@@ -5,7 +5,7 @@
 #
 #  This module is currently maintained by
 #
-#      Jeff Zucker < jeff AT cpan.org >
+#      Jeff Zucker < jzucker AT cpan.org >
 #
 #  The original author is Jochen Wiedmann.
 #
@@ -18,7 +18,7 @@
 #  General Public License or the Artistic License, as specified in
 #  the Perl README file.
 #
-
+BEGIN { use lib '../' }
 require 5.004;
 use strict;
 
@@ -30,11 +30,11 @@ my $haveFileSpec = eval { require File::Spec };
 
 package DBD::File;
 
-use vars qw(@ISA $VERSION $drh $err $errstr $sqlstate);
+use vars qw(@ISA $VERSION $drh $err $errstr $sqlstate $valid_attrs);
 
 @ISA = qw(DynaLoader);
 
-$VERSION = '0.23';      #
+$VERSION = '0.30';      # bumped from 0.22 to 0.30 with inclusion in DBI
 
 $err = 0;		# holds error code   for DBI::err
 $errstr = "";		# holds error string for DBI::errstr
@@ -74,6 +74,9 @@ sub driver ($;$) {
         for (qw( nano_version statement_version)) {
             $attr->{$_} = $DBI::SQL::Nano::versions->{$_}||'';
         }
+        $attr->{sql_handler} = ($attr->{statement_version})
+                             ? 'SQL::Statement'
+			     : 'DBI::SQL::Nano';
         $drh = DBI::_new_drh($class . "::dr", $attr);
     }
     $drh;
@@ -90,7 +93,7 @@ sub connect ($$;$$$) {
     # create a 'blank' dbh
     my $this = DBI::_new_dbh($drh, {
 	'Name' => $dbname,
-	'USER' => $user, 
+	'USER' => $user,
 	'CURRENT_USER' => $user,
     });
 
@@ -153,7 +156,6 @@ package DBD::File::db; # ====== DATABASE ======
 
 $DBD::File::db::imp_data_size = 0;
 
-
 sub prepare ($$;@) {
     my($dbh, $statement, @attribs)= @_;
 
@@ -170,8 +172,9 @@ sub prepare ($$;@) {
         # cache the parser object if the DBD supports parser caching
         # SQL::Nano and older SQL::Statements don't support this
 
-        my $sversion = $SQL::Statement::VERSION;
-	if ($sversion and $SQL::Statement::VERSION > 1) {
+	if ( $dbh->{Driver}->{sql_handler} eq 'SQL::Statement'
+             and $dbh->{Driver}->{statement_version} > 1)
+           {
             my $parser = $dbh->{csv_sql_parser_object};
             eval { $parser ||= $dbh->func('csv_cache_sql_parser_object') };
             if ($@) {
@@ -194,7 +197,6 @@ sub prepare ($$;@) {
 	    $sth->STORE('NUM_OF_PARAMS', scalar($stmt->params()));
 	}
     }
-
     $sth;
 }
 
@@ -208,7 +210,22 @@ sub FETCH ($$) {
 	return 1;
     } elsif ($attrib eq (lc $attrib)) {
 	# Driver private attributes are lower cased
-	return $dbh->{$attrib};
+
+        # Error-check If driver maintains registry of valid attributes
+        # But, hmm, maybe I shouldn't do this in case other
+        # things DBIx or whatever try to set things ???
+        #
+        if ($attrib !~ /^dbi/ and $dbh->{f_valid_attrs}) {
+	    if ( $dbh->{f_valid_attrs}->{$attrib} ) {
+	        return $dbh->{$attrib};
+	    }
+            else {
+	        return $dbh->set_err(1,"Invalid attribute '$attrib'!");
+	    }
+        }
+        else {
+	    return $dbh->{$attrib};
+        }
     }
     # else pass up to DBI to handle
     return $dbh->DBD::_::db::FETCH($attrib);
@@ -221,7 +238,22 @@ sub STORE ($$$) {
 	die("Can't disable AutoCommit");
     } elsif ($attrib eq (lc $attrib)) {
 	# Driver private attributes are lower cased
-	$dbh->{$attrib} = $value;
+
+        # Error-check If driver maintains registry of valid attributes
+        # But, hmm, maybe I shouldn't do this in case other
+        # things DBIx or whatever try to set things ???
+        #
+        if ($attrib !~ /^dbi/ and $dbh->{f_valid_attrs}) {
+	    if ( $dbh->{f_valid_attrs}->{$attrib} ) {
+    	        $dbh->{$attrib} = $value;
+	    }
+            else {
+	        return $dbh->set_err(1,"Invalid attribute '$attrib'!");
+	    }
+        }
+        else {
+  	    $dbh->{$attrib} = $value;
+	}
 	return 1;
     }
     return $dbh->DBD::_::db::STORE($attrib, $value);
@@ -368,6 +400,16 @@ sub rollback ($) {
     0;
 }
 
+sub f_versions {
+    my $dbh = shift;
+    printf "%s %s\n%s %s\n%s %s\n",
+    , 'DBD::File'      , $DBD::File::VERSION,
+    , 'DBI::SQL::Nano' , $dbh->{Driver}->{nano_version}
+    ;
+    printf "%s %s\n",
+    , 'SQL::Statement' , $dbh->{Driver}->{statement_version}
+      if $dbh->{Driver}->{sql_handler} eq 'SQL::Statement';
+}
 
 package DBD::File::st; # ====== STATEMENT ======
 
@@ -443,7 +485,7 @@ sub STORE ($$$) {
     my ($sth, $attrib, $value) = @_;
     if ($attrib eq (lc $attrib)) {
 	# Private driver attributes are lower cased
-	$sth->{$attrib} = $value;
+ 	$sth->{$attrib} = $value;
 	return 1;
     }
     return $sth->DBD::_::st::STORE($attrib, $value);
@@ -466,12 +508,6 @@ my $locking = $^O ne 'MacOS'  &&
 
 @DBD::File::Statement::ISA = qw(DBI::SQL::Nano::Statement);
 
-sub set_err {
-    my($handle,$errmsg,$state);
-    $handle->set_err($errmsg,$state);
-    die $errmsg;
-}
-
 my $open_table_re =
     $haveFileSpec ?
     sprintf('(?:%s|%s¦%s)',
@@ -479,15 +515,29 @@ my $open_table_re =
 	    quotemeta(File::Spec->updir()),
 	    quotemeta(File::Spec->rootdir()))
     : '(?:\.?\.)?\/';
-sub open_table ($$$$$) {
-    my($self, $data, $table, $createMode, $lockMode) = @_;
+
+sub get_file_name($$$) {
+    my($self,$data,$table)=@_;
+    $table =~ s/^\"//; # handle quoted identifiers
+    $table =~ s/\"$//;
     my $file = $table;
-    if ($file !~ /^$open_table_re/o) {
+    if ( $file !~ /^$open_table_re/o
+     and $file !~ m!^[/\\]!   # root
+     and $file !~ m!^[a-z]\:! # drive letter
+    ) {
 	$file = $haveFileSpec ?
 	    File::Spec->catfile($data->{Database}->{'f_dir'}, $table)
 		: $data->{Database}->{'f_dir'} . "/$table";
     }
+    return($table,$file);
+}
+
+sub open_table ($$$$$) {
+    my($self, $data, $table, $createMode, $lockMode) = @_;
+    my $file;
+    ($table,$file) = $self->get_file_name($data,$table);
     my $fh;
+    my $safe_drop = 1 if $self->{ignore_missing_table};
     if ($createMode) {
 	if (-f $file) {
 	    die "Cannot create table $table: Already exists";
@@ -500,11 +550,11 @@ sub open_table ($$$$$) {
 	}
     } else {
 	if (!($fh = IO::File->new($file, ($lockMode ? "r+" : "r")))) {
-	    die " Cannot open $file: $!";
+	    die " Cannot open $file: $!" unless $safe_drop;
 	}
     }
-    binmode($fh);
-    if ($locking) {
+    binmode($fh) if $fh;
+    if ($locking and $fh) {
 	if ($lockMode) {
 	    if (!flock($fh, 2)) {
 		die " Cannot obtain exclusive lock on $file: $!";
@@ -517,12 +567,13 @@ sub open_table ($$$$$) {
     }
     my $columns = {};
     my $array = [];
+    my $pos = $fh->tell() if $fh;
     my $tbl = {
 	file => $file,
 	fh => $fh,
 	col_nums => $columns,
 	col_names => $array,
-	first_row_pos => $fh->tell()
+	first_row_pos => $pos,
     };
     my $class = ref($self);
     $class =~ s/::Statement/::Table/;
@@ -539,7 +590,7 @@ sub drop ($) {
     my($self) = @_;
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
-    $self->{'fh'}->close();
+    $self->{'fh'}->close() if $self->{fh};
     unlink($self->{'file'});
     return 1;
 }
@@ -571,18 +622,14 @@ __END__
 
 =head1 NAME
 
-DBD::File - Base class for writing DBI drivers for plain files
+DBD::File - Base class for writing DBI drivers
 
 =head1 SYNOPSIS
 
-    use DBI;
-    $dbh = DBI->connect("DBI:File:f_dir=/home/joe/csvdb")
-        or die "Cannot connect: " . $DBI::errstr;
-    $sth = $dbh->prepare("CREATE TABLE a (id INTEGER, name CHAR(10))")
-        or die "Cannot prepare: " . $dbh->errstr();
-    $sth->execute() or die "Cannot execute: " . $sth->errstr();
-    $sth->finish();
-    $dbh->disconnect();
+ This module is a base class for writing other DBDs.
+ It is not intended to function as a DBD itself.
+ If you want to access flatfiles, use DBD::AnyData, or DBD::CSV,
+ (both of which are subclasses of DBD::File).
 
 =head1 DESCRIPTION
 
@@ -693,28 +740,6 @@ L<Creating and dropping tables> above.
 
 =back
 
-
-=head1 TODO
-
-=over 4
-
-=item Joins
-
-The current version of the module works with single table SELECT's
-only, although the basic design of the SQL::Statement module allows
-joins and the likes.
-
-=item Table name mapping
-
-Currently it is not possible to use files with names like C<names.csv>.
-Instead you have to use soft links or rename files. As an alternative
-one might use, for example a dbh attribute 'table_map'. It might be a
-hash ref, the keys being the table names and the values being the file
-names.
-
-=back
-
-
 =head1 KNOWN BUGS
 
 =over 8
@@ -733,8 +758,7 @@ MacOS and Windows 95, as there's a single user anyways).
 
 This module is currently maintained by
 
-      Jeff Zucker
-      <jeff@vpservices.com>
+Jeff Zucker < jzucker @ cpan.org >
 
 The original author is Jochen Wiedmann.
 
@@ -743,8 +767,7 @@ Copyright (C) 1998 by Jochen Wiedmann
 
 All rights reserved.
 
-You may distribute this module under the terms of either the GNU
-General Public License or the Artistic License, as specified in
+You may freely distribute and/or modify this module under the terms of either the GNU General Public License (GPL) or the Artistic License, as specified in
 the Perl README file.
 
 =head1 SEE ALSO
