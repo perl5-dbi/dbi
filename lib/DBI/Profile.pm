@@ -302,7 +302,7 @@ you can do:
 
 The default results format looks like this:
 
-  DBI::Profile: 0.001015 seconds (5 method calls) programname
+  DBI::Profile: 0.001015s (5 calls) programname @ YYYY-MM-DD HH:MM:SS
   '' =>
       0.000024s / 2 = 0.000012s avg (first 0.000015s, min 0.000009s, max 0.000015s)
   'SELECT mode,size,name FROM table' =>
@@ -573,11 +573,14 @@ sub format {
 	my ($count, $dbi_time) = @$totals;
 	(my $progname = $0) =~ s:.*/::;
 	if ($count) {
-	    $prologue .= sprintf "%f seconds ", $dbi_time;
+	    $prologue .= sprintf "%fs ", $dbi_time;
 	    my $perl_time = dbi_time() - $^T;
 	    $prologue .= sprintf "%.2f%% ", $dbi_time/$perl_time*100
 		if $DBI::PERL_ENDING && $perl_time;
-	    $prologue .= sprintf "(%d method calls) $progname\n", $count;
+	    my @lt = localtime(time);
+	    my $ts = sprintf "%d-%02d-%02d %02d:%02d:%02d",
+		1900+$lt[5], $lt[4]+1, @lt[3,2,1,0];
+	    $prologue .= sprintf "(%d calls) $progname \@ $ts\n", $count;
 	}
 
 	if (@$leaves == 1 && $self->{Data}->{DBI}) {

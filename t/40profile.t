@@ -122,7 +122,7 @@ print "Profile Output\n\n$output";
 # check that output was produced in the expected format
 ok(length $output);
 ok($output =~ /^DBI::Profile:/);
-ok($output =~ /\((\d+) method calls\)/);
+ok($output =~ /\((\d+) calls\)/);
 ok($1 >= $count);
 
 # try statement and method name path

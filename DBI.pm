@@ -382,7 +382,7 @@ my $keeperr = { O=>0x0004 };
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800 },
 	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
-	last_insert_id	=> { U =>[5,6,'$catalog, $schema, $table_name, $field_name [, \%attr ]'], O=>0x2100 },
+	last_insert_id	=> { U =>[5,6,'$catalog, $schema, $table_name, $field_name [, \%attr ]'], O=>0x2800 },
 	preparse    	=> {  }, # XXX
 	prepare    	=> { U =>[2,3,'$statement [, \%attr]'],                    O=>0x2200 },
 	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'],   O=>0x2200 },
@@ -442,12 +442,10 @@ my $keeperr = { O=>0x0004 };
     },
 );
 
-my($class, $method);
-foreach $class (keys %DBI::DBI_methods){
-    my %pkgif = %{ $DBI::DBI_methods{$class} };
-    foreach $method (keys %pkgif){
-	DBI->_install_method("DBI::${class}::$method", 'DBI.pm',
-			$pkgif{$method});
+while ( my ($class, $meths) = each %DBI::DBI_methods ) {
+    while ( my ($method, $info) = each %$meths ) {
+	my $fullmeth = "DBI::${class}::$method";
+	DBI->_install_method($fullmeth, 'DBI.pm', $info);
     }
 }
 
@@ -542,13 +540,14 @@ sub connect {
 		."and DBI_DSN env var not set");
 
     if ($ENV{DBI_AUTOPROXY} && $driver ne 'Proxy' && $driver ne 'Sponge' && $driver ne 'Switch') {
+	my $dbi_autoproxy = $ENV{DBI_AUTOPROXY};
 	my $proxy = 'Proxy';
-	if ($ENV{DBI_AUTOPROXY} =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i) {
+	if ($dbi_autoproxy =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i) {
 	    $proxy = $1;
 	    my $attr_spec = $2 || '';
 	    $driver_attrib_spec = ($driver_attrib_spec) ? "$driver_attrib_spec,$attr_spec" : $attr_spec;
 	}
-	$dsn = "$ENV{DBI_AUTOPROXY};dsn=dbi:$driver:$dsn";
+	$dsn = "$dbi_autoproxy;dsn=dbi:$driver:$dsn";
 	$driver = $proxy;
 	DBI->trace_msg("       DBI_AUTOPROXY: dbi:$driver($driver_attrib_spec):$dsn\n");
     }
