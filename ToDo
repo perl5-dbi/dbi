@@ -38,6 +38,8 @@ Change undocumented DBI->err and DBI->errstr methods to warn.
 Bundle enhanced DBD::Multiplex
 RISK: may break apps using old DBD::Multiplex
 
+disconnect() implies rollback() unless AutoCommit (Driver.xst + drivers)
+
 --- Internal Changes
 
 Increase size of DBIS (dbistate) structure and imp_xxh.com structures
@@ -113,6 +115,11 @@ A big project.
 
 -- others --
 
+Add (auto-maintained) #define macro giving the version number of the DBI
+as an integer in a form that can be used by #if statements (eg 1043000)
+e.g. Have Makefile.PL write a .h file that contains the value and have
+that #included by DBIXS.h
+
 Fixup @DBD::Foo::ISA and ?->setup_driver issues
 
 Add "imp_xxh_t* imp_xxh;" element to com struct that points back at
@@ -156,6 +163,7 @@ Use one bit for logging just the SQL statement executed
 (with no extra text) ideally in a way that lets the text
 file be parsed again later. Perhaps append ";\n\n\n" to each.
 Add parameter values and row count as comments afterwards?
+Use one bit for logging just Errors.
 
 Ability to remove a handle from the parents cache:
 	$sth->uncache;
@@ -196,6 +204,9 @@ e.g.	$dbh->{DefaultBindTypeArgs} = {
 		%{ $dbh->{DefaultBindTypeArgs}{$sth->{TYPE}->[1]}, # <==
 		OnFetch => sub { ... }
 	}); # YYYY-MM-DD
+
+Method call for drivers to get (or indicate they've got) the sth metadata
+which can then be used to trigger default bind_cols.
 
 Add a handle flag to say that the driver has a hash that maps error
 codes into SQLSTATE values. The error event mechanism could check for
