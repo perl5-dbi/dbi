@@ -247,6 +247,7 @@ $DBD::DBM::st::imp_data_size = 0;
 package DBD::DBM::Statement;
 ############################
 use base qw( DBD::File::Statement );
+use IO::File;  # for locking only
 use Fcntl;
 
 # you must define open_table;
@@ -261,7 +262,6 @@ use Fcntl;
 # between global, per-table, and default settings
 #
 sub open_table ($$$$$) {
-    # NEED TO ADD FILE LOCKING
     my($self, $data, $table, $createMode, $lockMode) = @_;
     my $dbh = $data->{Database};
 
@@ -322,6 +322,12 @@ sub open_table ($$$$$) {
        $tie_type = $dbm_type;
     }
 
+    # open and flock the lockfile, creating it if necessary
+    #
+    my $lock_table = $self->DBD::File::Statement::open_table(
+        $data, "$table.lck", $createMode, $lockMode
+    ) or die "Couldn't open lockfile!\n";
+
     eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
        unless $self->{command} eq 'DROP';
     die "Cannot tie file '$file': $@" if $@;
@@ -350,6 +356,7 @@ sub open_table ($$$$$) {
         dbm_type       => $dbm_type,
         store_metadata => $store,
         mldbm          => $serializer,
+        lock_fh        => $lock_table->{fh},
 	col_nums       => \%col_nums,
 	col_names      => $col_names
     };
@@ -438,7 +445,8 @@ sub drop ($$) {
     unlink $self->{file}.$ext if -f $self->{file}.$ext;
     unlink $self->{file}.'.dir' if -f $self->{file}.'.dir'
                                and $ext eq '.pag';
-    # put code to delete lockfile here
+    $self->{lock_fh}->close if $self->{lock_fh};
+    unlink $self->{file}.'.lck' if -f $self->{file}.'.lck';
     return 1;
 }
 
@@ -464,26 +472,25 @@ sub fetch_row ($$$) {
     }
     return (@ary) if wantarray;
     return \@ary;
-=pod
+
     # fetch without %each
     #
-    $self->{keys} = [sort keys %{$self->{hash}}] unless $self->{keys};
-    my $key = shift @{$self->{keys}};
-    $key = shift @{$self->{keys}} if $self->{store_metadata}
-                                 and $key
-                                 and $key eq "_metadata \0";
-    return undef unless defined $key;
-    my @ary;
-    $row = $self->{hash}->{$key};
-    if (ref $row eq 'ARRAY') {
-       @ary = ( $key, @{$row} );
-    }
-    else {
-	@ary = ($key,$row);
-    }
-    return (@ary) if wantarray;
-    return \@ary;
-=cut
+    # $self->{keys} = [sort keys %{$self->{hash}}] unless $self->{keys};
+    # my $key = shift @{$self->{keys}};
+    # $key = shift @{$self->{keys}} if $self->{store_metadata}
+    #                             and $key
+    #                             and $key eq "_metadata \0";
+    # return undef unless defined $key;
+    # my @ary;
+    # $row = $self->{hash}->{$key};
+    # if (ref $row eq 'ARRAY') {
+    #   @ary = ( $key, @{$row} );
+    # }
+    # else {
+    #    @ary = ($key,$row);
+    # }
+    # return (@ary) if wantarray;
+    # return \@ary;
 }
 
 # you must define push_row
@@ -541,8 +548,9 @@ sub update_one_row ($$$) {
 #
 sub DESTROY ($) {
     my $self=shift;
-    # code to release lock goes here
     untie %{$self->{hash}} if $self->{hash};
+    # release the flock on the lock file
+    $self->{lock_fh}->close if $self->{lock_fh};
 }
 
 # truncate() and seek() must be defined to satisfy DBI::SQL::Nano
@@ -683,6 +691,14 @@ If you have SQL::Statement installed, you can use table aliases:
    });
 
 See the L<GOTCHAS AND WARNINGS> for using DROP on tables.
+
+=head2 Table locking and flock()
+
+Table locking is accomplished using a lockfile which has the same name as the table's file but with the file extension '.lck'.  This file is created along with the table during a CREATE and removed during a DROP.  Every time the table itself is opened, the lockfile is flocked().  For SELECT, this is an shared lock.  For all other operations, it is an exclusive lock.
+
+Since the locking depends on flock(), it only works on operating systems that support flock().  In cases where flock() is not implemented, DBD::DBM will not complain, it will simply behave as if the flock() had occurred although no actual locking will happen.  Read the documentation for flock() if you need to understand this.
+
+Even on those systems that do support flock(), the locking is only advisory - as is allways the case with flock().  This means that if some other program tries to access the table while DBD::DBM has the table locked, that other program will *succeed* at opening the table.  DBD::DBM's locking only applies to DBD::DBM.
 
 =head2 Specifying the DBM type
 
@@ -862,6 +878,8 @@ Different DBM implementations return records in different orders.  That means th
 DBM data files are platform-specific.  To move them from one platform to another, you'll need to do something along the lines of dumping your data to CSV on platform #1 and then dumping from CSV to DBM on platform #2.  DBD::AnyData and DBD::CSV can help with that.  There may also be DBM conversion tools for your platforms which would probably be quickest.
 
 When using MLDBM, there is a very powerful serializer - it will allow you to store Perl code or objects in database columns.  When these get de-serialized, they may be evaled - in other words MLDBM (or actually Data::Dumper when used by MLDBM) may take the values and try to execute them in Perl.  Obviously, this can present dangers, so if you don't know what's in a file, be careful before you access it with MLDBM turned on!
+
+See the entire section on L<Table locking and flock()> for gotchas and warnings about the use of flock().
 
 =head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 

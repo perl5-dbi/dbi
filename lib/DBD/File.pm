@@ -243,8 +243,6 @@ sub STORE ($$$) {
     } elsif ($attrib eq (lc $attrib)) {
 	# Driver private attributes are lower cased
 
-=pod
-
   # I'm not implementing this yet becuase other drivers may be
   # setting f_ and sql_ attrs I don't know about
   # I'll investigate and publicize warnings to DBD authors
@@ -254,15 +252,15 @@ sub STORE ($$$) {
         # not implemented yet
         # my $class = $dbh->FETCH('ImplementorClass');
         #
-        if ( !$dbh->{f_valid_attrs}->{$attrib}
-         and !$dbh->{sql_valid_attrs}->{$attrib}
-         ) {
-	    return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
-        }
-        else {
-  	    $dbh->{$attrib} = $value;
-	}
-=cut
+        # if ( !$dbh->{f_valid_attrs}->{$attrib}
+        # and !$dbh->{sql_valid_attrs}->{$attrib}
+        # ) {
+	#    return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+        # }
+        # else {
+  	#    $dbh->{$attrib} = $value;
+	# }
+
         if ($attrib eq 'f_dir') {
   	    return $dbh->set_err( 1,"No such directory '$value'!")
                 unless -d $value;
