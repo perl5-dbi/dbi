@@ -2753,13 +2753,11 @@ tracing facilities.
   $h->trace_msg($message_text);
   $h->trace_msg($message_text, $min_level);
 
-Writes C<$message_text> to the trace file if trace is enabled for C<$h> or
-for the DBI as a whole. Can also be called as C<DBI-E<gt>trace_msg($msg)>.
-See L</trace>.
+Writes C<$message_text> to the trace file if the trace level is
+greater than or equal to $min_level (which defaults to 1).
+Can also be called as C<DBI-E<gt>trace_msg($msg)>.
 
-If C<$min_level> is defined, then the message is output only if the trace
-level is equal to or greater than that level. C<$min_level> defaults to 1.
-
+See L</TRACING> for more details.
 
 =item C<func>
 
@@ -3114,7 +3112,7 @@ end of the Statement text in the error message.
 
 The C<TraceLevel> attribute can be used as an alternative to the
 L</trace> method to set the DBI trace level and trace flags for a
-specific handle.
+specific handle. See L</TRACING> for more details.
 
 =item C<FetchHashKeyName> (string, inherited)
 
@@ -6159,8 +6157,11 @@ only to a value between 1 and 4.
 
 Each handle has it's own trace settings, and so does the DBI.
 When you call a method the DBI merges the handles settings into its
-own for the duration of the call. The highest trace level of the
-two is used and the trace flags are OR'd together.
+own for the duration of the call: the trace flags of the handle are
+OR'd into the trace flags of the DBI, and if the handle has a higher
+trace level then the DBI trace level is raised to match it.
+The previous DBI trace setings are restored when the called method
+returns.
 
 =head1 Enabling Trace
 
@@ -6194,16 +6195,16 @@ problem, when you need to see "inside" the driver and DBI.
 
 The trace output is detailed and typically very useful. Much of the
 trace output is formatted using the L</neat> function, so strings
-in the trace output may be edited and truncated.
+in the trace output may be edited and truncated by that function.
 
 =head2 Trace Output
 
 Initially trace output is written to C<STDERR>.  Both the
 C<$h-E<gt>trace> and C<DBI-E<gt>trace> methods take an optional
-$trace_filename parameter. If specified and can be opened in
-append mode then all trace output (including that from other handles)
-is redirected to that file.  A warning is generated if the file
-can't be opened.
+$trace_filename parameter. If specified, and can be opened in
+append mode, then I<all> trace output (currently including that
+from other handles) is redirected to that file.  A warning is
+generated if the file can't be opened.
 
 Further calls to trace() without a $trace_filename do not alter where
 the trace output is sent. If $trace_filename is undefined, then
@@ -6216,7 +6217,7 @@ those filehandles.
 =head2 Tracing Tips
 
 You can add tracing to your own application code using the
-C<$h-E<gt>trace_msg> method.
+L</trace_msg> method.
 
 It can sometimes be handy to compare trace files from two different
 runs of the same script. However using a tool like C<diff> doesn't work
