@@ -1,4 +1,4 @@
-#!perl -w
+#!perl -Tw
 use strict;
 
 #
@@ -6,7 +6,6 @@ use strict;
 # 
 
 use DBI;
-use DBI::ProfileDumper;
 
 BEGIN {
     if ($DBI::PurePerl) {
@@ -15,22 +14,25 @@ BEGIN {
     }
 }
 
-use Test;
-BEGIN { plan tests => 7; }
+BEGIN {
+    use Test::More;
 
-use Data::Dumper;
-$Data::Dumper::Indent = 1;
-$Data::Dumper::Terse = 1;
+    plan tests => 11;
+    use_ok( 'DBI' );
+    use_ok( 'DBI::ProfileDumper' );
+}
 
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', 
                        { RaiseError=>1, Profile=>"DBI::ProfileDumper" });
-ok(ref $dbh->{Profile}, "DBI::ProfileDumper");
-ok(ref $dbh->{Profile}{Data}, 'HASH');
-ok(ref $dbh->{Profile}{Path}, 'ARRAY');
+isa_ok( $dbh, 'DBI::db' );
+isa_ok( $dbh->{Profile}, "DBI::ProfileDumper" );
+isa_ok( $dbh->{Profile}{Data}, 'HASH' );
+isa_ok( $dbh->{Profile}{Path}, 'ARRAY' );
 
 # do a little work
 my $sql = "select mode,size,name from ?";
 my $sth = $dbh->prepare($sql);
+isa_ok( $sth, 'DBI::st' );
 $sth->execute(".");
 
 $sth->{Profile}->flush_to_disk();
@@ -42,21 +44,22 @@ $dbh->disconnect;
 undef $dbh;
 
 # wrote the profile to disk?
-ok(-s "dbi.prof");
+ok( -s "dbi.prof", 'Profile is on disk and nonzero size' );
 
 open(PROF, "dbi.prof") or die $!;
 my $prof = join('', <PROF>);
 close PROF;
 
 # has a header?
-ok($prof =~ /^DBI::ProfileDumper\s+([\d.]+)/);
+ok( $prof =~ /^DBI::ProfileDumper\s+([\d.]+)/, 'Found a version number' );
+# Can't use like() because we need $1
 
 # version matches VERSION? (DBI::ProfileDumper uses $self->VERSION so
 # it's a stringified version object that looks like N.N.N)
-ok($1, DBI::ProfileDumper->VERSION);
+is( $1, DBI::ProfileDumper->VERSION, 'Version numbers match' );
 
 # check that expected key is there
-ok($prof =~ /\+\s+1\s+\Q$sql\E/m);
+like($prof, qr/\+\s+1\s+\Q$sql\E/m);
 
 # unlink("dbi.prof"); # now done by 'make clean'
 
