@@ -2282,75 +2282,96 @@ characters in the value that you bind to the placeholder.
 B<NULL Values>
 
 Undefined values, or C<undef>, are used to indicate NULL values.
-You can insert update columns with a NULL value as you would a
-non-NULL value.  Consider these examples that insert and update the
-column C<product_code> with a NULL value:
+You can insert and update columns with a NULL value as you would a
+non-NULL value.  These examples insert and update the column
+C<age> with a NULL value:
 
   $sth = $dbh->prepare(qq{
-    INSERT INTO people (name, age) VALUES (?, ?)
+    INSERT INTO people (fullname, age) VALUES (?, ?)
   });
   $sth->execute("Joe Bloggs", undef);
 
   $sth = $dbh->prepare(qq{
-    UPDATE people SET age = ? WHERE name = ?
+    UPDATE people SET age = ? WHERE fullname = ?
   });
   $sth->execute(undef, "Joe Bloggs");
+  
+However, care must be taken when trying to use NULL values in a
+C<WHERE> clause.  Consider:
 
-However, care must be taken in the particular case of trying to use
-NULL values to qualify a C<WHERE> clause.  Consider:
-
-  SELECT name FROM people WHERE age = ?
+  SELECT fullname FROM people WHERE age = ?
 
 Binding an C<undef> (NULL) to the placeholder will I<not> select rows
-which have a NULL C<product_code>!  At least for database engines that
+which have a NULL C<age>!  At least for database engines that
 conform to the SQL standard.  Refer to the SQL manual for your database
 engine or any SQL book for the reasons for this.  To explicitly select
-NULLs you have to say "C<WHERE product_code IS NULL>".
+NULLs you have to say "C<WHERE age IS NULL>".
 
 A common issue is to have a code fragment handle a value that could be
-either C<defined> or C<undef> (non-NULL or NULL) in a C<WHERE> clause.
-A general way to do this is:
+either C<defined> or C<undef> (non-NULL or NULL) at runtime.
+A simple technique is to prepare the appropriate statement as needed,
+and substitute the placeholder for non-NULL cases:
 
-  if (defined $age) {
-      push @sql_qual, "age = ?";
-      push @sql_bind, $age;
-  }
-  else {
-      push @sql_qual, "age IS NULL";
-  }
+  $sql_clause = defined $age? "age = ?" : "age IS NULL";
   $sth = $dbh->prepare(qq{
-      SELECT id FROM products WHERE }.join(" AND ", @sql_qual).qq{
+    SELECT fullname FROM people WHERE $sql_clause
+  });
+  $sth->execute(defined $age ? $age : ());
+
+The following technique illustrates qualifying a C<WHERE> clause with
+several columns, whose associated values (C<defined> or C<undef>) are
+in a hash %h:
+
+  for my $col ("age", "phone", "email") {
+    if (defined $h{$col}) {
+      push @sql_qual, "$col = ?";
+      push @sql_bind, $h{$col};
+    }
+    else {
+      push @sql_qual, "$col IS NULL";
+    }
+  }
+  $sql_clause = join(" AND ", @sql_qual);
+  $sth = $dbh->prepare(qq{
+      SELECT fullname FROM people WHERE $sql_clause
   });
   $sth->execute(@sql_bind);
 
-If your WHERE clause contains many "NULLs-allowed" columns, you'll
-need to manage many combinations of statements and this approach
-rapidly becomes more complex.
+The techniques above call prepare for the SQL statement with each call to
+execute.  Because calls to prepare() can be expensive, performance
+can suffer when an application iterates many times over statements
+like the above.
 
-A better solution would be to design a single C<WHERE> clause that
-supports both NULL and non-NULL comparisons.  Several examples of
-C<WHERE> clauses that do this are presented below.  But each example
-lacks portability, robustness, or simplicity.  Whether an example
-is supported on your database engine depends on what SQL extensions it
-supports, and where it can support the C<?> parameter in a statement.
+A better solution is a single C<WHERE> clause that supports both
+NULL and non-NULL comparisons.  Its SQL statement would need to be
+prepared only once for all cases, thus improving performance.
+Several examples of C<WHERE> clauses that support this are presented
+below.  But each example lacks portability, robustness, or simplicity.
+Whether an example is supported on your database engine depends on
+what SQL extensions it provides, and where it supports the C<?>
+placeholder in a statement.
 
-  0) age = ?
-  1) NVL(age, xx) = NVL(?, xx)
-  2) ISNULL(age, xx) = ISNULL(?, xx)
-  3) DECODE(age, ?, 1, 0) = 1
-  4) age = ? OR (age IS NULL AND ? IS NULL)
-  5) age = ? OR (age IS NULL AND SP_ISNULL(?) = 1)
-  6) age = ? OR (age IS NULL AND ? = 1)
-
+  0)  age = ?
+  1)  NVL(age, xx) = NVL(?, xx)
+  2)  ISNULL(age, xx) = ISNULL(?, xx)
+  3)  DECODE(age, ?, 1, 0) = 1
+  4)  age = ? OR (age IS NULL AND ? IS NULL)
+  5)  age = ? OR (age IS NULL AND SP_ISNULL(?) = 1)
+  6)  age = ? OR (age IS NULL AND ? = 1)
+	
 Statements formed with the above C<WHERE> clauses require execute
-statements as follows:
+statements as follows.  The arguments are required, whether their
+values are C<defined> or C<undef>.
 
-  0-3) $sth->execute($age);
-  4,5) $sth->execute($age, $age);
-  6)   $sth->execute($age, defined($age)?0:1);
+  0,1,2,3)  $sth->execute($age);
+  4,5)      $sth->execute($age, $age);
+  6)        $sth->execute($age, defined($age) ? 0 : 1);
 
 Example 0 should not work (as mentioned earlier), but may work on
-a few database engines anyway.
+a few database engines anyway (e.g. Sybase).  Example 0 is part
+of examples 4, 5, and 6, so if example 0 works, these other
+examples may work, even if the engine does not properly support
+the right hand side of the C<OR> expression.
 
 Examples 1 and 2 are not robust: they require that you provide a
 valid column value xx (e.g. '~') which is not present in any row.
@@ -2364,18 +2385,19 @@ is null, and returns 1 if it is, or 0 if not.
 Example 6, the least simple, is probably the most portable, i.e., it
 should work with with most, if not all, database engines.
 
-Here is a table that indicates which examples above are known to work on
-various database engines:
+Here is a table that indicates which examples above are known to
+work on various database engines:
 
-              -----Examples------
-              0  1  2  3  4  5  6
-              -  -  -  -  -  -  -
-  Oracle 9    N           Y 
-  Informix    N  N  N  Y  N  Y  Y
-  MS SQL      
-  DB2
-  Sybase
-  MySQL 4
+                   -----Examples------
+                   0  1  2  3  4  5  6
+                   -  -  -  -  -  -  -
+  Oracle 9         N  Y  N  Y  Y  ?  Y
+  Informix IDS 9   N  N  N  Y  N  Y  Y
+  MS SQL           N  N  Y  N  Y  ?  Y
+  Sybase           Y  N  N  N  N  N  Y
+  AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y  
+
+* Works only because Example 0 works.
 
 DBI provides a sample perl script that will test the examples above
 on your database engine and tell you which ones work.  It is located
