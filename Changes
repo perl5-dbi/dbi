@@ -4,14 +4,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.47 (svn rev XXX),    XXth January 2005
+=head2 Changes in DBI 1.47 (svn rev XXX),    2nd February 2005
 
   Fixed DBI::ProxyServer to not create pid files by default.
     References: Ubuntu Security Notice USN-70-1, CAN-2005-0077
     Thanks to Javier Fernández-Sanguino Peña from the
     Debian Security Audit Project, and Jonathan Leffler.
   Fixed some tests to work with older Test::More versions.
-  Fixed setting $DBI::lasth where DESTROY calls other methods.
   Fixed setting $DBI::err/errstr in DBI::PurePerl.
   Fixed potential undef warning from connect_cached().
   Fixed $DBI::lasth handling for DESTROY so lasth points to
@@ -29,6 +28,7 @@ DBI::Changes - List of significant changes to the DBI
   Added $GetInfoType{SQL_DATABASE_NAME} thanks to Steffen Goeldner.
 
   Updated docs to recommend some common DSN string attributes.
+  Updated connect_cached() docs with issues and suggestions.
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
   Updated docs for primary_key_info and primary_keys.
   Updated docs to clarify that the default fetchrow_hashref behaviour,

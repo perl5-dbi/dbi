@@ -332,7 +332,9 @@ my $dbd_prefix_registry = {
 
 sub dump_dbd_registry {
     require Data::Dumper;
-    print Data::Dumper::Dump($dbd_prefix_registry);
+    local $Data::Dumper::Sortkeys=1;
+    local $Data::Dumper::Indent=1;
+    print Data::Dumper->Dump([$dbd_prefix_registry], [qw($dbd_prefix_registry)]);
 }
 
 # --- Dynamically create the DBI Standard Interface
@@ -2622,9 +2624,38 @@ behaviour of persistent connections implemented by Apache::DBI.
 
 Caching connections can be useful in some applications, but it can
 also cause problems, such as too many connections, and so should
-be used with care.
+be used with care. In particular, avoid changing the attributes of
+a database handle created via connect_cached() because it will affect
+other code that may be using the same handle.
 
-The cache can be accessed (and cleared) via the L</CachedKids> attribute.
+Where multiple separate parts of a program are using connect_cached()
+to connect to the same database with the same (initial) attributes
+it is a good idea to add a private attribute to the connect_cached()
+call to effectively limit the scope of the caching. For example:
+
+  DBI->connect_cached(..., { private_foo_cachekey => "Bar", ... });
+
+Handles returned from that connect_cached() call will only be returned
+by other connect_cached() call elsewhere in the code if those other
+calls also pass in the same attribute values, including the private one.
+(I've used C<private_foo_cachekey> here as an example, you can use
+any attribute name with a C<private_> prefix.)
+
+Taking that one step further, you can limit a particular connect_cached()
+call to return handles unique to that one place in the code by setting the
+private attribute to a unique value for that place:
+
+  DBI->connect_cached(..., { private_foo_cachekey => __FILE__.__LINE__, ... });
+
+By using a private attribute you still get connection caching for
+the individual calls to connect_cached() but, by making separate
+database conections for separate parts of the code, the database
+handles are isolated from any attribute changes made to other handles.
+
+The cache can be accessed (and cleared) via the L</CachedKids> attribute:
+
+  my $CachedKids_hashref = $dbh->{Driver}->{CachedKids};
+  %$CachedKids_hashref = () if $CachedKids_hashref;
 
 
 =item C<available_drivers>

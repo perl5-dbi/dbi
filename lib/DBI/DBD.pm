@@ -142,7 +142,9 @@ driver and a prefix for the driver.
 Typically, the name is based on the name of the database software it
 uses, and the prefix is a contraction of that.
 Hence, DBD::Oracle has the name Oracle and the prefix 'ora_'.
-This information will be recorded in the DBI documentation.
+This information will be recorded in the DBI module.
+Apart from documentation purposes, registration is a prerequisite for
+L<installing private methods|DBI/install_method>.
 
 This document assumes you are writing a driver called DBD::Driver, and
 that the prefix 'drv_' is assigned to the driver.
@@ -657,6 +659,8 @@ The I<DBI::new_drh> method and the I<driver> method both return C<undef>
 for failure (in which case you must look at $DBI::err and $DBI::errstr
 for the failure information, because you have no driver handle to use).
 
+=head4 The CLONE special subroutine
+
 Also needed here, in the DBD::Driver package, is a CLONE() method
 that will be called by perl when an intrepreter is cloned. All your
 CLONE method needs to do, currently, is clear the cached $drh so
@@ -666,6 +670,9 @@ interpreter:
   sub CLONE {
     undef $drh;
   }
+
+See L<http://search.cpan.org/dist/perl/pod/perlmod.pod#Making_your_module_threadsafe>
+for details.
 
 =head3 The DBD::Driver::dr package
 
@@ -2672,7 +2679,7 @@ quoted from I<DBD::CSV>:
 
 Note that we cannot do a
 
-  $srh->SUPER::connect($dbname, $user, $auth, $attr);
+  $drh->SUPER::connect($dbname, $user, $auth, $attr);
 
 as we would usually do in a an OO environment, because $drh is an instance
 of I<DBI::dr>. And note, that the I<connect> method of I<DBD::File> is
