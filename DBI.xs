@@ -2340,7 +2340,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, trace_level);
 	    if (trace_level >= 3)
                 PerlIO_printf(DBILOGFP,
-		    "%c   <> DESTROY ignored for outer handle %s (inner %s has ref cnt %ld)\n",
+		    "%c   <> DESTROY(%s) ignored for outer handle (inner %s has ref cnt %ld)\n",
 		    (dirty?'!':' '), neatsvpv(h,0), neatsvpv(mg->mg_obj,0),
 		    (long)SvREFCNT(SvRV(mg->mg_obj))
 		);
@@ -2697,8 +2697,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     err_sv = DBIc_ERR(imp_xxh);
 
-    if (trace_level >= 1
-	&& !(trace_level == 1 /* don't trace nested calls at level 1 */
+    if (trace_level > 1
+	|| (trace_level == 1 /* don't trace nested calls at level 1 */
 	    && call_depth <= 1
 	    && (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1))
     ) {
@@ -2719,9 +2719,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    (DBIc_is(imp_xxh, DBIcf_TaintIn|DBIcf_TaintOut)) ? 'T' : ' ',
 		    (qsv) ? '>' : '-',
 		    meth_name);
-	if (trace_level==1 && items>=2) { /* make level 1 more useful */
+	if (trace_level==1 && (items>=2||is_DESTROY)) { /* make level 1 more useful */
 	    /* we only have the first two parameters available here */
-	    PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
+	    if (is_DESTROY) /* show handle as first arg to DESTROY */
+		/* want to show outer handle so trace makes sense	*/
+		/* but outer handle has been destroyed so we fake it	*/
+		PerlIO_printf(logfp,"(%s=HASH(%p)", HvNAME(SvSTASH(SvRV(orig_h))), DBIc_MY_H(imp_xxh));
+	    else
+		PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
 	    if (items >= 3)
 		PerlIO_printf(logfp," %s", neatsvpv(st2,0));
 	    PerlIO_printf(logfp,"%s)", (items > 3) ? " ..." : "");

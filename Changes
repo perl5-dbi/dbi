@@ -22,6 +22,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed DBD::Sponge not to generate warning with threads.
   Fixed DBI_AUTOPROXY to work more than once thanks to Steven Hirsch.
 
+  Changed TraceLevel 1 to not show recursive/nested calls.
   Changed getting or setting an invalid attribute to no longer be
     a fatal error but generate a warning instead.
   Changed selectall_arrayref() to call finish() if
