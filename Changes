@@ -8,7 +8,6 @@ DBI::Changes - List of significant changes to the DBI
 
 Drivers to change how they get debug level (with masked bits).
 Extra hooks in Driver.xst for bind_col etc
-Add tests for $h->{Executed}
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.

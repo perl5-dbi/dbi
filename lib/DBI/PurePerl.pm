@@ -103,12 +103,14 @@ use constant IMA_STUB		=> 0x0100; #/* donothing eg $dbh->connected */
 #define IMA_CLEAR_STMT             0x0200  /* clear Statement before call  */
 #define IMA_PROF_EMPTY_STMT        0x0400  /* profile as empty Statement   */
 use constant IMA_NOT_FOUND_OKAY	=> 0x0800; #/* not error if not found */
+use constant IMA_EXECUTE	=> 0x1000; #/* do/execute: DBIcf_Executed   */
 
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active
 	AutoCommit
 	ChopBlanks
 	CompatMode
+	Executed
 	Taint
 	TaintIn
 	TaintOut
@@ -201,25 +203,22 @@ sub  _install_method {
     } if IMA_FUNC_REDIRECT & $bitmask;
 
     push @pre_call_frag, q{
-	my $dbh = $h->{Database};
-	warn "No Database set for $h on $method_name!" unless $dbh; # eg proxy problems
-	$dbh->{Statement} = $h->{Statement} if $dbh;
+	my $parent_dbh = $h->{Database};
+    } if (IMA_COPY_STMT|IMA_EXECUTE) & $bitmask;
+
+    push @pre_call_frag, q{
+	warn "No Database set for $h on $method_name!" unless $parent_dbh; # eg proxy problems
+	$parent_dbh->{Statement} = $h->{Statement} if $parent_dbh;
     } if IMA_COPY_STMT & $bitmask;
+
+    push @pre_call_frag, q{
+	$h->{Executed} = 1;
+	$parent_dbh->{Executed} = 1 if $parent_dbh;
+    } if IMA_EXECUTE & $bitmask;
 
     if (IMA_KEEP_ERR & $bitmask) {
 	push @pre_call_frag, q{
 	    my $keep_error = 1;
-	};
-    }
-    elsif (0 and IMA_KEEP_ERR_SUB & $bitmask) {
-	push @pre_call_frag, q{
-	    my $keep_error = $h->{_parent}->{_call_depth};
-	    unless ($keep_error) {	# see also set_err
-		#warn "$method_name cleared err";
-		$h->{err}    = $DBI::err    = undef;
-		$h->{errstr} = $DBI::errstr = undef;
-		$h->{state}  = $DBI::state  = '';
-	    };
 	};
     }
     else {
@@ -273,6 +272,7 @@ sub  _install_method {
     } if exists $ENV{DBI_TRACE}; # note use of exists
 
     push @post_call_frag, q{
+	$h->{Executed} = 0;
 	if ($h->{BegunWork}) {
 	    $h->{BegunWork}  = 0;
 	    $h->{AutoCommit} = 1;

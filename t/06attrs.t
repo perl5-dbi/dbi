@@ -1,10 +1,10 @@
 #!perl -w
 
 use strict;
-use Test;
+use Test::More;
 use DBI;
 
-BEGIN { plan tests => 126 }
+BEGIN { plan tests => 134 }
 
 $|=1;
 
@@ -34,17 +34,18 @@ ok(!$dbh->{LongTruncOk} );
 ok(!$dbh->{TaintIn} );
 ok(!$dbh->{TaintOut} );
 ok(!$dbh->{Taint} );
+ok(!$dbh->{Executed} );
 
 #	other attr
-ok( $dbh->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
-ok( $dbh->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
+is( $dbh->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
+is( $dbh->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
 ok( ! defined $dbh->{CachedKids} );
 ok( ! defined $dbh->{HandleError} );
-ok( $dbh->{TraceLevel}, $DBI::dbi_debug );
-ok( $dbh->{FetchHashKeyName}, 'NAME', );
-ok( $dbh->{LongReadLen}, 80 );
+is( $dbh->{TraceLevel}, $DBI::dbi_debug );
+is( $dbh->{FetchHashKeyName}, 'NAME', );
+is( $dbh->{LongReadLen}, 80 );
 ok( ! defined $dbh->{Profile} );
-ok( $dbh->{Name}, 'dummy' );	# fails for Multiplex
+is( $dbh->{Name}, 'dummy' );	# fails for Multiplex
 ok( ! defined $dbh->{Statement} );
 ok( ! defined $dbh->{RowCacheSize} );
 
@@ -55,7 +56,11 @@ ok( $err =~ /^DBD::(ExampleP|Multiplex)::db do failed: Unknown field names: foo/
 ok( $dbh->err );
 ok( my $errstr = $dbh->errstr);
 ok( $errstr =~ /^Unknown field names: foo\b/ ) or print "got: $errstr\n";
-ok( $dbh->state, 'S1000' );
+is( $dbh->state, 'S1000' );
+
+ok( $dbh->{Executed} );  	# even though it failed
+$dbh->{Executed} = 0;   	# reset(able)
+ok(!$dbh->{Executed} );  	# reset
 
 # ------ Test the driver handle attributes.
 
@@ -65,8 +70,8 @@ ok( $dbh->err );
 
 # error in $drh same as $dbh because Err/Errstr/State are set at drh level
 #ok( $drh->err );
-#ok( $drh->errstr, 'Unknown field names: foo' );
-#ok( $drh->state, 'S1000' );
+#is( $drh->errstr, 'Unknown field names: foo' );
+#is( $drh->state, 'S1000' );
 ok(1); ok(1); ok(1);
 
 ok( $drh->{Warn} );
@@ -82,24 +87,27 @@ ok(!$drh->{LongTruncOk} );
 ok(!$drh->{TaintIn} );
 ok(!$drh->{TaintOut} );
 ok(!$drh->{Taint} );
+ok( $drh->{Executed} ) unless $DBI::PurePerl && ok(1); # due to the do() above
 
 unless ($DBI::PurePerl or $dbh->{mx_handle_list}) {
-ok( $drh->{Kids}, 1 );
-ok( $drh->{ActiveKids}, 1 );
+is( $drh->{Kids}, 1 );
+is( $drh->{ActiveKids}, 1 );
 }
 else { ok(1); ok(1); }
 ok( ! defined $drh->{CachedKids} );
 ok( ! defined $drh->{HandleError} );
-ok( $drh->{TraceLevel}, 0 );
-ok( $drh->{FetchHashKeyName}, 'NAME', );
+is( $drh->{TraceLevel}, 0 );
+is( $drh->{FetchHashKeyName}, 'NAME', );
 ok( ! defined $drh->{Profile} );
-ok( $drh->{LongReadLen}, 80 );
-ok( $drh->{Name}, 'ExampleP' );
+is( $drh->{LongReadLen}, 80 );
+is( $drh->{Name}, 'ExampleP' );
 
 # ------ Test the statement handle attributes.
 
 # Create a statement handle.
 (ok my $sth = $dbh->prepare("select ctime, name from foo") );
+ok( !$sth->{Executed} );
+ok( !$dbh->{Executed} );
 
 # Trigger an exception.
 eval { $sth->execute };
@@ -109,7 +117,9 @@ ok( $err =~ /^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i )
 
 # Test all of the statement handle attributes.
 ok( $sth->errstr =~ /^opendir\(foo\): / ) or print "errstr: ".$sth->errstr."\n";
-ok( $sth->state, 'S1000' );
+is( $sth->state, 'S1000' );
+ok( $sth->{Executed} );	# even though it failed
+ok( $dbh->{Executed} );	# due to $sth->prepare, even though it failed
 
 # booleans
 ok( $sth->{Warn} );
@@ -126,23 +136,23 @@ ok(!$sth->{TaintOut} );
 ok(!$sth->{Taint} );
 
 # common attr
-ok( $sth->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
-ok( $sth->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
+is( $sth->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
+is( $sth->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
 ok( ! defined $sth->{CachedKids} );
 ok( ! defined $sth->{HandleError} );
-ok( $sth->{TraceLevel}, $DBI::dbi_debug );
-ok( $sth->{FetchHashKeyName}, 'NAME', );
+is( $sth->{TraceLevel}, $DBI::dbi_debug );
+is( $sth->{FetchHashKeyName}, 'NAME', );
 ok( ! defined $sth->{Profile} );
-ok( $sth->{LongReadLen}, 80 );
+is( $sth->{LongReadLen}, 80 );
 ok( ! defined $sth->{Profile} );
 
 # sth specific attr
 ok( ! defined $sth->{CursorName} );
 
-ok( $sth->{NUM_OF_FIELDS}, 2 );
-ok( $sth->{NUM_OF_PARAMS}, 0 );
+is( $sth->{NUM_OF_FIELDS}, 2 );
+is( $sth->{NUM_OF_PARAMS}, 0 );
 ok( my $name = $sth->{NAME} );
-ok( @$name, 2 );
+is( @$name, 2 );
 ok( $name->[0] eq 'ctime' );
 ok( $name->[1] eq 'name' );
 ok( my $name_lc = $sth->{NAME_lc} );
@@ -152,36 +162,36 @@ ok( my $name_uc = $sth->{NAME_uc} );
 ok( $name_uc->[0] eq 'CTIME' );
 ok( $name_uc->[1] eq 'NAME' );
 ok( my $nhash = $sth->{NAME_hash} );
-ok( keys %$nhash, 2 );
-ok( $nhash->{ctime}, 0 );
-ok( $nhash->{name}, 1 );
+is( keys %$nhash, 2 );
+is( $nhash->{ctime}, 0 );
+is( $nhash->{name}, 1 );
 ok( my $nhash_lc = $sth->{NAME_lc_hash} );
-ok( $nhash_lc->{ctime}, 0 );
-ok( $nhash_lc->{name}, 1 );
+is( $nhash_lc->{ctime}, 0 );
+is( $nhash_lc->{name}, 1 );
 ok( my $nhash_uc = $sth->{NAME_uc_hash} );
-ok( $nhash_uc->{CTIME}, 0 );
-ok( $nhash_uc->{NAME}, 1 );
+is( $nhash_uc->{CTIME}, 0 );
+is( $nhash_uc->{NAME}, 1 );
 ok( my $type = $sth->{TYPE} );
-ok( @$type, 2 );
-ok( $type->[0], 4 );
-ok( $type->[1], 12 );
+is( @$type, 2 );
+is( $type->[0], 4 );
+is( $type->[1], 12 );
 ok( my $null = $sth->{NULLABLE} );
-ok( @$null, 2 );
-ok( $null->[0], 0 );
-ok( $null->[1], 0 );
+is( @$null, 2 );
+is( $null->[0], 0 );
+is( $null->[1], 0 );
 
 # Should these work? They don't.
 ok( my $prec = $sth->{PRECISION} );
-ok( $prec->[0], 10 );
-ok( $prec->[1], 1024 );
+is( $prec->[0], 10 );
+is( $prec->[1], 1024 );
 ok( my $scale = $sth->{SCALE} );
-ok( $scale->[0], 0 );
-ok( $scale->[1], 0 );
+is( $scale->[0], 0 );
+is( $scale->[1], 0 );
 
 
 ok( my $params = $sth->{ParamValues} );
-ok( $params->{1}, 'foo' );
-ok( $sth->{Statement}, "select ctime, name from foo" );
+is( $params->{1}, 'foo' );
+is( $sth->{Statement}, "select ctime, name from foo" );
 ok( ! defined $sth->{RowsInCache} );
 
 # end
