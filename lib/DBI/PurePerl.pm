@@ -196,7 +196,6 @@ sub  _install_method {
 	if IMA_STUB & $bitmask;
 
     push @pre_call_frag, q{
-#warn "func";
 	#$method_name = $imp . '::' . pop @_;
 	$method_name = pop @_;
     } if IMA_FUNC_REDIRECT & $bitmask;
@@ -217,8 +216,9 @@ sub  _install_method {
 	    my $keep_error = $h->{_parent}->{_call_depth};
 	    unless ($keep_error) {	# see also set_err
 		#warn "$method_name cleared err";
-		$h->{err} = $DBI::err = undef;
-		$h->{errstr} = $DBI::state = '';
+		$h->{err}    = $DBI::err    = undef;
+		$h->{errstr} = $DBI::errstr = undef;
+		$h->{state}  = $DBI::state  = '';
 	    };
 	};
     }
@@ -231,8 +231,9 @@ sub  _install_method {
 	};
 	my $keep_error_code = q{
 	    #warn "$method_name cleared err";
-	    $h->{err} = $DBI::err = undef;
-	    $h->{errstr} = $DBI::state = '';
+	    $h->{err}    = $DBI::err    = undef;
+	    $h->{errstr} = $DBI::errstr = undef;
+	    $h->{state}  = $DBI::state  = '';
 	};
 	$keep_error_code = q{
 	    printf $DBI::tfh "    !! %s: %s CLEARED by call to }.$method_name.q{ method\n".
@@ -282,12 +283,11 @@ sub  _install_method {
         if ( !$keep_error && defined(my $err=$h->{err}) ) {
 
 	    my $at_top = ($call_depth <= 1 && !$h->{_parent}{_call_depth});
-	    my($pe,$re,$he,$hw) = @{$h}{qw(PrintError RaiseError HandleError HandleSetErr)};
+	    my($pe,$re,$he) = @{$h}{qw(PrintError RaiseError HandleError)};
 	    my $msg;
-$hw=0;
 
 	    if ($err && $at_top && ($pe || $re || $he)	# error at top level
-	    or (!$err && ($pe || $hw))			# warning/info
+	    or (!$err && $pe)				# warning/info
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
 		    ? ($h->{'_last_method'}||$method_name) : $method_name;
@@ -305,11 +305,8 @@ $hw=0;
 		    }
 		    $msg .= "]";
 		}
-		if (!$err && $hw) {
-		    undef $hw unless &$hw($msg,$h,$ret[0]);
-		}
-		# still have warn (not info) and it wasn't handled by HandleSetErr
-		if (!$hw and defined $DBI::err and $DBI::err eq "0") {
+		# have a 'warning' (not info) and PrintError is set
+		if (defined $DBI::err and $DBI::err eq "0") {
 		    warn $msg if $pe;
 		}
 
@@ -375,7 +372,7 @@ $hw=0;
     warn "$@\n$method_code\n" if $@;
     die "$@\n$method_code\n" if $@;
     *$method = $code_ref;
-    if ( 0 and $method =~ /set_err/) { # debuging tool
+    if (0 && $method =~ /set_err/) { # debuging tool
 	my $l=0; # show line-numbered code for method
 	warn "*$method = ".join("\n", map { ++$l.": $_" } split/\n/,$method_code);
     }
@@ -626,18 +623,9 @@ sub STORE {
     $h->{$key} = $is_flag_attribute{$key} ? !!$value : $value;
     return 1;
 }
-sub err {
-    my $h = shift;
-    return $h->{'err'} || $h->{'errstr'};
-}
-sub errstr {
-    my $h = shift;
-    my $errstr = $h->{'errstr'} || '';   # $h->{'err'}; caught in DBD-CSV
-    return $errstr;
-}
-sub state {
-    return shift->{state};
-}
+sub err    { return shift->{err}    }
+sub errstr { return shift->{errstr} }
+sub state  { return shift->{state}  }
 sub set_err {
     my ($h, $errnum,$msg,$state, $method, $rv) = @_;
     $h = tied(%$h) || $h; # for code that calls $h->DBI::set_err(...)
@@ -647,8 +635,9 @@ sub set_err {
     }
 
     if (!defined $errnum) {
-	$h->{err} = $DBI::err = undef;
-	$h->{errstr} = $DBI::state = '';
+	$h->{err}    = $DBI::err    = undef;
+	$h->{errstr} = $DBI::errstr = undef;
+	$h->{state}  = $DBI::state  = '';
         return;
     }
 
