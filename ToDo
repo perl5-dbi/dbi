@@ -152,6 +152,8 @@ mx_translate_sql_child  - called for each child handle so each can have differen
 from which mx_translate_sql_child then 'regenerates' custom sql for the child handle)
 See also http://c-jdbc.objectweb.org/
 
+Use subversion mechanism for $VERSION in source files.
+
 ====== LATER ======
 
 Define expected uft8 behaviour. Basically drivers need to set the

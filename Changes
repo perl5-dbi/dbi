@@ -9,6 +9,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed space-parsing bug in DBI::SQL::Nano thanks to Jeff Zucker.
   Fixed a couple of bad links in docs thanks to Graham Barr.
   Fixed test.pl Win32 undef warning thanks to H.Merijn Brand & David Repko.
+  Fixed minor issues in DBI::DBD::Metadata thanks to Steffen Goeldner.
 
   Changed use DBI qw(:utils) export tag to include $neat_maxlen.
   Updated Roadmap and ToDo.

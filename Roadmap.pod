@@ -1,11 +1,10 @@
-
 =head1 NAME
 
 DBI::Roadmap - Planned Enhancements for the DBI
 
-Tim Bunce - 9th November 2004
+Tim Bunce - 12th November 2004
 
-=head2 SYNOPSIS
+=head1 SYNOPSIS
 
 This document gives a high level overview of the future of the Perl
 DBI module.
@@ -24,7 +23,7 @@ Addressing these issues together, in coordinated way, will help
 ensure maximum future functionality with minimal disruptive
 (incompatible) upgrades.
 
-=head2 SCOPE
+=head1 SCOPE
 
 Broad categories of changes are outlined here along with some
 rationale, but implementation details and minor planned enhancements
@@ -113,20 +112,19 @@ the DBI.
 * The DBD::Multiplex driver provides a framework to enable a wide
 range of dynamic functionality, including support for high-availability,
 failover, load-balancing, caching, and access to distributed data.
-It is currently being rewritten to greatly increase its flexibility
-and has potential to be a very powerful tool, but development has
-stalled.
+It is currently being enhanced but development has stalled.
 
 * The DBD::Proxy module is complex and relatively inefficient because
 it's trying to be a complete proxy for most DBI method calls.  For
 many applications a simpler proxy architecture that operates with
-a single round-trip to the server would be sufficient and preferable.
+a single round-trip to the server would be simpler, faster, and more
+flexible.
 
 New proxy client and server classes are needed, which could be
 subclassed to support specific client to server transport mechanisms
 (such as HTTP and Spread::Queue).  Apart from the efficiency gains,
 this would also enable the use of a load-balanced pool of stateless
-servers.
+servers for greater scalability and reliability.
 
 * The DBI currently offers no support for distributed transactions.
 The most useful elements of the standard XA distributed transaction
@@ -204,7 +202,8 @@ advanced uses of the DBI.
 
 The DBI can be extended in three main dimensions: subclassing the
 DBI, subclassing a driver, and callback hooks. Each has different
-pros and cons and each is applicable in different situations.
+pros and cons, each is applicable in different situations, and
+all need enhancing.
 
 * Subclassing the DBI is functional but not well defined and some
 key elements are incomplete, particularly the DbTypeSubclass mechanism
@@ -335,21 +334,13 @@ model are magnified.
 
 =head1 PRIORITIES
 
-The foundations of many of the enhancements described above require
-changes to the interface between the DBI and drivers. To clearly
-define the transition point, the source code will be forked into a
-DBI v1 branch and the mainline bumped to v2.
-
-DBI v1 will continue to be maintained for bug fixes and any
-enhancements that ease the transition to DBI v2.
-
 =head2 Transition Drivers
 
 The first priority is to make all the infrastructure changes that
-impact drivers and make an alpha release available that driver
-authors can target. As far as possible, the changes will be implemented
-in a way that enables driver authors use the same code base for DBI v1
-and DBI v2.
+impact drivers and make an alpha release available for driver authors.
+
+As far as possible, the changes will be implemented in a way that
+enables driver authors use the same code base for DBI v1 and DBI v2.
 
 The main changes required by driver authors are:
 
@@ -372,6 +363,10 @@ Once DBI v2.0 is available, the other enhancements can be implemented
 incrementally on the updated foundations. Priorities for those
 changes have not been set.
 
+=head2 DBI v1 
+
+DBI v1 will continue to be maintained on a separate branch for
+bug fixes and any enhancements that ease the transition to DBI v2.
 
 =head1 RESOURCES AND CONTRIBUTIONS
 

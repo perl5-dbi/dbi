@@ -18,10 +18,9 @@ use DBI::Const::GetInfoType qw(%GetInfoType);
 @ISA = qw(Exporter);
 @EXPORT = qw(write_getinfo_pm write_typeinfo_pm);
 
-use strict;
-
-my
 $VERSION = sprintf("%d.%02d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/);
+
+use strict;
 
 =head1 NAME
 
@@ -186,6 +185,9 @@ PERL
         elsif ($key eq 'SQL_KEYWORDS') {
             $val = ($kw_map) ? '\&sql_keywords' : 'undef';
         }
+        elsif ($key eq 'SQL_DRIVER_NAME') {
+            $val = "\$INC{'DBD/$driver.pm'}";
+        }
         elsif ($key eq 'SQL_DRIVER_VER') {
             $val = '$sql_driver_ver';
         }
@@ -340,7 +342,7 @@ package DBD::${driver}::TypeInfo;
     require DynaLoader;
     \@ISA = qw(Exporter DynaLoader);
     \@EXPORT = qw(type_info_all);
-    use DBI (:sql_types);
+    use DBI qw(:sql_types);
 
 PERL
 
@@ -409,7 +411,7 @@ PERL
 
     my $h = $dbh->type_info_all;
     my @tia = @$h;
-    my %odbc_map = %{$tia[0]};
+    my %odbc_map = map { uc $_ => $tia[0]->{$_} } keys %{$tia[0]};
     shift @tia;     # Remove the mapping reference.
     my $numtyp = $#tia;
 
@@ -484,7 +486,7 @@ __END__
 
 Jonathan Leffler <jleffler@us.ibm.com> (previously <jleffler@informix.com>),
 Jochen Wiedmann <joe@ispsoft.de>,
-Steffen Goeldner <s.goeldner@eurodata.de>,
+Steffen Goeldner <sgoeldner@cpan.org>,
 and Tim Bunce <dbi-users@perl.org>.
 
 =cut
