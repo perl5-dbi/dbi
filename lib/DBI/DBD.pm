@@ -3754,6 +3754,7 @@ sub dbd_postamble {
     my $xstf_h = '$(DBI_INSTARCH_DIR)/Driver_xst.h';
     if ($^O eq 'VMS') {
 	$dbi_instarch_dir = vmsify($dbi_instarch_dir.'/');
+	$dbi_instarch_dir =~ s:/$::; # for buggy old vmsify's?
 	$dbi_driver_xst= '$(DBI_INSTARCH_DIR)Driver.xst';
 	$xstf_h = '$(DBI_INSTARCH_DIR)Driver_xst.h';
     }
