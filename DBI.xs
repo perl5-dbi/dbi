@@ -862,7 +862,6 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
     HV *imp_stash;
     SV *dbih_imp_sv;
     imp_xxh_t *imp;
-    STRLEN memzero_size;
 
     if ( (imp_stash = gv_stashpv(imp_class, FALSE)) == NULL)
         croak(errmsg, imp_class, "unknown package");
@@ -885,27 +884,41 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 	PerlIO_printf(DBILOGFP,"    dbih_make_com(%s, %p, %s, %ld, %p) thr#%p\n",
 	    neatsvpv(p_h,0), p_imp_xxh, imp_class, (long)imp_size, copy, PERL_GET_THX);
 
-    if (copy) {
+    if (copy && SvOK(copy)) {
+	U32  copy_flags;
 	/* validate the supplied dbi_imp_data looks reasonable,	*/
 	if (SvCUR(copy) != imp_size)
-	    croak("Can't use dbi_imp_data, wrong size (%d not %d)",
+	    croak("Can't use dbi_imp_data of wrong size (%d not %d)",
 		SvCUR(copy), imp_size);
-	/* copy the whole template, then zero out our imp_xxh struct */
+
+	/* copy the whole template */
 	dbih_imp_sv = newSVsv(copy);
+	imp = (imp_xxh_t*)(void*)SvPVX(dbih_imp_sv);
+
+	/* sanity checks on the supplied imp_data */
+	if (DBIc_TYPE(imp) != ((p_imp_xxh) ? DBIc_TYPE(p_imp_xxh)+1 :1) )
+	    croak("Can't use dbi_imp_data from different type of handle");
+	if (!DBIc_has(imp, DBIcf_IMPSET))
+	    croak("Can't use dbi_imp_data that not from a setup handle");
+
+        /* copy flags, zero out our imp_xxh struct, restore some flags */
+	copy_flags = DBIc_FLAGS(imp);
 	switch ( (p_imp_xxh) ? DBIc_TYPE(p_imp_xxh)+1 : DBIt_DR ) {
-	case DBIt_DR: memzero_size = sizeof(imp_drh_t); break;
-	case DBIt_DB: memzero_size = sizeof(imp_dbh_t); break;
-	case DBIt_ST: memzero_size = sizeof(imp_sth_t); break;
-	default:      memzero_size = 0; /* avoid warning */
-		      croak("dbih_make_com dbi_imp_data bad h type");
+	case DBIt_DR: memzero((char*)imp, sizeof(imp_drh_t)); break;
+	case DBIt_DB: memzero((char*)imp, sizeof(imp_dbh_t)); break;
+	case DBIt_ST: memzero((char*)imp, sizeof(imp_sth_t)); break;
+	default:      croak("dbih_make_com dbi_imp_data bad h type");
 	}
+	/* Only pass on DBIcf_IMPSET to indicate to driver that the imp	*/
+	/* structure has been copied and it doesn't need to reconnect.  */
+	/* Similarly DBIcf_ACTIVE is also passed along but isn't key.	*/
+	DBIc_FLAGS(imp) = copy_flags & (DBIcf_IMPSET|DBIcf_ACTIVE);
     }
     else {
 	dbih_imp_sv = newSV(imp_size); /* is grown to imp_size+1 */
-	memzero_size = imp_size;
+	imp = (imp_xxh_t*)(void*)SvPVX(dbih_imp_sv);
+	memzero((char*)imp, imp_size);
     }
-    imp = (imp_xxh_t*)(void*)SvPVX(dbih_imp_sv);
-    memzero((char*)imp, memzero_size);
 
     DBIc_DBISTATE(imp)  = DBIS;
     DBIc_IMP_STASH(imp) = imp_stash;
@@ -962,6 +975,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
     h      = dbih_inner(orv, "dbih_setup_handle");
     parent = dbih_inner(parent, NULL);	/* check parent valid (& inner)	*/
+    parent_imp = (parent) ? DBIh_COM(parent) : NULL;
 
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    dbih_setup_handle(%s=>%s, %s, %lx, %s)\n",
@@ -975,17 +989,11 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     if ( (imp_mem_stash = gv_stashpv(imp_mem_name, FALSE)) == NULL) 
         croak(errmsg, neatsvpv(orv,0), imp_mem_name, "unknown _mem package");
 
-    DBI_LOCK;
+    if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
+        dbi_imp_data = *svp;
+    }
 
-    if (parent) {
-	parent_imp = DBIh_COM(parent);
-	if (DBIc_TYPE(parent_imp) == DBIt_DR && (svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
-	    dbi_imp_data = *svp;
-	}
-    }
-    else {
-	parent_imp = NULL;
-    }
+    DBI_LOCK;
 
     dbih_imp_sv = dbih_make_com(parent, parent_imp, imp_class, 0, 0, dbi_imp_data);
     imp = (imp_xxh_t*)(void*)SvPVX(dbih_imp_sv);
@@ -3788,24 +3796,51 @@ take_imp_data(h)
     SV *imp_xxh_sv;
     CODE:
     /*
-    If the drivers imp data contains SV*'s, or other interpreter
-    specific items, they should be freed by the drivers own take_imp_data
-    method before it calls SUPER::take_imp_data to finalize the removal.
-    The driver needs to view the take_imp_data method as being
-    nearly the same as disconnect+DESTROY only not actually calling
-    the database API to disconnect.
-    All that needs to remain is the underlying database API connection data.
-    Everything else should in a 'clean' state such that if the drivers
-    own DESTROY method instead of take_imp_data, it would be able to
-    properly handle the contents of the structure. This is important in case
-    a new handle created using this imp_data, possibly in a new thread, might
-    end up being DESTROY's before the driver has had a chance to 're-setup'
-    the data. See dbih_setup_handle()
-    */
+     * Remove and return the imp_xxh_t structure that's attached to the inner
+     * hash of the handle. Effectively this removes the 'brain' of the handle
+     * leaving it as an empty shell - brain dead. All method calls on it fail.
+     *
+     * The imp_xxh_t structure that's removed and returned is a plain scalar
+     * (containing binary data). It can be passed to a new DBI->connect call
+     * in order to have the new $dbh use the same 'connection' as the original
+     * handle. In this way a multi-threaded connection pool can be implemented.
+     *
+     * If the drivers imp_xxh_t structure contains SV*'s, or other interpreter
+     * specific items, they should be freed by the drivers own take_imp_data()
+     * method. The drivers take_imp_data() method (or Driver.xst code) can then call
+     * SUPER::take_imp_data() to finalize the removal of the imp_xxh_t structure.
+     *
+     * The driver needs to view the take_imp_data method as being nearly the
+     * same as disconnect+DESTROY only not actually calling the database API to
+     * disconnect.  All that needs to remain valid in the imp_xxh_t structure
+     * is the underlying database API connection data.  Everything else should
+     * in a 'clean' state such that if the drivers own DESTROY method was
+     * called it would be able to properly handle the contents of the
+     * structure. This is important in case a new handle created using this
+     * imp_data, possibly in a new thread, might end up being DESTROY's before
+     * the driver has had a chance to 're-setup' the data. See
+     * dbih_setup_handle()
+     *
+     * All the above relates to the 'typical use case' for a compiled driver.
+     * For a pure-perl driver using a socket pair, for example, the drivers
+     * take_imp_data method might just return a string containing the fileno()
+     * values of the sockets (without calling this SUPER::take_imp_data() code).
+     * The key point is that the take_imp_data() method returns an opaque buffer
+     * containing whatever the driver would need to reuse the same underlying
+     * 'connection to the database' in a new handle.
+     *
+     * In all cases, care should be taken that driver attributes (such as
+     * AutoCommit) match the state of the underlying connection.
+     */
+
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
 	clear_cached_kids(h, imp_xxh, "take_imp_data", 0);
     if (DBIc_KIDS(imp_xxh)) {	/* safety check, may be relaxed later to DBIc_ACTIVE_KIDS */
 	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle while it still has kids", 0, "take_imp_data");
+	XSRETURN(0);
+    }
+    if (!DBIc_ACTIVE(imp_xxh)) {/* sanity check, may be relaxed later */
+	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle that's not Active", 0, "take_imp_data");
 	XSRETURN(0);
     }
     dbih_getcom2(h, &mg);	/* get the MAGIC so we can change it	*/
@@ -3818,7 +3853,9 @@ take_imp_data(h)
     DBIc_IMPSET_off(imp_xxh);	/* silence warning from dbih_clearcom */
     dbih_clearcom(imp_xxh);	/* free SVs like DBD::_mem::common::DESTROY */
     SvOBJECT_off(imp_xxh_sv);	/* no longer needs DESTROY via dbih_clearcom */
-    DBIc_IMPSET_on(imp_xxh);	/* to mark fact imp data still present */
+    /* restore flags to mark fact imp data holds active connection	*/
+    /* (don't use magical DBIc_ACTIVE_on here)				*/
+    DBIc_FLAGS(imp_xxh) |=  DBIcf_IMPSET | DBIcf_ACTIVE;
     /* --- tidy up the raw PV for life as a more normal string */
     SvPOK_on(imp_xxh_sv);
     SvCUR_set(imp_xxh_sv, SvLEN(imp_xxh_sv)-1); /* SvLEN(imp_xxh_sv)-1 == imp_size */

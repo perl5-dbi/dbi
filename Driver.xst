@@ -366,9 +366,15 @@ take_imp_data(h)
     SV * h
     CODE:
     D_imp_xxh(h);
-    ST(0) = (dbd_take_imp_data(h, imp_xxh, NULL))
+    /* dbd_take_imp_data() returns &sv_no (or other defined but false value)
+     * to indicate "preparations complete, now call SUPER::take_imp_data" for me.
+     * Anything else is returned to the caller via sv_2mortal(sv), typically that
+     * would be &sv_undef for error or an SV holding the imp_data.
+     */
+    SV *sv = dbd_take_imp_data(h, imp_xxh, NULL);
+    ST(0) = (SvOK(sv) && !SvTRUE(sv))
 	? dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::take_imp_data", items)
-	: &sv_undef;
+	: sv_2mortal(sv);
 
 #endif
 
