@@ -23,7 +23,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.01';
+$VERSION     = '0.02';
 $ATTRIBUTION = 'DBD::DBM by Jeff Zucker';
 
 # no need to have driver() unless you need private methods
@@ -280,15 +280,15 @@ sub open_table ($$$$$) {
     #
     # your DBD may not need this, gloabls and defaults may be enough
     #
-    my $dbm_type = $dbh->{dbm_tables}->{$file}->{type}
+    my $dbm_type = $dbh->{dbm_tables}->{$tname}->{type}
                 || $dbh->{dbm_type}
                 || 'SDBM_File';
-    $dbh->{dbm_tables}->{$file}->{type} = $dbm_type;
+    $dbh->{dbm_tables}->{$tname}->{type} = $dbm_type;
 
-    my $serializer = $dbh->{dbm_tables}->{$file}->{mldbm}
+    my $serializer = $dbh->{dbm_tables}->{$tname}->{mldbm}
                   || $dbh->{dbm_mldbm}
                   || '';
-    $dbh->{dbm_tables}->{$file}->{mldbm} = $serializer if $serializer;
+    $dbh->{dbm_tables}->{$tname}->{mldbm} = $serializer if $serializer;
 
     my $ext =  '' if $dbm_type eq 'GDBM_File'
                   or $dbm_type eq 'DB_File'
@@ -299,8 +299,8 @@ sub open_table ($$$$$) {
                   or $dbm_type eq 'SDBM_File'
                   or $dbm_type eq 'ODBM_File';
     $ext = $dbh->{dbm_ext} if defined $dbh->{dbm_ext};
-    $ext = $dbh->{dbm_tables}->{$file}->{ext}
-        if defined $dbh->{dbm_tables}->{$file}->{ext};
+    $ext = $dbh->{dbm_tables}->{$tname}->{ext}
+        if defined $dbh->{dbm_tables}->{$tname}->{ext};
     $ext = '' unless defined $ext;
 
     my $open_mode = O_RDONLY;
@@ -331,7 +331,7 @@ sub open_table ($$$$$) {
     # LOCKING
     #
     my($nolock,$lockext,$lock_table);
-    $lockext = $dbh->{dbm_tables}->{$file}->{lockfile};
+    $lockext = $dbh->{dbm_tables}->{$tname}->{lockfile};
     $lockext = $dbh->{dbm_lockfile} if !defined $lockext;
     if ( (defined $lockext and $lockext == 0) or !$HAS_FLOCK
     ) {
@@ -384,24 +384,24 @@ sub open_table ($$$$$) {
 
     # COLUMN NAMES
     #
-    my $store = $dbh->{dbm_tables}->{$file}->{store_metadata};
+    my $store = $dbh->{dbm_tables}->{$tname}->{store_metadata};
        $store = $dbh->{dbm_store_metadata} unless defined $store;
        $store = 1 unless defined $store;
-    $dbh->{dbm_tables}->{$file}->{store_metadata} = $store;
+    $dbh->{dbm_tables}->{$tname}->{store_metadata} = $store;
 
     my $col_names = $h{"_metadata \0"} if $store;
-    $col_names ||= $dbh->{dbm_tables}->{$file}->{c_cols}
-               || $dbh->{dbm_tables}->{$file}->{cols}
+    $col_names ||= $dbh->{dbm_tables}->{$tname}->{c_cols}
+               || $dbh->{dbm_tables}->{$tname}->{cols}
                || $dbh->{dbm_cols}
                || ['k','v'];
     $col_names = [split /,/,$col_names] if (ref $col_names ne 'ARRAY');
-    $dbh->{dbm_tables}->{$file}->{cols} = $col_names;
+    $dbh->{dbm_tables}->{$tname}->{cols} = $col_names;
 
     my $i;
     my %col_nums  = map { $_ => $i++ } @$col_names;
 
     my $tbl = {
-	table_name     => $table,
+	table_name     => $tname,
 	file           => $file,
 	ext            => $ext,
         hash           => \%h,
@@ -570,7 +570,8 @@ sub push_row ($$$) {
 #
 sub push_names ($$$) {
     my($self, $data, $row_aryref) = @_;
-    $data->{Database}->{dbm_tables}->{$self->{file}}->{c_cols} = $row_aryref;
+    $data->{Database}->{dbm_tables}->{$self->{table_name}}->{c_cols}
+       = $row_aryref;
     $self->{hash}->{"_metadata \0"} = join(',',@{$row_aryref})
         if $self->{store_metadata};
 }

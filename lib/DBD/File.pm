@@ -29,7 +29,7 @@ package DBD::File;
 
 use vars qw(@ISA $VERSION $drh $valid_attrs);
 
-$VERSION = '0.31';      # bumped from 0.22 to 0.30 with inclusion in DBI
+$VERSION = '0.30';      # bumped from 0.22 to 0.30 with inclusion in DBI
 
 $drh = undef;		# holds driver handle once initialised
 
@@ -210,7 +210,7 @@ sub FETCH ($$) {
         return $dbh->{$attrib};
     }
     # else pass up to DBI to handle
-    return $dbh->DBD::_::db::STORE($attrib);
+    return $dbh->SUPER::FETCH($attrib);
 }
 
 sub STORE ($$$) {
@@ -247,8 +247,7 @@ sub STORE ($$$) {
 	$dbh->{$attrib} = $value;
 	return 1;
     }
-    # else pass up to DBI to handle
-    return $dbh->DBD::_::db::STORE($attrib, $value);
+    return $dbh->SUPER::STORE($attrib, $value);
 }
 
 sub DESTROY ($) {
@@ -458,7 +457,7 @@ sub FETCH ($$) {
 	return $sth->{$attrib};
     }
     # else pass up to DBI to handle
-    return $sth->DBD::_::db::FETCH($attrib);
+    return $sth->SUPER::FETCH($attrib);
 }
 
 sub STORE ($$$) {
@@ -468,8 +467,7 @@ sub STORE ($$$) {
  	$sth->{$attrib} = $value;
 	return 1;
     }
-    # else pass up to DBI to handle
-    return $sth->DBD::_::db::STORE($attrib, $value);
+    return $sth->SUPER::STORE($attrib, $value);
 }
 
 sub DESTROY ($) {
