@@ -11,6 +11,8 @@ DBI::Changes - List of significant changes to the DBI
 
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
   
+  Added multi-keyfield nested hash fetching to fetchall_hashref()
+    thanks to Zhuang (John) Li for polishing up my draft.
   Added registered driver prefixes: amzn_ for DBD::Amazon and yaswi_ for DBD::Yaswi.
 
 

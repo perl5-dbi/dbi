@@ -1,6 +1,8 @@
 #!perl -w
 # vim:ts=8:sw=4
 
+use strict;
+
 use Test::More;
 use DBI;
 use Storable qw(dclone);
@@ -10,9 +12,9 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Quotekeys = 0;
 
-plan tests => 12;
+plan tests => 16;
 
-$dbh = DBI->connect("dbi:Sponge:foo","","", {
+my $dbh = DBI->connect("dbi:Sponge:foo","","", {
         PrintError => 0,
         RaiseError => 1,
 });
@@ -26,8 +28,9 @@ my $source_rows = [ # data for DBD::Sponge to return via fetch
 ];
 
 sub go {
+    my $source = shift || $source_rows;
     my $sth = $dbh->prepare("foo", {
-	rows => dclone($source_rows),
+	rows => dclone($source),
 	NAME => [ qw(C1 C2 C3) ],
     });
     ok($sth->execute(), $DBI::errstr);
@@ -79,18 +82,26 @@ push @fetchall_hashref_results, (	# multiple keys
   },
 );
 
+my %dump;
+
 while (my $keyfield = shift @fetchall_hashref_results) {
     my $expected = shift @fetchall_hashref_results;
     my $k = (ref $keyfield) ? "[@$keyfield]" : $keyfield;
-    diag "fetchall_hashref($k)";
+    print "# fetchall_hashref($k)\n";
     ok($sth = go);
     my $result = $sth->fetchall_hashref($keyfield);
     ok($result);
     is_deeply($result, $expected);
-$h{$k} = dclone $result;
+    # $dump{$k} = dclone $result; # just for adding tests
 }
 
-#warn Dumper \%h;
+warn Dumper \%dump if %dump;
+
+if (0) {
+    my @perf = map { [ int($_/100), $_, $_ ] } 0..10000;
+    require Benchmark;
+    Benchmark::timethis(10, sub { go(\@perf)->fetchall_hashref([ 'C1','C2','C3' ]) });
+}
 
 
 # end

@@ -1959,8 +1959,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
         }
         my $rows = {};
         my $NAME = $sth->FETCH($hash_key_name);
-        my @row;
-        push @row, undef for (1..$num_of_fields);
+        my @row = (undef) x $num_of_fields;
         $sth->bind_columns(\(@row));
         while ($sth->fetch) {
             my $ref = $rows;
@@ -3957,11 +3956,12 @@ passing to C</fetchall_arrayref>.
 
 This utility method combines L</prepare>, L</execute> and
 L</fetchall_hashref> into a single call. It returns a reference to a
-hash containing one entry, at most, for each row.  
-The C<$key_field> parameter can be the name of the key field for tables
-with a single column primary key, otherwise an array reference to the primary 
-key columns can be given. The value is a reference to a hash returned by
-C<fetchall_hashref>.
+hash containing one entry, at most, for each row, as returned by fetchall_hashref().
+
+The C<$key_field> parameter defines which column, or columns, are used as keys
+in the returned hash. It can either be the name of a single field, or a
+reference to an array containing multiple field names. See fetchall_hashref()
+for more details.
 
 The C<$statement> parameter can be a previously prepared statement handle,
 in which case the C<prepare> is skipped. This is recommended if the
@@ -5651,8 +5651,10 @@ would then shift the balance back towards fetchall_arrayref().
   $hash_ref = $sth->fetchall_hashref($key_field);
 
 The C<fetchall_hashref> method can be used to fetch all the data to be
-returned from a prepared and executed statement handle. It returns a
-reference to a hash that contains, at most, one entry per row.
+returned from a prepared and executed statement handle. It returns a reference
+to a hash containing a key for each distinct value of the $key_field column
+that was fetched For each key the corresponding value is a reference to a hash
+containing all the selected columns and their values, as returned by fetchrow_hashref().
 
 If there are no rows to return, C<fetchall_hashref> returns a reference
 to an empty hash. If an error occurs, C<fetchall_hashref> returns the
@@ -5674,17 +5676,20 @@ number (counting from 1).  If $key_field doesn't match any column in
 the statement, as a name first then as a number, then an error is
 returned.
 
-This method is normally used only where the key field value for each
-row is unique.  If multiple rows are returned with the same value for
-the key field then later rows overwrite earlier ones.
+For queries returing more than one 'key' column, you can specify
+multiple column names by passing $key_field as a reference to an
+array containing one or more key column names (or index numbers).
+For example:
 
-For tables with a multiple columns primary key, an array reference 
-can be specified:
-
-  $sth = $dbh->prepare("SELECT date, account, revenue, profit FROM TABLE");
+  $sth = $dbh->prepare("SELECT foo, bar, baz FROM table");
   $sth->execute;
-  $hash_ref = $sth->fetchall_hashref([qw(date account)]);
-  print "Revenue for account 42 on 2005-02-18 is $hash_ref->{'2005-02-18'}{42}{revenue}\n";
+  $hash_ref = $sth->fetchall_hashref( [ qw(foo bar) ] );
+  print "For foo 42 and bar 38, baz is $hash_ref->{42}->{38}->{baz}\n";
+
+The fetchall_hashref() method is normally used only where the key
+fields values for each row are unique.  If multiple rows are returned
+with the same values for the key fields then later rows overwrite
+earlier ones.
 
 =item C<finish>
 
