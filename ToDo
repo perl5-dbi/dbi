@@ -415,8 +415,12 @@ Devel::Leak integration?
 
 Add %time to per-node DBI::Profile dump
 
-DBI::Profile: some way to get count of 'executions' only, not all method calls.
-So avg time is totaltime/executions not totaltime/methodcalls.
+Add 'executer' and 'fetcher' method attributes and increment
+corresponding counters in DBIS when method with those attributes
+are called. When profiling record in the profile data the amount
+they have incremented.
+Add DBI_PROFILE option so count is executions and avg time can be
+totaltime/executions not totaltime/methodcalls.
 
 DBI::Profile: add simple way to normalise the sql (convert constants
 to placeholders) so profiling is more effective for drivers/applications

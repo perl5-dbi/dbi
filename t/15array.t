@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 42;
+use Test::More tests => 47;
 
 ## ----------------------------------------------------------------------------
 ## 15array.t
@@ -24,6 +24,7 @@ my $dbh = DBI->connect("dbi:Sponge:dummy", '', '',
 # check that our db handle is good
 isa_ok($dbh, "DBI::db");
 
+my $rv;
 my $rows         = [];
 my $tuple_status = [];
 my $dumped;
@@ -97,10 +98,24 @@ ok(eq_array(
 # --- with no values for bind params, should execute zero times
 
 @$rows = ();
-ok(!$sth->execute_array( { ArrayTupleStatus => $tuple_status }, [], [], [], []), '... execute_array should return false');
+$rv = $sth->execute_array( { ArrayTupleStatus => $tuple_status }, [], [], [], []);
+ok($rv,   '... execute_array should return true');
+ok(!($rv+0), '... execute_array should return 0 (but true)');
 
 cmp_ok(scalar @{$rows}, '==', 0, '... we should have 0 rows');
 cmp_ok(scalar @{$tuple_status}, '==', 0,'... we should have 0 tuple_status');
+
+# -----------------------------------------------
+# --- with only scalar values for bind params, should execute just once
+
+@$rows = ();
+$rv = $sth->execute_array( { ArrayTupleStatus => $tuple_status }, 5, 6, 7, 8);
+cmp_ok($rv, '==', 1,   '... execute_array should return 1');
+
+cmp_ok(scalar @{$rows}, '==', 1, '... we should have 1 rows');
+ok(eq_array( $rows, [ [5,6,7,8] ]), '... our rows are as expected');
+cmp_ok(scalar @{$tuple_status}, '==', 1,'... we should have 1 tuple_status');
+ok(eq_array( $tuple_status, [1]), '... our tuple_status is as expected');
 
 # -----------------------------------------------
 # --- catch 'undefined value' bug with zero bind values
@@ -113,7 +128,9 @@ my $sth_other = $dbh->prepare("insert", {
 
 isa_ok($sth_other, "DBI::st");
 
-ok(!$sth_other->execute_array( {}, [] ), '... execute_array should return false'); 
+$rv = $sth_other->execute_array( {}, [] );
+ok($rv,   '... execute_array should return true');
+ok(!($rv+0), '... execute_array should return 0 (but true)');
 # no ArrayTupleStatus
 
 cmp_ok(scalar @{$rows}, '==', 0, '... we should have 0 rows');
@@ -205,9 +222,6 @@ is( $sth->errstr, 'ArrayTupleStatus attribute must be an arrayref', '... errstr 
 
 ok(!defined $sth->execute_array( { ArrayTupleStatus => $tuple_status }, 1,{},3,4), '... execute_array should return undef');
 is( $sth->errstr, 'Value for parameter 2 must be a scalar or an arrayref, not a HASH', '... errstr is as expected');
-
-ok(!defined $sth->execute_array( { ArrayTupleStatus => $tuple_status }, 1,[1],[2,2],3), '... execute_array should return undef');
-is( $sth->errstr, 'Arrayref for parameter 3 has 2 elements but parameter 2 has 1', '... errstr is as expected');
 
 ok(!defined $sth->bind_param_array(":foo", [ qw(a b c) ]), '... bind_param_array should return undef');
 is( $sth->errstr, "Can't use named placeholders for non-driver supported bind_param_array", '... errstr is as expected');

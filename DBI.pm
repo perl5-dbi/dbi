@@ -1655,19 +1655,6 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# get/create arrayref to hold params
 	my $hash_of_arrays = $sth->{ParamArrays} ||= { };
 
-	if (ref $value_array eq 'ARRAY') {
-	    # check that input has same length as existing
-	    # find first arrayref entry (if any)
-	    foreach (keys %$hash_of_arrays) {
-		my $v = $$hash_of_arrays{$_};
-		next unless ref $v eq 'ARRAY';
-		return $sth->set_err(1,
-			"Arrayref for parameter $p_id has ".@$value_array." elements"
-			." but parameter $_ has ".@$v)
-		    if @$value_array != @$v;
-	    }
-	}
-
 	# If the bind has attribs then we rely on the driver conforming to
 	# the DBI spec in that a single bind_param() call with those attribs
 	# makes them 'sticky' and apply to all later execute(@values) calls.
@@ -1763,17 +1750,18 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		if defined($NUM_OF_PARAMS) && $NUM_OF_PARAMS != $NUM_OF_PARAMS_given;
 
 	    # get the length of a bound array
-	    my $len = 1; # in case all are scalars
+	    my $maxlen = 0;
 	    my %hash_of_arrays = %{$sth->{ParamArrays}};
 	    foreach (keys(%hash_of_arrays)) {
 		my $ary = $hash_of_arrays{$_};
-		$len = @$ary if ref $ary eq 'ARRAY';
+		my $len = (ref $ary eq 'ARRAY') ? @$ary : 1;
+		$maxlen = $len if $len > $maxlen;
 	    }
 	    my @bind_ids = 1..keys(%hash_of_arrays);
 
 	    my $tuple_idx = 0;
 	    $fetch_tuple_sub = sub {
-		return if $tuple_idx >= $len;
+		return if $tuple_idx >= $maxlen;
 		my @tuple = map {
 		    my $a = $hash_of_arrays{$_};
 		    ref($a) ? $a->[$tuple_idx] : $a
@@ -1802,7 +1790,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		push @$tuple_status, [ $err, $errstr_cache{$err} ||= $sth->errstr, $sth->state ];
 	    }
 	}
-	return ($err_count) ? undef : scalar @$tuple_status;
+	return ($err_count) ? undef : scalar(@$tuple_status)||"0E0";
     }
 
 
@@ -4884,10 +4872,6 @@ placeholder into a list of values for a statement like "SELECT foo
 WHERE bar IN (?)".  A placeholder can only ever represent one value
 per execution.)
 
-Each array bound to the statement must have the same number of
-elements.  Some drivers may define a method attribute to relax this
-safety check.
-
 Scalar values, including C<undef>, may also be bound by
 C<bind_param_array>. In which case the same value will be used for each
 L</execute> call. Driver-specific implementations may behave
@@ -4903,7 +4887,7 @@ match the default DBI behaviour, but always consult your driver
 documentation as there may be driver specific issues to consider.
 
 Note that the default implementation currently only supports non-data
-returning statements (insert, update, but not select). Also,
+returning statements (INSERT, UPDATE, but not SELECT). Also,
 C<bind_param_array> and L</bind_param> cannot be mixed in the same
 statement execution, and C<bind_param_array> must be used with
 L</execute_array>; using C<bind_param_array> will have no effect
@@ -4963,9 +4947,16 @@ tuples executed, even if it's zero.  See the C<ArrayTupleStatus>
 attribute below for how to determine the execution status for each
 tuple.
 
-Bind values for the tuples to be executed may be supplied by an
-C<ArrayTupleFetch> attribute, or else in the C<@bind_values> argument,
-or else by prior calls to L</bind_param_array>.
+Bind values for the tuples to be executed may be supplied row-wise
+by an C<ArrayTupleFetch> attribute, or else column-wise in the
+C<@bind_values> argument, or else column-wise by prior calls to
+L</bind_param_array>.
+
+Where column-wise binding is used (via the C<@bind_values> argument
+or calls to bind_param_array()) the maximum number of elements in
+any one of the bound value arrays determines the number of tuples
+executed. Placeholders with fewer values in their parameter arrays
+are treated as if padded with undef (NULL) values.
 
 The C<ArrayTupleFetch> attribute can be used to specify a reference
 to a subroutine that will be called to provide the bind values for
@@ -5031,7 +5022,7 @@ For example:
       }
   }
 
-Support for data returning statements, i.e., select, is driver-specific
+Support for data returning statements such as SELECT is driver-specific
 and subject to change. At present, the default implementation
 provided by DBI only supports non-data returning statements.
 
@@ -5071,9 +5062,11 @@ The execute_for_fetch() method calls $fetch_tuple_sub, without any
 parameters, until it returns a false value. Each tuple returned is
 used to provide bind values for an $sth->execute(@$tuple) call.
 
-The number of tuples executed is returned I<only if> there were no errors.
 If there were any errors then C<undef> is returned and the @tuple_status
 array can be used to discover which tuples failed and with what errors.
+If there were no errors then execute_for_fetch() returns the number
+of tuples executed. Like execute() and execute_array() a zero is
+returned as "0E0" so execute_for_fetch() is only false on error.
 
 If \@tuple_status is passed then the execute_for_fetch method uses
 it to return status information. The tuple_status array holds one

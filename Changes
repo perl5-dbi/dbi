@@ -4,6 +4,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head1 CHANGES in DBI 1.44 (svn rev ???),    XXX
+
+  Changed bind_param_array() so it doesn't require all bind arrays
+    to have the same number of elements.
+  Changed execute_array() definition, and default implementation,
+    to effectively NULL-pad shorter bind arrays.
+  Changed execute_array() to return "0E0" for 0 as per the docs.
+  Changed execute_for_fetch() definition, and default implementation,
+    to return "0E0" for 0 like execute() and execute_array().
+
 =head1 CHANGES in DBI 1.43 (svn rev 377),    2nd July 2004
 
   Fixed connect() and connect_cached() RaiseError/PrintError
@@ -30,7 +40,7 @@ DBI::Changes - List of significant changes to the DBI
   Changed all tests to use Test::More and enhanced the tests thanks
     to Stevan Little and Andy Lester. See http://qa.perl.org/phalanx/
   Changed Test::More minimum prerequisite version to 0.40 (2001).
-  Change DBI::Profile header to include timestamp.
+  Changed DBI::Profile header to include the date and time.
 
   Added DBI->parse_dsn($dsn) method.
   Added warning if build directory path contains whitespace.
