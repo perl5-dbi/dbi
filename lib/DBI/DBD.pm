@@ -622,7 +622,7 @@ DBD::Driver::db.
 The I<driver> method is the driver handle constructor. It's a
 reasonable example of how DBI implements its handles. There are three
 kinds: B<driver handles> (typically stored in C<$drh>; from now on
-called C<drh> of C<$drh>), B<database handles> (from now on called C<dbh> or
+called C<drh> or C<$drh>), B<database handles> (from now on called C<dbh> or
 C<$dbh>) and B<statement handles> (from now on called C<sth> or
 C<$sth>).
 
@@ -664,7 +664,7 @@ the new interpreter won't start using the cached $drh from the old
 interpreter:
 
   sub CLONE {
-    undef $rdh;
+    undef $drh;
   }
 
 =head3 The DBD::Driver::dr package
@@ -700,7 +700,7 @@ to change the namespace.
 
       # Process attributes from the DSN; we assume ODBC syntax
       # here, that is, the DSN looks like var1=val1;...;varN=valN
-      foreach my $var ( split /;/, $dbname ) {
+      foreach my $var ( split /;/, $dr_dsn ) {
           my ($attr_name, $attr_value) = split '=', $var, 2;
 	  return $drh->set_err(1, "Can't parse DSN part '$var'")
               unless defined $attr_value;
@@ -723,10 +723,10 @@ to change the namespace.
 
       # Assume you can attach to your database via drv_connect:
       my $connection = drv_connect($db, $host, $port, $user, $auth)
-          or return $drh->set_err(1, "Can't connect to $dbname: ...");
+          or return $drh->set_err(1, "Can't connect to $dr_dsn: ...");
 
       # create a 'blank' dbh (call superclass constructor)
-      my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
+      my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dr_dsn });
 
       $dbh->STORE('Active', 1 );
       $dbh->{drv_connection} = $connection;
@@ -775,7 +775,7 @@ As a trivial example, consider a fixed list of data sources:
 
   sub data_sources
   {
-      my($srh, $attr) = @_;
+      my($drh, $attr) = @_;
       my(@list) = ();
       # You need more sophisticated code than this to set @list...
       push @list, "dbi:Driver:abc";
@@ -996,7 +996,7 @@ using the I<drv_params> attribute from above:
           my $dbh = $sth->{Database};
           $val = $dbh->quote($sth, $type);
       }
-      my $params = $sth->FETCH('drv_params');
+      my $params = $sth->{drv_params};
       $params->[$pNum-1] = $val;
       1;
   }
@@ -1009,7 +1009,7 @@ using the I<drv_params> attribute from above:
       $sth->finish if $sth->FETCH('Active');
 
       my $params = (@bind_values) ?
-          \@bind_values : $sth->FETCH('drv_params');
+          \@bind_values : $sth->{drv_params};
       my $numParam = $sth->FETCH('NUM_OF_PARAMS');
       return $sth->set_err(1, "Wrong number of parameters")
           if @$params != $numParam;
@@ -1028,8 +1028,8 @@ using the I<drv_params> attribute from above:
 There are a number of things you should note here.
 We setup the NUM_OF_FIELDS attribute
 here, because this is essential for I<bind_columns> to work.
-We use attribute I<$sth->{'Statement'}> which we created
-within I<prepare>. The attribute I<$sth->{'Database'}>, which is
+We use attribute C<$sth-E<gt>{Statement}> which we created
+within I<prepare>. The attribute C<$sth-E<gt>{Database}>, which is
 nothing else than the I<dbh>, was automatically created by DBI.
 
 Finally note that (as specified in the DBI specification) we return the
@@ -1048,10 +1048,10 @@ I<fetchrow_arrayref>:
   sub fetchrow_arrayref
   {
       my ($sth) = @_;
-      my $data = $sth->FETCH('drv_data');
+      my $data = $sth->{drv_data};
       my $row = shift @$data;
       if (!$row) {
-          $sth->STORE(Active => 0); # mark as no longer active 
+          $sth->STORE(Active => 0); # mark as no longer active
           return undef;
       }
       if ($sth->FETCH('ChopBlanks')) {
@@ -1061,14 +1061,21 @@ I<fetchrow_arrayref>:
   }
   *fetch = \&fetchrow_arrayref; # required alias for fetchrow_arrayref
 
-  sub rows { shift->FETCH('drv_rows') }
-
 Note the use of the method I<_set_fbav>: This is required so that
 I<bind_col> and I<bind_columns> work.
 
 If an error occurs which leaves the $sth in a state where remaining rows
 can't be fetched then Active should be turned off
 before the method returns.
+
+The rows method for this driver can be implemented like this:
+
+  sub rows { shift->{drv_rows} }
+
+because it knows in advance how many rows it has fetched.
+Alternatively you could delete that method and so fallback
+to the DBI's own method which does the right thing based
+on the number of calls to _set_fbav().
 
 =head4 Statement attributes
 

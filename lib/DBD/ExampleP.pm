@@ -58,13 +58,10 @@
 
     sub connect { # normally overridden, but a handy default
         my($drh, $dbname, $user, $auth)= @_;
-        my($this) = DBI::_new_dbh($drh, {
-	    'Name' => $dbname,
-	    'User' => $user,
-	    examplep_get_info => {},
-	    });
-	$this->STORE(Active => 1);
-        $this;
+        my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
+        $dbh->STORE('Active', 1);
+        $dbh->{examplep_get_info} = {};
+        return $outer;
     }
 
     sub data_sources {
@@ -97,7 +94,7 @@
 	    # No we have DBI::DBM etc ExampleP should be deprecated
 	}
 
-	my ($outer, $inner) = DBI::_new_sth($dbh, {
+	my ($outer, $sth) = DBI::_new_sth($dbh, {
 	    'Statement'     => $statement,
 	}, ['example implementors private data '.__PACKAGE__]);
 
@@ -109,7 +106,7 @@
 
 	$outer->STORE('NUM_OF_FIELDS' => scalar(@fields));
 
-	$inner->{'dbd_ex_dir'} = $dir if defined($dir) && $dir !~ /\?/;
+	$sth->{dbd_ex_dir} = $dir if defined($dir) && $dir !~ /\?/;
 	$outer->STORE('NUM_OF_PARAMS' => ($dir) ? $dir =~ tr/?/?/ : 0);
 
 	if (@fields) {
