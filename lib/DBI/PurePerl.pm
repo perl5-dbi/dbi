@@ -143,6 +143,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Attribution
 	BegunWork
 	CachedKids
+        Callbacks
 	CursorName
 	Database
 	DebugDispatch

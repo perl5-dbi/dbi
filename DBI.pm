@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.48"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.49"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -115,7 +115,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.48.
+This is the DBI specification that corresponds to the DBI version 1.49.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -652,10 +652,10 @@ sub connect {
 	# if we've been subclassed then let the subclass know that we're connected
 	$dbh->connected($dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
 
-	# if the caller has provided a callback then call it
-	# especially useful with connect_cached() XXX not enabled/tested/documented
-	if (0 and $dbh and my $oc = $dbh->{OnConnect}) { # XXX
-	    $oc->($dbh, $dsn, $user, $pass, $attr) if ref $oc eq 'CODE';
+	# If the caller has provided a callback then call it
+	if (my $cb = $dbh->{Callbacks}) { # take care not to autovivify
+	    $cb = $cb->{connect};
+	    $cb->($dbh, $dsn, $user, $pass, $attr) if $cb;
 	}
 
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
@@ -1411,9 +1411,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	};
 	my $dbh = $cache->{$key};
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
-	    # XXX warn if BegunWork?
-	    # XXX warn if $dbh->FETCH('AutoCommit') != $attr->{AutoCommit} ?
-	    # but that's just one (bad) case of a more general issue.
+            # If the caller has provided a callback then call it
+            if (my $cb = $dbh->{Callbacks}) { # take care not to autovivify
+                $cb = $cb->{"connect_cached.reused"};
+                $cb->($dbh, $dsn, $user, $auth, $attr) if $cb;
+            }
 	    return $dbh;
 	}
 	$dbh = $drh->connect(@_);

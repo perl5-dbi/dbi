@@ -1089,6 +1089,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, char *msg, int level)
     if (DBIc_is(imp_xxh, DBIcf_TaintIn))	sv_catpv(flags,"TaintIn ");
     if (DBIc_is(imp_xxh, DBIcf_TaintOut))	sv_catpv(flags,"TaintOut ");
     if (DBIc_is(imp_xxh, DBIcf_Profile))	sv_catpv(flags,"Profile ");
+    if (DBIc_is(imp_xxh, DBIcf_Callbacks))	sv_catpv(flags,"Callbacks ");
     PerlIO_printf(DBILOGFP,"%s FLAGS 0x%lx: %s\n", pad, (long)DBIc_FLAGS(imp_xxh), SvPV(flags,lna));
     PerlIO_printf(DBILOGFP,"%s PARENT %s\n",	pad, neatsvpv((SV*)DBIc_PARENT_H(imp_xxh),0));
     PerlIO_printf(DBILOGFP,"%s KIDS %ld (%ld Active)\n", pad,
@@ -1510,6 +1511,12 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	    DBIc_CACHED_KIDS(imp_dbh) = (HV*)SvREFCNT_inc(SvRV(valuesv));
 	}
     }
+    else if (keylen==9 && strEQ(key, "Callbacks")) {
+	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) )
+	    croak("Can't set Callbacks to '%s'",neatsvpv(valuesv,0));
+	DBIc_set(imp_xxh, DBIcf_Callbacks, on);
+	cacheit = 1;
+    }
     else if (htype<=DBIt_DB && keylen==10 && strEQ(key, "AutoCommit")) {
 	/* driver should have intercepted this and either handled it	*/
 	/* or set valuesv to either the 'magic' on or off value.	*/
@@ -1861,6 +1868,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
 		||	(*key=='C' && strEQ(key, "CursorName"))
+		||	(*key=='C' && strEQ(key, "Callbacks"))
 		||	!isUPPER(*key)	/* dbd_*, private_* etc */
 	))
 	    warn("Can't get %s->{%s}: unrecognised attribute",neatsvpv(h,0),key);
@@ -2385,6 +2393,38 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	profile_t1 = dbi_time(); /* just get start time here */
     }
 
+    if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
+	I32 h_trace_level = (i & DBIc_TRACE_LEVEL_MASK);
+	if ( h_trace_level > trace_level )
+	    trace_level = h_trace_level;
+	trace_flags = (trace_flags & ~DBIc_TRACE_LEVEL_MASK)
+		    | (          i & ~DBIc_TRACE_LEVEL_MASK)
+		    | trace_level;
+    }
+
+    if (DBIc_has(imp_xxh,DBIcf_Callbacks)
+	&& (hook_svp = hv_fetch((HV*)SvRV(h), "Callbacks", 9, 0))
+	&& HvKEYS((HV*)SvRV(*hook_svp))
+	&& (hook_svp = hv_fetch((HV*)SvRV(*hook_svp), meth_name, strlen(meth_name), 0))
+	&& SvROK(*hook_svp)
+    ) {
+	dSP;
+	SV *code = SvRV(*hook_svp);
+	if (trace_level)
+	    PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked\n",
+		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
+	PUSHMARK(SP);
+	XPUSHs(h);
+	/* XXX add more params */
+	PUTBACK;
+	if (call_sv(code, G_ARRAY))
+	    die("Callback for %s must not return any values (temporary restriction in current version)");
+	SPAGAIN;
+	if (trace_level)
+	    PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned\n",
+		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
+    }
+
 #ifdef DBI_USE_THREADS
 {
     PerlInterpreter * h_perl = DBIc_THR_USER(imp_xxh) ;
@@ -2492,15 +2532,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		TAINT_PROPER(buf);	/* die's */
 	    }
 	}
-    }
-
-    if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
-	I32 h_trace_level = (i & DBIc_TRACE_LEVEL_MASK);
-	if ( h_trace_level > trace_level )
-	    trace_level = h_trace_level;
-	trace_flags = (trace_flags & ~DBIc_TRACE_LEVEL_MASK)
-		    | (          i & ~DBIc_TRACE_LEVEL_MASK)
-		    | trace_level;
     }
 
     /* record this inner handle for use by DBI::var::FETCH	*/
