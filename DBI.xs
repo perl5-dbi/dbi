@@ -855,7 +855,7 @@ dbih_make_fdsv(SV *sth, char *imp_class, STRLEN imp_size, char *col_name)
 
 
 static SV *
-dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, STRLEN extra, SV* copy)
+dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, STRLEN extra, SV* imp_templ)
 {
     dPERINTERP;
     char *errmsg = "Can't make DBI com handle for %s: %s";
@@ -882,17 +882,17 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    dbih_make_com(%s, %p, %s, %ld, %p) thr#%p\n",
-	    neatsvpv(p_h,0), p_imp_xxh, imp_class, (long)imp_size, copy, PERL_GET_THX);
+	    neatsvpv(p_h,0), p_imp_xxh, imp_class, (long)imp_size, imp_templ, PERL_GET_THX);
 
-    if (copy && SvOK(copy)) {
-	U32  copy_flags;
+    if (imp_templ && SvOK(imp_templ)) {
+	U32  imp_templ_flags;
 	/* validate the supplied dbi_imp_data looks reasonable,	*/
-	if (SvCUR(copy) != imp_size)
+	if (SvCUR(imp_templ) != imp_size)
 	    croak("Can't use dbi_imp_data of wrong size (%d not %d)",
-		SvCUR(copy), imp_size);
+		SvCUR(imp_templ), imp_size);
 
 	/* copy the whole template */
-	dbih_imp_sv = newSVsv(copy);
+	dbih_imp_sv = newSVsv(imp_templ);
 	imp = (imp_xxh_t*)(void*)SvPVX(dbih_imp_sv);
 
 	/* sanity checks on the supplied imp_data */
@@ -902,7 +902,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 	    croak("Can't use dbi_imp_data that not from a setup handle");
 
         /* copy flags, zero out our imp_xxh struct, restore some flags */
-	copy_flags = DBIc_FLAGS(imp);
+	imp_templ_flags = DBIc_FLAGS(imp);
 	switch ( (p_imp_xxh) ? DBIc_TYPE(p_imp_xxh)+1 : DBIt_DR ) {
 	case DBIt_DR: memzero((char*)imp, sizeof(imp_drh_t)); break;
 	case DBIt_DB: memzero((char*)imp, sizeof(imp_dbh_t)); break;
@@ -912,7 +912,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 	/* Only pass on DBIcf_IMPSET to indicate to driver that the imp	*/
 	/* structure has been copied and it doesn't need to reconnect.  */
 	/* Similarly DBIcf_ACTIVE is also passed along but isn't key.	*/
-	DBIc_FLAGS(imp) = copy_flags & (DBIcf_IMPSET|DBIcf_ACTIVE);
+	DBIc_FLAGS(imp) = imp_templ_flags & (DBIcf_IMPSET|DBIcf_ACTIVE);
     }
     else {
 	dbih_imp_sv = newSV(imp_size); /* is grown to imp_size+1 */
@@ -937,7 +937,9 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 	DBIc_PARENT_H(imp)    = (SV*)SvREFCNT_inc(p_h); /* ensure it lives	*/
 	DBIc_PARENT_COM(imp)  = p_imp_xxh;	 	/* shortcut for speed	*/
 	DBIc_TYPE(imp)	      = DBIc_TYPE(p_imp_xxh) + 1;
-	DBIc_FLAGS(imp)       = DBIc_FLAGS(p_imp_xxh) & ~DBIcf_INHERITMASK;
+	/* inherit some flags from parent and carry forward some from template	*/
+	DBIc_FLAGS(imp)       = (DBIc_FLAGS(p_imp_xxh) & ~DBIcf_INHERITMASK)
+	                      | (DBIc_FLAGS(imp) & (DBIcf_IMPSET|DBIcf_ACTIVE));
 	++DBIc_KIDS(p_imp_xxh);
     }
 #ifdef DBI_USE_THREADS

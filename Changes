@@ -7,6 +7,7 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.49 (svn rev XXX),    2005
 
   Fixed croak() in DBD::NullP thanks to Sergey Skvortsov.
+  Fixed handling of take_imp_data() and dbi_imp_data attribute.
 
   Added $h->{Callbacks} attribute to enable code hooks to be invoked
     when certain methods are called. For example:
