@@ -19,6 +19,8 @@ dbivport.h			DBI version portability macros (for drivers to copy)
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/ExampleP.pm		A very simple example Driver module
 lib/DBD/NullP.pm		An empty example Driver module
+lib/DBD/File.pm			A driver base class for simple drivers
+lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
 lib/DBI/Const/GetInfo/ANSI.pm	GetInfo data based on ANSI standard
@@ -52,6 +54,7 @@ t/30subclass.t
 t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
+t/50dbm.t
 t/60preparse.t
 t/80proxy.t
 test.pl				A very simple test harness using ExampleP.pm
