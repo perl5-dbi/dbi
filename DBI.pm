@@ -268,7 +268,7 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
 if ($DBI::dbi_debug) {
     @DBI::dbi_debug = ($DBI::dbi_debug);
 
-    if ($DBI::dbi_debug !~ m/^\d$/) {
+    unless (DBI::looks_like_number($DBI::dbi_debug)) {
 	# dbi_debug is a file name to write trace log to.
 	# Default level is 2 but if file starts with "digits=" then the
 	# digits (and equals) are stripped off and used as the level
@@ -2449,10 +2449,12 @@ There is also a data_sources() method defined for database handles.
 
   DBI->trace($trace_level)
   DBI->trace($trace_level, $trace_filename)
+  $trace_level = DBI->trace;
 
 DBI trace information can be enabled for all handles using the C<trace>
-DBI class method. To enable trace information for a specific handle, use
-the similar C<$h-E<gt>trace> method described elsewhere.
+DBI class method. It sets the I<global default minimum> trace level.
+To enable trace information for a specific handle, use the similar
+C<$h-E<gt>trace> method described elsewhere.
 
 Trace levels are as follows:
 

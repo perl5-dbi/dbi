@@ -49,7 +49,7 @@ my $ext_pl = $^O eq 'VMS' ? '.pl' : '';
 $::opt_v = 0;
 $::opt_thread = 1;	# thread if we can, use "-nothread" to disable
 $::opt_g = 0;
-$::opt_g = 1 if -d 'RCS' && $ENV{LOGNAME} eq 'timbo'; # it's me!
+$::opt_g = 1 if -d '.svn' && $ENV{LOGNAME} eq 'timbo'; # it's me! (probably)
 
 GetOptions(qw(v! g! thread!))
 	or die "Invalid arguments\n";
@@ -128,7 +128,7 @@ my %opts = (
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
     clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zz_*.t"
-			." dbiproxy$ext_pl dbiprof$ext_pl dbi.prof ndtest.prt" },
+			." dbiproxy$ext_pl dbiprof$ext_pl dbitrace.log dbi.prof ndtest.prt" },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest ci tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',

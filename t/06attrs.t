@@ -4,7 +4,7 @@ use strict;
 use Test::More;
 use DBI;
 
-BEGIN { plan tests => 134 }
+BEGIN { plan tests => 140 }
 
 $|=1;
 
@@ -41,7 +41,7 @@ is( $dbh->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
 is( $dbh->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
 ok( ! defined $dbh->{CachedKids} );
 ok( ! defined $dbh->{HandleError} );
-is( $dbh->{TraceLevel}, $DBI::dbi_debug );
+is( $dbh->{TraceLevel}, $DBI::dbi_debug & 0xF);
 is( $dbh->{FetchHashKeyName}, 'NAME', );
 is( $dbh->{LongReadLen}, 80 );
 ok( ! defined $dbh->{Profile} );
@@ -140,7 +140,7 @@ is( $sth->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
 is( $sth->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
 ok( ! defined $sth->{CachedKids} );
 ok( ! defined $sth->{HandleError} );
-is( $sth->{TraceLevel}, $DBI::dbi_debug );
+is( $sth->{TraceLevel}, $DBI::dbi_debug & 0xF);
 is( $sth->{FetchHashKeyName}, 'NAME', );
 ok( ! defined $sth->{Profile} );
 is( $sth->{LongReadLen}, 80 );
@@ -193,4 +193,19 @@ is( $params->{1}, 'foo' );
 is( $sth->{Statement}, "select ctime, name from foo" );
 ok( ! defined $sth->{RowsInCache} );
 
+my $trace_file = "dbitrace.log";
+1 while unlink $trace_file;
+$sth->trace(2, $trace_file);
+ok( -f $trace_file );
+is( $sth->{TraceLevel}, 2 );
+$sth->{TraceLevel} = 0;
+is( $sth->{TraceLevel}, 0 );
+$sth->{TraceLevel} = 3;
+is( $sth->{TraceLevel}, 3 );
+$sth->trace(0);			# set to 0 before return to STDERR
+is( $sth->{TraceLevel}, 0 );
+$sth->trace(0, "STDERR");	# close $trace_file
+ok( -s $trace_file );
+
+1;
 # end

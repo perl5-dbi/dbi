@@ -6,8 +6,6 @@ DBI::Changes - List of significant changes to the DBI
 
 =head1 CHANGES
 
-Drivers to change how they get debug level (with masked bits).
-
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.
   Fixed execute_for_array() docs to say that it returns undef if
@@ -15,12 +13,16 @@ Drivers to change how they get debug level (with masked bits).
   Fixed take_imp_data() test on m68k reported by Christian Hammers.
   Fixed write_typeinfo_pm inconsistencies in DBI::DBD::Metadata
     thanks to Andy Hassall.
+  Fixed $h->{TraceLevel} to not return DBI->trace trace level
+    which it used to if DBI->trace trace level was higher.
 
   Changed set_err() to append to errstr, with a leading "\n" if it's
     not empty, so that multiple error/warning messages are recorded.
   Changed trace to limit elements dumped when an array reference is
     returned from a method to the max(40, $DBI::neat_maxlen/10)
     so that fetchall_arrayref(), for example, doesn't flood the trace.
+  Changed trace level to be a four bit integer (levels 0 thru 15)
+    and a set of topic flags (no topics have been assigned yet).
 
   Added way for drivers to indicate 'success with info' or 'warning'
     by setting err to "0" for warning and "" for information.
@@ -31,7 +33,7 @@ Drivers to change how they get debug level (with masked bits).
     point that an error, warn, or info state is recorded.
     The code can alter the err, errstr, and state values
     (e.g., to promote an error to a warning, or the reverse).
-  Added $h->{Executed} attribute set if do()/execute() called.
+  Added $h->{Executed} attribute, set if do()/execute() called.
   Added details of DBI::Const::GetInfoType module to get_info() docs.
   Added ref count of inner handle to "DESTROY ignored for outer" msg.
   Added Win32 build config checks to DBI::DBD thanks to Andy Hassall.

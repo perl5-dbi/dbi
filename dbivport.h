@@ -22,4 +22,16 @@
         sv_setpv(DBIc_ERRSTR(imp_xxh), errstr)
 #endif
 
+#ifndef DBIc_TRACE
+#define DBIc_TRACE_LEVEL_MASK   0x0000000F
+#define DBIc_TRACE_TOPIC_MASK   0x00FFFF00
+#define DBDc_TRACE_TOPIC_MASK   0xFF000000
+#define DBIc_TRACE_LEVEL(imp)   (DBIc_DBISTATE(imp)->debug &  DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS(imp)   (DBIc_DBISTATE(imp)->debug & ~DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE(imp, flags, flaglevel, level)        \
+        (  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
+        || (level && DBIc_TRACE_LEVEL(imp) >= level) )
+#endif
+
+
 #endif /* !DBI_VPORT_H */

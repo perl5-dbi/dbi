@@ -198,8 +198,16 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIc_ACTIVE_KIDS(imp)  	_imp2com(imp, std.active_kids)
 #define DBIc_LAST_METHOD(imp)  	_imp2com(imp, std.last_method)
 
-#define DBIc_DEBUG(imp)		(_imp2com(imp, attr.TraceLevel))
-#define DBIc_DEBUGIV(imp)	SvIV(DBIc_DEBUG(imp))
+#define DBIc_TRACE_LEVEL_MASK	0x0000000F
+#define DBIc_TRACE_TOPIC_MASK	0x00FFFF00
+#define DBDc_TRACE_TOPIC_MASK	0xFF000000
+#define DBIc_TRACE_LEVEL(imp)	(DBIc_DBISTATE(imp)->debug &  DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS(imp)	(DBIc_DBISTATE(imp)->debug & ~DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE(imp, flags, flaglevel, level)	\
+	(  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
+	|| (level && DBIc_TRACE_LEVEL(imp) >= level) )
+#define DBIc_DEBUG(imp)		(_imp2com(imp, attr.TraceLevel)) /* deprecated */
+#define DBIc_DEBUGIV(imp)	SvIV(DBIc_DEBUG(imp))		 /* deprecated */
 #define DBIc_STATE(imp)		SvRV(_imp2com(imp, attr.State))
 #define DBIc_ERR(imp)		SvRV(_imp2com(imp, attr.Err))
 #define DBIc_ERRSTR(imp)	SvRV(_imp2com(imp, attr.Errstr))

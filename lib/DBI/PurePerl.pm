@@ -163,7 +163,8 @@ sub valid_attribute {
 my $initial_setup;
 sub initial_setup {
     $initial_setup = 1;
-    print $DBI::tfh  __FILE__ . " version " . $DBI::PurePerl::VERSION . "\n" if $DBI::dbi_debug;
+    print $DBI::tfh  __FILE__ . " version " . $DBI::PurePerl::VERSION . "\n"
+	if $DBI::dbi_debug & 0xF;
     untie $DBI::err;
     untie $DBI::errstr;
     untie $DBI::state;
@@ -237,7 +238,7 @@ sub  _install_method {
 	$keep_error_code = q{
 	    printf $DBI::tfh "    !! %s: %s CLEARED by call to }.$method_name.q{ method\n".
 		    $h->{err}, $h->{err}
-		if $DBI::dbi_debug && defined $h->{err};
+		if defined $h->{err} && $DBI::dbi_debug & 0xF;
 	}. $keep_error_code
 	    if exists $ENV{DBI_TRACE};
 	push @pre_call_frag, ($ke_init)
@@ -247,7 +248,7 @@ sub  _install_method {
     }
 
     push @pre_call_frag, q{
-        if ($DBI::dbi_debug >= 2) {
+        if (($DBI::dbi_debug & 0xF) >= 2) {
 	    local $^W;
 	    my $args = join " ", map { DBI::neat($_) } ($h, @_);
 	    printf $DBI::tfh "    > $method_name in $imp ($args) [$@]\n";
@@ -262,7 +263,7 @@ sub  _install_method {
     my @post_call_frag;
 
     push @post_call_frag, q{
-        if ($DBI::dbi_debug) {
+        if ($DBI::dbi_debug & 0xF) {
 	    if ($h->{err}) {
 		printf $DBI::tfh "    !! ERROR: %s %s\n", $h->{err}, $h->{errstr};
 	    }
@@ -317,7 +318,7 @@ sub  _install_method {
 		    }
 		    if ($do_croak) {
 			printf $DBI::tfh "    $method_name has failed ($h->{PrintError},$h->{RaiseError})\n"
-				if $DBI::dbi_debug >= 4;
+				if ($DBI::dbi_debug & 0xF) >= 4;
 			carp  $msg if $pe;
 			die $msg if $h->{RaiseError};
 		    }
@@ -381,7 +382,7 @@ sub  _install_method {
 sub _setup_handle {
     my($h, $imp_class, $parent, $imp_data) = @_;
     my $h_inner = tied(%$h) || $h;
-    if ($DBI::dbi_debug >= 4) {
+    if (($DBI::dbi_debug & 0xF) >= 4) {
 	local $^W;
 	print $DBI::tfh "_setup_handle(@_)";
     }
@@ -554,6 +555,7 @@ package
 sub trace {	# XXX should set per-handle level, not global
     my ($h, $level, $file) = @_;
     my $old_level = $DBI::dbi_debug;
+    DBI::_set_trace_file($file) if defined $file;
     if (defined $level) {
 	$DBI::dbi_debug = $level;
 	if ($DBI::dbi_debug) {
@@ -564,7 +566,6 @@ sub trace {	# XXX should set per-handle level, not global
 		unless exists $ENV{DBI_TRACE};
 	}
     }
-    _set_trace_file($file) if defined $file;
     return $old_level;
 }
 *debug = \&trace; *debug = \&trace; # twice to avoid typo warning
@@ -685,7 +686,7 @@ sub set_err {
 sub trace_msg {
     my ($h, $msg, $minlevel)=@_;
     $minlevel = 1 unless $minlevel;
-    return unless $minlevel <= $DBI::dbi_debug;
+    return unless $minlevel <= ($DBI::dbi_debug & 0xF);
     print $DBI::tfh $msg;
     return 1;
 }
