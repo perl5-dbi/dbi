@@ -329,8 +329,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 
 /* --- Event Support (VERY LIABLE TO CHANGE) --- */
 
-/* #define DBIh_EVENTx(h,t,a1,a2) (DBIS->event((h), (t), (a1), (a2))) */
-#define DBIh_EVENTx(h,t,a1,a2)	/* deprecated */ &PL_sv_no
+#define DBIh_EVENTx(h,t,a1,a2)	/* deprecated XXX */ &PL_sv_no
 #define DBIh_EVENT0(h,t)	DBIh_EVENTx((h), (t), &PL_sv_undef, &PL_sv_undef)
 #define DBIh_EVENT1(h,t, a1)	DBIh_EVENTx((h), (t), (a1),         &PL_sv_undef)
 #define DBIh_EVENT2(h,t, a1,a2)	DBIh_EVENTx((h), (t), (a1),         (a2))
@@ -340,6 +339,11 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define MSG_event	"MESSAGE"
 #define DBEVENT_event	"DBEVENT"
 #define UNKNOWN_event	"UNKNOWN"
+
+#define DBIh_SET_ERR_SV(h,i, err, errstr, state, method) \
+	(DBIc_DBISTATE(i)->set_err_sv(h,i, err, errstr, state, method))
+#define DBIh_SET_ERR_CHAR(h,i, err_c, err_i, errstr, state, method) \
+	(DBIc_DBISTATE(i)->set_err_char(h,i, err_c, err_i, errstr, state, method))
 
 
 /* --- Handy Macros --- */
@@ -389,9 +393,10 @@ struct dbistate_st {
     PerlInterpreter * thr_owner;	/* thread that owns this dbistate	*/
 
     int         (*logmsg)	_((imp_xxh_t *imp_xxh, char *fmt, ...));
-    int         (*set_err)	_((imp_xxh_t *imp_xxh, char *fmt, ...));
+    int         (*set_err_sv)	_((SV *h, imp_xxh_t *imp_xxh, SV   *err, SV   *errstr, SV   *state, SV   *method));
+    int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, char *err, IV err_i, char *errstr, char *state, char *method));
 
-    void *pad2[7];
+    void *pad2[6];
 };
 
 /* macros for backwards compatibility */

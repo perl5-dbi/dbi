@@ -70,7 +70,7 @@ static SV	 *dbih_event	   _((SV *h, char *name, SV*, SV*));
 static int        dbih_set_attr_k  _((SV *h, SV *keysv, int dbikey, SV *valuesv));
 static SV        *dbih_get_attr_k  _((SV *h, SV *keysv, int dbikey));
 
-static int      set_err_char	_((SV *h, imp_xxh_t *imp_xxh, char *err, char *errstr, char *state, char *method));
+static int      set_err_char	_((SV *h, imp_xxh_t *imp_xxh, char *err_c, IV err_i, char *errstr, char *state, char *method));
 static int	set_err_sv	_((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int	dbi_hash _((char *string, long i));
@@ -241,6 +241,9 @@ INIT_PERINTERP;
     DBIS->neat_svpv   = neatsvpv;
     DBIS->bind_as_num = quote_type;
     DBIS->hash        = dbi_hash;
+    DBIS->set_err_sv  = set_err_sv;
+    DBIS->set_err_char= set_err_char;
+
 
     /* Remember the last handle used. BEWARE! Sneaky stuff here!	*/
     /* We want a handle reference but we don't want to increment	*/
@@ -393,12 +396,18 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 
 
 static int
-set_err_char(SV *h, imp_xxh_t *imp_xxh, char *err, char *errstr, char *state, char *method)
+set_err_char(SV *h, imp_xxh_t *imp_xxh, char *err_c, IV err_i, char *errstr, char *state, char *method)
 {
-    SV *err_sv    = (strEQ(err,"1")) ? &sv_yes : sv_2mortal(newSVpvn(err, strlen(err)));
-    SV *errstr_sv = sv_2mortal(newSVpvn(errstr, strlen(errstr)));
-    SV *state_sv  = (state && *state)   ? sv_2mortal(newSVpvn(state,  strlen(state)))  : &sv_undef;
-    SV *method_sv = (method && *method) ? sv_2mortal(newSVpvn(method, strlen(method))) : &sv_undef;
+    char err_buf[28];
+    SV *err_sv, *errstr_sv, *state_sv, *method_sv;
+    if (!err_c) {
+	sprintf(err_buf, "%ld", (long)err_i);
+	err_c = &err_buf[0];
+    }
+    err_sv    = (strEQ(err_c,"1")) ? &sv_yes : sv_2mortal(newSVpvn(err_c, strlen(err_c)));
+    errstr_sv = sv_2mortal(newSVpvn(errstr, strlen(errstr)));
+    state_sv  = (state  && *state)  ? sv_2mortal(newSVpvn(state,  strlen(state)))  : &sv_undef;
+    method_sv = (method && *method) ? sv_2mortal(newSVpvn(method, strlen(method))) : &sv_undef;
     return set_err_sv(h, imp_xxh, err_sv, errstr_sv, state_sv, method_sv);
 }
 
@@ -3096,7 +3105,7 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
                    if (pln != idx) {
 			char buf[99];
 			sprintf(buf, "preparse found placeholder :%d out of sequence, expected :%d", pln, idx);
-			set_err_char(dbh, imp_xxh, "1", buf, 0, "preparse");
+			set_err_char(dbh, imp_xxh, "1", 1, buf, 0, "preparse");
 			return &sv_undef;
                    }
 		   while(isDIGIT(*src)) src++;
@@ -3127,7 +3136,7 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
 	if (laststyle && style != laststyle) {
 	    char buf[99];
 	    sprintf(buf, "preparse found mixed placeholder styles (%s / %s)", style, laststyle);
-	    set_err_char(dbh, imp_xxh, "1", buf, 0, "preparse");
+	    set_err_char(dbh, imp_xxh, "1", 1, buf, 0, "preparse");
             return &sv_undef;
         }
 	laststyle = style;
@@ -3138,19 +3147,19 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
     switch (in_quote)
     {
     case '\'':
-	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated single-quoted string", 0, "preparse");
+	    set_err_char(dbh, imp_xxh, "1", 1, "preparse found unterminated single-quoted string", 0, "preparse");
 	    break;
     case '\"':
-	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated double-quoted string", 0, "preparse");
+	    set_err_char(dbh, imp_xxh, "1", 1, "preparse found unterminated double-quoted string", 0, "preparse");
 	    break;
     }
     switch (in_comment)
     {
     case DBIpp_L_BRACE:
-	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated bracketed {...} comment", 0, "preparse");
+	    set_err_char(dbh, imp_xxh, "1", 1, "preparse found unterminated bracketed {...} comment", 0, "preparse");
 	    break;
     case '/':
-	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated bracketed C-style comment", 0, "preparse");
+	    set_err_char(dbh, imp_xxh, "1", 1, "preparse found unterminated bracketed C-style comment", 0, "preparse");
 	    break;
     }
 
@@ -3601,7 +3610,7 @@ take_imp_data(h)
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
 	clear_cached_kids(h, imp_xxh, "take_imp_data", DBIc_DEBUGIV(imp_xxh));
     if (DBIc_KIDS(imp_xxh)) {	/* safety check, may be relaxed later to DBIc_ACTIVE_KIDS */
-	set_err_char(h, imp_xxh, "1", "Can't take_imp_data from handle while it still has kids", 0, "take_imp_data");
+	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle while it still has kids", 0, "take_imp_data");
 	XSRETURN(0);
     }
     dbih_getcom2(h, &mg);	/* get the MAGIC so we can change it	*/

@@ -2091,23 +2091,44 @@ This macro will declare and initialize a variable I<imp_xxh> with
 a pointer to your private handle pointer. You may cast this to
 to I<imp_drh_t>, I<imp_dbh_t> or I<imp_sth_t>.
 
-  SV *errstr = DBIc_ERRSTR(imp_xxh);
-  sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);  /* set err early        */
-  sv_setpv(errstr, what);
+To record the error correctly, equivalent to the set_err() method,
+use one of the DBIh_SET_ERR_CHAR(...) or DBIh_SET_ERR_SV(...) macros,
+which were added in DBI 1.41:
 
-If your database supports SQLSTATE, you should also set the SQLSTATE value; for example,
-DBD::Informix includes the line:
+  DBIh_SET_ERR_SV(h, imp_xxh, err, errstr, state, method);
+  DBIh_SET_ERR_CHAR(h, imp_xxh, err_c, err_i, errstr, state, method);
 
-  sv_setpv(DBIc_STATE(imp_xxh), SQLSTATE);
+For DBIh_SET_ERR_SV the err, errstr, state, and method parameters are SV*.
+For DBIh_SET_ERR_CHAR the err_c, errstr, state, method are char*.
+The err_i parameter is an IV that's used instead of err_c is err_c is Null.
+The method parameter can be ignored.
 
-Note the use of the macros DBIc_ERRSTR and DBIc_ERR for accessing the
-handles error string and error code.
+The DBIh_SET_ERR_CHAR macro is usually the simplest to use when you
+just have an integer error code and an error message string:
+
+  DBIh_SET_ERR_CHAR(h, imp_xxh, Nullch, rc, what, Nullch, Nullch);
+
+As you can see, any parameters that aren't relevant to you can be Null.
+
+To make drivers compatible with DBI < 1.41 you can use this:
+
+#ifndef DBIh_SET_ERR_CHAR
+#define DBIh_SET_ERR_CHAR(h, imp_xxh, err_c, err_i, errstr, state, method) \
+	sv_setiv(DBIc_ERR(imp_xxh), err_i); \
+	sv_setpv(DBIc_STATE(imp_xxh), state); \
+	sv_setpv(DBIc_ERRSTR(imp_xxh), errstr)
+#endif
+
+and pass Null for the err_c and method parameters.
 
 The (obsolete) macros such as DBIh_EVENT2 should be removed from drivers.
+
 The names I<dbis> and I<DBIS>, which were used in previous versions of this document,
 should be replaced with the C<DBIc_STATE(imp_xxh)> macro.
+
 The name DBILOGFP, which was also used in previous  versions of this document, should be
 replaced by DBIc_LOGPIO(imp_xxh).
+
 Your code should not call the C C<E<lt>stdio.hE<gt>> I/O functions; you should either use
 C<PerlIO_printf>() as shown, or standard Perl functions such as C<warn>():
 
