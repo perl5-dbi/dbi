@@ -4,7 +4,7 @@ use strict;
 use Test::More;
 use DBI;
 
-BEGIN { plan tests => 140 }
+BEGIN { plan tests => 147 }
 
 $|=1;
 
@@ -38,6 +38,7 @@ ok(!$dbh->{Taint} );
 ok(!$dbh->{Executed} );
 
 #	other attr
+is( $dbh->{ErrCount}, 0 );
 is( $dbh->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
 is( $dbh->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
 ok( ! defined $dbh->{CachedKids} );
@@ -62,12 +63,15 @@ is( $dbh->state, 'S1000' );
 ok( $dbh->{Executed} );  	# even though it failed
 $dbh->{Executed} = 0;   	# reset(able)
 ok(!$dbh->{Executed} );  	# reset
+is( $dbh->{ErrCount}, 1 );
 
 # ------ Test the driver handle attributes.
 
 ok( my $drh = $dbh->{Driver} );
 ok( UNIVERSAL::isa($drh, 'DBI::dr') );
 ok( $dbh->err );
+
+is( $drh->{ErrCount}, 0 );
 
 ok( $drh->{Warn} );
 ok( $drh->{Active} );
@@ -104,6 +108,7 @@ is( $drh->{Name}, 'ExampleP' );
 (ok my $sth = $dbh->prepare("select ctime, name from foo") );
 ok( !$sth->{Executed} );
 ok( !$dbh->{Executed} );
+is( $sth->{ErrCount}, 0 );
 
 # Trigger an exception.
 eval { $sth->execute };
@@ -116,6 +121,12 @@ ok( $sth->errstr =~ /^opendir\(foo\): / ) or print "errstr: ".$sth->errstr."\n";
 is( $sth->state, 'S1000' );
 ok( $sth->{Executed} );	# even though it failed
 ok( $dbh->{Executed} );	# due to $sth->prepare, even though it failed
+
+is( $sth->{ErrCount}, 1 );
+$sth->{ErrCount} = 42;
+is( $sth->{ErrCount}, 42 );
+$sth->{ErrCount} = 0;
+is( $sth->{ErrCount}, 0 );
 
 # booleans
 ok( $sth->{Warn} );

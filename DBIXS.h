@@ -111,7 +111,7 @@ typedef struct dbih_com_attr_st {
     SV *State;		/* Standard SQLSTATE, 5 char string	*/
     SV *Err;		/* Native engine error code		*/
     SV *Errstr;		/* Native engine error message		*/
-    SV *spare;
+    UV ErrCount;
     U32  LongReadLen;	/* auto read length for long/blob types	*/
     SV *FetchHashKeyName;	/* for fetchrow_hashref		*/
     /* (NEW FIELDS?... DON'T FORGET TO UPDATE dbih_clearcom()!)	*/
@@ -211,6 +211,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIc_STATE(imp)		SvRV(_imp2com(imp, attr.State))
 #define DBIc_ERR(imp)		SvRV(_imp2com(imp, attr.Err))
 #define DBIc_ERRSTR(imp)	SvRV(_imp2com(imp, attr.Errstr))
+#define DBIc_ErrCount(imp)	_imp2com(imp, attr.ErrCount)
 #define DBIc_LongReadLen(imp)  	_imp2com(imp, attr.LongReadLen)
 #define DBIc_LongReadLen_init	80	/* may change */
 #define DBIc_FetchHashKeyName(imp) (_imp2com(imp, attr.FetchHashKeyName))
@@ -253,7 +254,6 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 
 #define DBIcf_INHERITMASK		/* what NOT to pass on to children */	\
   (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY		\
-  /* These are for dbh only:	*/						\
   | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed )
 
 /* general purpose bit setting and testing macros			*/

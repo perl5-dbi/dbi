@@ -492,6 +492,8 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     ) {
 	sv_setsv(h_err, err);
 	err_changed = 1;
+	if (SvTRUE(h_err))	/* new error */
+	    ++DBIc_ErrCount(imp_xxh);
     }
 
     if (err_changed) {
@@ -1359,6 +1361,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "ChopBlanks")) {
 	DBIc_set(imp_xxh, DBIcf_ChopBlanks, on);
     }
+    else if (strEQ(key, "ErrCount")) {
+	DBIc_ErrCount(imp_xxh) = SvUV(valuesv);
+    }
     else if (strEQ(key, "LongReadLen")) {
 	if (SvNV(valuesv) < 0 || SvNV(valuesv) > MAX_LongReadLen)
 	    croak("Can't set LongReadLen < 0 or > %ld",MAX_LongReadLen);
@@ -1692,6 +1697,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
           case 'E':
             if (strEQ(key, "Executed")) {
                 valuesv = boolSV(DBIc_is(imp_xxh, DBIcf_Executed));
+            }
+            else if (strEQ(key, "ErrCount")) {
+                valuesv = newSVuv(DBIc_ErrCount(imp_xxh));
             }
             break;
 

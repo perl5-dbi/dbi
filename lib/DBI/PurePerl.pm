@@ -132,6 +132,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Database
 	DebugDispatch
 	Driver
+	ErrCount
 	FetchHashKeyName
 	HandleError
 	HandleSetErr
@@ -419,7 +420,8 @@ sub _setup_handle {
 	$h_inner->{LongReadLen}		||= 80;
     }
     $h_inner->{"_call_depth"} = 0;
-    $h_inner->{"Active"} = 1;
+    $h_inner->{ErrCount} = 0;
+    $h_inner->{Active} = 1;
 }
 sub constant {
     warn "constant @_"; return;
@@ -668,6 +670,7 @@ sub set_err {
 	or defined $errnum && length($errnum) > length($h->{err})
     ) {
         $h->{err} = $DBI::err = $errnum;
+	++$h->{ErrCount} if $errnum;
 	++$err_changed;
     }
 
