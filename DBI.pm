@@ -1848,13 +1848,15 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		if defined($NUM_OF_PARAMS) && $NUM_OF_PARAMS != $NUM_OF_PARAMS_given;
 
 	    # get the length of a bound array
-	    my $maxlen = 0;
+	    my $maxlen;
 	    my %hash_of_arrays = %{$sth->{ParamArrays}};
 	    foreach (keys(%hash_of_arrays)) {
 		my $ary = $hash_of_arrays{$_};
-		my $len = (ref $ary eq 'ARRAY') ? @$ary : 1;
-		$maxlen = $len if $len > $maxlen;
+		next unless ref $ary eq 'ARRAY';
+		$maxlen = @$ary if !$maxlen || @$ary > $maxlen;
 	    }
+	    # if there are no arrays then execute scalars once
+	    $maxlen = 1 unless defined $maxlen;
 	    my @bind_ids = 1..keys(%hash_of_arrays);
 
 	    my $tuple_idx = 0;
@@ -5125,7 +5127,7 @@ execution.
 =item C<execute_array>
 
   $rv = $sth->execute_array(\%attr) or die $sth->errstr;
-  $rv = $sth->execute_array(\%attr, @bind_values)  or die $sth->errstr;
+  $rv = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
 
 Execute the prepared statement once for each parameter tuple
 (group of values) provided either in the @bind_values, or by prior
@@ -5148,6 +5150,13 @@ or calls to bind_param_array()) the maximum number of elements in
 any one of the bound value arrays determines the number of tuples
 executed. Placeholders with fewer values in their parameter arrays
 are treated as if padded with undef (NULL) values.
+
+If a scalar value is bound, instead of an array reference, it is
+treated as a I<variable> length array with all elements having the
+same value. It's does not influence the number of tuples executed,
+so if all bound arrays have zero elements then zero tuples will
+be executed. If I<all> bound values are scalars then one tuple
+will be executed, making execute_array() act just like execute().
 
 The C<ArrayTupleFetch> attribute can be used to specify a reference
 to a subroutine that will be called to provide the bind values for

@@ -4,7 +4,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.46 (svn rev 580),    14th November 2004
+=head2 Changes in DBI 1.46 (svn rev 581),    14th November 2004
 
   Fixed parsing bugs in DBI::SQL::Nano thanks to Jeff Zucker.
   Fixed a couple of bad links in docs thanks to Graham Barr.
@@ -12,6 +12,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed minor issues in DBI::DBD::Metadata thanks to Steffen Goeldner.
   Fixed DBI::PurePerl neat() to use double quotes for utf8.
 
+  Changed execute_array() definition, and default implementation,
+    to not consider scalar values for execute tuple count. See docs.
   Changed DBD::File to enable ShowErrorStatement by default,
     which affects DBD::File subclasses such as DBD::CSV and DBD::DBM.
   Changed use DBI qw(:utils) tag to include $neat_maxlen.

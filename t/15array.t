@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 47;
+use Test::More tests => 50;
 
 ## ----------------------------------------------------------------------------
 ## 15array.t
@@ -116,6 +116,16 @@ cmp_ok(scalar @{$rows}, '==', 1, '... we should have 1 rows');
 ok(eq_array( $rows, [ [5,6,7,8] ]), '... our rows are as expected');
 cmp_ok(scalar @{$tuple_status}, '==', 1,'... we should have 1 tuple_status');
 ok(eq_array( $tuple_status, [1]), '... our tuple_status is as expected');
+
+# -----------------------------------------------
+# --- with mix of scalar values and arrays only arrays control tuples
+
+@$rows = ();
+$rv = $sth->execute_array( { ArrayTupleStatus => $tuple_status }, 5, [], 7, 8);
+cmp_ok($rv, '==', 0,   '... execute_array should return 0');
+
+cmp_ok(scalar @{$rows}, '==', 0, '... we should have 0 rows');
+cmp_ok(scalar @{$tuple_status}, '==', 0,'... we should have 0 tuple_status');
 
 # -----------------------------------------------
 # --- catch 'undefined value' bug with zero bind values
