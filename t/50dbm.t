@@ -3,13 +3,13 @@ use strict;
 use DBI;
 use File::Path;
 use Test::More;
-use vars qw( @mldbm_types @dbm_types $DB_CREATE $DB_RDONLY);
+use vars qw( @mldbm_types @dbm_types );
 BEGIN {
     use lib qw(./ ../../lib);
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # uncomment next line to force use of Nano rather than default behaviour
-    $ENV{DBI_SQL_NANO}=1;
+    # $ENV{DBI_SQL_NANO}=1;
 
     # test without MLDBM
     # also test with MLDBM if both it and Data::Dumper are available
@@ -25,6 +25,7 @@ BEGIN {
         eval { require "$_.pm" };
         push @dbm_types, $_ unless $@;
     }
+
     my $num_tests = @mldbm_types * @dbm_types * 11;
     if (!$num_tests) {
         plan tests => 1;
@@ -101,7 +102,6 @@ sub do_test {
         die $sth->errstr if $sth->errstr and $sql !~ /DROP/;
         next unless $sql =~ /SELECT/;
         my $results='';
-
         # Note that we can't rely on the order here, it's not portable,
         # different DBMs (or versions) will return different orders.
         while (my ($key, $value) = $sth->fetchrow_array) {
