@@ -21,20 +21,21 @@ use strict;
 #################
 package DBD::DBM;
 #################
-use DBD::File ();
-use vars qw($VERSION $ATTRIBUTION $methods_already_installed);
 use base qw( DBD::File );
-$VERSION     = '0.01';                     # CHANGE THIS !
-$ATTRIBUTION = 'DBD::DBM by Jeff Zucker';  # CHANGE THIS !
+use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
+$VERSION     = '0.01';
+$ATTRIBUTION = 'DBD::DBM by Jeff Zucker';
 
 # no need to have driver() unless you need private methods
 #
 sub driver ($;$) {
     my($class, $attr) = @_;
+    return $drh if $drh;
 
     # do the real work in DBD::File
     #
-    my $this = $class->DBD::File::driver($attr);
+    $attr->{Attribution} = 'DBD::DBM by Jeff Zucker';
+    my $this = $class->SUPER::driver($attr);
 
     # install private methods
     #
@@ -49,6 +50,9 @@ sub driver ($;$) {
     $this;
 }
 
+sub CLONE {
+    undef $drh;
+}
 
 #####################
 package DBD::DBM::dr;
@@ -64,9 +68,7 @@ sub connect ($$;$$$) {
 
     # create a 'blank' dbh
     my $this = DBI::_new_dbh($drh, {
-	'Name'         => $dbname,
-	'USER'         => $user,
-	'CURRENT_USER' => $user,
+	Name => $dbname,
     });
 
     # parse the connection string for name=value pairs
@@ -88,6 +90,7 @@ sub connect ($$;$$$) {
           , dbm_cols              => 1  # the global column names
           , dbm_version           => 1  # verbose DBD::DBM version
           , dbm_ext               => 1  # file extension
+          , dbm_lockfile          => 1  # lockfile extension
           , dbm_store_metadata    => 1  # column names, etc.
           , dbm_berkeley_flags    => 1  # for BerkeleyDB
         };
@@ -206,9 +209,6 @@ sub dbm_versions {
     my $mldbm = $dbh->{dbm_tables}->{$table}->{mldbm}
              || $dbh->{dbm_mldbm}
              || '';
-    $mldbm    = 'Storable'     if $mldbm =~ /^S$/i;
-    $mldbm    = 'FreezeThaw'   if $mldbm =~ /^F$/i;
-    $mldbm    = 'Data::Dumper' if $mldbm =~ /^D$/i;
     $dtype   .= ' + MLDBM + ' . $mldbm if $mldbm;
 
     my %version = ( DBI => $DBI::VERSION );
@@ -288,9 +288,6 @@ sub open_table ($$$$$) {
     my $serializer = $dbh->{dbm_tables}->{$file}->{mldbm}
                   || $dbh->{dbm_mldbm}
                   || '';
-    $serializer = 'Storable'     if $serializer =~ /^S$/i;
-    $serializer = 'FreezeThaw'   if $serializer =~ /^F$/i;
-    $serializer = 'Data::Dumper' if $serializer =~ /^D$/i;
     $dbh->{dbm_tables}->{$file}->{mldbm} = $serializer if $serializer;
 
     my $ext =  '' if $dbm_type eq 'GDBM_File'
@@ -666,7 +663,6 @@ DBD::DBM - a DBI driver for DBM & MLDBM files
  $dbh = DBI->connect('dbi:DBM:type=GDBM_File');  # defaults to GDBM_File
  $dbh = DBI->connect('dbi:DBM:mldbm=Storable');  # MLDBM with SDBM_File
                                                  # and Storable
- $dbh = DBI->connect('dbi:DBM:mldbm=S');         # same as above
 
 or
 
@@ -820,23 +816,22 @@ If you want more than two columns, you must install MLDBM.  It's available for m
 
 MLDBM can use three different modules to serialize the column - Data::Dumper, Storable, and FreezeThaw.  Data::Dumper is the default, Storable is the fastest.  MLDBM can also make use of user-defined serialization methods.  All of this is available to you through DBD::DBM with just one attribute setting.
 
-To use MLDBM with DBD::DBM, you need to set the dbm_mldbm attribute to the name of the serialization module.  For convenience, you can abbreviate the three standard modules with D = Data::Dumper, S = Storable, and F = FreezeThaw.
+To use MLDBM with DBD::DBM, you need to set the dbm_mldbm attribute to the name of the serialization module.
 
 Some examples:
 
- $dbh=DBI->connect('dbi:DBM:mldbm=Storage');  # use MLDBM with Storable
- $dbh=DBI->connect('dbi:DBM:mldbm=S');        # same as above
+ $dbh=DBI->connect('dbi:DBM:mldbm=Storable');  # use MLDBM with Storable
  $dbh=DBI->connect(
-    'dbi:DBM:mldbm=MySerializer'      # use MLDBM with a user defined module
+    'dbi:DBM:mldbm=MySerializer'           # use MLDBM with a user defined module
  );
- $dbh->{mldbm} = 'MySerializer';      # same as above
+ $dbh->{mldbm} = 'MySerializer';           # same as above
  print $dbh->{mldbm}                       # show the MLDBM serializer
- $dbh->{dbm_tables}->{foo}->{mldbm}='D';   # set Data::Dumper for table "foo"
+ $dbh->{dbm_tables}->{foo}->{mldbm}='Data::Dumper';   # set Data::Dumper for table "foo"
  print $dbh->{dbm_tables}->{foo}->{mldbm}; # show serializer for table "foo"
 
 MLDBM works on top of other DBM modules so you can also set a DBM type along with setting dbm_mldbm.  The examples above would default to using SDBM_File with MLDBM.  If you wanted GDBM_File instead, here's how:
 
- $dbh = DBI->connect('dbi:DBM:type=GDBM_File;mldbm=S');
+ $dbh = DBI->connect('dbi:DBM:type=GDBM_File;mldbm=Storable');
  #
  # uses GDBM_File with MLDBM and Storable
 
@@ -852,7 +847,7 @@ The "BerkeleyDB" dbm_type is experimental and its interface is likely to chagne.
 
 With BerkeleyDB, you can specify initialization flags by setting them in your script like this:
 
- my $dbh = DBI->connect('dbi:DBM:type=BerkeleyDB;mldbm=S');
+ my $dbh = DBI->connect('dbi:DBM:type=BerkeleyDB;mldbm=Storable');
  use BerkeleyDB;
  my $env = new BerkeleyDB::Env -Home => $dir;  # and/or other Env flags
  $dbh->{dbm_berkeley_flags} = {

@@ -1,32 +1,28 @@
 #!perl
 use strict;
-use DBI;
 use File::Path;
 use Test::More;
+
+use DBI;
 use vars qw( @mldbm_types @dbm_types );
 BEGIN {
-    use lib qw(./ ../../lib);
-
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
     $ENV{DBI_SQL_NANO}=1;
 
-    # test without MLDBM
-    # also test with MLDBM if both it and Data::Dumper are available
-    #
-    @mldbm_types = ('plain');
-    eval { require 'MLDBM.pm'; require 'Data/Dumper.pm' };
-    push @mldbm_types, 'mldbm' unless $@;
+    if (eval { require 'MLDBM.pm'; }) {
+        push @mldbm_types, 'Data::Dumper' if eval { require 'Data/Dumper.pm' };
+        push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
+    }
 
     # test with as many of the 5 major DBM types as are available
     #
     for (qw( SDBM_File GDBM_File NDBM_File ODBM_File DB_File BerkeleyDB )){
-        undef $@;
         eval { require "$_.pm" };
         push @dbm_types, $_ unless $@;
     }
 
-    my $num_tests = @mldbm_types * @dbm_types * 11;
+    my $num_tests = (1+@mldbm_types) * @dbm_types * 11;
     if (!$num_tests) {
         plan tests => 1;
         SKIP: {
@@ -34,22 +30,22 @@ BEGIN {
         }
         exit;
     }
-    else {
-        plan tests => $num_tests;
-    }
+    plan tests => $num_tests;
 }
+
 my $dir = './test_output';
+
 rmtree $dir;
 mkpath $dir;
+
 my( $two_col_sql,$three_col_sql ) = split /\n\n/,join '',<DATA>;
-my %sql = (
-    mldbm => [ split /\s*;\n/, $three_col_sql ]
-  , plain => [ split /\s*;\n/, $two_col_sql   ]
-);
-for my $mldbm ( @mldbm_types ) {
+
+for my $mldbm ( '', @mldbm_types ) {
+    my $sql = ($mldbm) ? $three_col_sql : $two_col_sql;
+    my @sql = split /\s*;\n/, $sql;
     for my $dbm_type ( @dbm_types ) {
 	print "\n--- Using $dbm_type ($mldbm) ---\n";
-        do_test( $dbm_type, $sql{$mldbm}, $mldbm );
+        do_test( $dbm_type, \@sql, $mldbm );
     }
 }
 rmtree $dir;
@@ -59,10 +55,14 @@ sub do_test {
     my $stmts = shift;
     my $mldbm = shift;
     $|=1;
-    my $ml = ''  if $mldbm eq 'plain';
-       $ml = 'D' if $mldbm eq 'mldbm';
-    my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$ml";
+
+    # The DBI can't test locking here, sadly, because of the risk it'll hang
+    # on systems with broken NFS locking daemons.
+    # (This test script doesn't test that locking actually works anyway.)
+
+    my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
     my $dbh = DBI->connect( $dsn );
+
     if ($DBI::VERSION >= 1.37 ) { # needed for install_method
         print $dbh->dbm_versions;
     }
@@ -75,7 +75,7 @@ sub do_test {
     #
     eval {$dbh->{f_dir}=$dir};
     ok(!$@);
-    eval {$dbh->{dbm_mldbm}=$ml};
+    eval {$dbh->{dbm_mldbm}=$mldbm};
     ok(!$@);
 
     # test if it correctly rejects invalid $dbh attributes
@@ -97,7 +97,7 @@ sub do_test {
             1 => '11',
             2 => '12',
             3 => '13',
-        } if $ml;
+        } if $mldbm;
 	print " $sql\n";
         my $sth = $dbh->prepare($sql) or die $dbh->errstr;
         $sth->execute;

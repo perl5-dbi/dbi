@@ -18,62 +18,42 @@
 #  General Public License or the Artistic License, as specified in
 #  the Perl README file.
 #
-BEGIN { use lib '../' }
 require 5.004;
 use strict;
 
-
-require DynaLoader;
+use DBI ();
 require DBI::SQL::Nano;
-require DBI;
 my $haveFileSpec = eval { require File::Spec };
 
 package DBD::File;
 
-use vars qw(@ISA $VERSION $drh $err $errstr $sqlstate $valid_attrs);
-
-@ISA = qw(DynaLoader);
+use vars qw(@ISA $VERSION $drh $valid_attrs);
 
 $VERSION = '0.30';      # bumped from 0.22 to 0.30 with inclusion in DBI
 
-$err = 0;		# holds error code   for DBI::err
-$errstr = "";		# holds error string for DBI::errstr
-$sqlstate = "";         # holds error state  for DBI::state
 $drh = undef;		# holds driver handle once initialised
 
 sub driver ($;$) {
     my($class, $attr) = @_;
-    my $drh = eval '$' . $class . "::drh";
-    if (!$drh) {
-        DBI->setup_driver('DBD::File');
-	if (!$attr) { $attr = {} };
-	if (!exists($attr->{Attribution})) {
-	    $attr->{Attribution} = eval '$' . $class . '::ATTRIBUTION';
-	    $attr->{Attribution} = "$class by Jeff Zucker"
-                                if $class eq 'DBD::File';
-	    $attr->{Attribution} ||=
-                "oops the author of $class forgot to define this";
-	}
-	if (!exists($attr->{Version})) {
-	    $attr->{Version} = eval '$' . $class . '::VERSION';
-        }
-        if (!exists($attr->{Err})) {
-	    $attr->{Err} = eval '\$' . $class . '::err';
-        }
-        if (!exists($attr->{Errstr})) {
-	    $attr->{Errstr} = eval '\$' . $class . '::errstr';
-        }
-        if (!exists($attr->{State})) {
-	    $attr->{State} = eval '\$' . $class . '::state';
-        }
-        if (!exists($attr->{Name})) {
-	    my $c = $class;
-	    $c =~ s/^DBD\:\://;
-	    $attr->{Name} = $c;
-        }
-        $drh = DBI::_new_drh($class . "::dr", $attr);
+    return $drh if $drh;
+
+    DBI->setup_driver('DBD::File');
+    $attr ||= {};
+    no strict qw(refs);
+    if (!$attr->{Attribution}) {
+	$attr->{Attribution} = "$class by Jeff Zucker"
+	    if $class eq 'DBD::File';
+	$attr->{Attribution} ||= ${$class . '::ATTRIBUTION'}
+	    || "oops the author of $class forgot to define this";
     }
-    $drh;
+    $attr->{Version} ||= ${$class . '::VERSION'};
+    ($attr->{Name} = $class) =~ s/^DBD\:\:// unless $attr->{Name};
+    $drh = DBI::_new_drh($class . "::dr", $attr);
+    return $drh;
+}
+
+sub CLONE {
+    undef $drh;
 }
 
 package DBD::File::dr; # ====== DRIVER ======
@@ -496,11 +476,11 @@ sub DESTROY ($) {
 
 sub rows ($) { shift->{'f_stmt'}->{'NUM_OF_ROWS'} };
 
-sub finish ($) { 1; }
-
 
 package DBD::File::Statement;
 
+# We may have a working flock() built-in but that doesn't mean that locking
+# will work on NFS (flock() may hang hard)
 my $locking = eval { flock STDOUT, 0; 1 };
 
 # Jochen's old check for flock()
