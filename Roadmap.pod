@@ -1,9 +1,9 @@
 
 =head1 NAME
 
-DBI::Roadmap - Planned Changes and Enhancements for the DBI
+DBI::Roadmap - Planned Enhancements for the DBI
 
-Tim Bunce - 5th November 2004
+Tim Bunce - 9th November 2004
 
 =head2 SYNOPSIS
 
@@ -16,16 +16,11 @@ business, and on platforms from clustered super-computers to PDAs.
 Database interface drivers are available for all common databases
 and many not-so-common ones.
 
-In the 10 years since the DBI was first released, incremental
-development has continued at a reasonably steady pace. A growing
-number of issues and significant enhancements have, however, not
-been addressed by this incremental development process.
-
-The planned changes cover testing, performance, high availability
+The planned enhancements cover testing, performance, high availability
 and load balancing, batch statements, Unicode, database portability,
 and more.
 
-Addressing these issues now, in coordinated way, will help ensure
+Addressing these issues together, in coordinated way, will help ensure
 maximum future functionality with minimal disruptive (incompatible)
 upgrades.
 
@@ -86,14 +81,14 @@ driver is too low to provide sufficient incentive.
 A common test suite that can be reused by all the drivers is needed.
 It would:
 
+* Improve the quality of the DBI and drivers.
+
 * Ensure all drivers conform to the DBI specification.
 Easing the porting of applications between databases, and the implementation of
 database independent modules layered over the DBI.
 
 * Improve the DBI specification by clarifying unclear issues in order to
 implement test cases.
-
-* Improve the proportion of well tested code in the DBI and drivers.
 
 * Encourage expansion of the test suite as driver authors and others will be
 motivated by the greater benefits of their contributions.
@@ -175,8 +170,8 @@ dispatch behavior should be made part of the DBI API. This would
 enable more flexible and correct behavior by modules subclassing
 the DBI and by dynamic drivers such as DBD::Proxy and DBD::Multiplex.
 
-* Handle attribute information should also be
-made available, for the same reasons.
+* Handle attribute information should also be made available, for
+the same reasons.
 
 * Currently is it not possible to discover all the child statement
 handles that belong to a database handle (or all database handles
@@ -212,20 +207,21 @@ the side-effects of subclassing the DBI (especially in relation to
 error handling).
 
 * Callbacks are currently limited to error handling (the HandleError
-and HandleSetError attributes).  Providing callback hooks for more events, such
-as a row being fetched, would enable utility modules, for example, to modify
-the behavior of a handle independent of any subclassing in use.
+and HandleSetError attributes).  Providing callback hooks for more
+events, such as a row being fetched, would enable utility modules,
+for example, to modify the behavior of a handle independent of any
+subclassing in use.
 
-These changes would enable deeper and cleaner integration between
+These changes would enable cleaner and more powerful integration between
 applications, layered modules, and the DBI.
 
 
 =head2 Debugability
 
-* Enabling DBI trace output at a high level of detail causes a large volume of
-output, much of it unrelated to the problem being investigated. More trace
-output should be controlled by the new named-topic mechanism instead of the
-trace level.
+* Enabling DBI trace output at a high level of detail causes a large
+volume of output, much of it probably unrelated to the problem being
+investigated. Trace output should be controlled by the new named-topic
+mechanism instead of just the trace level.
 
 * Calls to XS functions (such as many DBI and driver methods) don't
 normally appear in the call stack.  Optionally enabling that would
@@ -249,7 +245,7 @@ The goal is I<not> to fully parse the SQL and rewrite it in a different
 dialect.  That's well beyond the scope of the DBI and should be
 left to layered modules.  A simple token rewriting mechanism
 for five comment styles, two quoting styles, four placeholder styles,
-plus the ODBC "{foo ...}" escape syntax is sufficient to significantly
+plus the ODBC "{foo ...}" escape syntax, is sufficient to significantly
 raise the level of SQL portability.
 
 * Another problem area is date/time formatting.  Since version 1.41
@@ -321,7 +317,7 @@ model are magnified.
 
 =head1 PRIORITIES
 
-The foundations of many of the changes described above require
+The foundations of many of the enhancements described above require
 changes to the interface between the DBI and drivers. To clearly
 define the transition point, the source code will be forked into a
 DBI v1 branch and the mainline bumped to v2.
@@ -356,15 +352,31 @@ will also be made in v2.0. See http://svn.perl.org/modules/dbi/trunk/ToDo
 
 Once DBI v2.0 is available, the other enhancements can be implemented
 incrementally on the updated foundations. Priorities for those
-changes have not yet been set. If your company would benefit from
-a specific feature it could pay to sponsor early development of it.
+changes have not been set.
 
 
 =head1 RESOURCES AND CONTRIBUTIONS
 
-This roadmap does not address the resources required to implement
-the changes for DBI v2.0 and beyond.
-
 See L<http://dbi.perl.org/contributing> for I<how you can help>.
+
+If your company has benefited from the DBI then please consider
+if the company could make donation to The Perl Foundation
+DBI Development fund at L<http://dbi.perl.org/donate> to secure
+future development.
+
+Alternatively, if your company would benefit from a specific new DBI
+feature, please consider sponsoring its development through my
+consulting company, Data Plan Services. Work is performed rapidly on
+a fixed-price payment-on-delivery basis. Contact me for details.
+
+Using such targeted financing allows you to contribute to DBI
+development and rapidly get something specific and directly valuable
+to you in return.
+
+My company also offers annual support contracts for the DBI, which
+provide another way to support the DBI and get something specific
+in return. Contact me for details.
+
+Thank you.
 
 =cut
