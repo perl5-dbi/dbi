@@ -116,8 +116,14 @@ else {
   ok(0, DBI::hash("foo2",1) == -1263462437,  DBI::hash("foo2",1));
 }
 
-print "test DBI->installed_versions (for @drivers)\n";
-print "(a bad driver can kill the process here)\n";
+print "Test DBI->installed_versions (for @drivers)\n";
+print "(If one of those drivers, or the configuration for it, is bad\n";
+print "then these tests can kill or freeze the process here. That's not the DBI's fault.)\n";
+$SIG{ALRM} = sub {
+    die "Test aborted because a driver (one of: @drivers) hung while loading"
+       ." (almost certainly NOT a DBI problem)";
+};
+alarm(20);
 my $installed_versions = DBI->installed_versions;
 ok(0, ref $installed_versions eq 'HASH');
 ok(0, %$installed_versions);

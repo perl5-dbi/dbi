@@ -2,10 +2,22 @@
 use strict;
 use File::Path;
 use Test::More;
+use Config qw(%Config);
 
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
 BEGIN {
+
+    # Be conservative about what modules we use here.
+    # We don't want to be tripped up by a badly installed module
+    # so we remove from @INC any version-specific dirs that don't
+    # also have an arch-specific dir.
+    my %inc = map { $_ => 1 } @INC;
+    my @del = grep { m:/5\.[0-9.]+$: && !$inc{"$_/$Config{archname}"} } @INC;
+    my %del = map { $_ => 1 } @del;
+    @INC = grep { !$del{$_} } @INC;
+    print "Removed some old dirs from \@INC for this test: @del\n" if @del;
+
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
     $ENV{DBI_SQL_NANO}=1;
