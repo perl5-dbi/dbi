@@ -994,7 +994,7 @@ using the I<drv_params> attribute from above:
       my ($sth, @bind_values) = @_;
 
       # start of by finishing any previous execution if still active
-      $sth->finish if $sth->{Active};
+      $sth->finish if $sth->FETCH('Active');
 
       my $params = (@bind_values) ?
           \@bind_values : $sth->FETCH('drv_params');
@@ -1039,7 +1039,7 @@ I<fetchrow_arrayref>:
       my $data = $sth->FETCH('drv_data');
       my $row = shift @$data;
       if (!$row) {
-          $sth->{Active} = 0; # mark as no longer active 
+          $sth->STORE(Active => 0); # mark as no longer active 
           return undef;
       }
       if ($sth->FETCH('ChopBlanks')) {
@@ -1086,6 +1086,13 @@ specification, in particular to make metadata available.
 Remember that they must have names that begin with your drivers
 registered prefix so they can be installed using install_method().
 
+If DESTROY() is called on a statement handle that's still active
+($sth->{Active} is true) then it should effectively call finish().
+
+    sub DESTROY {
+        my $sth = shift;
+        $sth->finish if $sth->FETCH('Active');
+    }
 
 =head2 Tests
 
