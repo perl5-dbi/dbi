@@ -1448,7 +1448,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		for (@$slice) { $_-- }
 	    }
 	}
-	return $sth->fetchall_arrayref($slice, $attr->{MaxRows});
+	my $rows = $sth->fetchall_arrayref($slice, my $MaxRows = $attr->{MaxRows});
+	$sth->finish if defined $MaxRows;
+	return $rows;
     }
 
     sub selectall_hashref {
@@ -3505,7 +3507,8 @@ complete or was truncated due to an error.
 
 The L</fetchall_arrayref> method called by C<selectall_arrayref>
 supports a $max_rows parameter. You can specify a value for $max_rows
-by including a 'C<MaxRows>' attribute in \%attr.
+by including a 'C<MaxRows>' attribute in \%attr. In which case finish()
+is called for you after fetchall_arrayref() returns.
 
 The L</fetchall_arrayref> method called by C<selectall_arrayref>
 also supports a $slice parameter. You can specify a value for $slice by

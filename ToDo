@@ -80,12 +80,10 @@ force it for drivers?
 And enable xsbypass in dispatch if possible.
 Remove PERL_POLLUTE
 
-Require a CLONE method.
-
 Add function pointer for setting fetched field values into DBIS.
 Drivers would use this instead of calling sv_setpv (etc) themselves.
 
-Add bind_col($n, $foo, { OnFetch => sub { ... } });
+Add bind_col($n, \$foo, { OnFetch => sub { ... } });
 
 Add way to specify default bind_col attributes for each TYPE
 e.g.	$dbh->{BindColumnTypes} = {

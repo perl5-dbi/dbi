@@ -94,9 +94,13 @@ ok((grep { DBI::looks_like_number($_) } @$data) == 7);
 ok((grep { $_ >= 0                    } @$data) == 7) or warn "profile data: [@$data]\n";
 my ($count, $total, $first, $shortest, $longest, $time1, $time2) = @$data;
 if ($shortest < 0) {
-    warn "Time went backwards at some point during the test on this $Config{archname} system!\n";
+    my $sys = "$Config{archname} $Config{osvers}"; # sparc-linux 2.4.20-2.3sparcsmp
+    warn "Time went backwards at some point during the test on this $sys system!\n";
     warn "Perhaps you have time sync software (like NTP) that adjusted the clock\n";
-    warn "backwards by more than $shortest seconds during the test.\n";
+    warn "backwards by more than $shortest seconds during the test. PLEASE RETRY.\n";
+    # Don't treat very small negative amounts as a failure - it's always been due
+    # due to NTP of buggy multiprocessor systems.
+    $shortest = 0 if $shortest > -0.008;
 }
 ok($count > 3);
 ok($total > $first);
