@@ -652,12 +652,6 @@ sub connect {
 	# if we've been subclassed then let the subclass know that we're connected
 	$dbh->connected($dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
 
-	# If the caller has provided a callback then call it
-	if (my $cb = $dbh->{Callbacks}) { # take care not to autovivify
-	    $cb = $cb->{connect};
-	    $cb->($dbh, $dsn, $user, $pass, $attr) if $cb;
-	}
-
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
 
 	return $dbh;
@@ -1410,14 +1404,22 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    join "~~", $dsn, $user||'', $auth||'', $attr ? (@attr_keys,@{$attr}{@attr_keys}) : ()
 	};
 	my $dbh = $cache->{$key};
+        my $cb = $attr->{Callbacks}; # take care not to autovivify
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
             # If the caller has provided a callback then call it
-            if (my $cb = $dbh->{Callbacks}) { # take care not to autovivify
-                $cb = $cb->{"connect_cached.reused"};
-                $cb->($dbh, $dsn, $user, $auth, $attr) if $cb;
+            if ($cb and $cb = $cb->{"connect_cached.reused"}) {
+		local $_ = "connect_cached.reused";
+		$cb->($dbh, $dsn, $user, $auth, $attr);
             }
 	    return $dbh;
 	}
+
+	# If the caller has provided a callback then call it
+	if ($cb and $cb = $cb->{"connect_cached.new"}) {
+	    local $_ = "connect_cached.new";
+	    $cb->($dbh, $dsn, $user, $auth, $attr);
+	}
+
 	$dbh = $drh->connect(@_);
 	$cache->{$key} = $dbh;	# replace prev entry, even if connect failed
 	return $dbh;

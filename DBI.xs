@@ -2408,18 +2408,28 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	&& (hook_svp = hv_fetch((HV*)SvRV(*hook_svp), meth_name, strlen(meth_name), 0))
 	&& SvROK(*hook_svp)
     ) {
-	dSP;
 	SV *code = SvRV(*hook_svp);
+	I32 count;
 	if (trace_level)
 	    PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked\n",
 		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
+	ENTER;
+	SAVETMPS;
+	EXTEND(SP, items+1);
 	PUSHMARK(SP);
-	XPUSHs(h);
-	/* XXX add more params */
+	PUSHs(h);			/* push inner handle, then others params */
+	for (i=1; i < items; ++i) {	/* start at 1 to skip handle */
+	    PUSHs( ST(i) );
+	}
 	PUTBACK;
-	if (call_sv(code, G_ARRAY))
-	    die("Callback for %s must not return any values (temporary restriction in current version)");
+	SAVE_DEFSV; /* local($_) = $method_name */
+	DEFSV = sv_2mortal(newSVpv(meth_name,0));
+	count = call_sv(code, G_ARRAY);
+	if (count != 0)
+	    die("Callback for %s returned %d values but must not return any (temporary restriction in current version)", meth_name, count);
 	SPAGAIN;
+	FREETMPS;
+	LEAVE;
 	if (trace_level)
 	    PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned\n",
 		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
