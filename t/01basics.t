@@ -150,7 +150,7 @@ is(neat_list([ 1 + 1, "2", undef, "foobarbaz"]), "2, '2', undef, 'foobarbaz'", '
 cmp_ok($DBI::dbi_debug, '==',  0, "... DBI::dbi_debug's initial state is 0");
 
 SKIP: {
-	skip "cannot find : /dev/null", 2 unless (-f "/dev/null");	
+    skip "cannot find : /dev/null", 2 unless (-e "/dev/null");	
     DBI->trace(42,"/dev/null");
     cmp_ok($DBI::dbi_debug, '==', 42, "... DBI::dbi_debug is 42");
 	DBI->trace(0, undef);
@@ -246,7 +246,7 @@ SKIP: {
 # restrict this test to just developers
 
 SKIP: {
-	skip 'these tests only for developers', 4 if (-d ".svn");
+	skip 'developer tests', 4 unless -d ".svn";
 	
 	print "Test DBI->installed_versions (for @drivers)\n";
 	print "(If one of those drivers, or the configuration for it, is bad\n";
