@@ -2384,12 +2384,13 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 {
     PerlInterpreter * h_perl = DBIc_THR_USER(imp_xxh) ;
     if (h_perl != my_perl) {
-	/* XXX could call a 'handle clone' method here, for dbh's at least */
+	/* XXX could call a 'handle clone' method here?, for dbh's at least */
 	if (is_DESTROY) {
     is_DESTROY_wrong_thread:
 	    if (trace_level >= 2) {
 		PerlIO_printf(DBILOGFP,"    DESTROY ignored because DBI %sh handle (%s) is owned by thread %p not current thread %p\n",
-		      dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)), h_perl, my_perl) ;
+		      dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)),
+		      (PerlInterpreter *)DBIc_THR_USER(imp_xxh), my_perl) ;
 		PerlIO_flush(DBILOGFP);
 	    }
 	    XSRETURN(0); /* don't DESTROY handle, if it is not our's !*/
