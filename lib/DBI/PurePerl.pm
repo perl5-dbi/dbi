@@ -36,6 +36,7 @@ $DBI::neat_maxlen ||= 400;
 
 $DBI::tfh = Symbol::gensym();
 open $DBI::tfh, ">&STDERR" or warn "Can't dup STDERR: $!";
+select( (select($DBI::tfh), $| = 1)[0] );  # autoflush
 
 
 %DBI::last_method_except = map { $_=>1 } qw(DESTROY _set_fbav set_err);
@@ -308,6 +309,10 @@ sub  _install_method {
     push @post_call_frag, q{
 	$keep_error = 0 if $keep_error && $h->{ErrCount} > $ErrCount;
 
+	$DBI::err    = $h->{err};
+	$DBI::errstr = $h->{errstr};
+	$DBI::state  = $h->{state};
+
         if ( !$keep_error
 	&& defined(my $err = $h->{err})
 	&& ($call_depth <= 1 && !$h->{_parent}{_call_depth})
@@ -336,7 +341,7 @@ sub  _install_method {
 		    }
 		    $msg .= "]";
 		}
-		if ($DBI::err eq "0") { # is 'warning' (not info)
+		if ($err eq "0") { # is 'warning' (not info)
 		    carp $msg if $pw;
 		}
 		else {
@@ -401,7 +406,7 @@ sub  _install_method {
     warn "$@\n$method_code\n" if $@;
     die "$@\n$method_code\n" if $@;
     *$method = $code_ref;
-    if (0 && $method =~ /set_err/) { # debuging tool
+    if (0 && $method =~ /do/) { # debuging tool
 	my $l=0; # show line-numbered code for method
 	warn "*$method = ".join("\n", map { ++$l.": $_" } split/\n/,$method_code);
     }

@@ -107,10 +107,6 @@
 	return undef;
     }
 
-    sub finish {
-	my($sth) = @_;
-    }
-
     sub FETCH {
 	my ($sth, $attrib) = @_;
 	# would normally validate and only fetch known attributes

@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.46"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.47"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -115,7 +115,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.46.
+This is the DBI specification that corresponds to the DBI version 1.47.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -1400,8 +1400,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	$drh->STORE('CachedKids', $cache = {}) unless $cache;
 
 	my @attr_keys = $attr ? sort keys %$attr : ();
-	my $key = join "~~", $dsn, $user||'', $auth||'',
-		$attr ? (@attr_keys,@{$attr}{@attr_keys}) : ();
+	my $key = do { local $^W; # silence undef warnings
+	    join "~~", $dsn, $user||'', $auth||'', $attr ? (@attr_keys,@{$attr}{@attr_keys}) : ()
+	};
 	my $dbh = $cache->{$key};
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
 	    # XXX warn if BegunWork?

@@ -7,6 +7,16 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.47 (svn rev XXX),    XXth November 2004
 
   Fixed some tests to work with older Test::More versions.
+  Fixed setting $DBI::lasth where DESTROY calls other methods.
+  Fixed setting $DBI::err/errstr in DBI::PurePerl.
+  Fixed potential undef warning from connect_cached().
+  Fixed $DBI::lasth handling for DESTROY so lasth points to
+    parent even if DESTROY called other methods.
+
+  Changed error handling so undef errstr doesn't cause warning.
+  Changed DBI::DBD docs to use =head3/=head4 pod thanks to
+    Jonathan Leffler. This may generate warnings for perl 5.6.
+  Changed DBI::PurePerl to set autoflush on trace filehandle.
   Changed DBD::Proxy to treat Username as a local attribute
     so recent DBI version can be used with old DBI::ProxyServer.
 

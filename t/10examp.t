@@ -11,7 +11,7 @@ my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
 # originally 246 tests
-use Test::More tests => 252;
+use Test::More tests => 253;
 #use Test::More 'no_plan';
 
 # "globals"
@@ -153,15 +153,16 @@ eval { $dbh->commit('dummy') };
 ok($@ =~ m/DBI commit: invalid number of arguments:/, $@)
 	unless $DBI::PurePerl && ok(1);
 
-ok($dbh->ping);
+ok($dbh->ping, "ping should return true");
 
 # --- errors
 my $cursor_e = $dbh->prepare("select unknown_field_name from ?");
-ok(!defined $cursor_e);
-ok($DBI::err);
-ok($DBI::errstr =~ m/Unknown field names: unknown_field_name/);
-ok($DBI::err    == $dbh->err,    "DBI::err='$DBI::err', dbh->err=".$dbh->err);
-ok($DBI::errstr eq $dbh->errstr, "DBI::errstr='$DBI::errstr', dbh->errstr=".$dbh->errstr);
+is($cursor_e, undef, "prepare should fail");
+ok($dbh->err, "sth->err should be true");
+ok($DBI::err, "DBI::err should be true");
+cmp_ok($DBI::err,    'eq', $dbh->err   , "\$DBI::err should match \$dbh->err");
+like($DBI::errstr, qr/Unknown field names: unknown_field_name/, "\$DBI::errstr should contain error string");
+cmp_ok($DBI::errstr, 'eq', $dbh->errstr, "\$DBI::errstr should match \$dbh->errstr");
 
 # --- func
 ok($dbh->errstr eq $dbh->func('errstr'));

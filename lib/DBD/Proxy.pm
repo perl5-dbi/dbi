@@ -664,7 +664,8 @@ sub bind_param ($$$@) {
 *bind_param_inout = \&bind_param;
 
 sub DESTROY {
-    # Just to avoid autoloading DESTROY ...
+    my $sth = shift;
+    $sth->finish if $sth->SUPER::FETCH('Active');
 }
 
 

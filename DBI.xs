@@ -1130,6 +1130,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     int dump = FALSE;
     int debug = DBIS_TRACE_LEVEL;
     int auto_dump = (debug >= 6);
+    imp_xxh_t *parent_xxh = DBIc_PARENT_COM(imp_xxh);
 
     /* Note that we're very much on our own here. DBIc_MY_H(imp_xxh) almost	*/
     /* certainly points to memory which has been freed. Don't use it!		*/
@@ -1189,8 +1190,12 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 
     /* --- pre-clearing adjustments --- */
 
-    if (DBIc_PARENT_COM(imp_xxh) && !dirty) {
-	--DBIc_KIDS(DBIc_PARENT_COM(imp_xxh));
+    if (!dirty) {
+	if (parent_xxh) {
+	    if (DBIc_ACTIVE(imp_xxh)) /* see also DBIc_ACTIVE_off */
+		--DBIc_ACTIVE_KIDS(parent_xxh);
+	    --DBIc_KIDS(parent_xxh);
+	}
     }
 
     /* --- clear fields (may invoke object destructors) ---	*/
@@ -2517,17 +2522,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		clear_cached_kids(h, imp_xxh, meth_name, trace_flags);
 	}
 
-	if (DBI_IS_LAST_HANDLE(h)) {	/* if destroying _this_ handle */
-	    SV *lhp = DBIc_PARENT_H(imp_xxh);
-	    if (lhp && SvROK(lhp)) {
-		DBI_SET_LAST_HANDLE(lhp);
-	    }
-	    else {
-		DBI_UNSET_LAST_HANDLE;
-	    }
-	
-	} /* otherwise don't alter last handle */
-
 	if (DBIc_IADESTROY(imp_xxh)) { /* want's ineffective destroy	*/
 	    DBIc_ACTIVE_off(imp_xxh);
 	}
@@ -2693,6 +2687,16 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     }
 
     post_dispatch:
+
+    if (is_DESTROY && DBI_IS_LAST_HANDLE(h)) { /* if destroying _this_ handle */
+	SV *lhp = DBIc_PARENT_H(imp_xxh);
+	if (lhp && SvROK(lhp)) {
+	    DBI_SET_LAST_HANDLE(lhp);
+	}
+	else {
+	    DBI_UNSET_LAST_HANDLE;
+	}
+    }
 
     /* if we didn't clear err before the call, check if ErrCount has gone up */
     /* if so, we turn off keep_error so error is acted on                    */
@@ -2870,7 +2874,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	sprintf(intro,"%s %s %s: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name,
 	    SvTRUE(err_sv) ? "failed" : is_warning ? "warning" : "information");
 	msg = sv_2mortal(newSVpv(intro,0));
-	sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
+	if (SvOK(DBIc_ERRSTR(imp_xxh)))
+	    sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
+	else
+	    sv_catpvf(msg, "(err=%s, errstr=undef, state=%s)",
+		neatsvpv(DBIc_ERR(imp_xxh),0), neatsvpv(DBIc_STATE(imp_xxh),0) );
 
 	if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
 	    && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima_flags & IMA_SHOW_ERR_STMT)
