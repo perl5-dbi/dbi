@@ -4,9 +4,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head1 CHANGES in DBI 1.42 (svn rev XX),    XXnd February 2004
-
 Document $t->parse_trace_flags etc
+
+=head1 CHANGES in DBI 1.42 (svn rev 261),    9th March 2004
 
   Fixed $sth->{NUM_OF_FIELDS} of non-executed statement handle
     to be undef as per the docs (it was 0).
@@ -29,7 +29,9 @@ Document $t->parse_trace_flags etc
     setting the trace level to a non-numeric value:
     $h->{TraceLevel}="foo|SQL|7"; $h->trace("foo|SQL|7");
     DBI->connect("dbi:Driver(TraceLevel=SQL|foo):...", ...);
+    Currently no trace flags have been defined.
   Added to, and reworked, the trace documentation.
+  Added dbivport.h for driver authors to use.
 
   Major driver additions that Jeff Zucker and I have been working on:
 
