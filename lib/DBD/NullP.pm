@@ -2,6 +2,7 @@
     package DBD::NullP;
 
     require DBI;
+    require Carp;
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
     $VERSION = sprintf("%d.%02d", q$Revision: 11.4 $ =~ /(\d+)\.(\d+)/o);
@@ -72,7 +73,7 @@
 	# else pass up to DBI to handle
 	if ($attrib eq 'AutoCommit') {
 	    return 1 if $value; # is already set
-	    croak("Can't disable AutoCommit");
+	    Carp::croak("Can't disable AutoCommit");
 	}
 	return $dbh->SUPER::STORE($attrib, $value);
     }
