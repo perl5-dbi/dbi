@@ -38,69 +38,7 @@ More details can be found in: L<http://svn.perl.org/modules/dbi/trunk/ToDo>
 
 =head1 CHANGES AND ENHANCEMENTS
 
-=head2 Batch Statements
-
-Batch statements are a sequence of SQL statements, or a stored procedure
-containing a sequence of SQL statements, which can be executed as a whole.
-
-Currently the DBI has no standard interface for dealing with multiple
-results from batch statements.  After considerable discussion, an
-interface design has been agreed upon with driver authors, but has
-not yet been implemented.
-
-These changes would enable greater application portability between
-databases, and greater performance for databases that directly
-support batch statements.
-
-=head2 Unicode
-
-Use of Unicode with the DBI is growing rapidly. The DBI should do more
-to help drivers support Unicode and help applications work with drivers
-that don't yet support Unicode directly.
-
-* Define expected behavior for fetching data and binding parameters.
-
-* Provide interfaces to support Unicode issues for XS and pure Perl drivers
-and applications.
-
-* Provide functions for applications to help diagnose inconsistencies
-between byte string contents and setting of the SvUTF8 flag.
-
-These changes would smooth the transition to Unicode for many
-applications and drivers.
-
-
-=head2 Testing
-
-The DBI has a test suite. Every driver has a test suite.  Each is limited in
-its scope.  The driver test suite is testing for behavior that the driver
-author I<thinks> the DBI specifies, but may be subtly incorrect.  These test
-suites are poorly maintained because the return on investment for a single
-driver is too low to provide sufficient incentive.
-
-A common test suite that can be reused by all the drivers is needed.
-It would:
-
-* Ensure all drivers conform to the DBI specification.
-Easing the porting of applications between databases, and the implementation of
-database independent modules layered over the DBI.
-
-* Improve the DBI specification by clarifying unclear issues in order to
-implement test cases.
-
-* Improve the proportion of well tested code in the DBI and drivers.
-
-* Encourage expansion of the test suite as driver authors and others will be
-motivated by the greater benefits of their contributions.
-
-* Detect and record optional functionality that a driver has not yet implemented.
-
-* Improve the testing of DBI subclassing, DBI::PurePerl and the
-various "transparent" drivers, such as DBD::Proxy and DBD::Multiplex,
-by automatically running the test suite through them.
-
-These changes would improve the quality of all applications using the DBI.
-
+These are grouped into categories and are not listed in any particular order.
 
 =head2 Performance
 
@@ -137,6 +75,98 @@ These changes would significantly enhance the performance of the
 DBI and many applications which use the DBI.
 
 
+=head2 Testing
+
+The DBI has a test suite. Every driver has a test suite.  Each is limited in
+its scope.  The driver test suite is testing for behavior that the driver
+author I<thinks> the DBI specifies, but may be subtly incorrect.  These test
+suites are poorly maintained because the return on investment for a single
+driver is too low to provide sufficient incentive.
+
+A common test suite that can be reused by all the drivers is needed.
+It would:
+
+* Ensure all drivers conform to the DBI specification.
+Easing the porting of applications between databases, and the implementation of
+database independent modules layered over the DBI.
+
+* Improve the DBI specification by clarifying unclear issues in order to
+implement test cases.
+
+* Improve the proportion of well tested code in the DBI and drivers.
+
+* Encourage expansion of the test suite as driver authors and others will be
+motivated by the greater benefits of their contributions.
+
+* Detect and record optional functionality that a driver has not yet implemented.
+
+* Improve the testing of DBI subclassing, DBI::PurePerl and the
+various "transparent" drivers, such as DBD::Proxy and DBD::Multiplex,
+by automatically running the test suite through them.
+
+These changes would improve the quality of all applications using the DBI.
+
+
+=head2 High Availability and Load Balancing
+
+* The DBD::Multiplex driver provides a framework to enable a wide range of
+dynamic functionality, including support for high-availability, load-balancing,
+caching, and access to distributed data.  It is currently being rewritten to
+greatly increase its flexibility and has potential to be a very powerful tool,
+but development has stalled.
+
+* The DBD::Proxy module is complex and relatively inefficient because
+it's trying to be a complete proxy for most DBI method calls.  For many
+applications a simpler proxy architecture that operates with a single
+round-trip to the server would be sufficient and preferable.
+
+New proxy client and server classes are needed, which could be
+subclassed to support specific client to server transport mechanisms
+(such as HTTP and Spread::Queue).  Apart from the efficiency gains,
+this would also enable the use of a load-balanced pool of stateless
+servers.
+
+* The DBI currently offers no support for distributed transactions.
+The most useful elements of the standard XA distributed transaction interface
+standard could be included in the DBI specification.  Drivers for databases
+which support distributed transactions could then be extended to support it.
+
+These changes would enable new kinds of DBI applications for critical environments.
+
+
+=head2 Unicode
+
+Use of Unicode with the DBI is growing rapidly. The DBI should do more
+to help drivers support Unicode and help applications work with drivers
+that don't yet support Unicode directly.
+
+* Define expected behavior for fetching data and binding parameters.
+
+* Provide interfaces to support Unicode issues for XS and pure Perl drivers
+and applications.
+
+* Provide functions for applications to help diagnose inconsistencies
+between byte string contents and setting of the SvUTF8 flag.
+
+These changes would smooth the transition to Unicode for many
+applications and drivers.
+
+
+=head2 Batch Statements
+
+Batch statements are a sequence of SQL statements, or a stored procedure
+containing a sequence of SQL statements, which can be executed as a whole.
+
+Currently the DBI has no standard interface for dealing with multiple
+results from batch statements.  After considerable discussion, an
+interface design has been agreed upon with driver authors, but has
+not yet been implemented.
+
+These changes would enable greater application portability between
+databases, and greater performance for databases that directly
+support batch statements.
+
+
 =head2 Introspection
 
 * The methods of the DBI API are installed dynamically when the DBI
@@ -164,33 +194,6 @@ These changes would simplify and improve the stability of many
 advanced uses of the DBI.
 
 
-=head2 High Availability and Load Balancing
-
-* The DBD::Multiplex driver provides a framework to enable a wide range of
-dynamic functionality, including support for high-availability, load-balancing,
-caching, and access to distributed data.  It is currently being rewritten to
-greatly increase its flexibility and has potential to be a very powerful tool,
-but development has stalled.
-
-* The DBD::Proxy module is complex and relatively inefficient because
-it's trying to be a complete proxy for most DBI method calls.  For many
-applications a simpler proxy architecture that operates with a single
-round-trip to the server would be sufficient and preferable.
-
-New proxy client and server classes are needed, which could be
-subclassed to support specific client to server transport mechanisms
-(such as HTTP and Spread::Queue).  Apart from the efficiency gains,
-this would also enable the use of a load-balanced pool of stateless
-servers.
-
-* The DBI currently offers no support for distributed transactions.
-The most useful elements of the standard XA distributed transaction interface
-standard could be included in the DBI specification.  Drivers for databases
-which support distributed transactions could then be extended to support it.
-
-These changes would enable new kinds of DBI applications.
-
-
 =head2 Extensibility
 
 The DBI can be extended in three main dimensions: subclassing the
@@ -215,6 +218,25 @@ the behavior of a handle independent of any subclassing in use.
 
 These changes would enable deeper and cleaner integration between
 applications, layered modules, and the DBI.
+
+
+=head2 Debugability
+
+* Enabling DBI trace output at a high level of detail causes a large volume of
+output, much of it unrelated to the problem being investigated. More trace
+output should be controlled by the new named-topic mechanism instead of the
+trace level.
+
+* Calls to XS functions (such as many DBI and driver methods) don't
+normally appear in the call stack.  Optionally enabling that would
+enable more useful diagnostics to be produced.
+
+* Integration with the Perl debugger would make it simpler to perform
+actions on a per-handle basis (such as breakpoint on execute,
+breakpoint on error).
+ 
+These changes would enable more rapid application development and
+fault finding.
 
 
 =head2 Database Portability
@@ -245,32 +267,16 @@ These changes would enable greater database portability for applications
 and greater functionality for layered modules.
 
 
-=head2 Debugability
+=head2 Intellectual Property
 
-* Enabling DBI trace output at a high level of detail causes a large volume of
-output, much of it unrelated to the problem being investigated. More trace
-output should be controlled by the new named-topic mechanism instead of the
-trace level.
+* Clarify current intellectual property status, including a review
+  of past contributions to ensure the DBI is unemcumbered.
 
-* Calls to XS functions (such as many DBI and driver methods) don't
-normally appear in the call stack.  Optionally enabling that would
-enable more useful diagnostics to be produced.
-
-* Integration with the Perl debugger would make it simpler to perform
-actions on a per-handle basis (such as breakpoint on execute,
-breakpoint on error).
- 
-These changes would enable more rapid application development and
-fault finding.
+* Establish a procedure for vetting future contributions for any
+  intellectual property issues.
 
 
 =head2 Other Enhancements
-
-* Clarify current intellectual property status, including a review
-  of past contributions.
-
-* Establishing a procedure for vetting future contributions for any
-  intellectual property issues.
 
 * Reduce the work needed to create new database interface drivers.
 
@@ -279,7 +285,7 @@ fault finding.
 
 =head2 Parrot and Perl 6
 
-The current DBI implementation in C code is very unlikely to run on Perl 6.
+The current DBI implementation in C code is unlikely to run on Perl 6.
 Perl 6 will target the Parrot virtual machine and so the internal architecture
 will be radically different from Perl 5.
 
@@ -350,12 +356,14 @@ will also be made in v2.0. See http://svn.perl.org/modules/dbi/trunk/ToDo
 
 Once DBI v2.0 is available, the other enhancements can be implemented
 incrementally on the updated foundations. Priorities for those
-changes have not yet been set.
+changes have not yet been set. If your company would benefit from
+a specific feature it could pay to sponsor early development of it.
+
 
 =head1 RESOURCES AND CONTRIBUTIONS
 
 This roadmap does not address the resources required to implement
-in a timely manner the changes for DBI v2.0 and beyond.
+the changes for DBI v2.0 and beyond.
 
 See L<http://dbi.perl.org/contributing> for I<how you can help>.
 

@@ -981,6 +981,7 @@ sub data_sources {
     return @ds;
 }
 
+
 sub neat_list {
     my ($listref, $maxlen, $sep) = @_;
     $maxlen = 0 unless defined $maxlen;	# 0 == use internal default
@@ -1006,6 +1007,75 @@ sub dump_results {	# also aliased as a method in DBD::_::st
     $rows;
 }
 
+
+sub data_diff {
+    my ($a, $b) = @_;
+    require utf8;
+
+    # hacks to cater for perl 5.6 for data_string_diff() & data_string_desc()
+    *utf8::is_utf8 = sub {
+        return (DBI::neat(shift) =~ /^"/); # XXX ugly hack, sufficient here
+    } unless defined &utf8::is_utf8;
+    *utf8::valid = sub { 1 } unless defined &utf8::valid;
+
+    my $a_desc = data_string_desc($a);
+    my $b_desc = data_string_desc($b);
+    my $diff   = data_string_diff($a, $b);
+
+    return "" if !$diff && $a_desc eq $b_desc;
+
+    return "\$a: $a_desc\n\$b: $b_desc\n$diff";
+}
+    
+
+sub data_string_diff 
+    # Compares 'logical' characters, not bytes, so a latin1 string and an
+    # an equivalent unicode string will compare as equal even though their
+    # byte encodings are different.
+    my ($a, $b) = @_;
+    my @a_chars = (utf8::is_utf8($a)) ? unpack("U*", $a) : unpack("C*", $a);
+    my @b_chars = (utf8::is_utf8($b)) ? unpack("U*", $b) : unpack("C*", $b);
+    my $i = 0;
+    while (@a_chars && @b_chars) {
+	++$i, shift(@a_chars), shift(@b_chars), next
+	    if $a_chars[0] == $b_chars[0];# compare ordinal values
+	my @desc = map {
+	    $_ > 255 ?                    # if wide character...
+	      sprintf("\\x{%04X}", $_) :  # \x{...}
+	      chr($_) =~ /[[:cntrl:]]/ ?  # else if control character ...
+	      sprintf("\\x%02X", $_) :    # \x..
+	      chr($_)                     # else as themselves
+	} ($a_chars[0], $b_chars[0]);
+	# highlight probable double-encoding?
+        foreach my $c ( @desc ) {
+	    next unless $c =~ m/\\x\{08(..)}/;
+	    $c .= "='" .chr(hex($1)) ."'"
+	}
+	return sprintf "Strings differ at index $i: a[$i]=$desc[0], b[$i]=$desc[1]\n";
+    }
+    return "String a truncated after $i characters\n" if @b_chars;
+    return "String b truncated after $i characters\n" if @a_chars;
+    return "";
+}
+
+sub data_string_desc {	# describe a data string
+    my ($a) = @_;
+    require utf8;
+    require bytes;
+    # Give sufficient info to help diagnose at least these kinds of situations:
+    # - valid UTF8 byte sequence but UTF8 flag not set
+    #   (might be ascii so also need to check for hibit to make it worthwhile)
+    # - UTF8 flag set but invalid UTF8 byte sequence
+    # could do better here, but this'll do for now
+    my $is_ascii = $a =~ m/^[\000-\177]*$/;
+    return sprintf "UTF8 %s%s, %s, %d characters %d bytes%s",
+	utf8::is_utf8($a) ? "on" : "off",
+	utf8::valid($a) ? "" : " but INVALID encoding",
+	$is_ascii ? "ASCII" : "Non-ASCII",
+	length($a), bytes::length($a);
+}
+
+#BEGIN { die data_diff("foox", "foo\x{083a}bar")}
 
 
 sub connect_test_perf {
