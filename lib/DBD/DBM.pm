@@ -250,6 +250,8 @@ use base qw( DBD::File::Statement );
 use IO::File;  # for locking only
 use Fcntl;
 
+my $HAS_FLOCK = eval { flock STDOUT, 0; 1 };
+
 # you must define open_table;
 # it is done at the start of all executes;
 # it doesn't necessarily have to "open" anything;
@@ -276,10 +278,10 @@ sub open_table ($$$$$) {
     #
     # your DBD may not need this, gloabls and defaults may be enough
     #
-    my $dbm_type = $dbh->{dbm_tables}->{$file}->{dbm_type}
+    my $dbm_type = $dbh->{dbm_tables}->{$file}->{type}
                 || $dbh->{dbm_type}
                 || 'SDBM_File';
-    $dbh->{dbm_tables}->{$file}->{dbm_type} = $dbm_type;
+    $dbh->{dbm_tables}->{$file}->{type} = $dbm_type;
 
     my $serializer = $dbh->{dbm_tables}->{$file}->{mldbm}
                   || $dbh->{dbm_mldbm}
@@ -289,14 +291,14 @@ sub open_table ($$$$$) {
     $serializer = 'Data::Dumper' if $serializer =~ /^D$/i;
     $dbh->{dbm_tables}->{$file}->{mldbm} = $serializer if $serializer;
 
-    my $ext = $dbh->{dbm_tables}->{$file}->{ext};
-        $ext = $dbh->{dbm_ext} unless defined $ext;
-        $ext = '' unless defined $ext;
-    $ext = ''     if $dbm_type eq 'GDBM_File' 
+    my $ext =  '' if $dbm_type eq 'GDBM_File'
                   or $dbm_type eq 'DB_File';
     $ext = '.pag' if $dbm_type eq 'NDBM_File'
                   or $dbm_type eq 'SDBM_File'
                   or $dbm_type eq 'ODBM_File';
+    $ext = $dbh->{dbm_ext} if defined $dbh->{dbm_ext};
+    $ext = $dbh->{dbm_tables}->{$file}->{ext}
+        if defined $dbh->{dbm_tables}->{$file}->{ext};
 
     die "Cannot CREATE '$file$ext', already exists!"
         if $createMode and (-e "$file$ext");
@@ -322,16 +324,36 @@ sub open_table ($$$$$) {
        $tie_type = $dbm_type;
     }
 
+    # LOCKING
+    #
+    my($nolock,$lockext,$lock_table);
+    $lockext = $dbh->{dbm_tables}->{$file}->{lockfile};
+    $lockext = $dbh->{dbm_lockfile} if !defined $lockext;
+    if ( (defined $lockext and $lockext == 0) or !$HAS_FLOCK
+    ) {
+        undef $lockext;
+        $nolock = 1;
+    }
+    else {
+        $lockext ||= '.lck';
+    }
     # open and flock the lockfile, creating it if necessary
     #
-    my $lock_table = $self->DBD::File::Statement::open_table(
-        $data, "$table.lck", $createMode, $lockMode
-    ) or die "Couldn't open lockfile!\n";
+    if (!$nolock) {
+        $lock_table = $self->DBD::File::Statement::open_table(
+            $data, "$table$lockext", $createMode, $lockMode
+        ) or die "Couldn't open lockfile '$table$lockext'!\n";
+    }
 
+    # TIEING
+    #
     eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
        unless $self->{command} eq 'DROP';
     die "Cannot tie file '$file': $@" if $@;
 
+
+    # COLUMN NAMES
+    #
     my $store = $dbh->{dbm_tables}->{$file}->{store_metadata};
        $store = $dbh->{dbm_store_metadata} unless defined $store;
        $store = 1 unless defined $store;
@@ -357,6 +379,8 @@ sub open_table ($$$$$) {
         store_metadata => $store,
         mldbm          => $serializer,
         lock_fh        => $lock_table->{fh},
+        lock_ext       => $lockext,
+        nolock         => $nolock,
 	col_nums       => \%col_nums,
 	col_names      => $col_names
     };
@@ -445,8 +469,11 @@ sub drop ($$) {
     unlink $self->{file}.$ext if -f $self->{file}.$ext;
     unlink $self->{file}.'.dir' if -f $self->{file}.'.dir'
                                and $ext eq '.pag';
-    $self->{lock_fh}->close if $self->{lock_fh};
-    unlink $self->{file}.'.lck' if -f $self->{file}.'.lck';
+    if (!$self->{nolock}) {
+        $self->{lock_fh}->close if $self->{lock_fh};
+        unlink $self->{file}.$self->{lock_ext}
+            if -f $self->{file}.$self->{lock_ext};
+    }
     return 1;
 }
 
@@ -550,7 +577,7 @@ sub DESTROY ($) {
     my $self=shift;
     untie %{$self->{hash}} if $self->{hash};
     # release the flock on the lock file
-    $self->{lock_fh}->close if $self->{lock_fh};
+    $self->{lock_fh}->close if !$self->{nolock} and $self->{lock_fh};
 }
 
 # truncate() and seek() must be defined to satisfy DBI::SQL::Nano
@@ -694,11 +721,23 @@ See the L<GOTCHAS AND WARNINGS> for using DROP on tables.
 
 =head2 Table locking and flock()
 
-Table locking is accomplished using a lockfile which has the same name as the table's file but with the file extension '.lck'.  This file is created along with the table during a CREATE and removed during a DROP.  Every time the table itself is opened, the lockfile is flocked().  For SELECT, this is an shared lock.  For all other operations, it is an exclusive lock.
+Table locking is accomplished using a lockfile which has the same name as the table's file but with the file extension '.lck' (or a lockfile extension that you suppy, see belwo).  This file is created along with the table during a CREATE and removed during a DROP.  Every time the table itself is opened, the lockfile is flocked().  For SELECT, this is an shared lock.  For all other operations, it is an exclusive lock.
 
 Since the locking depends on flock(), it only works on operating systems that support flock().  In cases where flock() is not implemented, DBD::DBM will not complain, it will simply behave as if the flock() had occurred although no actual locking will happen.  Read the documentation for flock() if you need to understand this.
 
-Even on those systems that do support flock(), the locking is only advisory - as is allways the case with flock().  This means that if some other program tries to access the table while DBD::DBM has the table locked, that other program will *succeed* at opening the table.  DBD::DBM's locking only applies to DBD::DBM.
+Even on those systems that do support flock(), the locking is only advisory - as is allways the case with flock().  This means that if some other program tries to access the table while DBD::DBM has the table locked, that other program will *succeed* at opening the table.  DBD::DBM's locking only applies to DBD::DBM.  An exception to this would be the situation in which you use a lockfile with the other program that has the same name as the lockfile used in DBD::DBM and that program also uses flock() on that lockfile.  In that case, DBD::DBM and your other program will respect each other's locks.
+
+If you wish to use a lockfile extension other than '.lck', simply specify the dbm_lockfile attribute:
+
+  $dbh = DBI->connect('dbi:DBM:lockfile=.foo');
+  $dbh->{dbm_lockfile} = '.foo';
+  $dbh->{dbm_tables}->{qux}->{lockfile} = '.foo';
+
+If you wish to disable locking, set the dbm_lockfile equal to 0.
+
+  $dbh = DBI->connect('dbi:DBM:lockfile=0');
+  $dbh->{dbm_lockfile} = 0;
+  $dbh->{dbm_tables}->{qux}->{lockfile} = 0;
 
 =head2 Specifying the DBM type
 

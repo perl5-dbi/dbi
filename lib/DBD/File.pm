@@ -503,9 +503,13 @@ sub finish ($) { 1; }
 
 package DBD::File::Statement;
 
-my $locking = $^O ne 'MacOS'  &&
-              ($^O ne 'MSWin32' || !Win32::IsWin95())  &&
-              $^O ne 'VMS';
+my $locking = eval { flock STDOUT, 0; 1 };
+
+# Jochen's old check for flock()
+#
+# my $locking = $^O ne 'MacOS'  &&
+#               ($^O ne 'MSWin32' || !Win32::IsWin95())  &&
+#               $^O ne 'VMS';
 
 @DBD::File::Statement::ISA = qw(DBI::SQL::Nano::Statement);
 
