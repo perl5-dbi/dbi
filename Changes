@@ -12,6 +12,7 @@ Document $t->parse_trace_flags etc
   Fixed "trace level set to" trace message thanks to H.Merijn Brand.
   Fixed DBD::DBM $dbh->{dbm_tables}->{...} to be keyed by the
     table name not the file name thanks to Jeff Zucker.
+  Fixed last_insert_id(...) thanks to Rudy Lippan.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.
