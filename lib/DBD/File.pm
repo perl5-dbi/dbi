@@ -45,6 +45,7 @@ sub driver ($;$) {
     my($class, $attr) = @_;
     my $drh = eval '$' . $class . "::drh";
     if (!$drh) {
+        DBI->setup_driver('DBD::File');
 	if (!$attr) { $attr = {} };
 	if (!exists($attr->{Attribution})) {
 	    $attr->{Attribution} = eval '$' . $class . '::ATTRIBUTION';
@@ -137,7 +138,7 @@ sub data_sources ($;$) {
 	$attr->{'f_dir'} : $haveFileSpec ? File::Spec->curdir() : '.';
     my($dirh) = Symbol::gensym();
     if (!opendir($dirh, $dir)) {
-        DBI::set_err($drh, 1, "Cannot open directory $dir");
+        $drh->set_err(1, "Cannot open directory $dir: $!");
 	return undef;
     }
     my($file, @dsns, %names, $driver);
@@ -173,11 +174,10 @@ $DBD::File::db::imp_data_size = 0;
 sub prepare ($$;@) {
     my($dbh, $statement, @attribs)= @_;
 
-    # create a 'blank' dbh
+    # create a 'blank' sth
     my $sth = DBI::_new_sth($dbh, {'Statement' => $statement});
 
     if ($sth) {
-	$@ = '';
 	my $class = $sth->FETCH('ImplementorClass');
 	$class =~ s/::st$/::Statement/;
 	my($stmt);
@@ -190,9 +190,8 @@ sub prepare ($$;@) {
              and $dbh->{sql_statement_version} > 1)
            {
             my $parser = $dbh->{csv_sql_parser_object};
-            eval { $parser ||= $dbh->func('csv_cache_sql_parser_object') };
+            $parser ||= eval { $dbh->func('csv_cache_sql_parser_object') };
             if ($@) {
-                undef $@;
   	        $stmt = eval { $class->new($statement) };
 	    }
             else {
@@ -203,7 +202,7 @@ sub prepare ($$;@) {
 	    $stmt = eval { $class->new($statement) };
 	}
 	if ($@) {
-	    DBI::set_err($dbh, 1, $@);
+	    $dbh->set_err(1, $@);
 	    undef $sth;
 	} else {
 	    $sth->STORE('f_stmt', $stmt);
@@ -231,7 +230,7 @@ sub FETCH ($$) {
         return $dbh->{$attrib};
     }
     # else pass up to DBI to handle
-    return $dbh->DBD::_::db::FETCH($attrib);
+    return $dbh->SUPER::FETCH($attrib);
 }
 
 sub STORE ($$$) {
@@ -268,7 +267,7 @@ sub STORE ($$$) {
 	$dbh->{$attrib} = $value;
 	return 1;
     }
-    return $dbh->DBD::_::db::STORE($attrib, $value);
+    return $dbh->SUPER::STORE($attrib, $value);
 }
 
 sub DESTROY ($) {
@@ -327,7 +326,7 @@ sub type_info_all ($) {
 	my($dir) = $dbh->{f_dir};
 	my($dirh) = Symbol::gensym();
 	if (!opendir($dirh, $dir)) {
-	    DBI::set_err($dbh, 1, "Cannot open directory $dir");
+	    $dbh->set_err(1, "Cannot open directory $dir: $!");
 	    return undef;
 	}
 	my($file, @tables, %names);
@@ -338,7 +337,7 @@ sub type_info_all ($) {
 	    }
 	}
 	if (!closedir($dirh)) {
-	    DBI::set_err($dbh, 1, "Cannot close directory $dir");
+	    $dbh->set_err(1, "Cannot close directory $dir: $!");
 	    return undef;
 	}
 
@@ -346,7 +345,7 @@ sub type_info_all ($) {
 	if (!$dbh2) {
 	    $dbh2 = $dbh->{'csv_sponge_driver'} = DBI->connect("DBI:Sponge:");
 	    if (!$dbh2) {
-	        DBI::set_err($dbh, 1, $DBI::errstr);
+	        $dbh->set_err(1, $DBI::errstr);
 		return undef;
 	    }
 	}
@@ -357,7 +356,7 @@ sub type_info_all ($) {
 	my $sth = $dbh2->prepare("TABLE_INFO", { 'rows' => \@tables,
 						 'NAMES' => $names });
 	if (!$sth) {
-	    DBI::set_err($dbh, 1, $dbh2->errstr());
+	    $dbh->set_err(1, $dbh2->errstr);
 	}
 	$sth;
     }
@@ -443,8 +442,7 @@ sub fetch ($) {
     my $sth = shift;
     my $data = $sth->{f_stmt}->{data};
     if (!$data  ||  ref($data) ne 'ARRAY') {
-	DBI::set_err($sth, 1,
-		     "Attempt to fetch row from a Non-SELECT statement");
+	$sth->set_err(1, "Attempt to fetch row from a Non-SELECT statement");
 	return undef;
     }
     my $dav = shift @$data;
@@ -479,7 +477,7 @@ sub FETCH ($$) {
 	return $sth->{$attrib};
     }
     # else pass up to DBI to handle
-    return $sth->DBD::_::st::FETCH($attrib);
+    return $sth->SUPER::FETCH($attrib);
 }
 
 sub STORE ($$$) {
@@ -489,7 +487,7 @@ sub STORE ($$$) {
  	$sth->{$attrib} = $value;
 	return 1;
     }
-    return $sth->DBD::_::st::STORE($attrib, $value);
+    return $sth->SUPER::STORE($attrib, $value);
 }
 
 sub DESTROY ($) {

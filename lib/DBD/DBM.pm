@@ -111,6 +111,7 @@ sub connect ($$;$$$) {
                 #
                 $var = 'dbm_' . $var unless $var =~ /^dbm_/
                                      or     $var eq 'f_dir';
+		# XXX should pass back to DBI via $attr for connect() to STORE
 		$this->{$var} = $val;
 	    }
 	}
@@ -174,7 +175,7 @@ sub STORE ($$$) {
 sub FETCH ($$) {
     my ($dbh, $attrib) = @_;
 
-    return $dbh->SUPER::STORE($attrib) unless $attrib =~ /^dbm_/;
+    return $dbh->SUPER::FETCH($attrib) unless $attrib =~ /^dbm_/;
 
     # throw an error if it has our prefix but isn't a valid attr name
     #
@@ -295,6 +296,8 @@ sub open_table ($$$$$) {
     my $ext =  '' if $dbm_type eq 'GDBM_File'
                   or $dbm_type eq 'DB_File'
                   or $dbm_type eq 'BerkeleyDB';
+    # XXX NDBM_File on FreeBSD (and elsewhere?) may actually be Berkeley
+    # behind the scenes and so create a single .db file.
     $ext = '.pag' if $dbm_type eq 'NDBM_File'
                   or $dbm_type eq 'SDBM_File'
                   or $dbm_type eq 'ODBM_File';
@@ -303,18 +306,11 @@ sub open_table ($$$$$) {
         if defined $dbh->{dbm_tables}->{$file}->{ext};
     $ext = '' unless defined $ext;
 
-    die "Cannot CREATE '$file$ext', already exists!"
-        if $createMode and (-e "$file$ext");
-    die "Cannot open '$file$ext', file not found!"
-        if !$createMode
-       and !($self->{command} eq 'DROP')
-       and !(-e "$file$ext");
-
     my $open_mode = O_RDONLY;
        $open_mode = O_RDWR                 if $lockMode;
        $open_mode = O_RDWR|O_CREAT|O_TRUNC if $createMode;
 
-    my(%h,$tie_type);
+    my($tie_type);
 
     if ( $serializer ) {
        require 'MLDBM.pm';
@@ -327,6 +323,19 @@ sub open_table ($$$$$) {
        require "$dbm_type.pm";
        $tie_type = $dbm_type;
     }
+
+    # Second-guessing the file extension isn't great here (or in general)
+    # could replace this by trying to open the file in non-create mode
+    # first and dieing if that succeeds.
+    # Currently this test doesn't work where NDBM is actually Berkeley (.db)
+    die "Cannot CREATE '$file$ext', already exists!"
+        if $createMode and (-e "$file$ext");
+
+    # let tie() fail instead of this explicit test
+    #die "Cannot open '$file$ext', file not found!"
+    #   if !$createMode
+    #  and !($self->{command} eq 'DROP')
+    #  and !(-e "$file$ext");
 
     # LOCKING
     #
@@ -353,6 +362,7 @@ sub open_table ($$$$$) {
     #
     # allow users to pass in a pre-created tied object
     #
+    my @tie_args;
     if ($dbm_type eq 'BerkeleyDB') {
        my $DB_CREATE = 1;  # but import constants if supplied
        my $DB_RDONLY = 16; #
@@ -368,16 +378,17 @@ sub open_table ($$$$$) {
        $flags{'-Flags'} = $DB_CREATE if $lockMode or $createMode;
         my $t = 'BerkeleyDB::Hash';
            $t = 'MLDBM' if $serializer;
-        if ( $self->{command} ne 'DROP') {
-            eval { tie %h, $t, -Filename=>$file, %flags }
-        }
-        # warn $BerkeleyDB::db_version;
+	@tie_args = ($t, -Filename=>$file, %flags);
     }
-    elsif (!%h) {
-        eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
-            unless $self->{command} eq 'DROP';
+    else {
+        @tie_args = ($tie_type, $file, $open_mode, 0666);
     }
-    die "Cannot tie file '$file': $@" if $@;
+    my %h;
+    if ( $self->{command} ne 'DROP') {
+	my $tie_class = shift @tie_args;
+	eval { tie %h, $tie_class, @tie_args };
+	die "Cannot tie(%h $tie_class @tie_args): $@" if $@;
+    }
 
 
     # COLUMN NAMES

@@ -48,6 +48,7 @@ my %sql = (
 );
 for my $mldbm ( @mldbm_types ) {
     for my $dbm_type ( @dbm_types ) {
+	print "\n--- Using $dbm_type ($mldbm) ---\n";
         do_test( $dbm_type, $sql{$mldbm}, $mldbm );
     }
 }
@@ -63,10 +64,10 @@ sub do_test {
     my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$ml";
     my $dbh = DBI->connect( $dsn );
     if ($DBI::VERSION >= 1.37 ) { # needed for install_method
-        diag( $dbh->dbm_versions );
+        print $dbh->dbm_versions;
     }
     else {
-        diag( $dbh->func('dbm_versions') );
+        print $dbh->func('dbm_versions');
     }
     ok($dbh);
 
@@ -97,9 +98,10 @@ sub do_test {
             2 => '12',
             3 => '13',
         } if $ml;
+	print " $sql\n";
         my $sth = $dbh->prepare($sql) or die $dbh->errstr;
         $sth->execute;
-        die $sth->errstr if $sth->errstr and $sql !~ /DROP/;
+        die $sth->errstr if $sth->err and $sql !~ /DROP/;
         next unless $sql =~ /SELECT/;
         my $results='';
         # Note that we can't rely on the order here, it's not portable,
