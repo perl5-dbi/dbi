@@ -8,4 +8,4 @@ requires:
     Test::More:                    0.4
 
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.16
+generated_by: ExtUtils::MakeMaker version 6.17
