@@ -32,8 +32,8 @@ DBI - Database independent interface for Perl
   $ary_ref  = $dbh->selectall_arrayref($statement);
   $hash_ref = $dbh->selectall_hashref($statement, $key_field);
 
-  $ary_ref = $dbh->selectcol_arrayref($statement);
-  $ary_ref = $dbh->selectcol_arrayref($statement, \%attr);
+  $ary_ref  = $dbh->selectcol_arrayref($statement);
+  $ary_ref  = $dbh->selectcol_arrayref($statement, \%attr);
 
   @row_ary  = $dbh->selectrow_array($statement);
   $ary_ref  = $dbh->selectrow_arrayref($statement);
@@ -48,10 +48,7 @@ DBI - Database independent interface for Perl
 
   $rv = $sth->execute;
   $rv = $sth->execute(@bind_values);
-
-  $rc = $sth->bind_param_array($p_num, $bind_values, \%attr);
-  $rv = $sth->execute_array(\%attr);
-  $rv = $sth->execute_array(\%attr, @bind_values);
+  $rv = $sth->execute_array(\%attr, ...);
 
   $rc = $sth->bind_col($col_num, \$col_variable);
   $rc = $sth->bind_columns(@list_of_refs_to_vars_to_bind);
@@ -91,7 +88,7 @@ on subscribing and using the list by emailing I<dbi-users-help@perl.org>.
 (To help you make the best use of the dbi-users mailing list,
 and any other lists or forums you may use, I I<strongly>
 recommend that you read "How To Ask Questions The Smart Way"
-by Eric Raymond: L<http://www.catb.org/~esr/faqs/smart-questions.html>.)
+by Eric Raymond: L<http://www.catb.org/~esr/faqs/smart-questions.html>)
 
 The DBI home page at L<http://dbi.perl.org/> is always worth a visit
 and includes an FAQ and links to other resources.
@@ -101,7 +98,7 @@ archives and read the DBI FAQ. The archives are listed
 at the end of this document and on the DBI home page.
 An FAQ is installed as a L<DBI::FAQ> module so
 you can read it by executing C<perldoc DBI::FAQ>.
-However the DBI::FAQ module is currently (2003) outdated relative
+However the DBI::FAQ module is currently (2004) outdated relative
 to the online FAQ on the DBI home page.
 
 This document often uses terms like I<references>, I<objects>,
@@ -2215,7 +2212,7 @@ abbreviation (e.g., "C<ora_>" for Oracle, "C<ing_>" for Ingres, etc).
 
 Most DBI drivers require applications to use a dialect of SQL
 (Structured Query Language) to interact with the database engine.
-The L</"SQL Standards Reference Information"> section provides links
+The L</"Standards Reference Information"> section provides links
 to useful information about SQL.
 
 The DBI itself does not mandate or require any particular language to
@@ -2322,7 +2319,7 @@ quotes that may be used in the SQL statement. Use the double-quote like
 C<qq{...}> operator if you want to interpolate variables into the string.
 See L<perlop/"Quote and Quote-like Operators"> for more details.
 
-See also the L</bind_column> method, which is used to associate Perl
+See also the L</bind_columns> method, which is used to associate Perl
 variables with the output columns of a C<SELECT> statement.
 
 =head1 THE DBI PACKAGE AND CLASS
@@ -2376,6 +2373,7 @@ which may be undefined.  If $attr_string is true then $attr_hash
 is a reference to a hash containing the parsed attribute names and
 values. $driver_dsn is the last part of the DBI DSN string.
 
+The parse_dsn() method was added in DBI 1.43.
 
 =item C<connect>
 
@@ -2657,6 +2655,8 @@ will report C<UTF8 on but INVALID encoding>.
 The C<ASCII> vs C<non-ASCII> portion shows C<ASCII> if I<all> the
 characters in the string are ASCII (have code points <= 127).
 
+The data_string_desc() function was added in DBI 1.46.
+
 =item C<data_string_diff>
 
   $diff = data_string_diff($a, $b);
@@ -2679,8 +2679,10 @@ likely to occur due to double-encoding. Characters in this range
 are reported as C<\x{08XX}='C'> where C<C> is the corresponding
 latin-1 character.
 
-The data_string_diff() function only considers I<characters> and
-not the underlying encoding. See the L</data_diff> function for
+The data_string_diff() function only considers logical I<characters>
+and not the underlying encoding. See L</data_diff> for an alternative.
+
+The data_string_diff() function was added in DBI 1.46.
 
 =item C<data_diff>
 
@@ -2697,10 +2699,12 @@ For example, C<data_diff("abc", "ab\x{263a}")> will return:
   b: UTF8 on, non-ASCII, 3 characters 5 bytes
   Strings differ at index 2: a[2]=c, b[2]=\x{263A}
 
-If $a and $b are identical in both the characters they contain and
+If $a and $b are identical in both the characters they contain I<and>
 their physical encoding then data_diff() returns an empty string.
-If $logical is true then physical encoding differences are ignored.
+If $logical is true then physical encoding differences are ignored
+(but are still reported if there is a difference in the characters).
 
+The data_diff() function was added in DBI 1.46.
 
 =item C<neat>
 
@@ -2998,6 +3002,8 @@ between 0 and 15 and/or trace flag names separated by vertical bar
 It uses the parse_trace_flag() method, described below, to process
 the individual trage flag names.
 
+The parse_trace_flags() method was added in DBI 1.42.
+
 =item C<parse_trace_flag>
 
   $bit_flag = $h->parse_trace_flag($trace_flag_name);
@@ -3006,6 +3012,8 @@ Returns the bit flag corresponding to the trace flag name in
 $trace_flag_name.  Drivers are expected to override this method and
 check if $trace_flag_name is a driver specific trace flags and, if
 not, then call the DBIs default parse_trace_flag().
+
+The parse_trace_flag() method was added in DBI 1.42.
 
 =item C<swap_inner_handle>
 
@@ -3024,6 +3032,8 @@ vice-versa. This is powerful stuff. Use with care.
 
 As a small safety measure, the two handles, $h1 and $h2, have to
 share the same parent unless $allow_reparent is true.
+
+The swap_inner_handle() method was added in DBI 1.44.
 
 =back
 
@@ -3372,8 +3382,7 @@ types are affected, even where field values have trailing spaces.
 
 The default is false (although it is possible that the default may change).
 Applications that need specific behaviour should set the attribute as
-needed. Emulation interfaces should set the attribute to match the
-behaviour of the interface they are emulating.
+needed.
 
 Drivers are not required to support this attribute, but any driver which
 does not support it must arrange to return C<undef> as the attribute value.
@@ -5197,7 +5206,7 @@ then execute_array() returns "C<0E0>", just like execute() does,
 which Perl will treat as 0 but will regard as true.
 
 For example:
- 
+
   $sth = $dbh->prepare("INSERT INTO staff (first_name, last_name) VALUES (?, ?)");
   my $tuples = $sth->execute_array(
       { ArrayTupleStatus => \my @tuple_status },
@@ -6675,7 +6684,7 @@ the (very large) SQL/CLI Working Draft available from:
 
   http://www.jtc1sc32.org/sc32/jtc1sc32.nsf/Attachments/7E3B41486BD99C3488256B410064C877/$FILE/32N0744T.PDF
 
-=head2 SQL Standards Reference Information
+=head2 Standards Reference Information
 
 A hyperlinked, browsable version of the BNF syntax for SQL92 (plus
 Oracle 7 SQL and PL/SQL) is available here:
@@ -6706,7 +6715,7 @@ Learning Perl by Randal Schwartz.
 L<http://books.perl.org/book/101>
 
 Details of many other books related to perl can be found at L<http://books.perl.org>
-  
+
 =head2 Perl Modules
 
 Index of DBI related modules available from CPAN:
@@ -6725,10 +6734,6 @@ A similar page for Java toolkits can be found at:
 
  http://c2.com/cgi-bin/wiki?ObjectRelationalToolComparison
 
-=head2 Manual Pages
-
-L<perl(1)>, L<perlmod(1)>, L<perlbook(1)>
-
 =head2 Mailing List
 
 The I<dbi-users> mailing list is the primary means of communication among
@@ -6742,10 +6747,8 @@ to subscribe in order to be able to post. However you can opt for a
 
 Mailing list archives (of variable quality) are held at:
 
+ http://groups.google.com/groups?group=perl.dbi.users
  http://www.xray.mpe.mpg.de/mailing-lists/dbi/
- http://groups.yahoo.com/group/dbi-users
- http://www.bitmechanic.com/mail-archives/dbi-users/
- http://marc.theaimsgroup.com/?l=perl-dbi&r=1&w=2
  http://www.mail-archive.com/dbi-users%40perl.org/
 
 =head2 Assorted Related WWW Links
@@ -6805,11 +6808,34 @@ C<perl5-porters>.
 
 =head1 COPYRIGHT
 
-The DBI module is Copyright (c) 1994-2003 Tim Bunce. Ireland.
+The DBI module is Copyright (c) 1994-2004 Tim Bunce. Ireland.
 All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl README file.
+
+=head1 SUPPORT / WARRANTY
+
+The DBI is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
+
+=head2 Support
+
+My consulting company, Data Plan Services, offers annual and
+multi-annual support contracts for the DBI. These provide sustained
+support for DBI development, and sustained value for you in return.
+Contact me for details.
+
+=head2 Sponsor Enhancements
+
+The DBI Roadmap is available at L<http://search.cpan.org/~timb/DBI/Roadmap.pod>
+
+If your company would benefit from a specific new DBI feature,
+please consider sponsoring its development.  Work is performed
+rapidly, and usually on a fixed-price payment-on-delivery basis.
+Contact me for details.
+
+Using such targeted financing allows you to contribute to DBI
+development, and rapidly get something specific and valuable in return.
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -6842,9 +6868,13 @@ supporting this work for many years.
 As you can see above, many people have contributed to the DBI and
 drivers in many ways over many years.
 
-If you'd like the DBI to do something new or different the best way
+If you'd like to help then see L<http://dbi.perl.org/contributing>
+and L<http://search.cpan.org/~timb/DBI/Roadmap.pod>
+
+If you'd like the DBI to do something new or different then a good way
 to make that happen is to do it yourself and send me a patch to the
-source code that shows the changes.
+source code that shows the changes. (But read "Speak before you patch"
+below.)
 
 =head2 Browsing the source code repository
 
@@ -6930,20 +6960,6 @@ Some other translations:
  http://member.nifty.ne.jp/hippo2000/dbimemo.htm        - Japanese
 
 
-=head1 SUPPORT / WARRANTY
-
-The DBI is free software. IT COMES WITHOUT WARRANTY OF ANY KIND.
-
-Commercial support for Perl and the DBI, DBD::Oracle and
-Oraperl modules can be arranged via The Perl Clinic.
-For more details visit:
-
-  http://www.perlclinic.com
-
-For direct DBI and DBD::Oracle support, enhancement, and related work
-I am available for consultancy on standard commercial terms.
-
-
 =head1 TRAINING
 
 References to DBI related training resources. No recommendation implied.
@@ -6951,69 +6967,13 @@ References to DBI related training resources. No recommendation implied.
   http://www.treepax.co.uk/
   http://www.keller.com/dbweb/
 
+(If you offer professional DBI related training services,
+please send me your details so I can add them here.)
+
 =head1 FREQUENTLY ASKED QUESTIONS
 
 See the DBI FAQ for a more comprehensive list of FAQs. Use the
 C<perldoc DBI::FAQ> command to read it.
-
-=head2 How fast is the DBI?
-
-To measure the speed of the DBI and DBD::Oracle code, I modified
-DBD::Oracle so you can set an attribute that will cause the
-same row to be fetched from the row cache over and over again (without
-involving Oracle code but exercising *all* the DBI and DBD::Oracle code
-in the code path for a fetch).
-
-The results (on my lightly loaded old Sparc 10) fetching 50000 rows using:
-
-	1 while $csr->fetch;
-
-were:
-	one field:   5300 fetches per cpu second (approx)
-	ten fields:  4000 fetches per cpu second (approx)
-
-Obviously results will vary between platforms (newer faster platforms
-can reach around 50000 fetches per second), but it does give a feel for
-the maximum performance: fast.  By way of comparison, using the code:
-
-	1 while @row = $csr->fetchrow_array;
-
-(C<fetchrow_array> is roughly the same as C<ora_fetch>) gives:
-
-	one field:   3100 fetches per cpu second (approx)
-	ten fields:  1000 fetches per cpu second (approx)
-
-Notice the slowdown and the more dramatic impact of extra fields.
-(The fields were all one char long. The impact would be even bigger for
-longer strings.)
-
-Changing that slightly to represent actually doing something in Perl
-with the fetched data:
-
-    while(@row = $csr->fetchrow_array) {
-        $hash{++$i} = [ @row ];
-    }
-
-gives:	ten fields:  500 fetches per cpu second (approx)
-
-That simple addition has *halved* the performance.
-
-I therefore conclude that DBI and DBD::Oracle overheads are small
-compared with Perl language overheads (and probably database overheads).
-
-So, if you think the DBI or your driver is slow, try replacing your
-fetch loop with just:
-
-	1 while $csr->fetch;
-
-and time that. If that helps then point the finger at your own code. If
-that doesn't help much then point the finger at the database, the
-platform, the network etc. But think carefully before pointing it at
-the DBI or your driver.
-
-(Having said all that, if anyone can show me how to make the DBI or
-drivers even more efficient, I'm all ears.)
-
 
 =head2 Why doesn't my CGI script work right?
 
@@ -7031,23 +6991,6 @@ CGI related questions to the I<dbi-users> mailing list (or to me).
 For information on the Apache httpd server and the C<mod_perl> module see
 
   http://perl.apache.org/
-
-=head2 What about ODBC?
-
-A DBD::ODBC driver module for ODBC is available and works well.
-
-=head2 Does the DBI have a year 2000 problem?
-
-No. The DBI has no knowledge or understanding of dates at all.
-
-Individual drivers (DBD::*) may have some date handling code but are
-unlikely to have year 2000 related problems within their code. However,
-your application code which I<uses> the DBI and DBD drivers may have
-year 2000 related problems if it has not been designed and written well.
-
-See also the "Does Perl have a year 2000 problem?" section of the Perl FAQ:
-
-  http://www.perl.com/CPAN/doc/FAQs/FAQ/PerlFAQ.html
 
 =head1 OTHER RELATED WORK AND PERL MODULES
 
