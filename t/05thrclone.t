@@ -2,18 +2,23 @@
 
 # --- Test DBI support for threads created after the DBI was loaded
 
+BEGIN { eval "use threads;" }	# Must be first
+my $use_threads_err = $@;
+
 use strict;
 use Config qw(%Config);
+use Test::More;
 
 BEGIN {
-    use Test::More;
-	if (!$Config{useithreads} || $] < 5.008) {
-		plan skip_all => "this $^O perl $] not configured to support iThreads";
-	}
+    if (!$Config{useithreads} || $] < 5.008) {
+	plan skip_all => "this $^O perl $] not configured to support iThreads";
+    }
+    die $use_threads_err if $use_threads_err; # need threads
 }
 
-use threads;
-use Test::More tests => 11;
+my $threads = 10;
+
+plan tests => 3 + 4 * $threads;
 
 {
     package threads_sub;
@@ -42,16 +47,18 @@ sub testing {
     isnt($dbh, $dbh_parent, '... new $dbh is not the same instance as $dbh_parent');
  
     SKIP: {
-        skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
-        
-        cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid');
+	# skip seems broken with threads (5.8.3)
+	# skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+
+        cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid')
+		unless $DBI::PurePerl && ok(1);
     }
 }
 
 # load up the threads
 
 my @thr;
-push @thr, threads_sub->create( \&testing ) foreach (1..2);
+push @thr, threads_sub->create( \&testing ) foreach (1..$threads);
 
 # join all the threads
 
