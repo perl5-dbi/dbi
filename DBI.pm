@@ -2273,25 +2273,109 @@ remember that the placeholder substitutes for the whole string.
 So you should use "C<... LIKE ? ...>" and include any wildcard
 characters in the value that you bind to the placeholder.
 
-B<Null Values>
+B<NULL Values>
 
-Undefined values, or C<undef>, can be used to indicate null values.
+Undefined values, or C<undef>, are used to indicate NULL values.
+You can insert update columns with a NULL value as you would a
+non-NULL value.  Consider these examples that insert and update the
+column C<product_code> with a NULL value:
+
+  $sth = $dbh->prepare(qq{
+    INSERT INTO people (name, age) VALUES (?, ?)
+  });
+  $sth->execute("Joe Bloggs", undef);
+
+  $sth = $dbh->prepare(qq{
+    UPDATE people SET age = ? WHERE name = ?
+  });
+  $sth->execute(undef, "Joe Bloggs");
+  
 However, care must be taken in the particular case of trying to use
-null values to qualify a C<SELECT> statement. Consider:
+NULL values to qualify a C<WHERE> clause.  Consider:
 
-  SELECT description FROM products WHERE product_code = ?
+  SELECT name FROM people WHERE age = ?
 
 Binding an C<undef> (NULL) to the placeholder will I<not> select rows
-which have a NULL C<product_code>! Refer to the SQL manual for your database
+which have a NULL C<product_code>!  At least for database engines that
+conform to the SQL standard.  Refer to the SQL manual for your database
 engine or any SQL book for the reasons for this.  To explicitly select
-NULLs you have to say "C<WHERE product_code IS NULL>" and to make that
-general you have to say:
+NULLs you have to say "C<WHERE product_code IS NULL>".
 
-  ... WHERE (product_code = ? OR (? IS NULL AND product_code IS NULL))
+A common issue is to have a code fragment handle a value that could be
+either C<defined> or C<undef> (non-NULL or NULL) in a C<WHERE> clause.
+A general way to do this is:
 
-and bind the same value to both placeholders. Sadly, that more general
-syntax doesn't work for Sybase and MS SQL Server. However on those two
-servers the original "C<product_code = ?>" syntax works for binding nulls.
+  if (defined $age) {
+      push @sql_qual, "age = ?";
+      push @sql_bind, $age;
+  }
+  else {
+      push @sql_qual, "age IS NULL";
+  }
+  $sth = $dbh->prepare(qq{
+      SELECT id FROM products WHERE }.join(" AND ", @sql_qual).qq{
+  });
+  $sth->execute(@sql_bind);
+
+If your WHERE clause contains many "NULLs-allowed" columns, you'll
+need to manage many combinations of statements and this approach
+rapidly becomes more complex.
+
+A better solution would be to design a single C<WHERE> clause that
+supports both NULL and non-NULL comparisons.  Several examples of
+C<WHERE> clauses that do this are presented below.  But each example
+lacks portability, robustness, or simplicity.  Whether an example
+is supported on your database engine depends on what SQL extensions it
+supports, and where it can support the C<?> parameter in a statement.
+
+  0) age = ?
+  1) NVL(age, xx) = NVL(?, xx)
+  2) ISNULL(age, xx) = ISNULL(?, xx)
+  3) DECODE(age, ?, 1, 0) = 1
+  4) age = ? OR (age IS NULL AND ? IS NULL)
+  5) age = ? OR (age IS NULL AND SP_ISNULL(?) = 1)
+  6) age = ? OR (age IS NULL AND ? = 1)
+	
+Statements formed with the above C<WHERE> clauses require execute
+statements as follows:
+
+  0-3) $sth->execute($age);
+  4,5) $sth->execute($age, $age);
+  6)   $sth->execute($age, defined($age)?0:1);
+
+Example 0 should not work (as mentioned earlier), but may work on
+a few database engines anyway.
+
+Examples 1 and 2 are not robust: they require that you provide a
+valid column value xx (e.g. '~') which is not present in any row.
+That means you must have some notion of what data won't be stored
+in the column, and expect clients to adhere to that.
+
+Example 5 requires that you provide a stored procedure (SP_ISNULL
+in this example) that acts as a function: it checks whether a value
+is null, and returns 1 if it is, or 0 if not.
+
+Example 6, the least simple, is probably the most portable, i.e., it
+should work with with most, if not all, database engines.
+
+Here is a table that indicates which examples above are known to work on
+various database engines:
+
+              -----Examples------
+              0  1  2  3  4  5  6
+              -  -  -  -  -  -  -
+  Oracle 9    N           Y 
+  Informix    N  N  N  Y  N  Y  Y
+  MS SQL      
+  DB2
+  Sybase
+  MySQL 4
+
+DBI provides a sample perl script that will test the examples above
+on your database engine and tell you which ones work.  It is located
+in the F<ex/> subdirectory of the DBI source distribution, or here:
+L<http://svn.perl.org/modules/dbi/trunk/ex/perl_dbi_nulls_test.pl>
+Please use the script to help us fill-in and maintain this table.
 
 B<Performance>
 
@@ -2415,9 +2499,17 @@ There is I<no standard> for the text following the driver name. Each
 driver is free to use whatever syntax it wants. The only requirement the
 DBI makes is that all the information is supplied in a single string.
 You must consult the documentation for the drivers you are using for a
-description of the syntax they require. (Where a driver author needs
-to define a syntax for the C<$data_source>, it is recommended that
-they follow the ODBC style, shown in the last example above.)
+description of the syntax they require.
+
+It is recommended that drivers support the ODBC style, shown in the
+last example above. It is also recommended that that they support the
+three common names 'C<host>', 'C<port>', and 'C<database>' (plus 'C<db>'
+as an alias for C<database>). This simplifies automatic construction
+of basic DSNs: C<"dbi:$driver:database=$db;host=$host;port=$port">.
+Drivers should aim to 'do something reasonable' when given a DSN
+in this form, but if any part is meaningless for that driver (such
+as 'port' for Informix) it should generate an error if that part
+is not empty.
 
 If the environment variable C<DBI_AUTOPROXY> is defined (and the
 driver in C<$data_source> is not "C<Proxy>") then the connect request

@@ -17,6 +17,7 @@ dbipport.h			Perl portability macros (from Devel::PPort)
 dbiprof.PL
 dbiproxy.PL			Frontend for DBI::ProxyServer
 dbivport.h			DBI version portability macros (for drivers to copy)
+ex/perl_dbi_nulls_test.pl	A test script for forms of IS NULL qualification in SQL
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
