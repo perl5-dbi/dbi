@@ -4,8 +4,6 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-Document $t->parse_trace_flags etc
-
 =head1 CHANGES in DBI 1.43 (svn rev XXX),    XXth XXX 2004
 
 Extended bind_col() TYPE attribute specification to imply
@@ -23,6 +21,7 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
   Fixed DBI::ProfileDumper new() docs thanks to Michael Schwern.
   Fixed _load_class to propagate $@ thanks to Drew Taylor.
   Fixed compile warnings on Win32 thanks to Robert Baron.
+  Fixed problem building with recent versions of MakeMaker.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.
@@ -32,6 +31,7 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
 
   Added DBI->parse_dsn($dsn) method.
   Added warning if build directory path contains whitespace.
+  Added docs for parse_trace_flags() and parse_trace_flag().
   Removed "may change" warnings from the docs for table_info(),
     primary_key_info(), and foreign_key_info() methods.
 

@@ -258,7 +258,7 @@ Exporter::export_ok_tags(keys %EXPORT_TAGS);
 }
 
 # Alias some handle methods to also be DBI class methods
-for (qw(trace_msg set_err parse_trace_flags parse_trace_flag)) {
+for (qw(trace_msg set_err parse_trace_flag parse_trace_flags)) {
   no strict;
   *$_ = \&{"DBD::_::common::$_"};
 }
@@ -1252,7 +1252,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $level = 0;
 	my $flags = 0;
 	my @unknown;
-	for my $word (split /\s*[|&]\s*/, $spec) {
+	for my $word (split /\s*[|&,]\s*/, $spec) {
 	    if (DBI::looks_like_number($word) && $word <= 0xF && $word >= 0) {
 		$level = $word;
 	    } elsif ($word eq 'ALL') {
@@ -2823,6 +2823,29 @@ default method is provided by the DBI.
 It returns false where a driver hasn't implemented a method and the
 default method is provided by the DBI is just an empty stub.
 
+=item C<parse_trace_flags>
+
+  $trace_settings_integer = $h->parse_trace_flags($trace_settings);
+
+Parses a string containing trace settings and returns the corresponding
+integer value used internally by the DBI and drivers.
+
+The $trace_settings argument is a string containing a trace level
+between 0 and 15 and/or trace flag names separated by vertical bar
+("C<|>") or comma ("C<,>") characters. For example: C<"SQL|3|foo">.
+
+It uses the parse_trace_flag() method, described below, to process
+the individual trage flag names.
+
+=item C<parse_trace_flag>
+
+  $bit_flag = $h->parse_trace_flag($trace_flag_name);
+
+Returns the bit flag corresponding to the trace flag name in
+$trace_flag_name.  Drivers are expected to override this method and
+check if $trace_flag_name is a driver specific trace flags and, if
+not, then call the DBIs default parse_trace_flag().
+
 =back
 
 
@@ -3146,7 +3169,10 @@ end of the Statement text in the error message.
 
 The C<TraceLevel> attribute can be used as an alternative to the
 L</trace> method to set the DBI trace level and trace flags for a
-specific handle. See L</TRACING> for more details.
+specific handle.  See L</TRACING> for more details.
+
+The C<TraceLevel> attribute is especially useful combined with
+C<local> to alter the trace settings for just a single block of code.
 
 =item C<FetchHashKeyName> (string, inherited)
 
@@ -6202,7 +6228,44 @@ trace level then the DBI trace level is raised to match it.
 The previous DBI trace setings are restored when the called method
 returns.
 
-=head1 Enabling Trace
+=head2 Trace Levels
+
+Trace I<levels> are as follows:
+
+  0 - Trace disabled.
+  1 - Trace DBI method calls returning with results or errors.
+  2 - Trace method entry with parameters and returning with results.
+  3 - As above, adding some high-level information from the driver
+      and some internal information from the DBI.
+  4 - As above, adding more detailed information from the driver.
+  5 to 15 - As above but with more and more obscure information.
+
+Trace level 1 is best for a simple overview of what's happening.
+Trace level 2 is a good choice for general purpose tracing.
+Levels 3 and above are best reserved for investigating a specific
+problem, when you need to see "inside" the driver and DBI.
+
+The trace output is detailed and typically very useful. Much of the
+trace output is formatted using the L</neat> function, so strings
+in the trace output may be edited and truncated by that function.
+
+=head2 Trace Flags
+
+Trace I<flags> are used to enable tracing of specific activities
+within the DBI and drivers. The DBI defines some trace flags and
+drivers can define others. DBI trace flag names begin with a capital
+letter and driver specific names begin with a lowercase letter, as
+usual.
+
+Curently the DBI only defines two trace flags:
+
+  ALL - turn on all DBI and driver flags (not recommended)
+  SQL - trace SQL statements executed (not yet implemented)
+
+The L</parse_trace_flags> and L</parse_trace_flag> methods are used
+to convert trace flag names into the coresponding integer bit flags.
+
+=head2 Enabling Trace
 
 The C<$h-E<gt>trace> method sets the trace settings for a handle
 and C<DBI-E<gt>trace> does the same for the DBI.
@@ -6215,26 +6278,12 @@ See L</DBI_TRACE> for more information.
 Finally, you can set, or get, the trace settings for a handle using
 the C<TraceLevel> attribute.
 
-=head2 Trace Levels
+All of those methods use parse_trace_flags() and so allow you set
+both the trace level and multiple trace flags by using a string
+containing the trace level and/or flag names separated by vertical
+bar ("C<|>") or comma ("C<,>") characters. For example:
 
-Trace levels are as follows:
-
-  0 - Trace disabled.
-  1 - Trace DBI method calls returning with results or errors.
-  2 - Trace method entry with parameters and returning with results.
-  3 - As above, adding some high-level information from the driver
-      and some internal information from the DBI.
-  4 - As above, adding more detailed information from the driver.
-  5 and above - As above but with more and more obscure information.
-
-Trace level 1 is best for a simple overview of what's happening.
-Trace level 2 is a good choice for general purpose tracing.
-Levels 3 and above are best reserved for investigating a specific
-problem, when you need to see "inside" the driver and DBI.
-
-The trace output is detailed and typically very useful. Much of the
-trace output is formatted using the L</neat> function, so strings
-in the trace output may be edited and truncated by that function.
+  local $h->{TraceLevel} = "3|SQL|foo";
 
 =head2 Trace Output
 

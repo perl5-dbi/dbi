@@ -2,6 +2,9 @@
 
 --- Changes that may impact applications:
 
+Redefine tables() to default to tables accessible from current
+schema without further qualification.
+
 Turning AutoCommit on should trigger rollback not commit.
 (ODBC does a commit) This will break code that assumes a commit.
 
@@ -56,9 +59,6 @@ $sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type
 $h->{KidsHandles} = ref to cache (array or hash?)
 of weakrefs to child handles.
 
-DBI::Profile: some way to get count of 'executions' only, not all method calls.
-So avg time is totaltime/executions not totaltime/methodcalls.
-
 Document DbTypeSubclass (ala DBIx::AnyDBD)
 Polish up and document _dbtype_names with an external interface and using get_info.
 
@@ -93,6 +93,10 @@ e.g.	$dbh->{BindColumnTypes} = {
 	  SQL_DATE => SQL_DATE,
 	  SQL_DATETIME => { TYPE => SQL_DATETIME, OnFetch => \&foo },
 	}
+
+Add utility function that does SvUTF8_on(sv) if the sv contains
+valid-looking utf8. To be used (perhaps via OnFetch hook) where
+utf8 data is being stored in a non-utf8 aware database.
 
 Add a handle flag to say that the driver has a hash that maps error
 codes into SQLSTATE values. The error event mechanism could check for
@@ -188,8 +192,6 @@ Then $dbh->{Statement} would be the same as $dbh->{LastSth}->{Statement}
 Also $dbh->{ParamValues} would be the same as $dbh->{LastSth}->{ParamValues}.
 
 Remove dummy 'Switch' driver.
-
-Add %time to per-node DBI::Profile dump
 
 Sponge behave_like - generalize into new_child()
 	copy RaiseError, PrintError, HandleError etc from the specified handle
@@ -401,13 +403,18 @@ Jan 2002: Also now see DBIx::FetchLoop (Brendan Fagan)
 Alternatively, and perferably, add sufficient hooks for this to be
 done efficiently externally.
 
+Devel::Leak integration?
+
+--- DBI::Profile
+
+Add %time to per-node DBI::Profile dump
+
+DBI::Profile: some way to get count of 'executions' only, not all method calls.
+So avg time is totaltime/executions not totaltime/methodcalls.
 
 DBI::Profile: add simple way to normalise the sql (convert constants
 to placeholders) so profiling is more effective for drivers/applications
 which don't use placeholders. Requires preparse()?
-
-
-Devel::Leak
 
 DBI::Profile: Add calc of approx XS method call and timing overhead
 by calling perl_call("DBI::dbi_time") x100 at boot time for profile,
@@ -415,7 +422,13 @@ and add 1/100 (x2) to each sample. Beware Win32 where resolution
 is too small and overhead will be 0 normally but may be eg 100ms
 if overhead probe is on cusp of time unit.
 
+Add mechanism so "call path" can be included in the Path of the
+profile data. Something like "<basename>@<linenum>;..." or
+optionally just the basename part.
+
 Fix dbi_time for Windows by using or linking-to Time::HiRes code.
+
+---
 
 Add a C call to return boolean for is a number' for a given SV.
 Needs to do the right thing for a non-numeric string SV that's been
