@@ -25,7 +25,7 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.
   Changed all tests to use Test::More and enhanced the tests thanks
-    to Andy Lester and Stevan Little. http://qa.perl.org/phalanx/
+    to Stevan Little and Andy Lester. See http://qa.perl.org/phalanx/
   Changed Test::More minimum prerequisite version to 0.40 (2001).
 
   Added warning if build directory path contains whitespace.

@@ -153,8 +153,11 @@ ok(exists $data->{$sql}{DESTROY});
 
 my $do_sql = "set foo=1";
 $dbh->do($do_sql); # check dbh do() gets associated with right statement
-ok(keys %{$data->{$do_sql}}, 1); # XXX extra one is DESTROY
 ok(exists $data->{$do_sql}{do});
+# In perl 5.6 the sth DESTROY gets included. In perl 5.8 it doesn't.
+ok(keys %{$data->{$do_sql}},
+  (exists $data->{$do_sql}{DESTROY}) ? 2 : 1);
+
 print "Profile Data keys: @{[ keys %{$data->{$do_sql}} ]}\n";
 
 
