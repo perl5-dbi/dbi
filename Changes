@@ -18,6 +18,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Corrected docs to say that get/set of unknown attribute generates
     a warning and is no longer fatal. Thanks to Vadim.
+  Corrected fetchall_arrayref() docs example thanks to Drew Broadley.
 
 =head2 Changes in DBI 1.43 (svn rev 377),    2nd July 2004
 

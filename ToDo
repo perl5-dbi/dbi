@@ -35,6 +35,9 @@ Remove "old-style" connect syntax (where driver name is 4th parameter).
 
 Change undocumented DBI->err and DBI->errstr methods to warn.
 
+Bundle enhanced DBD::Multiplex
+RISK: may break apps using old DBD::Multiplex
+
 --- Internal Changes
 
 Increase size of DBIS (dbistate) structure and imp_xxh.com structures
@@ -56,6 +59,8 @@ Remove DBIS global and related macros.
 Add dDBIS to be used in functions (eg like dTHR) that can't access it via a imp_xxh
 
 Remove PERL_POLLUTE (so some names will require PL_ or Perl_ prefixes)
+
+Update dbipport.h from latest Devel::PPPort.
 
 Add function pointers for setting fetched field values into DBIS.
 IV, UV, NV, PV and SV?
@@ -122,6 +127,13 @@ utf8 data is being stored in a non-utf8 aware database.
 Remove _not_impl. Alias debug to trace in DBI::(dr/db/st) and remove
 debug() method from internals.
 
+DBD::Multiplex enhancements (Thomas Kishel <tom@kishel.net>):
+Enable DBIx::HA (http://search.cpan.org/~hasseily/DBIx-HA/HA.pm) features.
+SQL translation hooks:
+mx_translate_sql_parent - called by prepare() to translate sql from app
+mx_translate_sql_child  - called for each child handle so each can have different dialect
+(note that mx_translate_sql_parent could parse into internal tree
+from which mx_translate_sql_child then 'regenerates' custom sql for the child handle)
 
 ====== LATER ======
 
@@ -208,6 +220,8 @@ a transition for old drivers.)
 
 --- Other changes
 
+Simplify layering/subclassing of DBD's
+
 Reconsider clone() API
 
 See comment under $drh->$connect_meth in DBI.pm about $drh->errstr
@@ -267,6 +281,8 @@ to remove FETCH method call overhead in prepare_cached().
 --- Other things to consider
 
 Add $h->err_errstr_state method that returns all three in one go.
+
+Support async (non-blocking) mode
 
 Study alternate DBI's:
 	ruby

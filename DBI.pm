@@ -5241,7 +5241,7 @@ all the rows in one go. Here's an example:
 
   my $rows = []; # cache for batches of rows
   while( my $row = ( shift(@$rows) || # get row from cache, or reload cache:
-                     shift(@{$rows=$sth->fetchall_arrayref(undef,10_000)||[]) )
+                     shift(@{$rows=$sth->fetchall_arrayref(undef,10_000)||[]}) )
   ) {
     ...
   }
