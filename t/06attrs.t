@@ -2,7 +2,14 @@
 
 use strict;
 
-use Test::More tests => 144;
+use Test::More tests => 137;
+
+## ----------------------------------------------------------------------------
+## 06attrs.t - ...
+## ----------------------------------------------------------------------------
+# This test checks the parameters and the values associated with them for 
+# the three different handles (Driver, Database, Statement)
+## ----------------------------------------------------------------------------
 
 BEGIN { 
 	use_ok( 'DBI' ) 
@@ -22,190 +29,244 @@ isa_ok( $dbh, 'DBI::db' );
 # Clean up when we're done.
 END { $dbh->disconnect if $dbh };
 
-# ------ Check the database handle attributes.
+## ----------------------------------------------------------------------------
+# Check the database handle attributes.
 
 #	bit flag attr
-ok( $dbh->{Warn} );
-ok( $dbh->{Active} );
-ok( $dbh->{AutoCommit} );
-ok(!$dbh->{CompatMode} );
-ok(!$dbh->{InactiveDestroy} );
-ok(!$dbh->{PrintError} );
-ok( $dbh->{PrintWarn} );	# true because of perl -w above
-ok( $dbh->{RaiseError} );
-ok(!$dbh->{ShowErrorStatement} );
-ok(!$dbh->{ChopBlanks} );
-ok(!$dbh->{LongTruncOk} );
-ok(!$dbh->{TaintIn} );
-ok(!$dbh->{TaintOut} );
-ok(!$dbh->{Taint} );
-ok(!$dbh->{Executed} );
+ok( $dbh->{Warn},               '... checking Warn attribute for dbh');
+ok( $dbh->{Active},             '... checking Active attribute for dbh');
+ok( $dbh->{AutoCommit},         '... checking AutoCommit attribute for dbh');
+ok(!$dbh->{CompatMode},         '... checking CompatMode attribute for dbh');
+ok(!$dbh->{InactiveDestroy},    '... checking InactiveDestory attribute for dbh');
+ok(!$dbh->{PrintError},         '... checking PrintError attribute for dbh');
+ok( $dbh->{PrintWarn},          '... checking PrintWarn attribute for dbh');	# true because of perl -w above
+ok( $dbh->{RaiseError},         '... checking RaiseError attribute for dbh');
+ok(!$dbh->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for dbh');
+ok(!$dbh->{ChopBlanks},         '... checking ChopBlanks attribute for dbh');
+ok(!$dbh->{LongTruncOk},        '... checking LongTrunkOk attribute for dbh');
+ok(!$dbh->{TaintIn},            '... checking TaintIn attribute for dbh');
+ok(!$dbh->{TaintOut},           '... checking TaintOut attribute for dbh');
+ok(!$dbh->{Taint},              '... checking Taint attribute for dbh');
+ok(!$dbh->{Executed},           '... checking Executed attribute for dbh');
 
 #	other attr
-is( $dbh->{ErrCount}, 0 );
-is( $dbh->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
-is( $dbh->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
-ok( ! defined $dbh->{CachedKids} );
-ok( ! defined $dbh->{HandleError} );
-is( $dbh->{TraceLevel}, $DBI::dbi_debug & 0xF);
-is( $dbh->{FetchHashKeyName}, 'NAME', );
-is( $dbh->{LongReadLen}, 80 );
-ok( ! defined $dbh->{Profile} );
-is( $dbh->{Name}, 'dummy' );	# fails for Multiplex
-ok( ! defined $dbh->{Statement} );
-ok( ! defined $dbh->{RowCacheSize} );
+cmp_ok($dbh->{ErrCount}, '==', 0, '... checking ErrCount attribute for dbh');
+
+SKIP: {
+    skip "Kids and ActiveKids attribute not supported under DBI::PurePerl", 2 if $DBI::PurePerl;
+    
+    cmp_ok($dbh->{Kids},       '==', 0, '... checking Kids attribute for dbh');;
+    cmp_ok($dbh->{ActiveKids}, '==', 0, '... checking ActiveKids attribute for dbh');;
+}
+
+ok(!defined $dbh->{CachedKids},   '... checking CachedKids attribute for dbh');
+ok(!defined $dbh->{HandleError},  '... checking HandleError attribute for dbh');
+ok(!defined $dbh->{Profile},      '... checking Profile attribute for dbh');
+ok(!defined $dbh->{Statement},    '... checking Statement attribute for dbh');
+ok(!defined $dbh->{RowCacheSize}, '... checking RowCacheSize attribute for dbh');
+
+is($dbh->{FetchHashKeyName}, 'NAME',  '... checking FetchHashKeyName attribute for dbh');
+is($dbh->{Name},             'dummy', '... checking Name attribute for dbh');	# fails for Multiplex
+
+cmp_ok($dbh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for dbh');
+cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for dbh');
 
 # Raise an error.
-eval { $dbh->do('select foo from foo') };
-ok( my $err = $@ );
-ok( $err =~ /^DBD::(ExampleP|Multiplex)::db do failed: Unknown field names: foo/ ) or print "got: $err\n";
-ok( $dbh->err );
-ok( my $errstr = $dbh->errstr);
-ok( $errstr =~ /^Unknown field names: foo\b/ ) or print "got: $errstr\n";
-is( $dbh->state, 'S1000' );
+eval { 
+    $dbh->do('select foo from foo') 
+};
+like($@, qr/^DBD::(ExampleP|Multiplex)::db do failed: Unknown field names: foo/ , '... catching exception');
 
-ok( $dbh->{Executed} );  	# even though it failed
-$dbh->{Executed} = 0;   	# reset(able)
-ok(!$dbh->{Executed} );  	# reset
-is( $dbh->{ErrCount}, 1 );
+ok(defined $dbh->err, '... $dbh->err is undefined');
+like($dbh->errstr,  qr/^Unknown field names: foo\b/, '... checking $dbh->errstr');
 
-# ------ Test the driver handle attributes.
+is($dbh->state, 'S1000', '... checking $dbh->state');
 
-ok( my $drh = $dbh->{Driver} );
+ok($dbh->{Executed}, '... checking Executed attribute for dbh');    # even though it failed
+$dbh->{Executed} = 0;       	                            # reset(able)
+cmp_ok($dbh->{Executed}, '==', 0, '... checking Executed attribute for dbh (after reset)');
+
+cmp_ok($dbh->{ErrCount}, '==', 1, '... checking ErrCount attribute for dbh (after error was generated)');
+
+## ----------------------------------------------------------------------------
+# Test the driver handle attributes.
+
+my $drh = $dbh->{Driver};
 isa_ok( $drh, 'DBI::dr' );
-ok( $dbh->err );
 
-is( $drh->{ErrCount}, 0 );
+ok($dbh->err, '... checking $dbh->err');
 
-ok( $drh->{Warn} );
-ok( $drh->{Active} );
-ok( $drh->{AutoCommit} );
-ok(!$drh->{CompatMode} );
-ok(!$drh->{InactiveDestroy} );
-ok(!$drh->{PrintError} );
-ok( $drh->{PrintWarn} );	# true because of perl -w above
-ok(!$drh->{RaiseError} );
-ok(!$drh->{ShowErrorStatement} );
-ok(!$drh->{ChopBlanks} );
-ok(!$drh->{LongTruncOk} );
-ok(!$drh->{TaintIn} );
-ok(!$drh->{TaintOut} );
-ok(!$drh->{Taint} );
-ok( $drh->{Executed} ) unless $DBI::PurePerl && ok(1); # due to the do() above
+cmp_ok($drh->{ErrCount}, '==', 0, '... checking ErrCount attribute for drh');
 
-unless ($DBI::PurePerl or $dbh->{mx_handle_list}) {
-is( $drh->{Kids}, 1 );
-is( $drh->{ActiveKids}, 1 );
+ok( $drh->{Warn},               '... checking Warn attribute for drh');
+ok( $drh->{Active},             '... checking Active attribute for drh');
+ok( $drh->{AutoCommit},         '... checking AutoCommit attribute for drh');
+ok(!$drh->{CompatMode},         '... checking CompatMode attribute for drh');
+ok(!$drh->{InactiveDestroy},    '... checking InactiveDestory attribute for drh');
+ok(!$drh->{PrintError},         '... checking PrintError attribute for drh');
+ok( $drh->{PrintWarn},          '... checking PrintWarn attribute for drh');	# true because of perl -w above
+ok(!$drh->{RaiseError},         '... checking RaiseError attribute for drh');
+ok(!$drh->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for drh');
+ok(!$drh->{ChopBlanks},         '... checking ChopBlanks attribute for drh');
+ok(!$drh->{LongTruncOk},        '... checking LongTrunkOk attribute for drh');
+ok(!$drh->{TaintIn},            '... checking TaintIn attribute for drh');
+ok(!$drh->{TaintOut},           '... checking TaintOut attribute for drh');
+ok(!$drh->{Taint},              '... checking Taint attribute for drh');
+
+SKIP: {
+    skip "Executed attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+    
+    ok($drh->{Executed}, '... checking Executed attribute for drh') # due to the do() above
 }
-else { ok(1); ok(1); }
-ok( ! defined $drh->{CachedKids} );
-ok( ! defined $drh->{HandleError} );
-is( $drh->{TraceLevel}, $DBI::dbi_debug & 0xF );
-is( $drh->{FetchHashKeyName}, 'NAME', );
-ok( ! defined $drh->{Profile} );
-is( $drh->{LongReadLen}, 80 );
-is( $drh->{Name}, 'ExampleP' );
 
-# ------ Test the statement handle attributes.
+SKIP: {
+    skip "Kids and ActiveKids attribute not supported under DBI::PurePerl", 2 if ($DBI::PurePerl or $dbh->{mx_handle_list});
+    cmp_ok($drh->{Kids},       '==', 1, '... checking Kids attribute for drh');
+    cmp_ok($drh->{ActiveKids}, '==', 1, '... checking ActiveKids attribute for drh');
+}
+
+ok(!defined $drh->{CachedKids},  '... checking CachedKids attribute for drh');
+ok(!defined $drh->{HandleError}, '... checking HandleError attribute for drh');
+ok(!defined $drh->{Profile},     '... checking Profile attribute for drh');
+
+cmp_ok($drh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for drh');
+cmp_ok($drh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for drh');
+
+is($drh->{FetchHashKeyName}, 'NAME',     '... checking FetchHashKeyName attribute for drh');
+is($drh->{Name},             'ExampleP', '... checking Name attribute for drh');
+
+## ----------------------------------------------------------------------------
+# Test the statement handle attributes.
 
 # Create a statement handle.
-(ok my $sth = $dbh->prepare("select ctime, name from ?") );
-ok( !$sth->{Executed} );
-ok( !$dbh->{Executed} );
-is( $sth->{ErrCount}, 0 );
+my $sth = $dbh->prepare("select ctime, name from ?");
+isa_ok($sth, "DBI::st");
+
+ok(!$sth->{Executed}, '... checking Executed attribute for sth');
+ok(!$dbh->{Executed}, '... checking Executed attribute for dbh');
+cmp_ok($sth->{ErrCount}, '==', 0, '... checking ErrCount attribute for sth');
 
 # Trigger an exception.
-eval { $sth->execute("foo") };
-ok( $err = $@ );
+eval { 
+    $sth->execute("foo") 
+};
 # we don't check actual opendir error msg because of locale differences
-like( $err, qr/^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i );
+like($@, qr/^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i, '... checking exception');
 
 # Test all of the statement handle attributes.
-ok( $sth->errstr =~ /^opendir\(foo\): / ) or print "errstr: ".$sth->errstr."\n";
-is( $sth->state, 'S1000' );
-ok( $sth->{Executed} );	# even though it failed
-ok( $dbh->{Executed} );	# due to $sth->prepare, even though it failed
+like($sth->errstr, qr/^opendir\(foo\): /, '... checking $sth->errstr');
+is($sth->state, 'S1000', '... checking $sth->state');
+ok($sth->{Executed}, '... checking Executed attribute for sth');	# even though it failed
+ok($dbh->{Executed}, '... checking Exceuted attribute for dbh');	# due to $sth->prepare, even though it failed
 
-is( $sth->{ErrCount}, 1 );
-eval { $sth->{ErrCount} = 42 };
-ok($@);
-like($@, qr/STORE failed:/);
-is( $sth->{ErrCount}, 42 );
+cmp_ok($sth->{ErrCount}, '==', 1, '... checking ErrCount attribute for sth');
+eval { 
+    $sth->{ErrCount} = 42 
+};
+like($@, qr/STORE failed:/, '... checking exception');
+
+cmp_ok($sth->{ErrCount}, '==', 42 , '... checking ErrCount attribute for sth (after assignment)');
+
 $sth->{ErrCount} = 0;
-is( $sth->{ErrCount}, 0 );
+cmp_ok($sth->{ErrCount}, '==', 0, '... checking ErrCount attribute for sth (after reset)');
 
 # booleans
-ok( $sth->{Warn} );
-ok(!$sth->{Active} );
-ok(!$sth->{CompatMode} );
-ok(!$sth->{InactiveDestroy} );
-ok(!$sth->{PrintError} );
-ok( $sth->{PrintWarn} );
-ok( $sth->{RaiseError} );
-ok(!$sth->{ShowErrorStatement} );
-ok(!$sth->{ChopBlanks} );
-ok(!$sth->{LongTruncOk} );
-ok(!$sth->{TaintIn} );
-ok(!$sth->{TaintOut} );
-ok(!$sth->{Taint} );
+ok( $sth->{Warn},               '... checking Warn attribute for sth');
+ok(!$sth->{Active},             '... checking Active attribute for sth');
+ok(!$sth->{CompatMode},         '... checking CompatMode attribute for sth');
+ok(!$sth->{InactiveDestroy},    '... checking InactiveDestroy attribute for sth');
+ok(!$sth->{PrintError},         '... checking PrintError attribute for sth');
+ok( $sth->{PrintWarn},          '... checking PrintWarn attribute for sth');
+ok( $sth->{RaiseError},         '... checking RaiseError attribute for sth');
+ok(!$sth->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for sth');
+ok(!$sth->{ChopBlanks},         '... checking ChopBlanks attribute for sth');
+ok(!$sth->{LongTruncOk},        '... checking LongTrunkOk attribute for sth');
+ok(!$sth->{TaintIn},            '... checking TaintIn attribute for sth');
+ok(!$sth->{TaintOut},           '... checking TaintOut attribute for sth');
+ok(!$sth->{Taint},              '... checking Taint attribute for sth');
 
 # common attr
-is( $sth->{Kids}, 0 )		unless $DBI::PurePerl && ok(1);
-is( $sth->{ActiveKids}, 0 )	unless $DBI::PurePerl && ok(1);
-ok( ! defined $sth->{CachedKids} );
-ok( ! defined $sth->{HandleError} );
-is( $sth->{TraceLevel}, $DBI::dbi_debug & 0xF);
-is( $sth->{FetchHashKeyName}, 'NAME', );
-ok( ! defined $sth->{Profile} );
-is( $sth->{LongReadLen}, 80 );
-ok( ! defined $sth->{Profile} );
+SKIP: {
+    skip "Kids and ActiveKids attribute not supported under DBI::PurePerl", 2 if $DBI::PurePerl;
+    cmp_ok($sth->{Kids},       '==', 0, '... checking Kids attribute for sth');
+    cmp_ok($sth->{ActiveKids}, '==', 0, '... checking ActiveKids attribute for sth');
+}
+
+ok(!defined $sth->{CachedKids},  '... checking CachedKids attribute for sth');
+ok(!defined $sth->{HandleError}, '... checking HandleError attribute for sth');
+ok(!defined $sth->{Profile},     '... checking Profile attribute for sth');
+
+cmp_ok($sth->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for sth');
+cmp_ok($sth->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for sth');
+
+is($sth->{FetchHashKeyName}, 'NAME', '... checking FetchHashKeyName attribute for sth');
 
 # sth specific attr
-ok( ! defined $sth->{CursorName} );
+ok(!defined $sth->{CursorName}, '... checking CursorName attribute for sth');
 
-is( $sth->{NUM_OF_FIELDS}, 2 );
-is( $sth->{NUM_OF_PARAMS}, 1 );
-ok( my $name = $sth->{NAME} );
-is( @$name, 2 );
-ok( $name->[0] eq 'ctime' );
-ok( $name->[1] eq 'name' );
-ok( my $name_lc = $sth->{NAME_lc} );
-ok( $name_lc->[0] eq 'ctime' );
-ok( $name_lc->[1] eq 'name' );
-ok( my $name_uc = $sth->{NAME_uc} );
-ok( $name_uc->[0] eq 'CTIME' );
-ok( $name_uc->[1] eq 'NAME' );
-ok( my $nhash = $sth->{NAME_hash} );
-is( keys %$nhash, 2 );
-is( $nhash->{ctime}, 0 );
-is( $nhash->{name}, 1 );
-ok( my $nhash_lc = $sth->{NAME_lc_hash} );
-is( $nhash_lc->{ctime}, 0 );
-is( $nhash_lc->{name}, 1 );
-ok( my $nhash_uc = $sth->{NAME_uc_hash} );
-is( $nhash_uc->{CTIME}, 0 );
-is( $nhash_uc->{NAME}, 1 );
-ok( my $type = $sth->{TYPE} );
-is( @$type, 2 );
-is( $type->[0], 4 );
-is( $type->[1], 12 );
-ok( my $null = $sth->{NULLABLE} );
-is( @$null, 2 );
-is( $null->[0], 0 );
-is( $null->[1], 0 );
+cmp_ok($sth->{NUM_OF_FIELDS}, '==', 2, '... checking NUM_OF_FIELDS attribute for sth');
+cmp_ok($sth->{NUM_OF_PARAMS}, '==', 1, '... checking NUM_OF_PARAMS attribute for sth');
+
+my $name = $sth->{NAME};
+is(ref($name), 'ARRAY', '... checking type of NAME attribute for sth');
+cmp_ok(scalar(@{$name}), '==', 2, '... checking number of elements returned');
+is_deeply($name, ['ctime', 'name' ], '... checking values returned');
+
+my $name_lc = $sth->{NAME_lc};
+is(ref($name_lc), 'ARRAY', '... checking type of NAME_lc attribute for sth');
+cmp_ok(scalar(@{$name_lc}), '==', 2, '... checking number of elements returned');
+is_deeply($name_lc, ['ctime', 'name' ], '... checking values returned');
+
+my $name_uc = $sth->{NAME_uc};
+is(ref($name_uc), 'ARRAY', '... checking type of NAME_uc attribute for sth');
+cmp_ok(scalar(@{$name_uc}), '==', 2, '... checking number of elements returned');
+is_deeply($name_uc, ['CTIME', 'NAME' ], '... checking values returned');
+
+my $nhash = $sth->{NAME_hash};
+is(ref($nhash), 'HASH', '... checking type of NAME_hash attribute for sth');
+cmp_ok(scalar(keys(%{$nhash})), '==', 2, '... checking number of keys returned');
+cmp_ok($nhash->{ctime},         '==', 0, '... checking values returned');
+cmp_ok($nhash->{name},          '==', 1, '... checking values returned');
+
+my $nhash_lc = $sth->{NAME_lc_hash};
+is(ref($nhash_lc), 'HASH', '... checking type of NAME_lc_hash attribute for sth');
+cmp_ok(scalar(keys(%{$nhash_lc})), '==', 2, '... checking number of keys returned');
+cmp_ok($nhash_lc->{ctime},         '==', 0, '... checking values returned');
+cmp_ok($nhash_lc->{name},          '==', 1, '... checking values returned');
+
+my $nhash_uc = $sth->{NAME_uc_hash};
+is(ref($nhash_lc), 'HASH', '... checking type of NAME_us_hash attribute for sth');
+cmp_ok(scalar(keys(%{$nhash_uc})), '==', 2, '... checking number of keys returned');
+cmp_ok($nhash_uc->{CTIME},         '==', 0, '... checking values returned');
+cmp_ok($nhash_uc->{NAME},          '==', 1, '... checking values returned');
+
+my $type = $sth->{TYPE};
+is(ref($type), 'ARRAY', '... checking type of TYPE attribute for sth');
+cmp_ok(scalar(@{$type}), '==', 2, '... checking number of elements returned');
+is_deeply($type, [ 4, 12 ], '... checking values returned');
+
+my $null = $sth->{NULLABLE};
+is(ref($null), 'ARRAY', '... checking type of NULLABLE attribute for sth');
+cmp_ok(scalar(@{$null}), '==', 2, '... checking number of elements returned');
+is_deeply($null, [ 0, 0 ], '... checking values returned');
 
 # Should these work? They don't.
-ok( my $prec = $sth->{PRECISION} );
-is( $prec->[0], 10 );
-is( $prec->[1], 1024 );
-ok( my $scale = $sth->{SCALE} );
-is( $scale->[0], 0 );
-is( $scale->[1], 0 );
+my $prec = $sth->{PRECISION};
+is(ref($prec), 'ARRAY', '... checking type of PRECISION attribute for sth');
+cmp_ok(scalar(@{$prec}), '==', 2, '... checking number of elements returned');
+is_deeply($prec, [ 10, 1024 ], '... checking values returned');
+    
+my $scale = $sth->{SCALE};
+is(ref($scale), 'ARRAY', '... checking type of SCALE attribute for sth');
+cmp_ok(scalar(@{$scale}), '==', 2, '... checking number of elements returned');
+is_deeply($scale, [ 0, 0 ], '... checking values returned');
 
-ok( my $params = $sth->{ParamValues} );
-is( $params->{1}, 'foo' );
-is( $sth->{Statement}, "select ctime, name from ?" );
-ok( ! defined $sth->{RowsInCache} );
+my $params = $sth->{ParamValues};
+is(ref($params), 'HASH', '... checking type of ParamValues attribute for sth');
+is($params->{1}, 'foo', '... checking values returned');
+
+is($sth->{Statement}, "select ctime, name from ?", '... checking Statement attribute for sth');
+ok(!defined $sth->{RowsInCache}, '... checking type of RowsInCache attribute for sth');
 
 # $h->{TraceLevel} tests are in t/09trace.t
 

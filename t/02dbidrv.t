@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 48;
+use Test::More tests => 51;
 
 ## ----------------------------------------------------------------------------
 ## 02dbidrv.t - ...
@@ -118,8 +118,7 @@ BEGIN {
 		my ($dbh, $attr) = @_;
 		my @ds = $dbh->SUPER::data_sources($attr);
 		
-		Test::More::ok(
-			Test::More::eq_array(
+		Test::More::is_deeply((
 				\@ds,
 				[ 'dbi:Test:foo', 'dbi:Test:bar' ]
 				), 
@@ -147,11 +146,17 @@ isa_ok($drh, 'DBI::dr');
 cmp_ok(DBI::_get_imp_data($drh), '==', 77, '... checking the DBI::_get_imp_data function');
 
 my @ds1 = DBI->data_sources("Test");
-ok(eq_array(
+is_deeply((
 	[ @ds1 ],
 	[ 'dbi:Test:foo', 'dbi:Test:bar' ]
 	), '... got correct datasources from DBI->data_sources("Test")'
 );
+
+SKIP: {
+    skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+    
+    cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids');
+}
 
 # create scope to test $dbh DESTROY behaviour
 do {				
@@ -160,9 +165,15 @@ do {
 	
 	ok($dbh, '... got a database handle from calling $drh->connect');
 	isa_ok($dbh, 'DBI::db');
-	
+
+    SKIP: {
+        skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+    
+        cmp_ok($drh->{Kids}, '==', 1, '... this Driver does not yet have any Kids');
+    }  
+
 	my @ds2 = $dbh->data_sources();
-	ok(eq_array(
+	is_deeply((
 		[ @ds2 ],
 		[ 'dbi:Test:foo', 'dbi:Test:bar', 'dbi:Test:baz' ]
 		), '... got correct datasources from $dbh->data_sources()'
@@ -177,6 +188,12 @@ do {
 	cmp_ok($drh->err, '==', 41, '... checking Database handle err set with Driver handle set_err method');
 
 };
+
+SKIP: {
+    skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+    
+    cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids');
+}
 
 # copied up to drh from dbh when dbh was DESTROYd
 cmp_ok($drh->err, '==', 42, '... $dbh->DESTROY should set $drh->err to 42');

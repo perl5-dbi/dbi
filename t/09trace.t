@@ -2,13 +2,25 @@
 # vim:sw=4:ts=8
 
 use strict;
+
+# 66 tests originally
 use Test::More tests => 66;
 
-BEGIN { use_ok( 'DBI' ); }
+## ----------------------------------------------------------------------------
+## 09trace.t
+## ----------------------------------------------------------------------------
+# 
+## ----------------------------------------------------------------------------
+
+BEGIN { 
+    use_ok( 'DBI' ); 
+}
 
 $|=1;
 
+## ----------------------------------------------------------------------------
 # Connect to the example driver.
+
 my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
                            { PrintError => 0,
                              RaiseError => 1,
@@ -19,16 +31,17 @@ isa_ok( $dbh, 'DBI::db' );
 # Clean up when we're done.
 END { $dbh->disconnect if $dbh };
 
+## ----------------------------------------------------------------------------
+# Check the database handle attributes.
 
-# ------ Check the database handle attributes.
-
-is( $dbh->{TraceLevel}, $DBI::dbi_debug & 0xF);
+cmp_ok($dbh->{TraceLevel}, '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute');
 
 my $trace_file = "dbitrace.log";
-print "trace to file $trace_file\n";
+
 1 while unlink $trace_file;
+
 $dbh->trace(0, $trace_file);
-ok( -f $trace_file );
+ok( -f $trace_file, '... trace file successfully created');
 
 my @names = qw(
 	SQL
@@ -59,19 +72,20 @@ foreach my $name (@names) {
 
     $flag{$name} = $flag1;
     $all_flags |= $flag1
-	if defined $flag1; # reduce noise if there's a bug
+        if defined $flag1; # reduce noise if there's a bug
 }
+
 print "parse_trace_flag @names\n";
-is keys %flag, @names;
+ok(eq_set([ keys %flag ], [ @names ]), '...');
 $dbh->{TraceLevel} = 0;
 $dbh->{TraceLevel} = join "|", @names;
-is $dbh->{TraceLevel}, $all_flags;
+is($dbh->{TraceLevel}, $all_flags, '...');
 
 {
-print "inherit\n";
-my $sth = $dbh->prepare("select ctime, name from foo");
-isa_ok( $sth, 'DBI::st' );
-is( $sth->{TraceLevel}, $all_flags );
+    print "inherit\n";
+    my $sth = $dbh->prepare("select ctime, name from foo");
+    isa_ok( $sth, 'DBI::st' );
+    is( $sth->{TraceLevel}, $all_flags );
 }
 
 $dbh->{TraceLevel} = 0;
@@ -80,17 +94,17 @@ $dbh->{TraceLevel} = 'ALL';
 ok $dbh->{TraceLevel};
 
 {
-print "unknown parse_trace_flag\n";
-my $warn = 0;
-local $SIG{__WARN__} = sub {
-    if ($_[0] =~ /unknown/i) { ++$warn; print "warn: ",@_ }else{ warn @_ }
-};
-is $dbh->parse_trace_flag("nonesuch"), undef;
-is $warn, 0;
-is $dbh->parse_trace_flags("nonesuch"), 0;
-is $warn, 1;
-is $dbh->parse_trace_flags("nonesuch|SQL|nonesuch2"), $dbh->parse_trace_flag("SQL");
-is $warn, 2;
+    print "unknown parse_trace_flag\n";
+    my $warn = 0;
+    local $SIG{__WARN__} = sub {
+        if ($_[0] =~ /unknown/i) { ++$warn; print "warn: ",@_ }else{ warn @_ }
+        };
+    is $dbh->parse_trace_flag("nonesuch"), undef;
+    is $warn, 0;
+    is $dbh->parse_trace_flags("nonesuch"), 0;
+    is $warn, 1;
+    is $dbh->parse_trace_flags("nonesuch|SQL|nonesuch2"), $dbh->parse_trace_flag("SQL");
+    is $warn, 2;
 }
 
 $dbh->trace(0);

@@ -1,4 +1,4 @@
-#!perl -w
+#!perl -Tw
 
 use lib qw(blib/arch blib/lib);	# needed since -T ignores PERL5LIB
 use DBI qw(:sql_types);
@@ -10,96 +10,141 @@ $^W = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 247;
+# originally 246 tests
+use Test::More tests => 252;
+#use Test::More 'no_plan';
+
+# "globals"
+my ($r, $dbh);
 
 ## testing tracing to file
+sub trace_to_file {
 
-my $trace_file = "dbitrace.log";
+	my $trace_file = "dbitrace.log";
 
-SKIP: {
-	skip "no trace file to clean up", 2 unless (-e $trace_file);
+	SKIP: {
+		skip "no trace file to clean up", 2 unless (-e $trace_file);
 	
-	is(unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
+		is(unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
+		ok( !-e $trace_file, "Trace file actually gone" );
+	}
+
+	my $orig_trace_level = DBI->trace;
+	DBI->trace(3, $trace_file);		# enable trace before first driver load
+	
+	$dbh = DBI->connect('dbi:ExampleP(AutoCommit=>1):', undef, undef);
+	die "Unable to connect to ExampleP driver: $DBI::errstr" unless $dbh;
+
+	isa_ok($dbh, 'DBI::db');
+
+	$dbh->dump_handle("dump_handle test, write to log file", 2);
+
+	DBI->trace(0, undef);	# turn off and restore to STDERR
+	
+	SKIP: {
+		skip "cygwin has buffer flushing bug", 1 if ($^O =~ /cygwin/i);
+		ok( -s $trace_file, "trace file size = " . -s $trace_file);
+	}
+
+	is( unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
 	ok( !-e $trace_file, "Trace file actually gone" );
 }
 
-my $orig_trace_level = DBI->trace;
-DBI->trace(3, $trace_file);		# enable trace before first driver load
-
-my $r;
-my $dbh = DBI->connect('dbi:ExampleP(AutoCommit=>1):', undef, undef);
-die "Unable to connect to ExampleP driver: $DBI::errstr" unless $dbh;
-
-ok($dbh);
-isa_ok($dbh, 'DBI::db');
-
-$dbh->dump_handle("dump_handle test, write to log file", 2);
-
-DBI->trace(0, undef);	# turn off and restore to STDERR
-if ($^O =~ /cygwin/i) { # cygwin has buffer flushing bug
-	ok(1);
-} else {
-	ok( -s $trace_file, "trace file size = " . -s $trace_file);
-}
-
-is( unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
-ok( !-e $trace_file, "Trace file actually gone" );
+trace_to_file();
 
 # internal hack to assist debugging using DBI_TRACE env var. See DBI.pm.
 DBI->trace(@DBI::dbi_debug) if @DBI::dbi_debug;
 
-$dbh->{Taint} = 1 unless $DBI::PurePerl;
-
 my $dbh2;
 eval {
-    $dbh2 = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError=>1, AutoCommit=>0 });
+    $dbh2 = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError => 1, AutoCommit => 0 });
 };
-ok($@, $@);
-ok(!$dbh2);
+like($@, qr/install_driver\(NoneSuch\) failed/, '... we should have an exception here');
+ok(!$dbh2, '... $dbh2 should not be defined');
 
 $dbh2 = DBI->connect('dbi:ExampleP:', '', '');
 ok($dbh ne $dbh2);
-my $dbh3 = DBI->connect_cached('dbi:ExampleP:', '', '');
-my $dbh4 = DBI->connect_cached('dbi:ExampleP:', '', '');
-ok($dbh3 eq $dbh4);
-my $dbh5 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo=>1 });
-ok($dbh5 ne $dbh4);
 
-#$dbh->trace(2);
+sub check_connect_cached {
+	# connect_cached
+	# ------------------------------------------
+	# This test checks that connect_cached works
+	# and how it then relates to the CachedKids 
+	# attribute for the driver.
+
+	my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '');
+	my $dbh_cached_2 = DBI->connect_cached('dbi:ExampleP:', '', '');
+	my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
+	
+	isa_ok($dbh_cached_1, "DBI::db");
+	isa_ok($dbh_cached_2, "DBI::db");
+	isa_ok($dbh_cached_3, "DBI::db");
+	
+	is($dbh_cached_1, $dbh_cached_2, '... these 2 handles are cached, so they are the same');
+	isnt($dbh_cached_3, $dbh_cached_2, '... this handle was created with different parameters, so it is not the same');
+
+	my $drh = $dbh->{Driver};
+	isa_ok($drh, "DBI::dr");
+	
+	my @cached_kids = values %{$drh->{CachedKids}};	
+	ok(eq_set(\@cached_kids, [ $dbh_cached_1, $dbh_cached_3 ]), '... these are our cached kids');
+
+	$drh->{CachedKids} = {};	
+	cmp_ok(scalar(keys %{$drh->{CachedKids}}), '==', 0, '... we have emptied out cache');	
+}
+
+check_connect_cached();
+
 $dbh->{AutoCommit} = 1;
 $dbh->{PrintError} = 0;
-ok($dbh->{Taint}      == 1) unless $DBI::PurePerl && ok(1);
+
 ok($dbh->{AutoCommit} == 1);
-ok($dbh->{PrintError} == 0);
-#$dbh->trace(0); die;
+cmp_ok($dbh->{PrintError}, '==', 0, '... PrintError should be 0');
 
-ok($dbh->{FetchHashKeyName} eq 'NAME');
-ok($dbh->{example_driver_path} =~ m:DBD/ExampleP.pm$:, $dbh->{example_driver_path});
-#$dbh->trace(2);
+SKIP: {
+	skip "cant test this if we have DBI::PurePerl", 1 if $DBI::PurePerl;
+	$dbh->{Taint} = 1;	
+	ok($dbh->{Taint}      == 1);
+}
 
-print "quote\n";
-ok($dbh->quote("quote's") eq "'quote''s'");
-ok($dbh->quote("42", SQL_VARCHAR) eq "'42'");
-ok($dbh->quote("42", SQL_INTEGER) eq "42");
-ok($dbh->quote(undef)     eq "NULL");
+is($dbh->{FetchHashKeyName}, 'NAME', '... FetchHashKey is NAME');
+like($dbh->{example_driver_path}, qr/DBD\/ExampleP\.pm$/, '... checking the example driver_path');
 
-print "quote_identifier\n";
+sub check_quote {
+	# checking quote
+	is($dbh->quote("quote's"),         "'quote''s'", '... quoting strings with embedded single quotes');
+	is($dbh->quote("42", SQL_VARCHAR), "'42'",       '... quoting number as SQL_VARCHAR');
+	is($dbh->quote("42", SQL_INTEGER), "42",         '... quoting number as SQL_INTEGER');
+	is($dbh->quote(undef),			   "NULL",		 '... quoting undef as NULL');
+}
+
+check_quote();
+
 my $get_info = $dbh->{examplep_get_info} || {};
-$get_info->{29}  ='"'; # SQL_IDENTIFIER_QUOTE_CHAR
-$dbh->{examplep_get_info} = $get_info;	# trigger STORE
 
-ok($dbh->quote_identifier('foo')    eq '"foo"',  $dbh->quote_identifier('foo'));
-ok($dbh->quote_identifier('f"o')    eq '"f""o"', $dbh->quote_identifier('f"o'));
-ok($dbh->quote_identifier('foo','bar') eq '"foo"."bar"');
-ok($dbh->quote_identifier(undef,undef,'bar') eq '"bar"');
+sub check_quote_identifier {
+	# quote_identifier
+	$get_info->{29}  ='"';					# SQL_IDENTIFIER_QUOTE_CHAR
+	$dbh->{examplep_get_info} = $get_info;	# trigger STORE
+	
+	is($dbh->quote_identifier('foo'),             '"foo"',       '... properly quotes foo as "foo"');
+	is($dbh->quote_identifier('f"o'),             '"f""o"',      '... properly quotes f"o as "f""o"');
+	is($dbh->quote_identifier('foo','bar'),       '"foo"."bar"', '... properly quotes foo, bar as "foo"."bar"');
+	is($dbh->quote_identifier(undef,undef,'bar'), '"bar"',       '... properly quotes undef, undef, bar as "bar"');
 
-$get_info->{41}  ='@'; # SQL_CATALOG_NAME_SEPARATOR
-$get_info->{114} = 2;  # SQL_CATALOG_LOCATION
-$dbh->{examplep_get_info} = $get_info;	# trigger STORE
-ok($dbh->quote_identifier('foo',undef,'bar') eq '"foo"."bar"');
+	is($dbh->quote_identifier('foo',undef,'bar'), '"foo"."bar"', '... properly quotes foo, undef, bar as "foo"."bar"');
 
-$dbh->{dbi_quote_identifier_cache} = undef; # force cache refresh
-ok($dbh->quote_identifier('foo',undef,'bar') eq '"bar"@"foo"');
+	$get_info->{41}  ='@';                  # SQL_CATALOG_NAME_SEPARATOR
+	$get_info->{114} = 2;                   # SQL_CATALOG_LOCATION
+	$dbh->{examplep_get_info} = $get_info;	# trigger STORE
+
+	# force cache refresh
+	$dbh->{dbi_quote_identifier_cache} = undef; 
+	is($dbh->quote_identifier('foo',undef,'bar'), '"bar"@"foo"', '... now quotes it as "bar"@"foo" after flushing cache');
+}
+
+check_quote_identifier();
+
 
 print "others\n";
 eval { $dbh->commit('dummy') };
@@ -565,29 +610,40 @@ ok(!$dbh->{HandleError});
 
 #$dbh->trace(0); die;
 
-print "dump_results\n";
-ok($csr_a = $dbh->prepare($std_sql));
-if ($haveFileSpec && length(File::Spec->updir)) {
-  ok($csr_a->execute(File::Spec->updir));
-} else {
-  ok($csr_a->execute('../'));
-}
-my $dump_dir = ($ENV{TMP} || $ENV{TEMP} || $ENV{TMPDIR} 
-               || $ENV{'SYS$SCRATCH'} || '/tmp');
-my $dump_file = ($haveFileSpec)
-    ? File::Spec->catfile($dump_dir, 'dumpcsr.tst')
-    : "$dump_dir/dumpcsr.tst";
-($dump_file) = ($dump_file =~ m/^(.*)$/);	# untaint
+{
+	# dump_results;
+	my $sth = $dbh->prepare($std_sql);
+	
+	isa_ok($sth, "DBI::st");
+	
+	if ($haveFileSpec && length(File::Spec->updir)) {
+	  ok($sth->execute(File::Spec->updir));
+	} else {
+	  ok($sth->execute('../'));
+	}
+	
+	my $dump_dir = ($ENV{TMP}           || 
+					$ENV{TEMP}          || 
+					$ENV{TMPDIR}        || 
+					$ENV{'SYS$SCRATCH'} || 
+					'/tmp');
+	my $dump_file = ($haveFileSpec) ? 
+						File::Spec->catfile($dump_dir, 'dumpcsr.tst')
+						: 
+						"$dump_dir/dumpcsr.tst";
+	($dump_file) = ($dump_file =~ m/^(.*)$/);	# untaint
 
-SKIP: {
-	skip "# dump_results test skipped: unable to open $dump_file: $!\n", 2 unless (open(DUMP_RESULTS, ">$dump_file"));
-	ok($csr_a->dump_results("10", "\n", ",\t", \*DUMP_RESULTS));
-	close(DUMP_RESULTS);
-	ok(-s $dump_file > 0);
-}
+	SKIP: {
+		skip "# dump_results test skipped: unable to open $dump_file: $!\n", 2 unless (open(DUMP_RESULTS, ">$dump_file"));
+		ok($sth->dump_results("10", "\n", ",\t", \*DUMP_RESULTS));
+		close(DUMP_RESULTS);
+		ok(-s $dump_file > 0);
+	}
 
-is( unlink( $dump_file ), 1, "Remove $dump_file" );
-ok( !-e $dump_file, "Actually gone" );
+	is( unlink( $dump_file ), 1, "Remove $dump_file" );
+	ok( !-e $dump_file, "Actually gone" );
+
+}
 
 print "table_info\n";
 # First generate a list of all subdirectories

@@ -12,7 +12,7 @@ BEGIN {
 		plan skip_all => "this $^O perl $] not configured to support iThreads";
 	}
 	else {
-		plan tests => 11;
+		plan tests => 12;
 	}
 }
 
@@ -28,31 +28,40 @@ use threads;
 }
 
 $DBI::neat_maxlen = 12345;
+cmp_ok($DBI::neat_maxlen, '==', 12345, '... assignment of neat_maxlen was successful');
 
 my @connect_args = ("dbi:ExampleP:", '', '');
 
 my $dbh_parent = DBI->connect_cached(@connect_args);
 isa_ok( $dbh_parent, 'DBI::db' );
 
-sub tests1 {
-  is($DBI::neat_maxlen, 12345);
+# this our function for the threads to run
 
-  my $dbh = DBI->connect_cached(@connect_args);
-  isa_ok( $dbh, 'DBI::db' );
-  isnt($dbh, $dbh_parent);
-  is($dbh->{Driver}->{Kids}, 1) unless $DBI::PurePerl && ok(1);
+sub testing {
+    cmp_ok($DBI::neat_maxlen, '==', 12345, '... DBI::neat_maxlen still holding its value');
+
+    my $dbh = DBI->connect_cached(@connect_args);
+    isa_ok( $dbh, 'DBI::db' );
+    isnt($dbh, $dbh_parent, '... new $dbh is not the same instance as $dbh_parent');
+ 
+    SKIP: {
+        skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
+        
+        cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid');
+    }
 }
+
+# load up the threads
 
 my @thr;
-foreach (1..2) {
-    print "\n\n*** creating thread $_\n";
-    push @thr, threads_sub->create( \&tests1 );
-}
-foreach (@thr) {
-    print "\n\n*** joining thread $_\n";
-    $_->join;
+push @thr, threads_sub->create( \&testing ) foreach (1..2);
+
+# join all the threads
+
+foreach my $thread (@thr) {
+    $thread->join;
 }
 
-ok(1);
+pass('... all tests have passed');
 
 1;

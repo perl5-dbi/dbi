@@ -7,7 +7,9 @@ use Test::More tests => 101;
 ## ----------------------------------------------------------------------------
 ## 03handle.t - tests handles
 ## ----------------------------------------------------------------------------
-#
+# This set of tests exercises the different handles; Driver, Database and 
+# Statement in various ways, in particular in their interactions with one
+# another
 ## ----------------------------------------------------------------------------
 
 BEGIN { 
@@ -72,52 +74,52 @@ do {
     
     ok(!$sth1->{Active}, '... our first statment is no longer Active since we re-prepared it');
 
-    $sth2 = $dbh->prepare_cached($sql, { foo => 1 });
-    isa_ok($sth2, 'DBI::st');
+    my $sth3 = $dbh->prepare_cached($sql, { foo => 1 });
+    isa_ok($sth3, 'DBI::st');
     
-    isnt($sth1, $sth2, '... prepare_cached returned a different statement handle now');
+    isnt($sth1, $sth3, '... prepare_cached returned a different statement handle now');
     cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');
     ok(eq_set(
         [ values %{$ck} ],
-        [ $sth1, $sth2 ]
+        [ $sth1, $sth3 ]
         ), 
     '... both statment handles should be in the CachedKids');    
 
     ok($sth1->execute("."), '... executing first statement handle again');
     ok($sth1->{Active}, '... first statement handle is now active again');
     
-    my $sth3 = $dbh->prepare_cached($sql, undef, 3);
-    isa_ok($sth3, 'DBI::st');
-    
-    isnt($sth1, $sth3, '... our new statement handle is not the same as our first');
-    ok($sth1->{Active}, '... first statement handle is still active');
-    
-    cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
-    ok(eq_set(
-        [ values %{$ck} ],
-        [ $sth2, $sth3 ]
-        ), 
-    '... second and third statment handles should be in the CachedKids');      
-    
-    $sth1->finish;
-    ok(!$sth1->{Active}, '... first statement handle is no longer active');    
-
-    ok($sth3->execute("."), '... third statement handle executed properly');
-    ok($sth3->{Active}, '... third statement handle is Active');
-    
-    my $sth4 = $dbh->prepare_cached($sql, undef, 1);
+    my $sth4 = $dbh->prepare_cached($sql, undef, 3);
     isa_ok($sth4, 'DBI::st');
     
-    is($sth4, $sth3, '... third statement handle and fourth one match');
-    ok(!$sth3->{Active}, '... third statement handle is not Active');
-    ok(!$sth4->{Active}, '... fourth statement handle is not Active (shouldnt be its the same as third)');
+    isnt($sth1, $sth4, '... our fourth statement handle is not the same as our first');
+    ok($sth1->{Active}, '... first statement handle is still active');
     
     cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
     ok(eq_set(
         [ values %{$ck} ],
         [ $sth2, $sth4 ]
         ), 
-    '... second and third/fourth statment handles should be in the CachedKids');     
+    '... second and fourth statment handles should be in the CachedKids');      
+    
+    $sth1->finish;
+    ok(!$sth1->{Active}, '... first statement handle is no longer active');    
+
+    ok($sth4->execute("."), '... fourth statement handle executed properly');
+    ok($sth4->{Active}, '... fourth statement handle is Active');
+    
+    my $sth5 = $dbh->prepare_cached($sql, undef, 1);
+    isa_ok($sth5, 'DBI::st');
+    
+    is($sth4, $sth5, '... fourth statement handle and fifth one match');
+    ok(!$sth4->{Active}, '... fourth statement handle is not Active');
+    ok(!$sth5->{Active}, '... fifth statement handle is not Active (shouldnt be its the same as fifth)');
+    
+    cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
+    ok(eq_set(
+        [ values %{$ck} ],
+        [ $sth2, $sth5 ]
+        ), 
+    '... second and fourth/fifth statment handles should be in the CachedKids');     
 
     cmp_ok($warn, '==', 1, '... we still only got one warning');
     $dbh->disconnect;
