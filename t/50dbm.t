@@ -140,9 +140,9 @@ CREATE TABLE fruit (dKey INT, dVal VARCHAR(10));
 INSERT INTO  fruit VALUES (1,'oranges'   );
 INSERT INTO  fruit VALUES (2,'to_change' );
 INSERT INTO  fruit VALUES (3, NULL       );
-INSERT INTO  fruit VALUES (4,'to_delete' );
+INSERT INTO  fruit VALUES (4,'to delete' );
 UPDATE fruit SET dVal='apples' WHERE dKey=2;
-DELETE FROM  fruit WHERE dKey=4;
+DELETE FROM  fruit WHERE dVal='to delete';
 SELECT * FROM fruit;
 DROP TABLE fruit;
 
