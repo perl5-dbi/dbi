@@ -89,6 +89,8 @@ sub connect ($$;$$$) {
           , dbm_version           => 1  # verbose DBD::DBM version
           , dbm_ext               => 1  # file extension
           , dbm_store_metadata    => 1  # column names, etc.
+          , dbm_rdonly            => 1  # for Berkeley DB
+          , dbm_create            => 1  # for Berkeley DB
         };
 
 	my($var, $val);
@@ -292,13 +294,15 @@ sub open_table ($$$$$) {
     $dbh->{dbm_tables}->{$file}->{mldbm} = $serializer if $serializer;
 
     my $ext =  '' if $dbm_type eq 'GDBM_File'
-                  or $dbm_type eq 'DB_File';
+                  or $dbm_type eq 'DB_File'
+                  or $dbm_type eq 'BerkeleyDB';
     $ext = '.pag' if $dbm_type eq 'NDBM_File'
                   or $dbm_type eq 'SDBM_File'
                   or $dbm_type eq 'ODBM_File';
     $ext = $dbh->{dbm_ext} if defined $dbh->{dbm_ext};
     $ext = $dbh->{dbm_tables}->{$file}->{ext}
         if defined $dbh->{dbm_tables}->{$file}->{ext};
+    $ext = '' unless defined $ext;
 
     die "Cannot CREATE '$file$ext', already exists!"
         if $createMode and (-e "$file$ext");
@@ -316,6 +320,7 @@ sub open_table ($$$$$) {
     if ( $serializer ) {
        require 'MLDBM.pm';
        $MLDBM::UseDB      = $dbm_type;
+       $MLDBM::UseDB      = 'BerkeleyDB::Hash' if $dbm_type eq 'BerkeleyDB';
        $MLDBM::Serializer = $serializer;
        $tie_type = 'MLDBM';
     }
@@ -347,8 +352,21 @@ sub open_table ($$$$$) {
 
     # TIEING
     #
-    eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
-       unless $self->{command} eq 'DROP';
+    if ($dbm_type eq 'BerkeleyDB') {
+       my $DB_CREATE = 1;  # DB_CREATE should import constants
+       my $DB_RDONLY = 16; # DB_RDONLY should import constants
+       my %flags = ( '-Flags' => $DB_RDONLY );
+          %flags = ( '-Flags' => $DB_CREATE ) if $lockMode or $createMode;
+       my $t = 'BerkeleyDB::Hash';
+          $t = 'MLDBM' if $serializer;
+       if ( $self->{command} ne 'DROP') {
+           eval { tie %h, $t, -Filename=>$file, %flags }
+       }
+    }
+    else {
+        eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
+            unless $self->{command} eq 'DROP';
+    }
     die "Cannot tie file '$file': $@" if $@;
 
 
@@ -527,7 +545,7 @@ sub push_row ($$$) {
     my($self, $data, $row_aryref) = @_;
     my $key = shift @$row_aryref;
     if ( $self->{mldbm} ) {
-        $self->{hash}->{$key}=$row_aryref;
+        $self->{hash}->{$key}= $row_aryref;
     }
     else {
         $self->{hash}->{$key}=$row_aryref->[0];
@@ -647,6 +665,8 @@ DBD::DBM is a database management sytem that can work right out of the box.  If 
 The module uses a DBM file storage layer.  DBM file storage is common on many platforms and files can be created with it in many languges.  That means that, in addition to creating files with DBI/SQL, you can also use DBI/SQL to access and modify files created by other DBM modules and programs.  You can also use those programs to access files created with DBD::DBM.
 
 DBM files are stored in binary format optimized for quick retrieval when using a key field.  That optimization can be used advantageously to make DBD::DBM SQL operations that use key fields very fast.  There are several different "flavors" of DBM - different storage formats supported by different sorts of perl modules such as SDBM_File and MLDBM.  This module supports all of the flavors that perl supports and, when used with MLDBM, supports tables with any number of columns and insertion of Perl objects into tables.
+
+DBD::DBM has been tested with the following DBM types: SDBM_File, NDBM_File, ODBM_File, GDBM_File, DB_File, BerekeleyDB.  Each type was tested both with and without MLDBM.
 
 =head1 QUICK START
 
