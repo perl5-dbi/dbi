@@ -82,19 +82,25 @@
 
     sub prepare {
 	my($dbh, $statement)= @_;
+	my @fields;
+	my($fields, $dir) = $statement =~ m/^\s*select\s+(.*?)\s+from\s+(\S*)/i;
 
-	my($fields, $dir)
-		= $statement =~ m/^\s*select\s+(.*?)\s+from\s+(\S*)/i;
-	return $dbh->set_err(1, "Syntax error in select statement (\"$statement\")")
-		unless defined $fields and defined $dir;
+	if (defined $fields and defined $dir) {
+	    @fields = ($fields eq '*')
+			? keys %DBD::ExampleP::statnames
+			: split(/\s*,\s*/, $fields);
+	}
+	else {
+	    return $dbh->set_err(1, "Syntax error in select statement (\"$statement\")")
+		unless $statement =~ m/^\s*set\s+/;
+	    # the SET syntax is just a hack so the ExampleP driver can
+	    # be used to test non-select statements.
+	    # No we have DBI::DBM etc ExampleP should be deprecated
+	}
 
 	my ($outer, $inner) = DBI::_new_sth($dbh, {
 	    'Statement'     => $statement,
 	}, ['example implementors private data '.__PACKAGE__]);
-
-	my @fields = ($fields eq '*')
-			? keys %DBD::ExampleP::statnames
-			: split(/\s*,\s*/, $fields);
 
 	my @bad = map {
 	    defined $DBD::ExampleP::statnames{$_} ? () : $_
@@ -102,14 +108,16 @@
 	return $dbh->set_err(1, "Unknown field names: @bad")
 		if @bad;
 
-	$inner->{dbd_param} = [];
-	@{ $inner->{'dbd_param'} } = ($dir) if $dir !~ /\?/;
-
-	$outer->STORE('NAME' => \@fields);
-	$outer->STORE('NULLABLE' => [ (0) x @fields ]);
 	$outer->STORE('NUM_OF_FIELDS' => scalar(@fields));
-	$outer->STORE('NUM_OF_PARAMS' => ($dir !~ /\?/) ? 0 : 1);
-	$outer->STORE('SCALE'     => [ (0) x @fields ] );
+
+	$inner->{'dbd_ex_dir'} = $dir if defined($dir) && $dir !~ /\?/;
+	$outer->STORE('NUM_OF_PARAMS' => ($dir) ? $dir =~ tr/?/?/ : 0);
+
+	if (@fields) {
+	    $outer->STORE('NAME'     => \@fields);
+	    $outer->STORE('NULLABLE' => [ (0) x @fields ]);
+	    $outer->STORE('SCALE'    => [ (0) x @fields ]);
+	}
 
 	$outer;
     }
@@ -285,10 +293,12 @@
 	}
 
 	my $dbd_param = $sth->{'dbd_param'} || [];
-	return $sth->set_err(2, @$dbd_param." values bound when 1 expected")
-	    unless @$dbd_param == 1;
+	return $sth->set_err(2, @$dbd_param." values bound when $sth->{NUM_OF_PARAMS} expected")
+	    unless @$dbd_param == $sth->{NUM_OF_PARAMS};
 
-	$dir = $dbd_param->[0];
+	return 0 unless $sth->{NUM_OF_FIELDS}; # not a select
+
+	$dir = $dbd_param->[0] || $sth->{dbd_ex_dir};
 	return $sth->set_err(2, "No bind parameter supplied")
 	    unless defined $dir;
 

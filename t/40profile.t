@@ -25,7 +25,7 @@ BEGIN {
 }
 
 use Test;
-BEGIN { plan tests => 59; }
+BEGIN { plan tests => 60; }
 
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -137,19 +137,24 @@ $sql = "select name from .";
 $sth = $dbh->prepare($sql);
 $sth->execute();
 while ( my $hash = $sth->fetchrow_hashref ) {}
-$dbh->do($sql); # check dbh do() gets associated with right statement
+undef $sth; # DESTROY
 
 # check that the resulting tree fits the expected layout
 $data = $dbh->{Profile}{Data};
 ok($data);
 ok(exists $data->{$sql});
-ok(keys %{$data->{$sql}}, 5);
+ok(keys %{$data->{$sql}}, 4);
+print "Profile Data keys: @{[ keys %{$data->{$sql}} ]}\n";
 ok(exists $data->{$sql}{prepare});
 ok(exists $data->{$sql}{execute});
 ok(exists $data->{$sql}{fetchrow_hashref});
-ok(exists $data->{$sql}{do});
 ok(exists $data->{$sql}{DESTROY});
 
+my $do_sql = "set foo=1";
+$dbh->do($do_sql); # check dbh do() gets associated with right statement
+ok(keys %{$data->{$do_sql}}, 2); # XXX extra one is DESTROY
+ok(exists $data->{$do_sql}{do});
+print "Profile Data keys: @{[ keys %{$data->{$do_sql}} ]}\n";
 
 
 # try a custom path

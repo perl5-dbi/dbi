@@ -104,13 +104,13 @@ is( $drh->{Name}, 'ExampleP' );
 # ------ Test the statement handle attributes.
 
 # Create a statement handle.
-(ok my $sth = $dbh->prepare("select ctime, name from foo") );
+(ok my $sth = $dbh->prepare("select ctime, name from ?") );
 ok( !$sth->{Executed} );
 ok( !$dbh->{Executed} );
 is( $sth->{ErrCount}, 0 );
 
 # Trigger an exception.
-eval { $sth->execute };
+eval { $sth->execute("foo") };
 ok( $err = $@ );
 # we don't check actual opendir error msg because of locale differences
 like( $err, qr/^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i );
@@ -159,7 +159,7 @@ ok( ! defined $sth->{Profile} );
 ok( ! defined $sth->{CursorName} );
 
 is( $sth->{NUM_OF_FIELDS}, 2 );
-is( $sth->{NUM_OF_PARAMS}, 0 );
+is( $sth->{NUM_OF_PARAMS}, 1 );
 ok( my $name = $sth->{NAME} );
 is( @$name, 2 );
 ok( $name->[0] eq 'ctime' );
@@ -199,7 +199,7 @@ is( $scale->[1], 0 );
 
 ok( my $params = $sth->{ParamValues} );
 is( $params->{1}, 'foo' );
-is( $sth->{Statement}, "select ctime, name from foo" );
+is( $sth->{Statement}, "select ctime, name from ?" );
 ok( ! defined $sth->{RowsInCache} );
 
 # $h->{TraceLevel} tests are in t/09trace.t

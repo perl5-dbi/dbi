@@ -1159,27 +1159,27 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
 	    imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh; /* works for DRH also */
 	    if (DBIc_CACHED_KIDS(imp_dbh)) {
-		warn("DBI handle cleared whilst still holding %d cached kids",
-			HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
+		warn("DBI handle 0x%x cleared whilst still holding %d cached kids",
+			DBIc_MY_H(imp_xxh), HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
 		SvREFCNT_dec(DBIc_CACHED_KIDS(imp_dbh)); /* may recurse */
 		DBIc_CACHED_KIDS(imp_dbh) = Nullhv;
 	    }
 	}
 
 	if (DBIc_ACTIVE(imp_xxh)) {	/* bad news		*/
-	    warn("DBI handle cleared whilst still active");
+	    warn("DBI handle 0x%x cleared whilst still active", DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	/* check that the implementor has done its own housekeeping	*/
 	if (DBIc_IMPSET(imp_xxh)) {
-	    warn("DBI handle has uncleared implementors data");
+	    warn("DBI handle 0x%x has uncleared implementors data", DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	if (DBIc_KIDS(imp_xxh)) {
-	    warn("DBI handle has %d uncleared child handles",
-		    (int)DBIc_KIDS(imp_xxh));
+	    warn("DBI handle 0x%x has %d uncleared child handles",
+		    DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
 	    dump = TRUE;
 	}
     }
