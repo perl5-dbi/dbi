@@ -6613,7 +6613,7 @@ change log message and diff of each change checked-in to the source.
 After making your changes you can generate a patch file, but before
 you do, make sure your source is still upto date using:
 
-  svn update http://svn.perl.org/modules/dbi/trunk
+  svn update
 
 If you get any conflicts reported you'll need to fix them first.
 Then generate the patch file from within the C<trunk> directory using:
