@@ -242,8 +242,12 @@ cmp_ok($num_drivers, '>', 0, '... we should at least have one driver');
 cmp_ok(DBI::hash("foo1"  ), '==', -1077531989, '... should be -1077531989');
 cmp_ok(DBI::hash("foo1",0), '==', -1077531989, '... should be -1077531989');
 cmp_ok(DBI::hash("foo2",0), '==', -1077531990, '... should be -1077531990');
+SKIP: {
+    skip("Math::BigInt < 1.56",2)
+	if $DBI::PurePerl && !eval { require Math::BigInt; require_version Math::BigInt 9.56 };
 cmp_ok(DBI::hash("foo1",1), '==', -1263462440, '... should be -1263462440');
 cmp_ok(DBI::hash("foo2",1), '==', -1263462437, '... should be -1263462437');
+}
 
 is(data_string_desc(""), "UTF8 off, ASCII, 0 characters 0 bytes");
 is(data_string_desc(42), "UTF8 off, ASCII, 2 characters 2 bytes");

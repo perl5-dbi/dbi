@@ -402,6 +402,13 @@ rather than convert int_colum values to strings (which wouldn't match).
 Okay. I'll take that as a vote for bind_param_by_ref as an alias for
 bind_param_inout. >>todo.
 
+bind_param_by_ref (or bind_param_byref) could be provided as a fallback
+method using a BeforeExecute hook to call bind_param with the 'current value'
+from the reference.
+
+Should ParamValues hold the value or the ref?
+Use ParamAttr to indicate byref?
+
 ------
 
 OTHERS:

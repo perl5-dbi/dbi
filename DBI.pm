@@ -5031,11 +5031,6 @@ big to fit, then the execution should fail. If unsure what value to use,
 pick a generous length, i.e., a length larger than the longest value that would ever be
 returned.  The only cost of using a larger value than needed is wasted memory.
 
-It is expected that few drivers will support this method. The only
-driver currently known to do so is DBD::Oracle (DBD::ODBC may support
-it in a future release). Therefore it should not be used for database
-independent applications.
-
 Undefined values or C<undef> are used to indicate null values.
 See also L</"Placeholders and Bind Values"> for more information.
 
