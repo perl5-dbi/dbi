@@ -8,6 +8,9 @@
  * dbdimp.h file in the driver source.
  */
 
+#ifndef DBI_DBD_XSH_H
+#define DBI_DBD_XSH_H
+
 void     dbd_init _((dbistate_t *dbistate));
 
 int      dbd_discon_all _((SV *drh, imp_drh_t *imp_drh));
@@ -29,6 +32,7 @@ int      dbd_db_disconnect _((SV *dbh, imp_dbh_t *imp_dbh));
 void     dbd_db_destroy    _((SV *dbh, imp_dbh_t *imp_dbh));
 int      dbd_db_STORE_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv, SV *valuesv));
 SV      *dbd_db_FETCH_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv));
+SV	*dbd_db_last_insert_id _((SV *dbh, SV *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
 
 int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));
 int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
@@ -46,4 +50,4 @@ int      dbd_bind_ph  _((SV *sth, imp_sth_t *imp_sth,
                 SV *param, SV *value, IV sql_type, SV *attribs,
 				int is_inout, IV maxlen));
 
-/* end of dbd_xsh.h */
+#endif /* end of dbd_xsh.h */

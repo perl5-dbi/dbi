@@ -1890,6 +1890,8 @@ Driver.h is very simple and the operational contents should look like this:
 
   #include "dbdimp.h"
 
+  #include "dbivport.h"   /* see below                    */
+
   #include <dbd_xsh.h>    /* installed by the DBI module  */
 
   #endif /* DRIVER_H_INCLUDED */
@@ -1904,6 +1906,24 @@ DBI (prior to DBI 1.06) as well as modern versions.
 The only standard, DBI-mandated functions that you need write are those
 specified in the dbd_xsh.h header.
 You might also add extra driver-specific functions in Driver.xs.
+
+The dbivport.h file should be I<copied> from the latest DBI release into
+your distribution each time you enhance your driver to use new features
+for which the DBI is offering backwards compatibility via dbivport.h.
+
+Its job is to allow you to enhance your code to work with the latest
+DBI API while still allowing your driver to be compiled and used
+with older versions of the DBI. For example, when the DBIh_SET_ERR_CHAR
+macro was added to DBI 1.41 in an emulation of it was added to dbivport.h.
+
+Copying dbivport.h into your driver distribution and #including it
+in Driver.h, as shown above, lets you enhance your driver to use
+the new DBIh_SET_ERR_CHAR macro even with versions of the DBI earlier
+than 1.41. This makes users happy and your life easier.
+
+Always read the notes in dbivport.h to check for any limitations
+in the emulation that you should be aware of.
+
 
 =head2 Implementation header dbdimp.h
 
@@ -2110,16 +2130,8 @@ just have an integer error code and an error message string:
 
 As you can see, any parameters that aren't relevant to you can be Null.
 
-To make drivers compatible with DBI < 1.41 you can use this:
-
-#ifndef DBIh_SET_ERR_CHAR
-#define DBIh_SET_ERR_CHAR(h, imp_xxh, err_c, err_i, errstr, state, method) \
-	sv_setiv(DBIc_ERR(imp_xxh), err_i); \
-	sv_setpv(DBIc_STATE(imp_xxh), state); \
-	sv_setpv(DBIc_ERRSTR(imp_xxh), errstr)
-#endif
-
-and pass Null for the err_c and method parameters.
+To make drivers compatible with DBI < 1.41 you should be using dbivport.h
+as described in L</Driver.h> above.
 
 The (obsolete) macros such as DBIh_EVENT2 should be removed from drivers.
 
@@ -3446,9 +3458,10 @@ macros.
 The approved method for handling these is now the four macros:
 
   DBIc_is(imp, flag)
-  DBIc_has(imp, flag)    an alias for DBIc_is
+  DBIc_has(imp, flag)       an alias for DBIc_is
   DBIc_on(imp, flag)
   DBIc_off(imp, flag)
+  DBIc_set(imp, flag, on)   set if on is true, else clear
 
 Consequently, the DBIc_XXXXX family of macros is now mostly deprecated
 and new drivers should avoid using them, even though the older drivers

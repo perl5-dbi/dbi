@@ -1,5 +1,14 @@
+/* This is a skeleton driver that only serves as a basic sanity check
+   that the Driver.xst mechansim doesn't have compile-time errors in it.
+*/
+
 #include "DBIXS.h"
 #include "dbd_xsh.h"
+
+#undef DBIh_SET_ERR_CHAR	/* to syntax check emulation */
+#include "dbivport.h"
+
+DBISTATE_DECLARE;
 
 #define dbd_discon_all(drh, imp_drh)		(drh=drh,imp_drh=imp_drh,1)
 #define dbd_dr_data_sources(drh, imp_drh, attr)	(drh=drh,imp_drh=imp_drh,Nullav)
@@ -21,6 +30,13 @@ struct imp_sth_st {
     dbih_stc_t com;     /* MUST be first element in structure   */
 };
 
+static int
+foo_dummy(SV *h)
+{
+	D_imp_xxh(h);
+	DBIh_SET_ERR_CHAR(h, imp_xxh, 0, 1, "err msg", "12345", Nullch);
+	return 1;
+}
 
 DBISTATE_DECLARE;
 
