@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 Document $t->parse_trace_flags etc
 
-=head1 CHANGES in DBI 1.42 (svn rev 218),    11th March 2004
+=head1 CHANGES in DBI 1.42 (svn rev 222),    12th March 2004
 
   Fixed $sth->{NUM_OF_FIELDS} of non-executed statement handle
     to be undef as per the docs (it was 0).
