@@ -396,8 +396,9 @@ struct dbistate_st {
     int         (*logmsg)	_((imp_xxh_t *imp_xxh, char *fmt, ...));
     int         (*set_err_sv)	_((SV *h, imp_xxh_t *imp_xxh, SV   *err, SV   *errstr, SV   *state, SV   *method));
     int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, char *err, IV err_i, char *errstr, char *state, char *method));
+    int         (*bind_col)     _((SV *sth, SV *col, SV *ref, SV *attribs));
 
-    void *pad2[6];
+    void *pad2[5];
 };
 
 /* macros for backwards compatibility */

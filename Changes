@@ -7,7 +7,6 @@ DBI::Changes - List of significant changes to the DBI
 =head1 CHANGES
 
 Drivers to change how they get debug level (with masked bits).
-Extra hooks in Driver.xst for bind_col etc
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.
@@ -36,6 +35,7 @@ Extra hooks in Driver.xst for bind_col etc
   Added details of DBI::Const::GetInfoType module to get_info() docs.
   Added ref count of inner handle to "DESTROY ignored for outer" msg.
   Added Win32 build config checks to DBI::DBD thanks to Andy Hassall.
+  Added bind_col to Driver.xst so drivers can define their own.
 
   Major update to signal handling docs thanks to Lincoln Baxter.
   Corrected dbiproxy usage doc thanks to Christian Hammers.

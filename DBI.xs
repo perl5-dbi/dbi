@@ -69,9 +69,10 @@ static AV        *dbih_get_fbav	   _((imp_sth_t *imp_sth));
 static SV	 *dbih_event	   _((SV *h, char *name, SV*, SV*));
 static int        dbih_set_attr_k  _((SV *h, SV *keysv, int dbikey, SV *valuesv));
 static SV        *dbih_get_attr_k  _((SV *h, SV *keysv, int dbikey));
+static int	 dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
 
-static int      set_err_char	_((SV *h, imp_xxh_t *imp_xxh, char *err_c, IV err_i, char *errstr, char *state, char *method));
-static int	set_err_sv	_((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
+static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, char *err_c, IV err_i, char *errstr, char *state, char *method));
+static int	set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int	dbi_hash _((char *string, long i));
 static void	dbih_dumphandle _((SV *h, char *msg, int level));
@@ -244,6 +245,7 @@ INIT_PERINTERP;
     DBIS->hash        = dbi_hash;
     DBIS->set_err_sv  = set_err_sv;
     DBIS->set_err_char= set_err_char;
+    DBIS->bind_col    = dbih_sth_bind_col;
 
 
     /* Remember the last handle used. BEWARE! Sneaky stuff here!	*/
@@ -3697,38 +3699,6 @@ bind_col(sth, col, ref, attribs=Nullsv)
     CODE:
     DBD_ATTRIBS_CHECK("bind_col", sth, attribs);
     ST(0) = boolSV(dbih_sth_bind_col(sth, col, ref, attribs));
-
-void
-bind_columns(sth, ...)
-    SV *	sth
-    CODE:
-    D_imp_sth(sth);
-    SV *colsv;
-    SV *attribs = &sv_undef;
-    int fields = DBIc_NUM_FIELDS(imp_sth);
-    int skip = 0;
-    int i;
-    if (fields <= 0 && !DBIc_ACTIVE(imp_sth))
-	croak("Statement has no result columns to bind %s",
-		"(perhaps you need to successfully call execute first)");
-    ST(0) = &sv_yes;
-    /* Backwards compatibility for old-style call with attribute hash	*/
-    /* ref as first arg. Skip arg if undef or a hash ref.		*/
-    if (!SvOK(ST(1)) || (SvROK(ST(1)) && SvTYPE(SvRV(ST(1)))==SVt_PVHV)) {
-	attribs = ST(1);
-	DBD_ATTRIBS_CHECK("bind_columns", sth, attribs);
-	skip = 1;
-    }
-    if (items-(1+skip) != fields)
-	croak("bind_columns called with %ld refs when %d needed.", items-(1+skip), fields);
-    colsv = sv_2mortal(newSViv(0));
-    for(i=1; i < items-skip; ++i) {
-	sv_setiv(colsv, i);
-	if (!dbih_sth_bind_col(sth, colsv, ST(skip+i), attribs)) {
-	    ST(0) = &sv_no;
-	    break;
-	}
-    }
 
 
 void

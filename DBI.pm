@@ -1642,6 +1642,27 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return $sth->DBI::set_err(1, "bind_param_inout_array not supported");
     }
 
+    sub bind_columns {
+	my $sth = shift;
+	my $fields = $sth->FETCH('NUM_OF_FIELDS') || 0;
+	if ($fields <= 0 && !$sth->{Active}) {
+	    # XXX ought to be set_err
+	    die "Statement has no result columns to bind"
+		." (perhaps you need to successfully call execute first)";
+	}
+	# Backwards compatibility for old-style call with attribute hash
+	# ref as first arg. Skip arg if undef or a hash ref.
+	my $attr = $_[0]; # maybe
+	shift if !defined $attr or ref($attr) eq 'HASH';
+
+	die "bind_columns called with ".@_." refs when $fields needed."
+	    if @_ != $fields;
+	my $idx = 0;
+	$sth->bind_col(++$idx, shift) or return
+	    while (@_);
+	return 1;
+    }
+
     sub execute_array {
 	my $sth = shift;
 	my ($attr, @array_of_arrays) = @_;

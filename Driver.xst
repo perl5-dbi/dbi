@@ -427,6 +427,46 @@ rows(sth)
 #endif /* dbd_st_rows */
 
 
+#ifdef dbd_st_bind_col
+
+void
+bind_col(sth, col, ref, attribs=Nullsv)
+    SV *	sth
+    SV *	col
+    SV *	ref
+    SV *	attribs
+    CODE:
+    {
+    IV sql_type = 0;
+    D_imp_sth(sth);
+    if (SvGMAGICAL(ref))
+	mg_get(ref);
+    if (attribs) {
+	if (SvNIOK(attribs)) {
+	    sql_type = SvIV(attribs);
+	    attribs = Nullsv;
+	}
+	else {
+	    SV **svp;
+	    DBD_ATTRIBS_CHECK("bind_col", sth, attribs);
+	    /* XXX we should perhaps complain if TYPE is not SvNIOK */
+	    DBD_ATTRIB_GET_IV(attribs, "TYPE",4, svp, sql_type);
+	}
+    }
+    switch(dbd_st_bind_col(sth, imp_sth, col, ref, sql_type, attribs)) {
+    case 2:	ST(0) = &sv_yes;	/* job done completely */
+		break;
+    case 1:	/* fallback to DBI default */
+		ST(0) = (DBIc_DBISTATE(imp_sth)->bind_col(sth, col, ref, attribs))
+		    ? &sv_yes : &sv_no;
+		break;
+    default:	ST(0) = &sv_no;		/* dbd_st_bind_col has called set_err */
+		break;
+    }
+    }
+
+#endif /* dbd_st_bind_col */
+
 void
 bind_param(sth, param, value, attribs=Nullsv)
     SV *	sth

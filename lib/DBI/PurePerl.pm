@@ -779,17 +779,6 @@ sub bind_col {
     $h->{'_bound_cols'}->[$col] = $value_ref;
     return 1;
 }
-sub bind_columns {
-    my $h = shift;
-    shift if !defined $_[0] or ref $_[0] eq 'HASH'; # old style args
-    my $fbav = $h->_get_fbav;
-    DBI::croak("bind_columns called with wrong number of args")
-	if @_ != @$fbav;
-    foreach (0..@_-1) {
-        $h->bind_col($_, $_[$_],'from_bind_columns')
-    }
-    return 1;
-}
 sub finish {
     my $h = shift;
     $h->{'_fbav'} = undef;
