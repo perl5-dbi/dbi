@@ -8,8 +8,8 @@ BEGIN {
     use lib qw(./ ../../lib);
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
-    # uncomment next line to force use of Nano rather than default behaviour
-    # $ENV{DBI_SQL_NANO}=1;
+    # next line forces use of Nano rather than default behaviour
+    $ENV{DBI_SQL_NANO}=1;
 
     # test without MLDBM
     # also test with MLDBM if both it and Data::Dumper are available
