@@ -1251,7 +1251,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    }
 	}
 	if (@unknown && (ref $h ? $h->FETCH('Warn') : 1)) {
-	    Carp::carp("$h->parse_trace_flags($spec): Unknown trace flags ignored: ".
+	    Carp::carp("$h->parse_trace_flags($spec) ignored unknown trace flags: ".
 		join(" ", map { DBI::neat($_) } @unknown));
 	}
 	$flags |= $level;

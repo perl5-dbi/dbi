@@ -5,7 +5,7 @@ use strict;
 use Test::More;
 use DBI;
 
-BEGIN { plan tests => 53 }
+BEGIN { plan tests => 65 }
 
 $|=1;
 
@@ -46,8 +46,14 @@ foreach my $name (@names) {
 
     $dbh->{TraceLevel} = $flag1;
     is( $dbh->{TraceLevel}, $flag1 );
+
     $dbh->{TraceLevel} = 0;
     is( $dbh->{TraceLevel}, 0 );
+
+    $dbh->trace($flag1);
+    is $dbh->trace,        $flag1;
+    is $dbh->{TraceLevel}, $flag1;
+
     $dbh->{TraceLevel} = $name;		# set by name
     $dbh->{TraceLevel} = undef;		# check no change on undef
     is( $dbh->{TraceLevel}, $flag1 );

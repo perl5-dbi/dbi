@@ -621,6 +621,9 @@ static IV
 parse_trace_flags(SV *h, SV *level_sv, IV old_level)
 {
     IV level;
+    if (!level_sv || !SvOK(level_sv))
+	level = old_level;		/* undef: no change	*/
+    else
     if (SvTRUE(level_sv)) {
 	if (looks_like_number(level_sv) && SvIV(level_sv)>=0)
 	    level = SvIV(level_sv);	/* number: number	*/
@@ -637,10 +640,8 @@ parse_trace_flags(SV *h, SV *level_sv, IV old_level)
 	    PUTBACK;
 	}
     }
-    else if (SvOK(level_sv))
-	level = 0;			/* defined but false: 0	*/
-    else
-	level = old_level;		/* undef: no change	*/
+    else				/* defined but false: 0	*/
+	level = 0;
     return level;
 }
 
@@ -2290,6 +2291,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     char	*meth_name = GvNAME(CvGV(cv));
     dbi_ima_t	*ima       = (dbi_ima_t*)CvXSUBANY(cv).any_ptr;
+    U32  	ima_flags  = (ima) ? ima->flags : 0;
     imp_xxh_t	*imp_xxh   = NULL;
     SV		*imp_msv   = Nullsv;
     SV		*qsv       = Nullsv; /* quick result from a shortcut method   */
@@ -2300,7 +2302,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
         PerlIO_printf(logfp,"%c   >> %-11s DISPATCH (%s rc%ld/%ld @%ld g%x ima%lx pid#%ld)",
 	    (dirty?'!':' '), meth_name, neatsvpv(h,0),
 	    (long)SvREFCNT(h), (SvROK(h) ? (long)SvREFCNT(SvRV(h)) : (long)-1),
-	    (long)items, (int)gimme, (long)(ima?ima->flags:0), (long)PerlProc_getpid());
+	    (long)items, (int)gimme, (long)ima_flags, (long)PerlProc_getpid());
 	PerlIO_puts(logfp, log_where(trace_level, 0, 0, "\n"));
 	PerlIO_flush(logfp);
     }
@@ -2394,9 +2396,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     /* Check method call against Internal Method Attributes */
     if (ima) {
 
-	if (ima->flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT|IMA_EXECUTE)) {
+	if (ima_flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT|IMA_EXECUTE)) {
 
-	    if (ima->flags & IMA_STUB) {
+	    if (ima_flags & IMA_STUB) {
 		if (*meth_name == 'c' && strEQ(meth_name,"can")) {
 		    char *can_meth = SvPV(st1,lna);
 		    SV *dbi_msv = Nullsv;
@@ -2418,7 +2420,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		}
 		XSRETURN(0);
 	    }
-	    if (ima->flags & IMA_FUNC_REDIRECT) {
+	    if (ima_flags & IMA_FUNC_REDIRECT) {
 		SV *meth_name_sv = POPs;
 		PUTBACK;
 		--items;
@@ -2427,24 +2429,24 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 			    neatsvpv(h,0), meth_name, neatsvpv(meth_name_sv,0));
 		meth_name = SvPV(meth_name_sv, lna);
 	    }
-	    if (ima->flags & IMA_EXECUTE) {
+	    if (ima_flags & IMA_EXECUTE) {
 		imp_xxh_t *parent = DBIc_PARENT_COM(imp_xxh);
 		DBIc_on(imp_xxh, DBIcf_Executed);
 		if (parent)
 		    DBIc_on(parent, DBIcf_Executed);
 	    }
-	    if (ima->flags & IMA_KEEP_ERR)
+	    if (ima_flags & IMA_KEEP_ERR)
 		keep_error = TRUE;
-	    if (ima->flags & IMA_KEEP_ERR_SUB
+	    if (ima_flags & IMA_KEEP_ERR_SUB
 		&& DBIc_PARENT_COM(imp_xxh) && DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) > 0)
 		keep_error = TRUE;
-	    if (ima->flags & IMA_CLEAR_STMT) {
+	    if (ima_flags & IMA_CLEAR_STMT) {
 		/* don't use SvOK_off: dbh's Statement may be ref to sth's */
 		hv_store((HV*)SvRV(h), "Statement", 9, &sv_undef, 0);
 	    }
 	}
 
-	if (ima->flags & IMA_HAS_USAGE) {
+	if (ima_flags & IMA_HAS_USAGE) {
 	    char *err = NULL;
 	    char msg[200];
 
@@ -2465,7 +2467,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     if (tainting && items > 1		      /* method call has args	*/
 	&& DBIc_is(imp_xxh, DBIcf_TaintIn)    /* taint checks requested	*/
-	&& !(ima && ima->flags & IMA_NO_TAINT_IN)
+	&& !(ima_flags & IMA_NO_TAINT_IN)
     ) {
 	for(i=1; i < items; ++i) {
 	    if (SvTAINTED(ST(i))) {
@@ -2525,13 +2527,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	SAVEINT(DBIc_CALL_DEPTH(imp_xxh));
 	call_depth = ++DBIc_CALL_DEPTH(imp_xxh);
 
-	if (ima) {
-	    if (ima->flags & IMA_COPY_UP_STMT) { /* execute() */
-		SV *parent = DBIc_PARENT_H(imp_xxh);
-		SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
-		/* XXX sv_copy() if Profiling? */
-		hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
-	    }
+	if (ima_flags & IMA_COPY_UP_STMT) { /* execute() */
+	    SV *parent = DBIc_PARENT_H(imp_xxh);
+	    SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
+	    /* XXX sv_copy() if Profiling? */
+	    hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
 	}
     }
 
@@ -2624,7 +2624,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		outitems = 0;
 		goto post_dispatch;
 	    }
-	    if (ima && ima->flags & IMA_NOT_FOUND_OKAY) {
+	    if (ima_flags & IMA_NOT_FOUND_OKAY) {
 		outitems = 0;
 		goto post_dispatch;
 	    }
@@ -2703,9 +2703,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    goto skip_meth_return_trace;
 	}
 	if (SvOK(err_sv)) {
-	    PerlIO_printf(logfp, "    %s %s %s %s\n", (keep_error) ? "  " : "!!",
+	    PerlIO_printf(logfp, "    %s %s %s %s (err#%ld)\n", (keep_error) ? "  " : "!!",
 		SvTRUE(err_sv) ? "ERROR:" : strlen(SvPV_nolen(err_sv)) ? "warn:" : "info:",
-		neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0));
+		neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0), (long)DBIc_ErrCount(imp_xxh));
 	}
 	PerlIO_printf(logfp,"%c%c  <%c %s",
 		    (call_depth > 1)  ? '0'+call_depth-1 : (dirty?'!':' '),
@@ -2763,7 +2763,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	PerlIO_flush(logfp);
     }
 
-    if (ima && ima->flags & IMA_END_WORK) { /* commit() or rollback() */
+    if (ima_flags & IMA_END_WORK) { /* commit() or rollback() */
 	DBIc_off(imp_xxh, DBIcf_Executed);
 
 	if (DBIc_has(imp_xxh, DBIcf_BegunWork)) {
@@ -2790,7 +2790,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	/* XXX this would taint *everything* being returned from *any*	*/
 	/* method that doesn't have IMA_NO_TAINT_OUT set.		*/
 	/* DISABLED: just tainting fetched data in get_fbav seems ok	*/
-	&& 0/* XXX disabled*/ /* !(ima && ima->flags & IMA_NO_TAINT_OUT) */
+	&& 0/* XXX disabled*/ /* !(ima_flags & IMA_NO_TAINT_OUT) */
     ) {
 	dTHR;
 	TAINT; /* affects sv_setsv()'s within same perl statement */
@@ -2857,8 +2857,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
 
 	if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
-	    && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima->flags & IMA_SHOW_ERR_STMT)
-	    && !(ima->flags & IMA_UNRELATED_TO_STMT)	/* error unrelated to Statement */
+	    && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima_flags & IMA_SHOW_ERR_STMT)
+	    && !(ima_flags & IMA_UNRELATED_TO_STMT) /* error unrelated to Statement */
 	    && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
 	    &&  statement_svp && SvOK(*statement_svp)
 	) {
@@ -2938,7 +2938,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	if (profile_t1) { /* see also dbi_profile() call a few lines below */
-	    char *Statement = (ima && ima->flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
+	    char *Statement = (ima_flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
 	    dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
 	}
@@ -2954,7 +2954,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
     else if (profile_t1) { /* see also dbi_profile() call a few lines above */
-	char *Statement = (ima && ima->flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
+	char *Statement = (ima_flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
 	dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
     }
@@ -4069,7 +4069,7 @@ set_err(h, err, errstr=&sv_no, state=&sv_undef, method=&sv_undef, result=Nullsv)
 
 
 int
-trace(h, level=0, file=Nullsv)
+trace(h, level=&sv_undef, file=Nullsv)
     SV *h
     SV *level
     SV *file
