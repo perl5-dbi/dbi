@@ -8,7 +8,6 @@ DBI::Changes - List of significant changes to the DBI
 
 Split keep_err ima into err_keep_call err_ignore_rtn, err_chknew_rtn
 FETCH would be err_keep_in and err_chknew_rtn
-Add %attr to more methods, esp metadata
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.
@@ -27,6 +26,7 @@ Add %attr to more methods, esp metadata
     so that fetchall_arrayref(), for example, doesn't flood the trace.
   Changed trace level to be a four bit integer (levels 0 thru 15)
     and a set of topic flags (no topics have been assigned yet).
+  Change table_info() and column_info() to check argument count.
   Extended bind_param() TYPE attribute specification to imply
     standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
 
@@ -44,6 +44,7 @@ Add %attr to more methods, esp metadata
   Added $h->{ErrCount} attribute, incremented whenever an error is
     recorded by the driver via set_err().
   Added $h->{Executed} attribute, set if do()/execute() called.
+  Added \%attr parameter to foreign_key_info() method.
   Added ref count of inner handle to "DESTROY ignored for outer" msg.
   Added Win32 build config checks to DBI::DBD thanks to Andy Hassall.
   Added bind_col to Driver.xst so drivers can define their own.

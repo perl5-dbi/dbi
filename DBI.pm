@@ -408,11 +408,11 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	rows       	=> $keeperr,
 
 	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x0200 },
-	table_info      => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x0200|0x0800 },
-	column_info     => { U =>[1,6,'$catalog, $schema, $table, $column [, \%attr ]'],O=>0x0200|0x0800 },
+	table_info      => { U =>[5,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x0200|0x0800 },
+	column_info     => { U =>[5,6,'$catalog, $schema, $table, $column [, \%attr ]'],O=>0x0200|0x0800 },
 	primary_key_info=> { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200|0x0800 },
 	primary_key     => { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200 },
-	foreign_key_info=> { U =>[1,7,'$pk_catalog, $pk_schema, $pk_table, $fk_catalog, $fk_schema, $fk_table' ], O=>0x0200|0x0800 },
+	foreign_key_info=> { U =>[7,8,'$pk_catalog, $pk_schema, $pk_table, $fk_catalog, $fk_schema, $fk_table [, \%attr ]' ], O=>0x0200|0x0800 },
 	type_info_all	=> { U =>[1,1], O=>0x0200|0x0800 },
 	type_info	=> { U =>[1,2,'$data_type'], O=>0x0200 },
 	get_info	=> { U =>[2,2,'$info_type'], O=>0x0200|0x0800 },
@@ -4078,6 +4078,10 @@ B<Warning:> This method is experimental and may change.
 
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table
                                , $fk_catalog, $fk_schema, $fk_table );
+
+  $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table
+                               , $fk_catalog, $fk_schema, $fk_table
+                               , \%attr );
 
 Returns an active statement handle that can be used to fetch information
 about foreign keys in and/or referencing the specified table(s).
