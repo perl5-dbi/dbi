@@ -106,7 +106,7 @@ else {
     printf "%5d NullP sth/s perl %8s %s (%s %s %s)\n\n",
 	    $count/$dur, $], $Config{archname},
 	    $Config{gccversion} ? 'gcc' : $Config{cc},
-	    (split / /, $Config{gccversion}||$Config{ccversion}||'')[0],
+	    (split / /, $Config{gccversion}||$Config{ccversion}||'')[0]||'',
 	    $Config{optimize};
 
   if (0) {

@@ -138,9 +138,9 @@ text with the version number of the DBI release they first appeared in.
 
 Extensions to the DBI API often use the C<DBIx::*> namespace.
 See L</Naming Conventions and Name Space>. DBI extension modules
-can be found at L<"http://search.cpan.org/search?mode=module&query=DBIx%3A%3A">.
+can be found at L<http://search.cpan.org/search?mode=module&query=DBIx>.
 And all modules related to the DBI can be found at
-L<"http://search.cpan.org/search?query=DBI&mode=all">.
+L<http://search.cpan.org/search?query=DBI&mode=all>.
 
 =cut
 

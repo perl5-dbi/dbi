@@ -4,6 +4,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.46 (svn rev XXX),    5th November 2004
+
+  Fixed space-parsing bug in DBI::SQL::Nano thanks to Jeff Zucker.
+  Fixed a couple of bad links in docs thanks to Graham Barr.
+  Fixed test.pl Win32 undef warning thanks to H.Merijn Brand & David Repko.
+  Updated Roadmap and ToDo
+
 =head2 Changes in DBI 1.45 (svn rev 480),    6th October 2004
 
   Fixed DBI::DBD code for drivers broken in 1.44.
