@@ -2974,6 +2974,13 @@ handler or modules like CGI::Carp and CGI::ErrorWrap.
 See also L</set_err> for how warnings are recorded and L</HandleSetErr>
 for how to influence it.
 
+Fetching the full details of warnings can require an extra round-trip
+to the database server for some drivers. In which case the driver
+may opt to only fetch the full details of warnings if the C<PrintWarn>
+attribute is true. If C<PrintWarn> is false then these drivers should
+still indicate the fact that there were warnings by setting the
+warning string to, for example: "3 warnings".
+
 =item C<PrintError> (boolean, inherited)
 
 The C<PrintError> attribute can be used to force errors to generate warnings (using
