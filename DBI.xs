@@ -753,7 +753,7 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
 	sv = SvRV(hrv);
     else if (hrv == DBI_LAST_HANDLE)	/* special for var::FETCH */
 	sv = DBI_LAST_HANDLE;
-    else if (Perl_sv_derived_from(hrv, "DBI::common")) {
+    else if (sv_derived_from(hrv, "DBI::common")) {
 	/* probably a class name, if ref($h)->foo() */
 	return 0;
     }
