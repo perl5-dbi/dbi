@@ -121,8 +121,9 @@ is($row->[1], "bb");
 
 is($DBI::err, undef);
 $row = eval { $sth->fetch };
+my $eval_err = $@;
 is(!defined $row, 1);
-is(substr($@,0,50), "DBD::Sponge::st fetch failed: Don't be so negative");
+is(substr($eval_err,0,50), "DBD::Sponge::st fetch failed: Don't be so negative");
 
 #$sth->trace(5);
 #$sth->{PrintError} = 1;

@@ -222,6 +222,7 @@ use vars qw(%ATTR $AUTOLOAD);
     Statement => 'local',
     Driver => 'local',
     dbi_connect_closure => 'local',
+    Username => 'local',
 );
 
 sub AUTOLOAD {

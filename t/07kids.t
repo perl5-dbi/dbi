@@ -4,10 +4,11 @@ use strict;
 
 use Test::More;
 
-if ($DBI::PurePerl) {
-	plan skip_all => '$h->{Kids} attribute not supported for DBI::PurePerl';
-}
-else {
+use DBI;
+
+BEGIN {
+	plan skip_all => '$h->{Kids} attribute not supported for DBI::PurePerl'
+		if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
 	plan tests => 20;
 }
 
@@ -29,11 +30,6 @@ else {
 #   - after destruction of database handle
 ## ----------------------------------------------------------------------------
 
-## load DBI
-
-BEGIN {
-	use_ok('DBI');
-}
 
 # Connect to the example driver and create a database handle
 my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
