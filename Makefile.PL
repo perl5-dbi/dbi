@@ -36,6 +36,7 @@ use File::Spec;
 use strict;
 
 use Test::Harness;	# tests use it so check it's loadable early
+use Test::More 0.4;	# tests use it so check it's loadable early
 
 use DBI::DBD;
 
