@@ -22,7 +22,6 @@ use strict;
 package DBD::DBM;
 #################
 use DBD::File ();
-use Carp;
 use vars qw($VERSION $ATTRIBUTION $methods_already_installed);
 use base qw( DBD::File );
 $VERSION     = '0.01';                     # CHANGE THIS !
@@ -78,21 +77,16 @@ sub connect ($$;$$$) {
         # attempts to set non-valid attrs in connect() or
         # with $dbh->{attr} will throw errors
         #
-        # the attrs here *must* start with dbm_ or foo_ or f_
+        # the attrs here *must* start with dbm_ or foo_
         #
-        $this->{f_valid_attrs} = my $valid_attrs = {
-            dbm_tables   => 1  # per-table information
-          , dbm_type     => 1  # the global DBM type e.g. SDBM_File
-          , dbm_mldbm    => 1  # the global MLDBM serializer
-          , dbm_cols     => 1  # the global column names
-          , dbm_version  => 1  # verbose DBD::DBM version
-          , dbm_ext      => 1  # file extension
+        $this->{dbm_valid_attrs} = {
+            dbm_tables            => 1  # per-table information
+          , dbm_type              => 1  # the global DBM type e.g. SDBM_File
+          , dbm_mldbm             => 1  # the global MLDBM serializer
+          , dbm_cols              => 1  # the global column names
+          , dbm_version           => 1  # verbose DBD::DBM version
+          , dbm_ext               => 1  # file extension
           , dbm_store_metadata    => 1  # column names, etc.
-          , sql_handler           => 1  # Nano or S:S
-          , sql_nano_version      => 1  # Nano version
-          , sql_statement_version => 1  # S:S version
-          , f_version    => 1  # DBD::File version
-          , f_dir        => 1  # base directory
         };
 
 	my($var, $val);
@@ -108,20 +102,17 @@ sub connect ($$;$$$) {
 		$var = $1;
 		($val = $2) =~ s/\\(.)/$1/g;
 
-		# Add dbm_ prefix to attributes that need it
-		# (attributes for DBD::Foo in the Driver DSN portion
-		# of the DSN string are allowed to skip the "foo_" prefix)
-                $var = 'dbm_' . $var if !$valid_attrs->{$var}
-				     &&  $valid_attrs->{"dbm_$var"};
-
-		# place the attribute in $attr (possibly replacing an exiting value)
-		# so DBI->connect will then call our STORE on it for us.
-		# Our STORE method (inherited from DBD::File's) should validate it
-		$attr->{$var} = $val;
+                # in the connect string the attr names
+                # can either have dbm_ (or foo_) prepended or not
+                # this will add the prefix if it's missing
+                #
+                $var = 'dbm_' . $var unless $var =~ /^dbm_/
+                                     or     $var eq 'f_dir';
+		$this->{$var} = $val;
 	    }
 	}
 	$this->{f_version} = $DBD::File::VERSION;
-        $this->{dbm_version} = $DBD::File::VERSION;
+        $this->{dbm_version} = $DBD::DBM::VERSION;
         for (qw( nano_version statement_version)) {
             $this->{'sql_'.$_} = $DBI::SQL::Nano::versions->{$_}||'';
         }
@@ -143,6 +134,60 @@ package DBD::DBM::db;
 #####################
 $DBD::DBM::db::imp_data_size = 0;
 @DBD::DBM::db::ISA = qw(DBD::File::db);
+
+# the ::db::STORE method is what gets called when you set
+# a lower-cased database handle attribute such as $dbh->{somekey}=$someval;
+#
+# STORE should check to make sure that "somekey" is a valid attribute name
+# but only if it is really one of our attributes (starts with dbm_ or foo_)
+# You can also check for valid values for the attributes if needed
+# and/or perform other operations
+#
+sub STORE ($$$) {
+    my ($dbh, $attrib, $value) = @_;
+
+    # use DBD::File's STORE unless its one of our own attributes
+    #
+    return $dbh->SUPER::STORE($attrib,$value) unless $attrib =~ /^dbm_/;
+
+    # throw an error if it has our prefix but isn't a valid attr name
+    #
+    if ( $attrib ne 'dbm_valid_attrs'          # gotta start somewhere :-)
+     and !$dbh->{dbm_valid_attrs}->{$attrib} ) {
+        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+    }
+    else {
+
+        # check here if you need to validate values
+        # or conceivably do other things as well
+        #
+	$dbh->{$attrib} = $value;
+        return 1;
+    }
+}
+
+# and FETCH is done similar to STORE
+#
+sub FETCH ($$) {
+    my ($dbh, $attrib) = @_;
+
+    return $dbh->SUPER::STORE($attrib) unless $attrib =~ /^dbm_/;
+
+    # throw an error if it has our prefix but isn't a valid attr name
+    #
+    if ( $attrib ne 'dbm_valid_attrs'          # gotta start somewhere :-)
+     and !$dbh->{dbm_valid_attrs}->{$attrib} ) {
+        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+    }
+    else {
+
+        # check here if you need to validate values
+        # or conceivably do other things as well
+        #
+	return $dbh->{$attrib};
+    }
+}
+
 
 # this is an example of a private method
 # these used to be done with $dbh->func(...)
@@ -235,22 +280,25 @@ sub open_table ($$$$$) {
     $dbh->{dbm_tables}->{$file}->{dbm_type} = $dbm_type;
 
     my $serializer = $dbh->{dbm_tables}->{$file}->{mldbm}
-                  || $dbh->{mldbm}
+                  || $dbh->{dbm_mldbm}
                   || '';
     $serializer = 'Storable'     if $serializer =~ /^S$/i;
     $serializer = 'FreezeThaw'   if $serializer =~ /^F$/i;
     $serializer = 'Data::Dumper' if $serializer =~ /^D$/i;
     $dbh->{dbm_tables}->{$file}->{mldbm} = $serializer if $serializer;
 
-    my $ext = $dbh->{dbm_tables}->{$file}->{ext}
-           || $dbh->{dbm_ext}
-           || '.pag';
-    # add code to define extension by dbm_type
-    # when I get the info to do so
+    my $ext = $dbh->{dbm_tables}->{$file}->{ext};
+        $ext = $dbh->{dbm_ext} unless defined $ext;
+        $ext = '' unless defined $ext;
+    $ext = ''     if $dbm_type eq 'GDBM_File' 
+                  or $dbm_type eq 'DB_File';
+    $ext = '.pag' if $dbm_type eq 'NDBM_File'
+                  or $dbm_type eq 'SDBM_File'
+                  or $dbm_type eq 'ODBM_File';
 
     die "Cannot CREATE '$file$ext', already exists!"
         if $createMode and (-e "$file$ext");
-    die "Cannot open '$file', file not found!"
+    die "Cannot open '$file$ext', file not found!"
         if !$createMode
        and !($self->{command} eq 'DROP')
        and !(-e "$file$ext");
@@ -271,6 +319,7 @@ sub open_table ($$$$$) {
        require "$dbm_type.pm";
        $tie_type = $dbm_type;
     }
+
     eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
        unless $self->{command} eq 'DROP';
     die "Cannot tie file '$file': $@" if $@;
@@ -280,7 +329,7 @@ sub open_table ($$$$$) {
        $store = 1 unless defined $store;
     $dbh->{dbm_tables}->{$file}->{store_metadata} = $store;
 
-    my $col_names = $h{"_metadata"} if $store;
+    my $col_names = $h{"_metadata \0"} if $store;
     $col_names ||= $dbh->{dbm_tables}->{$file}->{c_cols}
                || $dbh->{dbm_tables}->{$file}->{cols}
                || $dbh->{dbm_cols}
@@ -400,14 +449,12 @@ sub drop ($$) {
 #
 sub fetch_row ($$$) {
     my($self, $data, $row) = @_;
-    my @ary = each %{$self->{hash}};
-
-    # to prevent treating the column names row as data
-    # is this too expensive?
+    # fetch with %each
     #
+    my @ary = each %{$self->{hash}};
     @ary = each %{$self->{hash}} if $self->{store_metadata}
                                  and $ary[0]
-                                 and $ary[0] eq "_metadata";
+                                 and $ary[0] eq "_metadata \0";
 
     return undef unless defined $ary[0];
     if (ref $ary[1] eq 'ARRAY') {
@@ -415,6 +462,26 @@ sub fetch_row ($$$) {
     }
     return (@ary) if wantarray;
     return \@ary;
+=pod
+    # fetch without %each
+    #
+    $self->{keys} = [sort keys %{$self->{hash}}] unless $self->{keys};
+    my $key = shift @{$self->{keys}};
+    $key = shift @{$self->{keys}} if $self->{store_metadata}
+                                 and $key
+                                 and $key eq "_metadata \0";
+    return undef unless defined $key;
+    my @ary;
+    $row = $self->{hash}->{$key};
+    if (ref $row eq 'ARRAY') {
+       @ary = ( $key, @{$row} );
+    }
+    else {
+	@ary = ($key,$row);
+    }
+    return (@ary) if wantarray;
+    return \@ary;
+=cut
 }
 
 # you must define push_row
@@ -438,7 +505,7 @@ sub push_row ($$$) {
 sub push_names ($$$) {
     my($self, $data, $row_aryref) = @_;
     $data->{Database}->{dbm_tables}->{$self->{file}}->{c_cols} = $row_aryref;
-    $self->{hash}->{"_metadata"} = join(',',@{$row_aryref})
+    $self->{hash}->{"_metadata \0"} = join(',',@{$row_aryref})
         if $self->{store_metadata};
 }
 
@@ -461,6 +528,9 @@ sub update_one_row ($$$) {
     my($self,$data,$aryref) = @_;
     my $key = shift @$aryref;
     return undef unless defined $key;
+    if( ref $aryref->[0] eq 'ARRAY'){
+        return  $self->{hash}->{$key}=$aryref;
+    }
     $self->{hash}->{$key}=$aryref->[0];
 }
 
@@ -470,6 +540,7 @@ sub update_one_row ($$$) {
 sub DESTROY ($) {
     my $self=shift;
     # code to release lock goes here
+    untie %{$self->{hash}} if $self->{hash};
 }
 
 # truncate() and seek() must be defined to satisfy DBI::SQL::Nano
@@ -800,7 +871,7 @@ When reporting bugs, please send the output of $dbh->dbm_versions($table) for a 
 
 =head1 ACKNOWLEDGEMENTS
 
-Thanks to Tim Bunce for prodding me to write this, for copious and for patient suggestions all along the way.  Thanks to Bob Walton for looking over a draft version.
+Many, many thanks to Tim Bunce for prodding me to write this, and for copious, wise, and patient suggestions all along the way.
 
 =head1 AUTHOR AND COPYRIGHT
 

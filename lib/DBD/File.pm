@@ -105,6 +105,16 @@ sub connect ($$;$$$) {
 		$this->{$var} = $val;
 	    }
 	}
+        $this->{f_valid_attrs} = {
+            f_version    => 1  # DBD::File version
+          , f_dir        => 1  # base directory
+          , f_tables     => 1  # base directory
+        };
+        $this->{sql_valid_attrs} = {
+            sql_handler           => 1  # Nano or S:S
+          , sql_nano_version      => 1  # Nano version
+          , sql_statement_version => 1  # S:S version
+        };
     }
     return set_versions($this);
 }
@@ -215,21 +225,10 @@ sub FETCH ($$) {
     } elsif ($attrib eq (lc $attrib)) {
 	# Driver private attributes are lower cased
 
-        # Error-check If driver maintains registry of valid attributes
-        # But, hmm, maybe I shouldn't do this in case other
-        # things DBIx or whatever try to set things ???
+        # Error-check for valid attributes
+        # not implemented yet, see STORE
         #
-        if ($attrib !~ /^dbi/ and $dbh->{f_valid_attrs}) {
-	    if ( $dbh->{f_valid_attrs}->{$attrib} ) {
-	        return $dbh->{$attrib};
-	    }
-            else {
-	        return $dbh->set_err(1,"Invalid attribute '$attrib'!");
-	    }
-        }
-        else {
-	    return $dbh->{$attrib};
-        }
+        return $dbh->{$attrib};
     }
     # else pass up to DBI to handle
     return $dbh->DBD::_::db::FETCH($attrib);
@@ -237,31 +236,38 @@ sub FETCH ($$) {
 
 sub STORE ($$$) {
     my ($dbh, $attrib, $value) = @_;
+
     if ($attrib eq 'AutoCommit') {
 	return 1 if $value; # is already set
 	die("Can't disable AutoCommit");
     } elsif ($attrib eq (lc $attrib)) {
 	# Driver private attributes are lower cased
 
-        # Error-check If driver maintains registry of valid attributes
-        # But, hmm, maybe I shouldn't do this in case other
-        # things DBIx or whatever try to set things ???
+=pod
+
+  # I'm not implementing this yet becuase other drivers may be
+  # setting f_ and sql_ attrs I don't know about
+  # I'll investigate and publicize warnings to DBD authors
+  # then implement this
+  #
+        # return to implementor if not f_ or sql_
+        # not implemented yet
+        # my $class = $dbh->FETCH('ImplementorClass');
         #
-        if ($attrib !~ /^dbi/ and $dbh->{f_valid_attrs}) {
-	    if ( $dbh->{f_valid_attrs}->{$attrib} ) {
- 	        if ($attrib eq 'f_dir') {
-  	              return $dbh->set_err( 1,"No such directory '$value'!")
-                      unless -d $value;
-	        }
-    	        $dbh->{$attrib} = $value;
-	    }
-            else {
-	        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
-	    }
+        if ( !$dbh->{f_valid_attrs}->{$attrib}
+         and !$dbh->{sql_valid_attrs}->{$attrib}
+         ) {
+	    return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
         }
         else {
   	    $dbh->{$attrib} = $value;
 	}
+=cut
+        if ($attrib eq 'f_dir') {
+  	    return $dbh->set_err( 1,"No such directory '$value'!")
+                unless -d $value;
+	}
+	$dbh->{$attrib} = $value;
 	return 1;
     }
     return $dbh->DBD::_::db::STORE($attrib, $value);
@@ -406,17 +412,6 @@ sub rollback ($) {
 	warn("Rollback ineffective while AutoCommit is on", -1);
     }
     0;
-}
-
-sub f_versions {
-    my $dbh = shift;
-    printf "%s %s\n%s %s\n%s %s\n",
-    , 'DBD::File'      , $DBD::File::VERSION,
-    , 'DBI::SQL::Nano' , $dbh->{sql_nano_version}
-    ;
-    printf "%s %s\n",
-    , 'SQL::Statement' , $dbh->{sql_statement_version}
-      if $dbh->{sql_handler} eq 'SQL::Statement';
 }
 
 package DBD::File::st; # ====== STATEMENT ======
