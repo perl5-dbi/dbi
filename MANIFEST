@@ -36,6 +36,7 @@ lib/DBI/ProfileDumper.pm
 lib/DBI/ProfileDumper/Apache.pm
 lib/DBI/ProxyServer.pm		The proxy drivers server
 lib/DBI/PurePerl.pm		A DBI.xs emulation in Perl
+lib/DBI/SQL/Nano.pm		A 'smaller than micro' SQL parser
 lib/DBI/W32ODBC.pm		An experimental DBI emulation layer for Win32::ODBC
 lib/Win32/DBIODBC.pm		An experimental Win32::ODBC emulation layer for DBI
 t/01basics.t

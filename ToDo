@@ -139,6 +139,12 @@ a transition for old drivers.)
 
 --- Other changes
 
+Change t/zz_*_pp.t to be t/zXX_*.t where XX is a combination of:
+ - 'pp' (for DBI_PUREPERL=2)
+ - 'mx' (for DBI_AUTOPROXY=dbi:Multiplex:)
+ - 'pr' (for DBI_AUTOPROXY=dbi:Proxy:)
+mx and pr wouldn't both apply to the same test
+
 Add data structure describing attributes
 Use the data structure to replace similar data in Proxy and PurePerl code
 
