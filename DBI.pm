@@ -342,37 +342,32 @@ sub dump_dbd_registry {
 
 my $keeperr = { O=>0x0004 };
 
-my @TieHash_IF = (	# Generic Tied Hash Interface
-	'STORE'   => { O=>0x0418 | 0x4 },
-	'FETCH'   => { O=>0x0404 },
-	'FIRSTKEY'=> $keeperr,
-	'NEXTKEY' => $keeperr,
-	'EXISTS'  => $keeperr,
-	'CLEAR'   => $keeperr,
-	'DESTROY' => $keeperr,
-);
-my @Common_IF = (	# Interface functions common to all DBI classes
-	func    =>	{				O=>0x0006	},
-	'trace' =>	{ U =>[1,3,'[$trace_level, [$filename]]'],	O=>0x0004 },
-	trace_msg =>	{ U =>[2,3,'$message_text [, $min_level ]' ],	O=>0x0004, T=>8 },
-	debug   =>	{ U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
-	dump_handle  =>	{ U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
-	private_data =>	{ U =>[1,1],			O=>0x0004 },
-	err     =>	$keeperr,
-	errstr  =>	$keeperr,
-	state   =>	$keeperr,
-	set_err =>	{ U =>[3,6,'$err, $errmsg [, $state, $method, $rv]'], O=>0x0010 },
-	_not_impl =>	undef,
-	can	=>	{ O=>0x0100 }, # special case, see dispatch
-	parse_trace_flag   =>	{ U =>[2,2,'$name'],	O=>0x0404, T=>8 },
-	parse_trace_flags  =>	{ U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
-);
-
 %DBI::DBI_methods = ( # Define the DBI interface methods per class:
 
+    common => {		# Interface methods common to all DBI handle classes
+	'DESTROY'	=> $keeperr,
+	'CLEAR'  	=> $keeperr,
+	'EXISTS' 	=> $keeperr,
+	'FETCH'		=> { O=>0x0404 },
+	'FIRSTKEY'	=> $keeperr,
+	'NEXTKEY'	=> $keeperr,
+	'STORE'		=> { O=>0x0418 | 0x4 },
+	_not_impl	=> undef,
+	can		=> { O=>0x0100 }, # special case, see dispatch
+	debug 	 	=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
+	dump_handle 	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
+	err		=> $keeperr,
+	errstr		=> $keeperr,
+	state		=> $keeperr,
+	func	   	=> { O=>0x0006	},
+	parse_trace_flag   => { U =>[2,2,'$name'],	O=>0x0404, T=>8 },
+	parse_trace_flags  => { U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
+	private_data	=> { U =>[1,1],			O=>0x0004 },
+	set_err		=> { U =>[3,6,'$err, $errmsg [, $state, $method, $rv]'], O=>0x0010 },
+	trace		=> { U =>[1,3,'[$trace_level, [$filename]]'],	O=>0x0004 },
+	trace_msg	=> { U =>[2,3,'$message_text [, $min_level ]' ],	O=>0x0004, T=>8 },
+    },
     dr => {		# Database Driver Interface
-	@Common_IF,
-	@TieHash_IF,
 	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3 },
 	'connect_cached'=>{U=>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3 },
 	'disconnect_all'=>{ U =>[1,1], O=>0x0800 },
@@ -380,8 +375,6 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	default_user => { U =>[3,4,'$user, $pass [, \%attr]' ] },
     },
     db => {		# Database Session Class Interface
-	@Common_IF,
-	@TieHash_IF,
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], },
 	clone   	=> { U =>[1,1,''] },
@@ -417,8 +410,6 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	get_info	=> { U =>[2,2,'$info_type'], O=>0x2200|0x0800 },
     },
     st => {		# Statement Class Interface
-	@Common_IF,
-	@TieHash_IF,
 	bind_col	=> { U =>[3,4,'$column, \\$var [, \%attr]'] },
 	bind_columns	=> { U =>[2,0,'\\$var1 [, \\$var2, ...]'] },
 	bind_param	=> { U =>[3,4,'$parameter, $var [, \%attr]'] },

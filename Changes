@@ -22,6 +22,7 @@ Document $t->parse_trace_flags etc
     DBI->trace(split '=', $ENV{DBI_TRACE}, 2);
   Improved "invalid number of parameters" error message.
   Added DBI::common as base class for DBI::db, DBD::st etc.
+  Moved methods common to all handles into DBI::common.
 
   Major tracing enhancement:
 

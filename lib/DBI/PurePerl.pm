@@ -197,14 +197,11 @@ sub  _install_method {
 
     push @pre_call_frag, q{
 	return if $h_inner; # ignore DESTROY for outer handle
-    } if $method_name eq 'DESTROY';
-
-    push @pre_call_frag, q{
 	# copy err/errstr/state up to driver so $DBI::err etc still work
 	if ($h->{err} and my $drh = $h->{Driver}) {
 	    $drh->{$_} = $h->{$_} for ('err','errstr','state');
 	}
-    } if $method eq 'DBI::db::DESTROY';
+    } if $method_name eq 'DESTROY';
 
     push @pre_call_frag, q{
 	return $h->{$_[0]} if exists $h->{$_[0]};
@@ -408,7 +405,7 @@ sub _setup_handle {
     my $h_inner = tied(%$h) || $h;
     if (($DBI::dbi_debug & 0xF) >= 4) {
 	local $^W;
-	print $DBI::tfh "_setup_handle(@_)";
+	print $DBI::tfh "      _setup_handle(@_)\n";
     }
     $h_inner->{"imp_data"} = $imp_data;
     $h_inner->{"ImplementorClass"} = $imp_class;
