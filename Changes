@@ -6,9 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =head1 CHANGES
 
-Change to let drivers use set_err to record errors
 Drivers to change how they get debug level (with masked bits).
 Extra hooks in Driver.xst for bind_col etc
+Add tests for $h->{Executed}
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.
@@ -33,6 +33,7 @@ Extra hooks in Driver.xst for bind_col etc
     point that an error, warn, or info state is recorded.
     The code can alter the err, errstr, and state values
     (e.g., to promote an error to a warning, or the reverse).
+  Added $h->{Executed} attribute set if do()/execute() called.
   Added details of DBI::Const::GetInfoType module to get_info() docs.
   Added ref count of inner handle to "DESTROY ignored for outer" msg.
   Added Win32 build config checks to DBI::DBD thanks to Andy Hassall.

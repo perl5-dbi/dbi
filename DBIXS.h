@@ -239,12 +239,13 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIcf_Profile     0x010000	/* profile activity on this handle      */
 #define DBIcf_TaintIn     0x020000	/* check inputs for taintedness */
 #define DBIcf_TaintOut    0x040000	/* taint outgoing data */
+#define DBIcf_Executed    0x080000	/* do/execute called since commit/rollb */
 /* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK		/* what NOT to pass on to children */	\
   (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY		\
   /* These are for dbh only:	*/						\
-  | DBIcf_AutoCommit | DBIcf_BegunWork	)
+  | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed )
 
 /* general purpose bit setting and testing macros			*/
 #define DBIbf_is( bitset,flag)		((bitset) &   (flag))

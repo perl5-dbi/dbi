@@ -110,6 +110,7 @@ typedef struct dbi_ima_st {
 #define IMA_CLEAR_STMT   	0x0200	/* clear Statement before call	*/
 #define IMA_PROF_EMPTY_STMT   	0x0400	/* profile as empty Statement	*/
 #define IMA_NOT_FOUND_OKAY   	0x0800	/* no error if not found	*/
+#define IMA_EXECUTE	   	0x1000	/* do/execute: DBIcf_Executed	*/
 
 #define DBIc_STATE_adjust(imp_xxh, state)				 \
     (SvOK(state)	/* SQLSTATE is implemented by driver   */	 \
@@ -1298,13 +1299,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	PerlIO_printf(DBILOGFP,"    STORE %s %s => %s\n",
 		neatsvpv(h,0), neatsvpv(keysv,0), neatsvpv(valuesv,0));
 
-    if (strEQ(key, "CompatMode")) {
-	(on) ? DBIc_COMPAT_on(imp_xxh) : DBIc_COMPAT_off(imp_xxh);
-    }
-    else if (strEQ(key, "Warn")) {
-	(on) ? DBIc_WARN_on(imp_xxh) : DBIc_WARN_off(imp_xxh);
-    }
-    else if (internal && strEQ(key, "Active")) {
+    if (internal && strEQ(key, "Active")) {
 	if (on) {
 	    D_imp_sth(h);
 	    DBIc_ACTIVE_on(imp_xxh);
@@ -1317,13 +1312,19 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	    DBIc_ACTIVE_off(imp_xxh);
 	}
     }
-    else if (strEQ(key, "InactiveDestroy")) {
-	(on) ? DBIc_IADESTROY_on(imp_xxh) : DBIc_IADESTROY_off(imp_xxh);
-    }
     else if (strEQ(key, "FetchHashKeyName")) {
 	if (htype >= DBIt_ST)
 	    croak("Can't set FetchHashKeyName for a statement handle, set in parent before prepare()");
 	cacheit = 1;	/* just save it */
+    }
+    else if (strEQ(key, "CompatMode")) {
+	(on) ? DBIc_COMPAT_on(imp_xxh) : DBIc_COMPAT_off(imp_xxh);
+    }
+    else if (strEQ(key, "Warn")) {
+	(on) ? DBIc_WARN_on(imp_xxh) : DBIc_WARN_off(imp_xxh);
+    }
+    else if (strEQ(key, "InactiveDestroy")) {
+	(on) ? DBIc_IADESTROY_on(imp_xxh) : DBIc_IADESTROY_off(imp_xxh);
     }
     else if (strEQ(key, "RootClass")) {
 	cacheit = 1;	/* just save it */
@@ -1331,8 +1332,11 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "RowCacheSize")) {
 	cacheit = 0;	/* ignore it */
     }
+    else if (strEQ(key, "Executed")) {
+	DBIc_set(imp_xxh, DBIcf_Executed, on);
+    }
     else if (strEQ(key, "ChopBlanks")) {
-	DBIc_set(imp_xxh,DBIcf_ChopBlanks, on);
+	DBIc_set(imp_xxh, DBIcf_ChopBlanks, on);
     }
     else if (strEQ(key, "LongReadLen")) {
 	if (SvNV(valuesv) < 0 || SvNV(valuesv) > MAX_LongReadLen)
@@ -1658,6 +1662,12 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             else if (strEQ(key, "CompatMode")) {
                 valuesv = boolSV(DBIc_COMPAT(imp_xxh));
+            }
+            break;
+
+          case 'E':
+            if (strEQ(key, "Executed")) {
+                valuesv = boolSV(DBIc_is(imp_xxh, DBIcf_Executed));
             }
             break;
 
@@ -2295,7 +2305,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     /* Check method call against Internal Method Attributes */
     if (ima) {
 
-	if (ima->flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT)) {
+	if (ima->flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT|IMA_EXECUTE)) {
 
 	    if (ima->flags & IMA_STUB) {
 		if (*meth_name == 'c' && strEQ(meth_name,"can")) {
@@ -2327,6 +2337,12 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    croak("%s->%s() invalid redirect method name %s",
 			    neatsvpv(h,0), meth_name, neatsvpv(meth_name_sv,0));
 		meth_name = SvPV(meth_name_sv, lna);
+	    }
+	    if (ima->flags & IMA_EXECUTE) {
+		imp_xxh_t *parent = DBIc_PARENT_COM(imp_xxh);
+		DBIc_on(imp_xxh, DBIcf_Executed);
+		if (parent)
+		    DBIc_on(parent, DBIcf_Executed);
 	    }
 	    if (ima->flags & IMA_KEEP_ERR)
 		keep_error = TRUE;
@@ -2648,6 +2664,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     }
 
     if (ima && ima->flags & IMA_END_WORK) { /* commit() or rollback() */
+	DBIc_off(imp_xxh, DBIcf_Executed);
+
 	if (DBIc_has(imp_xxh, DBIcf_BegunWork)) {
 	    DBIc_off(imp_xxh, DBIcf_BegunWork);
 	    if (!DBIc_has(imp_xxh, DBIcf_AutoCommit)) {

@@ -345,7 +345,10 @@ DESTROY(dbh)
 	    /* Perl will call DESTROY on the dbh and, if we don't rollback,	*/
 	    /* the server may automatically commit! Bham! Corrupt database!	*/
 	    if (!DBIc_has(imp_dbh,DBIcf_AutoCommit)) {
-		if (DBIc_WARN(imp_dbh) && (!dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3))
+		if (DBIc_WARN(imp_dbh)
+		&&  DBIc_is(imp_dbh, DBIcf_Executed)
+		&& (!dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
+		)
 		     warn("Issuing rollback() for database handle being DESTROY'd without explicit disconnect()");
 		dbd_db_rollback(dbh, imp_dbh);			/* ROLLBACK! */
 	    }

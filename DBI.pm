@@ -389,7 +389,7 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800 },
-	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x0200 },
+	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x1200 },
 	last_insert_id	=> { U =>[3,4,'$table_name, $field_name [, \%attr ]'], O=>0x0100 },
 	preparse    	=> {  }, # XXX
 	prepare    	=> { U =>[2,3,'$statement [, \%attr]'], O=>0x0200 },
@@ -423,12 +423,12 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	bind_columns	=> { U =>[2,0,'\\$var1 [, \\$var2, ...]'] },
 	bind_param	=> { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout=> { U =>[4,5,'$parameter, \\$var, $maxlen, [, \%attr]'] },
-	execute		=> { U =>[1,0,'[@args]'], O=>0x40 },
+	execute		=> { U =>[1,0,'[@args]'], O=>0x1040 },
 
 	bind_param_array  => { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout_array => { U =>[4,5,'$parameter, \\@var, $maxlen, [, \%attr]'] },
-	execute_array     => { U =>[2,0,'\\%attribs [, @args]'] },
-	execute_for_fetch => { U =>[2,3,'$fetch_sub [, $tuple_status]'] },
+	execute_array     => { U =>[2,0,'\\%attribs [, @args]'],         O=>0x1040 },
+	execute_for_fetch => { U =>[2,3,'$fetch_sub [, $tuple_status]'], O=>0x1040 },
 
 	fetch    	  => undef, # alias for fetchrow_arrayref
 	fetchrow_arrayref => undef,
@@ -2814,6 +2814,20 @@ connected to a database (C<$dbh-E<gt>disconnect> sets C<Active> off).  For
 a statement handle it typically means that the handle is a C<SELECT>
 that may have more data to fetch. (Fetching all the data or calling C<$sth-E<gt>finish>
 sets C<Active> off.)
+
+=item C<Executed> (boolean)
+
+The C<Executed> attribute is true if the handle object has been "executed".
+Currently only the $dbh do() method and the $sth execute(), execute_array(),
+and execute_for_fetch() methods set the C<Executed> attribute.
+
+When it's on a handle it is also set on the parent handle at the
+same time. So calling execute() on a $sth also sets the C<Executed>
+attribute on the parent $dbh.
+
+The C<Executed> attribute for a $dbh is cleared by the commit() and
+rollback() methods. (The C<Executed> attribute of any child statement
+handles are not cleared.)
 
 =item C<Kids> (integer, read-only)
 
