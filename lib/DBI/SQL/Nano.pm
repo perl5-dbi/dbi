@@ -72,7 +72,14 @@ sub prepare {
                 $self->{column_names} = parse_comma_list($1) if $1;
                 die "Can't find columns!\n" unless $self->{column_names};
                 $self->{table_name}   = $2;
-                $self->{where_clause} = $self->parse_where_clause($4) if $4;
+                if ( my $clauses = $4) {
+		    if ($clauses =~ /^(.*)\s+ORDER\s+BY\s+(.*)$/is) {
+                        $clauses = $1;
+                        $self->{order_clause} = $self->parse_order_clause($2);
+		    }
+                    $self->{where_clause}=$self->parse_where_clause($clauses)
+                        if $clauses;
+		}
             };
         /^\s*INSERT\s+INTO\s+(\S+)\s*(\((.*?)\))?\s*VALUES\s*\((.+)\)/is
             &&do{
@@ -99,6 +106,16 @@ sub prepare {
     die " Couldn't parse!\n  <$sql>\n" unless $self->{command}
                                        and $self->{table_name};
     return $self;
+}
+sub parse_order_clause {
+    my($self,$str) = @_;
+    my @clause = split /\s+/,$str;
+    return { $clause[0] => 'ASC' } if @clause == 1;
+    die "Bad ORDER BY clause '$str'!\n" if @clause > 2;
+    $clause[1] ||= '';
+    return { $clause[0] => uc $clause[1] } if $clause[1] =~ /^ASC$/i
+                                           or $clause[1] =~ /^DESC$/i;
+    die "Bad ORDER BY clause '$clause[1]'!\n";
 }
 sub parse_coldef_list  {                # check column definitions
     my @col_defs;
@@ -289,6 +306,41 @@ sub SELECT ($$$) {
             return (scalar(@rows),scalar @{$self->{column_names}},\@rows)
  	        if $self->{fetched_from_key};
         }
+    }
+    if ( $self->{order_clause} ) {
+        my( $sort_col, $desc ) = each %{$self->{order_clause}};
+        undef $desc unless $desc eq 'DESC';
+        my @sortCols = ( $self->column_nums($table,$sort_col) );
+        my($c, $d, $colNum);
+        my $sortFunc = sub {
+            my $result;
+            $i = 0;
+            do {
+                $colNum = $sortCols[$i++];
+                # $desc = $sortCols[$i++];
+                $c = $a->[$colNum];
+                $d = $b->[$colNum];
+                if (!defined($c)) {
+                    $result = defined $d ? -1 : 0;
+                } elsif (!defined($d)) {
+                    $result = 1;
+	        } elsif ( DBI::looks_like_number($c,$d) ) {
+                    $result = ($c <=> $d);
+                } else {
+  		    if ($self->{"case_fold"}) {
+                        $result = lc $c cmp lc $d || $c cmp $d;
+		    }
+                    else {
+                        $result = $c cmp $d;
+		    }
+                }
+                if ($desc) {
+                    $result = -$result;
+                }
+            } while (!$result  &&  $i < @sortCols);
+            $result;
+        };
+        @rows = (sort $sortFunc @rows);
     }
     (scalar(@rows), scalar @{$self->{column_names}}, \@rows);
 }
@@ -544,6 +596,7 @@ You can set the environment variable in your shell prior to running your script 
     | DELETE FROM <table_name> [<where_clause>]
     | UPDATE <table_name> SET <set_clause> <where_clause>
     | SELECT <select_col_list> FROM <table_name> [<where_clause>]
+                                                 [<order_clause>]
 
   the optional IF EXISTS clause ::=
     * similar to MySQL - prevents errors when trying to drop
@@ -603,6 +656,11 @@ You can set the environment variable in your shell prior to running your script 
     * op may be one of:
          < > >= <= = <> LIKE CLIKE IS
     * CLIKE is a case insensitive LIKE
+
+  order_clause ::= column_name [ASC|DESC]
+    * a single column optional ORDER BY clause is supported
+    * as in standard SQL, if neither ASC (ascending) nor
+      DESC (descending) is specified, ASC becomes the default
 
 =head1 ACKNOWLEDGEMENTS
 
