@@ -1511,7 +1511,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $sth = $cache->{$key};
 	if ($sth) {
 	    return $sth unless $sth->FETCH('Active');
-	    Carp::carp("prepare_cached($statement) statement handle $sth still active")
+	    Carp::carp("prepare_cached($statement) statement handle $sth still Active")
 		unless ($if_active ||= 0);
 	    $sth->finish if $if_active <= 1;
 	    return $sth  if $if_active <= 2;

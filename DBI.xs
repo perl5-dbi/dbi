@@ -2502,7 +2502,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	if (DBIc_TYPE(imp_xxh) <= DBIt_DB ) {	/* is dbh or drh */
 	    imp_xxh_t *parent_imp;
 
-	    if (SvOK(DBIc_ERR(imp_xxh)) && (parent_imp = DBIc_PARENT_COM(imp_xxh)) ) {
+	    if (SvOK(DBIc_ERR(imp_xxh)) && (parent_imp = DBIc_PARENT_COM(imp_xxh))
+		&& !dirty
+	    ) {
 		/* copy err/errstr/state values to $DBI::err etc still work */
 		sv_setsv(DBIc_ERR(parent_imp),    DBIc_ERR(imp_xxh));
 		sv_setsv(DBIc_ERRSTR(parent_imp), DBIc_ERRSTR(imp_xxh));
