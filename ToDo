@@ -181,6 +181,7 @@ $sth->{ParamAttr} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=
 $h->{KidsHandles} = ref to cache (array or hash?)
 of weakrefs to child handles (bugs pre 5.8.5 with CLONE and weakrefs,
 see Perl changes 21936 and 22106)
+DESTROY could automatically disconnect/finish children
 
 Document DbTypeSubclass (ala DBIx::AnyDBD)
 Polish up and document _dbtype_names with an external interface and using get_info.
