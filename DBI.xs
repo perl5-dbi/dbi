@@ -1164,8 +1164,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 
     if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
 	imp_sth_t *imp_sth = (imp_sth_t*)imp_xxh;
-	if (DBIc_FIELDS_AV(imp_sth));
-	    sv_free((SV*)DBIc_FIELDS_AV(imp_sth));
+	sv_free((SV*)DBIc_FIELDS_AV(imp_sth));
     }
 
     sv_free(DBIc_IMP_DATA(imp_xxh));	/* do this first	*/

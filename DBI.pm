@@ -2718,7 +2718,7 @@ above are replaced by the corresponding values.
 The handle C<err> value is set to $err if: $err is true; or handle
 C<err> value is undef; or $err is defined and the length is greater
 than the handle C<err> length. The effect is that an 'information'
-state only overides undef; a 'warning' overrides undef or 'information',
+state only overrides undef; a 'warning' overrides undef or 'information',
 and an 'error' state overrides anything.
 
 The handle C<state> value is set to $state if $state is true and
@@ -2827,7 +2827,7 @@ Example:
 =item C<Warn> (boolean, inherited)
 
 The C<Warn> attribute enables useful warnings for certain bad
-practices. It is enabled by default and should only be disable is
+practices. It is enabled by default and should only be disabled in
 rare circumstances.  Since warnings are generated using the Perl
 C<warn> function, they can be intercepted using the Perl C<$SIG{__WARN__}>
 hook.
@@ -2857,7 +2857,7 @@ attribute on the parent $dbh.
 The C<Executed> attribute for a database handle is cleared by the
 commit() and rollback() methods. The C<Executed> attribute of a
 statement handle is not cleared by the DBI under any circumstances
-and so acts as a permenant record of whether the statement handle
+and so acts as a permanent record of whether the statement handle
 was ever used.
 
 The C<Executed> attribute was added in DBI 1.41.
@@ -3070,7 +3070,7 @@ closures. See L</HandleError> for an example.
 The C<HandleSetErr> and C<HandleError> subroutines differ in subtle
 but significant ways. HandleError is only invoked at the point where
 the DBI is about to return to the application with C<err> set true.
-It's not invoked by the failure of a method that's been caled by
+It's not invoked by the failure of a method that's been called by
 another DBI method.  HandleSetErr, on the other hand, is called
 whenever set_err() is called with a defined C<err> value, even if false.
 So it's not just for errors, despite the name, but also warn and info states.
@@ -3179,7 +3179,7 @@ For example:
       SELECT long_column_name, ... FROM table WHERE ...
   });
 
-You may need to take etra care if the table can be modified between
+You may need to take extra care if the table can be modified between
 the first select and the second being executed.
 
 See L</LongTruncOk> for more information on truncation behaviour.
@@ -5330,7 +5330,7 @@ formatting the column should have. For example, you can use:
 to specify that you'd like the column (which presumably is some
 kind of datetime type) to be returned in the standard format for
 SQL_DATETIME, which is 'YYYY-MM-DD HH:MM:SS', rather than the
-native formatting the database would normaly use.
+native formatting the database would normally use.
 
 There's no $var_to_bind in that example to emphasize the point
 that bind_col() works on the underlying column value and not just

@@ -12,6 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Changed attributes (NAME, TYPE etc) of non-executed statement
     handle to be undef instead of triggering an error.
+  Corrected typos in docs thanks to Steffen Goeldner.
 
 =head1 CHANGES in DBI 1.41 (svn rev 130),    22nd February 2004
 
@@ -39,7 +40,6 @@ DBI::Changes - List of significant changes to the DBI
   Added way for drivers to indicate 'success with info' or 'warning'
     by setting err to "0" for warning and "" for information.
     Both values are false and so don't trigger RaiseError etc.
-    Warnings (err="0") are automatically printed if PrintError is set.
     Thanks to Steffen Goeldner for the original idea.
   Added $h->{HandleSetErr} = sub { ... } to be called at the
     point that an error, warn, or info state is recorded.
