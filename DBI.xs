@@ -92,8 +92,8 @@ struct imp_fdh_st { dbih_fdc_t com; };
 typedef struct dbi_ima_st {
     U8 minargs;
     U8 maxargs;
-    U8 hidearg;
-    U8 trace_level;
+    IV hidearg;
+    IV trace_level;
     char *usage_msg;
     U32   flags;
 } dbi_ima_t;
@@ -3517,9 +3517,9 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 	if ( (svp=DBD_ATTRIB_GET_SVP(attribs, "U",1)) != NULL) {
 	    STRLEN lna;
 	    AV *av = (AV*)SvRV(*svp);
-	    ima->minargs    = SvIV(*av_fetch(av, 0, 1));
-	    ima->maxargs    = SvIV(*av_fetch(av, 1, 1));
-			      svp = av_fetch(av, 2, 0);
+	    ima->minargs = (U8)SvIV(*av_fetch(av, 0, 1));
+	    ima->maxargs = (U8)SvIV(*av_fetch(av, 1, 1));
+	    svp = av_fetch(av, 2, 0);
 	    ima->usage_msg  = savepv( (svp) ? SvPV(*svp,lna) : "");
 	    ima->flags |= IMA_HAS_USAGE;
 	    if (trace_msg && DBIS_TRACE_LEVEL >= 11)

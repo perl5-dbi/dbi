@@ -21,6 +21,8 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
   Fixed propagation of scalar/list context into proxied methods.
   Fixed DBI::Profile::DESTROY to not alter $@.
   Fixed DBI::ProfileDumper new() docs thanks to Michael Schwern.
+  Fixed _load_class to propagate $@ thanks to Drew Taylor.
+  Fixed compile warnings on Win32 thanks to Robert Baron.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.

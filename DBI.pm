@@ -879,15 +879,15 @@ sub _dbtype_names { # list dbtypes for hierarchy, ie Informix=>ADO=>ODBC
 
 sub _load_class {
     my ($load_class, $missing_ok) = @_;
-    #DBI->trace_msg("    _load_class($load_class, $missing_ok)\n");
+    DBI->trace_msg("    _load_class($load_class, $missing_ok)\n", 2);
     no strict 'refs';
     return 1 if @{"$load_class\::ISA"};	# already loaded/exists
     (my $module = $load_class) =~ s!::!/!g;
-    #DBI->trace_msg("    _load_class require $module\n");
+    DBI->trace_msg("    _load_class require $module\n", 2);
     eval { require "$module.pm"; };
     return 1 unless $@;
     return 0 if $missing_ok && $@ =~ /^Can't locate \Q$module.pm\E/;
-    die; # propagate $@;
+    die $@;
 }
 
 
