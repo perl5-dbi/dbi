@@ -161,6 +161,8 @@ Macro to get new statement handle for XS code
 
 Trace to tied file handle.
 
+preparse() - incl ability to split statements on semicolon
+
 Hooks for method entry and exit.
 
 $dbh->{Statement} can be wrong because fetch doesn't update value
@@ -212,6 +214,30 @@ Phalanx?
 *** Small/quick/simple changes/checks ***
 
 fetchall_hashref for multiple keys - pending
+        my $hash_key_name = $sth->{FetchHashKeyName} || 'NAME';
+        my $names_hash = $sth->FETCH("${hash_key_name}_hash");
+
+        my @key_fields = (ref $key_field) ? @$key_field : ($key_field);
+        my @key_values;
+        foreach (@key_fields) {
+
+            my $index = $names_hash->{$_};  # perl index not column
+            ++$index if defined $index;     # convert to column number
+            $index ||= $key_field if DBI::looks_like_number($key_field) && $key_field>=1;
+
+            push @key_values, undef;
+            $sth->bind_col($index, \$key_value[-1]) or return;
+        }
+
+        my $rows = {};
+        my $NAME = $sth->{$hash_key_name};
+        while (my $row = $sth->fetchrow_arrayref($hash_key_name)) {
+            my $ref = $rows;
+            $ref = $ref->{$_} ||= {} for @key_values;
+            @{$ref}{@$NAME} = @$row;
+        }
+        return \%rows;
+
 
 
 *** Assorted to-do items and random thoughts *** IN NO PARTICULAR ORDER ***

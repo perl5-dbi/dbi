@@ -14,6 +14,7 @@ Document $t->parse_trace_flags etc
     table name not the file name thanks to Jeff Zucker.
   Fixed last_insert_id(...) thanks to Rudy Lippan.
   Fixed propagation of scalar/list context into proxied methods.
+  Fixed DBI::Profile::DESTROY to not alter $@.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.

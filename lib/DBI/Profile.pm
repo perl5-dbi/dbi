@@ -647,6 +647,7 @@ sub on_destroy {
 
 sub DESTROY {
     my $self = shift;
+    local $@;
     eval { $self->on_destroy };
     if ($@) {
         my $class = ref($self) || $self;

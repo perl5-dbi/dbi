@@ -5597,10 +5597,13 @@ in the keys but all the values undef, but some drivers may return
 a ref to an empty hash.
 
 It is possible that the values in the hash returned by C<ParamValues>
-are not exactly the same as those passed to bind_param() or execute().
-The driver may have modified the values in some way based on the
+are not I<exactly> the same as those passed to bind_param() or execute().
+The driver may have slightly modified values in some way based on the
 TYPE the value was bound with. For example a floating point value
 bound as an SQL_INTEGER type may be returned as an integer.
+The values returned by C<ParamValues> can be passed to another
+bind_param() method with the same TYPE and will be seen by the
+database as the same value.
 
 It is also possible that the keys in the hash returned by C<ParamValues>
 are not exactly the same as those implied by the prepared statement.
