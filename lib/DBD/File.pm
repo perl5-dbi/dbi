@@ -29,7 +29,7 @@ package DBD::File;
 
 use vars qw(@ISA $VERSION $drh $valid_attrs);
 
-$VERSION = '0.32';
+$VERSION = '0.33';
 
 $drh = undef;		# holds driver handle(s) once initialised
 
@@ -556,6 +556,7 @@ sub open_table ($$$$$) {
     my($self, $data, $table, $createMode, $lockMode) = @_;
     my $file;
     ($table,$file) = $self->get_file_name($data,$table);
+    require IO::File;
     my $fh;
     my $safe_drop = 1 if $self->{ignore_missing_table};
     if ($createMode) {
