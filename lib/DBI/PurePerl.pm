@@ -193,6 +193,8 @@ sub  _install_method {
     my $bitmask = $param_hash->{'O'} || 0;
     my @pre_call_frag;
 
+    return if $method_name eq 'can';
+
     push @pre_call_frag, q{
 	return if $h_inner; # ignore DESTROY for outer handle
     } if $method_name eq 'DESTROY';
@@ -848,7 +850,7 @@ of DBI without needing any changes in your scripts.
 
 =head1 EXPERIMENTAL STATUS
 
-DBI::PurePerl is very new so please treat it as experimental pending
+DBI::PurePerl is new so please treat it as experimental pending
 more extensive testing.  So far it has passed all tests with DBD::CSV,
 DBD::AnyData, DBD::XBase, DBD::Sprite, DBD::mysqlPP.  Please send
 bug reports to Jeff Zucker at <jeff@vpservices.com> with a cc to
@@ -968,7 +970,9 @@ does not work 100% (which is sad because that would be far more useful :)
 Try re-enabling t/80proxy.t for DBI::PurePerl to see if the problem
 that remains will affect you're usage.
 
-=head2 Undoubtedly Others
+=head2 Others
+
+  can() - doesn't have any special behaviour
 
 Please let us know if you find any other differences between DBI
 and DBI::PurePerl.

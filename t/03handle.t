@@ -6,7 +6,7 @@ use Data::Dumper;
 
 # handle tests
 
-BEGIN { plan tests => 49 }
+BEGIN { plan tests => 52 }
 
 use DBI;
 
@@ -134,5 +134,12 @@ is $sth->{NAME_hash}, undef;
 is $sth->{NAME_uc_hash}, undef;
 is $sth->{NAME_lc_hash}, undef;
 
+ok  ref($dbh)->can("prepare");
+ok !ref($dbh)->can("nonesuch");
+ok  ref($sth)->can("execute");
+
+# I don't know why this warning has the "(perhaps ...)" suffix, it shouldn't:
+# Can't locate object method "nonesuch" via package "DBI::db" (perhaps you forgot to load "DBI::db"?)
+eval { ref($dbh)->nonesuch; };
 
 exit 0;

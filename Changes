@@ -13,6 +13,7 @@ Document $t->parse_trace_flags etc
   Fixed t/41prof_dump.t to work with perl5.9.1.
   Fixed DBD_ATTRIB_DELETE macro thanks to Marco Paskamp.
   Fixed DBI::PurePerl looks_like_number() and $DBI::rows.
+  Fixed ref($h)->can("foo") to not croak.
 
   Changed attributes (NAME, TYPE etc) of non-executed statement
     handle to be undef instead of triggering an error.
@@ -20,6 +21,7 @@ Document $t->parse_trace_flags etc
   Changed DBI_TRACE env var so just does this at load time:
     DBI->trace(split '=', $ENV{DBI_TRACE}, 2);
   Improved "invalid number of parameters" error message.
+  Added DBI::common as base class for DBI::db, DBD::st etc.
 
   Major tracing enhancement:
 

@@ -461,6 +461,12 @@ foreach $class (keys %DBI::DBI_methods){
     }
 }
 
+{
+    package DBI::common;
+    @DBI::dr::ISA = ('DBI::common');
+    @DBI::db::ISA = ('DBI::common');
+    @DBI::st::ISA = ('DBI::common');
+}
 
 # End of init code
 

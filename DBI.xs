@@ -753,6 +753,10 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
 	sv = SvRV(hrv);
     else if (hrv == DBI_LAST_HANDLE)	/* special for var::FETCH */
 	sv = DBI_LAST_HANDLE;
+    else if (Perl_sv_derived_from(hrv, "DBI::common")) {
+	/* probably a class name, if ref($h)->foo() */
+	return 0;
+    }
     else {
 	sv_dump(hrv);
 	croak("Invalid DBI handle %s", neatsvpv(hrv,0));
@@ -2307,10 +2311,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	PerlIO_flush(logfp);
     }
 
-    if (!SvROK(h) || SvTYPE(SvRV(h)) != SVt_PVHV) {
-        croak("%s: handle %s is not a hash reference",meth_name,neatsvpv(h,0));
-    }
-
     if ( ( (is_DESTROY=(*meth_name=='D' && strEQ(meth_name,"DESTROY")))) ) {
 	/* note that croak()'s won't propagate, only append to $@ */
 	keep_error = TRUE;
@@ -2322,7 +2322,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
        data (without having to go through FETCH and STORE methods) and
        for tie and non-tie methods to call each other.
     */
-    if (SvRMAGICAL(SvRV(h)) && (mg=mg_find(SvRV(h),'P'))!=NULL) {
+    if (SvROK(h) && SvRMAGICAL(SvRV(h)) && (mg=mg_find(SvRV(h),'P'))!=NULL) {
 
         if (SvPVX(mg->mg_obj)==NULL) {  /* maybe global destruction */
             if (trace_level >= 3)
@@ -2359,12 +2359,24 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     imp_xxh = dbih_getcom2(h, 0); /* get common Internal Handle Attributes	*/
     if (!imp_xxh) {
-	/* XXX perhaps warn() for anything other than DESTROY? */
+	if (strEQ(meth_name, "can")) {	/* ref($h)->can("foo")		*/
+	    char *can_meth = SvPV(st1,lna);
+	    SV *rv = &PL_sv_undef;
+	    GV *gv = gv_fetchmethod_autoload(gv_stashsv(orig_h,FALSE), can_meth, FALSE);
+	    if (gv && isGV(gv))
+		rv = sv_2mortal(newRV((SV*)GvCV(gv)));
+	    if (trace_level >= 3) {
+		PerlIO_printf(DBILOGFP,"    <- %s(%s) = %p\n", meth_name, can_meth, neatsvpv(rv,0));
+	    }
+	    ST(0) = rv;
+	    XSRETURN(1);
+	}
 	if (trace_level)
-	    PerlIO_printf(DBILOGFP, "%c   <> %s for %s ignored (dbi_imp_data gone)\n",
+	    PerlIO_printf(DBILOGFP, "%c   <> %s for %s ignored (no imp_data)\n",
 		(dirty?'!':' '), meth_name, neatsvpv(h,0));
 	if (!is_DESTROY)
-	    warn("Can't call %s method on handle %s after take_imp_data()", meth_name, neatsvpv(h,0));
+	    warn("Can't call %s method on handle %s%s", meth_name, neatsvpv(h,0),
+		SvROK(h) ? " after take_imp_data()" : " (not a reference)");
 	XSRETURN(0);
     }
 
