@@ -1587,10 +1587,6 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 
           case 'D':
             if (keylen==8 && strEQ(key, "Database")) {
-                /* this is here but is, sadly, not called because
-                 * not-preloading them into the handle attrib cache caused
-                 * wierdness in t/proxy.t that I never got to the bottom
-                 * of. One day maybe.  */
                 D_imp_from_child(imp_dbh, imp_dbh_t, imp_xxh);
                 valuesv = newRV((SV*)DBIc_MY_H(imp_dbh));
                 cacheit = FALSE;  /* else creates ref loop */
@@ -3990,6 +3986,15 @@ MODULE = DBI   PACKAGE = DBD::_::common
 
 
 void
+DESTROY(h)
+    SV * h
+    CODE:
+    /* DESTROY defined here just to avoid AUTOLOAD */
+    h = h; 
+    ST(0) = &sv_undef;
+
+
+void
 STORE(h, keysv, valuesv)
     SV *	h
     SV *	keysv
@@ -4133,6 +4138,46 @@ rows(h)
     /* fallback esp for $DBI::rows after $drh was last used */
 	if (0) h = h;	/* avoid unused variable warning */
     ST(0) = sv_2mortal(newSViv(-1));
+
+
+void
+swap_inner_handle(rh1, rh2, allow_reparent=0)
+    SV *        rh1
+    SV *        rh2
+    IV	allow_reparent
+    CODE:
+    {
+    D_impdata(imp_xxh1, imp_xxh_t, rh1);
+    D_impdata(imp_xxh2, imp_xxh_t, rh2);
+    SV *h1i = dbih_inner(rh1, "swap_inner_handle");
+    SV *h2i = dbih_inner(rh2, "swap_inner_handle");
+    SV *h1  = (rh1 == h1i) ? (SV*)DBIc_MY_H(imp_xxh1) : SvRV(rh1);
+    SV *h2  = (rh2 == h2i) ? (SV*)DBIc_MY_H(imp_xxh2) : SvRV(rh2);
+    if (DBIc_TYPE(imp_xxh1) != DBIc_TYPE(imp_xxh2)) {
+	char buf[99];
+	sprintf(buf, "Can't swap_inner_handle between %sh and %sh",
+	    dbih_htype_name(DBIc_TYPE(imp_xxh1)), dbih_htype_name(DBIc_TYPE(imp_xxh2)));
+	DBIh_SET_ERR_CHAR(rh1, imp_xxh1, "1", 1, buf, Nullch, Nullch);
+	XSRETURN_NO;
+    }
+    if (!allow_reparent && DBIc_PARENT_COM(imp_xxh1) != DBIc_PARENT_COM(imp_xxh2)) {
+	DBIh_SET_ERR_CHAR(rh1, imp_xxh1, "1", 1,
+	    "Can't swap_inner_handle with handle from different parent",
+	    Nullch, Nullch);
+	XSRETURN_NO;
+    }
+    SvREFCNT_inc(h1i);
+    SvREFCNT_inc(h2i);
+    sv_unmagic(h1, 'P');		/* untie(%$h1)  	*/
+    sv_unmagic(h2, 'P');		/* untie(%$h2)  	*/
+    sv_magic(h1, h2i, 'P', Nullch, 0);	/* tie %$h1, $h2i	*/
+    DBIc_MY_H(imp_xxh2) = (HV*)h1;
+    sv_magic(h2, h1i, 'P', Nullch, 0);	/* tie %$h2, $h1i	*/
+    DBIc_MY_H(imp_xxh1) = (HV*)h2;
+    SvREFCNT_dec(h1i);
+    SvREFCNT_dec(h2i);
+    ST(0) = &sv_yes;
+    }
 
 
 MODULE = DBI   PACKAGE = DBD::_mem::common

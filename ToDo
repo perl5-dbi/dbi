@@ -435,8 +435,6 @@ Informix inspired changes?
 Add hook to DBI::DBD to write a myconfig.txt file into the
 source directory containing key driver and config info.
 
-Add $h->swap_internal_handle($other_h)
-
 dbish - state AutoCommit status clearly at connect time.
 (And try to set AutoCommit off in eval?)
 test shell "/connect user pass" etc

@@ -27,6 +27,9 @@ fix utf8 leakage
     a warning and is no longer fatal. Thanks to Vadim.
   Corrected fetchall_arrayref() docs example thanks to Drew Broadley.
 
+  Added $h1->swap_inner_handle($h2) sponsored by BizRate.com
+
+
 =head2 Changes in DBI 1.43 (svn rev 377),    2nd July 2004
 
   Fixed connect() and connect_cached() RaiseError/PrintError

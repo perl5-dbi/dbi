@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 101;
+use Test::More tests => 124;
 
 ## ----------------------------------------------------------------------------
 ## 03handle.t - tests handles
@@ -62,68 +62,115 @@ do {
 
     ok($sth1->{Active}, '... our first statment is Active');
     
-    # use this to check that we are warned
-    my $warn = 0;
-    local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /still active/ };
-    
-    my $sth2 = $dbh->prepare_cached($sql);
-    isa_ok($sth2, 'DBI::st');
-    
-    is($sth1, $sth2, '... prepare_cached returned the same statement handle');
-    cmp_ok($warn,'==', 1, '... we got warned about our first statement handle being still active');
-    
-    ok(!$sth1->{Active}, '... our first statment is no longer Active since we re-prepared it');
+    {
+	my $warn = 0; # use this to check that we are warned
+	local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /still active/i };
+	
+	my $sth2 = $dbh->prepare_cached($sql);
+	isa_ok($sth2, 'DBI::st');
+	
+	is($sth1, $sth2, '... prepare_cached returned the same statement handle');
+	cmp_ok($warn,'==', 1, '... we got warned about our first statement handle being still active');
+	
+	ok(!$sth1->{Active}, '... our first statment is no longer Active since we re-prepared it');
 
-    my $sth3 = $dbh->prepare_cached($sql, { foo => 1 });
-    isa_ok($sth3, 'DBI::st');
-    
-    isnt($sth1, $sth3, '... prepare_cached returned a different statement handle now');
-    cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');
-    ok(eq_set(
-        [ values %{$ck} ],
-        [ $sth1, $sth3 ]
-        ), 
-    '... both statment handles should be in the CachedKids');    
+	my $sth3 = $dbh->prepare_cached($sql, { foo => 1 });
+	isa_ok($sth3, 'DBI::st');
+	
+	isnt($sth1, $sth3, '... prepare_cached returned a different statement handle now');
+	cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');
+	ok(eq_set(
+	    [ values %{$ck} ],
+	    [ $sth1, $sth3 ]
+	    ), 
+	'... both statment handles should be in the CachedKids');    
 
-    ok($sth1->execute("."), '... executing first statement handle again');
-    ok($sth1->{Active}, '... first statement handle is now active again');
-    
-    my $sth4 = $dbh->prepare_cached($sql, undef, 3);
-    isa_ok($sth4, 'DBI::st');
-    
-    isnt($sth1, $sth4, '... our fourth statement handle is not the same as our first');
-    ok($sth1->{Active}, '... first statement handle is still active');
-    
-    cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
-    ok(eq_set(
-        [ values %{$ck} ],
-        [ $sth2, $sth4 ]
-        ), 
-    '... second and fourth statment handles should be in the CachedKids');      
-    
-    $sth1->finish;
-    ok(!$sth1->{Active}, '... first statement handle is no longer active');    
+	ok($sth1->execute("."), '... executing first statement handle again');
+	ok($sth1->{Active}, '... first statement handle is now active again');
+	
+	my $sth4 = $dbh->prepare_cached($sql, undef, 3);
+	isa_ok($sth4, 'DBI::st');
+	
+	isnt($sth1, $sth4, '... our fourth statement handle is not the same as our first');
+	ok($sth1->{Active}, '... first statement handle is still active');
+	
+	cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
+	ok(eq_set(
+	    [ values %{$ck} ],
+	    [ $sth2, $sth4 ]
+	    ), 
+	'... second and fourth statment handles should be in the CachedKids');      
+	
+	$sth1->finish;
+	ok(!$sth1->{Active}, '... first statement handle is no longer active');    
 
-    ok($sth4->execute("."), '... fourth statement handle executed properly');
-    ok($sth4->{Active}, '... fourth statement handle is Active');
-    
-    my $sth5 = $dbh->prepare_cached($sql, undef, 1);
-    isa_ok($sth5, 'DBI::st');
-    
-    is($sth4, $sth5, '... fourth statement handle and fifth one match');
-    ok(!$sth4->{Active}, '... fourth statement handle is not Active');
-    ok(!$sth5->{Active}, '... fifth statement handle is not Active (shouldnt be its the same as fifth)');
-    
-    cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
-    ok(eq_set(
-        [ values %{$ck} ],
-        [ $sth2, $sth5 ]
-        ), 
-    '... second and fourth/fifth statment handles should be in the CachedKids');     
+	ok($sth4->execute("."), '... fourth statement handle executed properly');
+	ok($sth4->{Active}, '... fourth statement handle is Active');
+	
+	my $sth5 = $dbh->prepare_cached($sql, undef, 1);
+	isa_ok($sth5, 'DBI::st');
+	
+	cmp_ok($warn, '==', 1, '... we still only got one warning');
 
-    cmp_ok($warn, '==', 1, '... we still only got one warning');
+	is($sth4, $sth5, '... fourth statement handle and fifth one match');
+	ok(!$sth4->{Active}, '... fourth statement handle is not Active');
+	ok(!$sth5->{Active}, '... fifth statement handle is not Active (shouldnt be its the same as fifth)');
+	
+	cmp_ok(scalar(keys(%{$ck})), '==', 2, '... there are two CachedKids');    
+	ok(eq_set(
+	    [ values %{$ck} ],
+	    [ $sth2, $sth5 ]
+	    ), 
+	'... second and fourth/fifth statment handles should be in the CachedKids');     
+    }
+
+    SKIP: {
+	skip "become() not supported under DBI::PurePerl", 23 if $DBI::PurePerl;
+    
+        my $sth6 = $dbh->prepare($sql);
+        $sth6->execute(".");
+
+        ok( $sth6->{Active}, '... sixth statement handle is active');
+        ok(!$sth1->{Active}, '... first statement handle is not active');
+
+        ok($sth1->swap_inner_handle($sth6), '... first statement handle becomes the sixth');
+        ok(!$sth6->{Active}, '... sixth statement handle is now not active');
+        ok( $sth1->{Active}, '... first statement handle is now active again');
+
+        ok($sth1->swap_inner_handle($sth6), '... first statement handle becomes the sixth');
+        ok( $sth6->{Active}, '... sixth statement handle is active');
+        ok(!$sth1->{Active}, '... first statement handle is not active');
+
+        ok($sth1->swap_inner_handle($sth6), '... first statement handle becomes the sixth');
+        ok(!$sth6->{Active}, '... sixth statement handle is now not active');
+        ok( $sth1->{Active}, '... first statement handle is now active again');
+
+	$sth1->{PrintError} = 0;
+        ok(!$sth1->swap_inner_handle($dbh), '... can not swap a sth with a dbh');
+	cmp_ok( $sth1->errstr, 'eq', "Can't swap_inner_handle between sth and dbh");
+
+        ok($sth1->swap_inner_handle($sth6), '... first statement handle becomes the sixth');
+        ok( $sth6->{Active}, '... sixth statement handle is active');
+        ok(!$sth1->{Active}, '... first statement handle is not active');
+
+        $sth6->finish;
+
+	ok(my $dbh_nullp = DBI->connect("dbi:NullP:"));
+	ok(my $sth7 = $dbh_nullp->prepare(""));
+
+	$sth1->{PrintError} = 0;
+        ok(!$sth1->swap_inner_handle($sth7), "... can't swap_inner_handle with handle from different parent");
+	cmp_ok( $sth1->errstr, 'eq', "Can't swap_inner_handle with handle from different parent");
+
+	cmp_ok( $sth1->{Database}{Driver}{Name}, 'eq', "ExampleP" );
+        ok( $sth1->swap_inner_handle($sth7,1), "... can swap to different parent if forced");
+	cmp_ok( $sth1->{Database}{Driver}{Name}, 'eq', "NullP" );
+
+	$dbh_nullp->disconnect;
+    }
+
     $dbh->disconnect;
-    
+
     SKIP: {
         skip "Kids and ActiveKids attributes not supported under DBI::PurePerl", 2 if $DBI::PurePerl;
     
@@ -302,6 +349,8 @@ do {
     # I don't know why this warning has the "(perhaps ...)" suffix, it shouldn't:
     # Can't locate object method "nonesuch" via package "DBI::db" (perhaps you forgot to load "DBI::db"?)
     eval { ref($dbh)->nonesuch; };
+
+    $dbh->disconnect;
 };
 
 SKIP: {

@@ -224,6 +224,8 @@ ok(!defined $sth->execute_array( { ArrayTupleStatus => $tuple_status }, 1,{},3,4
 is( $sth->errstr, 'Value for parameter 2 must be a scalar or an arrayref, not a HASH', '... errstr is as expected');
 
 ok(!defined $sth->bind_param_array(":foo", [ qw(a b c) ]), '... bind_param_array should return undef');
-is( $sth->errstr, "Can't use named placeholders for non-driver supported bind_param_array", '... errstr is as expected');
+is( $sth->errstr, "Can't use named placeholder ':foo' for non-driver supported bind_param_array", '... errstr is as expected');
+
+$dbh->disconnect;
 
 1;

@@ -365,6 +365,7 @@ my $keeperr = { O=>0x0004 };
 	set_err		=> { U =>[3,6,'$err, $errmsg [, $state, $method, $rv]'], O=>0x0010 },
 	trace		=> { U =>[1,3,'[$trace_level, [$filename]]'],	O=>0x0004 },
 	trace_msg	=> { U =>[2,3,'$message_text [, $min_level ]' ],	O=>0x0004, T=>8 },
+	swap_inner_handle => { U =>[2,3,'$h [, $allow_reparent ]'] },
     },
     dr => {		# Database Driver Interface
 	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3 },
@@ -1279,7 +1280,6 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return;
     }
 
-    sub DESTROY { return }	# avoid AUTOLOAD
 }
 
 
@@ -1300,6 +1300,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($this) = DBI::_new_dbh($drh, {
 	    'Name' => $dsn,
 	});
+	# $this->STORE(Active => 1); debatable as there's no "server side" here
 	$this;
     }
 
@@ -2836,6 +2837,24 @@ Returns the bit flag corresponding to the trace flag name in
 $trace_flag_name.  Drivers are expected to override this method and
 check if $trace_flag_name is a driver specific trace flags and, if
 not, then call the DBIs default parse_trace_flag().
+
+=item C<swap_inner_handle>
+
+  $rc = $h1->swap_inner_handle( $h2 );
+  $rc = $h1->swap_inner_handle( $h2, $allow_reparent );
+
+Brain transplants for handles. You don't need to know about this
+unless you want to become a handle surgeon.
+
+A DBI handle is a reference to a tied hash. A tied hash has an
+I<inner> hash that actually holds the contents.  The swap_inner_handle()
+method swaps the inner hashes between two handles. The $h1 and $h2
+handles still point to the same tied hashes, but what those hashes
+are tied to has been swapped.  In effect $h1 I<becomes> $h2 and
+vice-versa. This is powerful stuff. Use with care.
+
+As a small safety measure, the two handles, $h1 and $h2, have to
+share the same parent unless $allow_reparent is true.
 
 =back
 

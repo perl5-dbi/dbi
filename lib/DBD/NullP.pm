@@ -64,7 +64,7 @@
 	# or fetch and cache attribute values too expensive to prefetch.
 	return 1 if $attrib eq 'AutoCommit';
 	# else pass up to DBI to handle
-	return $dbh->DBD::_::db::FETCH($attrib);
+	return $dbh->SUPER::FETCH($attrib);
 	}
 
     sub STORE {
@@ -75,10 +75,13 @@
 	    return 1 if $value; # is already set
 	    croak("Can't disable AutoCommit");
 	}
-	return $dbh->DBD::_::db::STORE($attrib, $value);
+	return $dbh->SUPER::STORE($attrib, $value);
     }
 
-    sub DESTROY { undef }
+    sub disconnect {
+	shift->STORE(Active => 0);
+    }
+
 }
 
 
@@ -112,17 +115,16 @@
 	my ($sth, $attrib) = @_;
 	# would normally validate and only fetch known attributes
 	# else pass up to DBI to handle
-	return $sth->DBD::_::st::FETCH($attrib);
+	return $sth->SUPER::FETCH($attrib);
     }
 
     sub STORE {
 	my ($sth, $attrib, $value) = @_;
 	# would normally validate and only store known attributes
 	# else pass up to DBI to handle
-	return $sth->DBD::_::st::STORE($attrib, $value);
+	return $sth->SUPER::STORE($attrib, $value);
     }
 
-    sub DESTROY { undef }
 }
 
 1;

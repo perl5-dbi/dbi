@@ -1,4 +1,5 @@
 #!perl -w
+# vim:sw=4:ts=8
 
 use strict;
 
@@ -24,10 +25,10 @@ BEGIN {
 
 ## main Test Driver Package
 {   
-	package DBD::Test;
+    package DBD::Test;
 
     use strict;
-	use warnings;
+    use warnings;
 
     my $drh = undef;
 
@@ -86,8 +87,6 @@ BEGIN {
 	
     Test::More::cmp_ok($DBD::Test::db::imp_data_size, '==', 0, '... check DBD::Test::db::imp_data_size to avoid typo');
 
-    sub DESTROY { 1 }
-
     sub do {
 		my $h = shift;
 
@@ -127,6 +126,10 @@ BEGIN {
 		
 		push @ds, "dbi:Test:baz";
 		return @ds;
+    }
+
+    sub disconnect {
+	shift->STORE(Active => 0);
     }
 }
 
@@ -180,6 +183,8 @@ do {
 	);
 	
 	ok($dbh->do('dummy'), '... this will trigger more driver internal tests above in DBD::Test::db');
+
+	$dbh->disconnect;
 
 	$drh->set_err("41", "foo 41 drh");
 	cmp_ok($drh->err, '==', 41, '... checking Driver handle err set with set_err method');
