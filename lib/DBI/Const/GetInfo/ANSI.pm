@@ -12,7 +12,7 @@ package DBI::Const::GetInfo::ANSI;
 
 =head1 NAME
 
- DBI::Const::GetInfo::ANSI - ISO/IEC SQL/CLI Constants for GetInfo
+DBI::Const::GetInfo::ANSI - ISO/IEC SQL/CLI Constants for GetInfo
 
 =head1 SYNOPSIS
 

@@ -65,7 +65,7 @@ can construct the DBI::ProfileDumper object yourself:
                         File => 'dbi.prof' );
 
 The C<Path> option takes the same values as in
-L<DBI::Profile|DBI:Profile>.  The C<File> option gives the name of the
+L<DBI::Profile>.  The C<File> option gives the name of the
 file where results will be collected.  If it already exists it will be
 overwritten.
 
@@ -107,7 +107,7 @@ newlines, the profile data forms the body of the file.  For example:
   DBI::ProfileDumper 1.0
   Path = [ DBIprofile_Statement, DBIprofile_MethodName ]
   Program = t/42profile_data.t
-  
+
   + 1 SELECT name FROM users WHERE id = ?
   + 2 prepare
   = 1 0.0312958955764771 0.000490069389343262 0.000176072120666504 0.00140702724456787 1023115819.83019 1023115819.86576

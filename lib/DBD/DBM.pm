@@ -710,7 +710,7 @@ DBD::DBM has been tested with the following DBM types: SDBM_File, NDBM_File, ODB
 
 DBD::DBM operates like all other DBD drivers - it's basic syntax and operation is specified by DBI.  If you're not familiar with DBI, you should start by reading L<DBI> and the documents it points to and then come back and read this file.  If you are familiar with DBI, you already know most of what you need to know to operate this module.  Just jump in and create a test script something like the one shown below.
 
-You should be aware that there are several options for the SQL engine underlying DBD::DBM, see L<Supported SQL>.  There are also many options for DBM support, see especially the section on L<Adding multi-column support with MLDBM>.
+You should be aware that there are several options for the SQL engine underlying DBD::DBM, see L<Supported SQL syntax>.  There are also many options for DBM support, see especially the section on L<Adding multi-column support with MLDBM>.
 
 But here's a sample to get you started.
 
@@ -858,7 +858,7 @@ MLDBM works on top of other DBM modules so you can also set a DBM type along wit
 
 SDBM_File, the default file type is quite limited, so if you are going to use MLDBM, you should probably use a different type, see L<AnyDBM_File>.
 
-See below for some L<Gotchas and Warnings> about MLDBM.
+See below for some L<GOTCHAS AND WARNINGS> about MLDBM.
 
 =head2 Support for Berkeley DB
 

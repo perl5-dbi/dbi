@@ -23,7 +23,7 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.4 $ ' =~ /(\d+)\.(\d+)/;
 
 =head1 NAME
 
- DBI::Const::GetInfoReturn - Data and functions for describing GetInfo results
+DBI::Const::GetInfoReturn - Data and functions for describing GetInfo results
 
 =head1 SYNOPSIS
 

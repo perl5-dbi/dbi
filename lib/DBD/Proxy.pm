@@ -715,7 +715,7 @@ I<Note that the connect_cached method is new and still experimental.>
 Before connecting to a remote database, you must ensure, that a Proxy
 server is running on the remote machine. There's no default port, so
 you have to ask your system administrator for the port number. See
-L<DBI::ProxyServer(3)> for details.
+L<DBI::ProxyServer> for details.
 
 Say, your Proxy server is running on machine "alpha", port 3334, and
 you'd like to connect to an ODBC database called "mydb" as user "joe"
@@ -732,7 +732,7 @@ You see, this is mainly the same. The DBD::Proxy module will create a
 connection to the Proxy server on "alpha" which in turn will connect
 to the ODBC database.
 
-Refer to the L<DBI(3)> documentation on the C<connect> method for a way
+Refer to the L<DBI> documentation on the C<connect> method for a way
 to automatically use DBD::Proxy without having to change your code.
 
 DBD::Proxy's DSN string has the format
@@ -782,7 +782,7 @@ by executing
     $cipherRef = $class->new(pack("H*", $key));
 
 and pass this object to the RPC::PlClient module when creating a
-client. See L<RPC::PlClient(3)>. Example:
+client. See L<RPC::PlClient>. Example:
 
     cipher=IDEA;key=97cd2375efa329aceef2098babdc9721
 
@@ -794,7 +794,7 @@ less secure than the usercipher/userkey secret and readable by anyone.
 The usercipher/userkey secret is B<your> private secret.
 
 Of course encryption requires an appropriately configured server. See
-<DBD::ProxyServer(3)/CONFIGURATION FILE>.
+<DBD::ProxyServer/CONFIGURATION FILE>.
 
 =item debug
 
@@ -841,7 +841,7 @@ and fast CGI applications.
 This attribute can be used to reduce network traffic: By default calls
 to $dbh->quote() are passed to the remote driver.  Of course this slows
 down things quite a lot, but is the safest default behaviour.
-  
+
 However, if you set the I<proxy_quote> attribute to the value 'C<local>'
 either in the database handle or in the statement handle, and the call
 to quote has only one parameter, then the local default DBI quote
@@ -871,13 +871,13 @@ executing the above example in two steps:
 
 =over
 
-=item 1.)
- 
+=item 1
+
 The first step is fetching the value of the key "csv_tables" in the
 handle $dbh. The value returned is complex, a hash ref.
- 
-=item 2.)
- 
+
+=item 2
+
 The second step is storing some value (the right hand side of the
 assignment) as the key "passwd" in the hash ref from step 1.
 
@@ -921,6 +921,6 @@ is granted to Tim Bunce for distributing this as a part of the DBI.
 
 =head1 SEE ALSO
 
-L<DBI(3)>, L<RPC::PlClient(3)>, L<Storable(3)>
+L<DBI>, L<RPC::PlClient>, L<Storable>
 
 =cut

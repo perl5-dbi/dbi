@@ -2290,7 +2290,7 @@ column C<product_code> with a NULL value:
     UPDATE people SET age = ? WHERE name = ?
   });
   $sth->execute(undef, "Joe Bloggs");
-  
+
 However, care must be taken in the particular case of trying to use
 NULL values to qualify a C<WHERE> clause.  Consider:
 
@@ -2336,7 +2336,7 @@ supports, and where it can support the C<?> parameter in a statement.
   4) age = ? OR (age IS NULL AND ? IS NULL)
   5) age = ? OR (age IS NULL AND SP_ISNULL(?) = 1)
   6) age = ? OR (age IS NULL AND ? = 1)
-	
+
 Statements formed with the above C<WHERE> clauses require execute
 statements as follows:
 
@@ -3975,16 +3975,16 @@ alternatives:
 
 =over 4
 
-B<0>: A warning will be generated, and finish() will be called on
+=item B<0>: A warning will be generated, and finish() will be called on
 the statement handle before it is returned.  This is the default
 behaviour if $if_active is not passed.
 
-B<1>: finish() will be called on the statement handle, but the
+=item B<1>: finish() will be called on the statement handle, but the
 warning is suppressed.
 
-B<2>: Disables any checking.
+=item B<2>: Disables any checking.
 
-B<3>: The existing active statement handle will be removed from the
+=item B<3>: The existing active statement handle will be removed from the
 cache and a new statement handle prepared and cached in its place.
 This is the safest option because it doesn't affect the state of the
 old handle, it just removes it from the cache. [Added in DBI 1.40]

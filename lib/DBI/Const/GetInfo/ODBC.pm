@@ -12,7 +12,7 @@ package DBI::Const::GetInfo::ODBC;
 
 =head1 NAME
 
- DBI::Const::GetInfo::ODBC - ODBC Constants for GetInfo
+DBI::Const::GetInfo::ODBC - ODBC Constants for GetInfo
 
 =head1 SYNOPSIS
 

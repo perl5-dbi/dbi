@@ -848,7 +848,7 @@ __END__
 
 =head1 NAME
 
- DBI::PurePerl -- a DBI emulation using pure perl (no C/XS compilation required)
+DBI::PurePerl -- a DBI emulation using pure perl (no C/XS compilation required)
 
 =head1 SYNOPSIS
 
@@ -947,7 +947,7 @@ is defined.  To enable total tracing you can set the DBI_TRACE
 environment variable as usual.  But to enable individual handle
 tracing using the trace() method you also need to set the DBI_TRACE
 environment variable, but set it to 0.
- 
+
 =head2 Parameter Usage Checking
 
 The DBI does some basic parameter count checking on method calls.

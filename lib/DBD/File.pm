@@ -659,8 +659,8 @@ that these drivers work with plain files, for example CSV files or
 INI files. The module is based on the SQL::Statement module, a simple
 SQL engine.
 
-See L<DBI(3)> for details on DBI, L<SQL::Statement(3)> for details on
-SQL::Statement and L<DBD::CSV(3)> or L<DBD::IniFile(3)> for example
+See L<DBI> for details on DBI, L<SQL::Statement> for details on
+SQL::Statement and L<DBD::CSV> or L<DBD::IniFile> for example
 drivers.
 
 
@@ -755,8 +755,7 @@ Example:
     my(@list) = $dbh->func('list_tables');
 
 Note that the list includes all files contained in the directory, even
-those that have non-valid table names, from the view of SQL. See
-L<Creating and dropping tables> above.
+those that have non-valid table names, from the view of SQL.
 
 =back
 
@@ -792,7 +791,7 @@ the Perl README file.
 
 =head1 SEE ALSO
 
-L<DBI(3)>, L<Text::CSV_XS(3)>, L<SQL::Statement(3)>
+L<DBI>, L<Text::CSV_XS>, L<SQL::Statement>
 
 
 =cut
