@@ -1695,19 +1695,18 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $sth = shift;
 	my $fields = $sth->FETCH('NUM_OF_FIELDS') || 0;
 	if ($fields <= 0 && !$sth->{Active}) {
-	    # XXX ought to be set_err
-	    die "Statement has no result columns to bind"
-		." (perhaps you need to successfully call execute first)";
+	    return $sth->set_err(1, "Statement has no result columns to bind"
+		    ." (perhaps you need to successfully call execute first)");
 	}
 	# Backwards compatibility for old-style call with attribute hash
 	# ref as first arg. Skip arg if undef or a hash ref.
-	my $attr = $_[0]; # maybe
-	shift if !defined $attr or ref($attr) eq 'HASH';
+	my $attr;
+	$attr = shift if !defined $_[0] or ref($_[0]) eq 'HASH';
 
 	die "bind_columns called with ".@_." refs when $fields needed."
 	    if @_ != $fields;
 	my $idx = 0;
-	$sth->bind_col(++$idx, shift) or return
+	$sth->bind_col(++$idx, shift, $attr) or return
 	    while (@_);
 	return 1;
     }
@@ -5382,7 +5381,7 @@ to be automatically updated simply because it refers to the same
 memory location as the corresponding column value.  This makes using
 bound variables very efficient. Multiple variables can be bound
 to a single column, but there's rarely any point. Binding a tied
-variable doesn't work.
+variable doesn't work, currently.
 
 The L</bind_param> method
 performs a similar, but opposite, function for input variables.
