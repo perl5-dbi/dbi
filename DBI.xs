@@ -3539,7 +3539,8 @@ trace(class, level_sv=&sv_undef, file=Nullsv)
 	ix=ix;		/* avoid 'unused variable' warnings	*/
 	croak("DBI not initialised");
     }
-    set_trace_file(file);	/* always call this regardless of level */
+    if (level)		/* call before or after altering DBI trace level */
+        set_trace_file(file);
     if (level != RETVAL) {
 	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
 	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to Ox%lx/%ld (in pid %d)\n",
@@ -3554,6 +3555,8 @@ trace(class, level_sv=&sv_undef, file=Nullsv)
 	DBIS->debug = level;
 	sv_setiv(perl_get_sv("DBI::dbi_debug",0x5), level);
     }
+    if (!level)		/* call before or after altering DBI trace level */
+        set_trace_file(file);
     }
     OUTPUT:
     RETVAL
@@ -4080,21 +4083,27 @@ trace(h, level=0, file=Nullsv)
 
 
 void
-trace_msg(sv, msg, min_level=1)
+trace_msg(sv, msg, this_trace=1)
     SV *sv
     char *msg
-    int min_level
+    int this_trace
     PREINIT:
-    int debug = 0;
+    int current_trace;
+    PerlIO *pio;
     CODE:
     {
     dPERINTERP;
     if (SvROK(sv)) {
 	D_imp_xxh(sv);
-	debug = DBIc_TRACE_LEVEL(imp_xxh);
+	current_trace = DBIc_TRACE_LEVEL(imp_xxh);
+	pio = DBIc_LOGPIO(imp_xxh);
     }
-    if (DBIS_TRACE_LEVEL >= min_level || debug >= min_level) {
-	PerlIO_puts(DBILOGFP, msg);
+    else {	/* called as a static method */
+	current_trace = DBIS_TRACE_FLAGS;
+	pio = DBILOGFP;
+    }
+    if (DBIc_TRACE_MATCHES(this_trace, current_trace)) {
+	PerlIO_puts(pio, msg);
         ST(0) = &sv_yes;
     }
     else {

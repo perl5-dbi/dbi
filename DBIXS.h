@@ -199,13 +199,27 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIc_LAST_METHOD(imp)  	_imp2com(imp, std.last_method)
 
 #define DBIc_TRACE_LEVEL_MASK	0x0000000F
-#define DBIc_TRACE_TOPIC_MASK	0x00FFFF00
-#define DBDc_TRACE_TOPIC_MASK	0xFF000000
-#define DBIc_TRACE_LEVEL(imp)	(DBIc_DBISTATE(imp)->debug &  DBIc_TRACE_LEVEL_MASK)
-#define DBIc_TRACE_FLAGS(imp)	(DBIc_DBISTATE(imp)->debug & ~DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS_MASK	0xFFFFFF00
+#define DBIc_TRACE_SETTINGS(imp) (DBIc_DBISTATE(imp)->debug)
+#define DBIc_TRACE_LEVEL(imp)	(DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS(imp)	(DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_FLAGS_MASK)
+/* DBIc_TRACE_MATCHES(this, crnt): true if this 'matches' (is within) crnt
+   DBIc_TRACE_MATCHES(foo, DBIc_TRACE_SETTINGS(imp))
+*/
+#define DBIc_TRACE_MATCHES(this, crnt)	\
+	(  ((crnt & DBIc_TRACE_LEVEL_MASK) >= (this & DBIc_TRACE_LEVEL_MASK)) \
+	|| ((crnt & DBIc_TRACE_FLAGS_MASK)  & (this & DBIc_TRACE_FLAGS_MASK)) )
+/* DBIc_TRACE: true if flags match & DBI level>=flaglevel, or if DBI level>level
+   This is the main trace testing macro to be used by drivers.
+   (Drivers should define their own DBDtf_* macros for the top 8 bits: 0xFF000000)
+   DBIc_TRACE(imp,         0, 0, 4) = if level >= 4
+   DBIc_TRACE(imp, DBDtf_FOO, 2, 4) = if tracing DBDtf_FOO & level>=2 or level>=4
+   DBIc_TRACE(imp, DBDtf_FOO, 2, 0) = as above but never trace just due to level
+*/
 #define DBIc_TRACE(imp, flags, flaglevel, level)	\
 	(  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
 	|| (level && DBIc_TRACE_LEVEL(imp) >= level) )
+
 #define DBIc_DEBUG(imp)		(_imp2com(imp, attr.TraceLevel)) /* deprecated */
 #define DBIc_DEBUGIV(imp)	SvIV(DBIc_DEBUG(imp))		 /* deprecated */
 #define DBIc_STATE(imp)		SvRV(_imp2com(imp, attr.State))

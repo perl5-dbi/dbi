@@ -22,12 +22,23 @@
         sv_setpv(DBIc_ERRSTR(imp_xxh), errstr)
 #endif
 
-#ifndef DBIc_TRACE
+#ifndef DBIc_TRACE_LEVEL_MASK
 #define DBIc_TRACE_LEVEL_MASK   0x0000000F
-#define DBIc_TRACE_TOPIC_MASK   0x00FFFF00
-#define DBDc_TRACE_TOPIC_MASK   0xFF000000
-#define DBIc_TRACE_LEVEL(imp)   (DBIc_DBISTATE(imp)->debug &  DBIc_TRACE_LEVEL_MASK)
-#define DBIc_TRACE_FLAGS(imp)   (DBIc_DBISTATE(imp)->debug & ~DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS_MASK   0xFFFFFF00
+#define DBIc_TRACE_SETTINGS(imp) (DBIc_DBISTATE(imp)->debug)
+#define DBIc_TRACE_LEVEL(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_LEVEL_MASK)
+#define DBIc_TRACE_FLAGS(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_FLAGS_MASK)
+/* DBIc_TRACE_MATCHES - true if s1 'matches' s2  (c.f. trace_msg())
+   DBIc_TRACE_MATCHES(foo, DBIc_TRACE_SETTINGS(imp))
+*/
+#define DBIc_TRACE_MATCHES(s1, s2)      \
+        (  ((s1 & DBIc_TRACE_LEVEL_MASK) >= (s2 & DBIc_TRACE_LEVEL_MASK)) \
+        || ((s1 & DBIc_TRACE_FLAGS_MASK)  & (s2 & DBIc_TRACE_FLAGS_MASK)) )
+/* DBIc_TRACE - true if flags match & DBI level>=flaglevel, or if DBI level>level
+   DBIc_TRACE(imp,         0, 0, 4) = if level >= 4
+   DBIc_TRACE(imp, DBDtf_FOO, 2, 4) = if tracing DBDtf_FOO & level>=2 or level>=4
+   DBIc_TRACE(imp, DBDtf_FOO, 2, 0) = as above but never trace just due to level
+*/
 #define DBIc_TRACE(imp, flags, flaglevel, level)        \
         (  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
         || (level && DBIc_TRACE_LEVEL(imp) >= level) )
