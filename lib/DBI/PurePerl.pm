@@ -632,7 +632,7 @@ sub errstr { return shift->{errstr} }
 sub state  { return shift->{state}  }
 sub set_err {
     my ($h, $errnum,$msg,$state, $method, $rv) = @_;
-    $h = tied(%$h) || $h; # for code that calls $h->DBI::set_err(...)
+    $h = tied(%$h) || $h;
 
     if (my $hss = $h->{HandleSetErr}) {
 	return if $hss->($h, $errnum, $msg, $state, $method);

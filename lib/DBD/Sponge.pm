@@ -83,8 +83,7 @@
 	    } elsif (my $firstrow = $rows->[0]) {
 		$numFields = scalar @$firstrow;
 	    } else {
-		DBI::set_err($dbh, 1, 'Cannot determine NUM_OF_FIELDS');
-		return undef;
+		return $dbh->set_err(1, 'Cannot determine NUM_OF_FIELDS');
 	    }
 	    $sth->STORE('NUM_OF_FIELDS' => $numFields);
 	    $sth->{NAME} = $attribs->{NAME}

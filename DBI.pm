@@ -1480,7 +1480,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub begin_work {
 	my $dbh = shift;
-	return $dbh->DBI::set_err(1, "Already in a transaction")
+	return $dbh->set_err(1, "Already in a transaction")
 		unless $dbh->FETCH('AutoCommit');
 	$dbh->STORE('AutoCommit', 0); # will croak if driver doesn't support it
 	$dbh->STORE('BegunWork',  1); # trigger post commit/rollback action
@@ -1598,10 +1598,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $sth = shift;
 	my ($p_id, $value_array, $attr) = @_;
 
-	return $sth->DBI::set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
+	return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
 	    if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
 
-	return $sth->DBI::set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
+	return $sth->set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
 	    unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
 
 	# get/create arrayref to hold params
@@ -1613,7 +1613,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    foreach (keys %$hash_of_arrays) {
 		my $v = $$hash_of_arrays{$_};
 		next unless ref $v eq 'ARRAY';
-		return $sth->DBI::set_err(1,
+		return $sth->set_err(1,
 			"Arrayref for parameter $p_id has ".@$value_array." elements"
 			." but parameter $_ has ".@$v)
 		    if @$value_array != @$v;
@@ -1639,7 +1639,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# and then return an error
 	my ($p_num, $value_array, $attr) = @_;
 	$sth->bind_param_array($p_num, $value_array, $attr);
-	return $sth->DBI::set_err(1, "bind_param_inout_array not supported");
+	return $sth->set_err(1, "bind_param_inout_array not supported");
     }
 
     sub bind_columns {
@@ -1670,13 +1670,13 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 	# get tuple status array or hash attribute
 	my $tuple_sts = $attr->{ArrayTupleStatus};
-	return $sth->DBI::set_err(1, "ArrayTupleStatus attribute must be an arrayref")
+	return $sth->set_err(1, "ArrayTupleStatus attribute must be an arrayref")
 		if $tuple_sts and ref $tuple_sts ne 'ARRAY';
 
 	# bind all supplied arrays
 	if (@array_of_arrays) {
 	    $sth->{ParamArrays} = { };	# clear out old params
-	    return $sth->DBI::set_err(1,
+	    return $sth->set_err(1,
 		    @array_of_arrays." bind values supplied but $NUM_OF_PARAMS expected")
 		if defined ($NUM_OF_PARAMS) && @array_of_arrays != $NUM_OF_PARAMS;
 	    $sth->bind_param_array($_, $array_of_arrays[$_-1]) or return
@@ -1687,31 +1687,31 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 	if ($fetch_tuple_sub = $attr->{ArrayTupleFetch}) {	# fetch on demand
 
-	    return $sth->DBI::set_err(1,
+	    return $sth->set_err(1,
 		    "Can't use both ArrayTupleFetch and explicit bind values")
 		if @array_of_arrays; # previous bind_param_array calls will simply be ignored
 
 	    if (UNIVERSAL::isa($fetch_tuple_sub,'DBI::st')) {
 		my $fetch_sth = $fetch_tuple_sub;
-		return $sth->DBI::set_err(1,
+		return $sth->set_err(1,
 			"ArrayTupleFetch sth is not Active, need to execute() it first")
 		    unless $fetch_sth->{Active};
 		# check column count match to give more friendly message
 		my $NUM_OF_FIELDS = $fetch_sth->{NUM_OF_FIELDS};
-		return $sth->DBI::set_err(1,
+		return $sth->set_err(1,
 			"$NUM_OF_FIELDS columns from ArrayTupleFetch sth but $NUM_OF_PARAMS expected")
 		    if defined($NUM_OF_FIELDS) && defined($NUM_OF_PARAMS)
 		    && $NUM_OF_FIELDS != $NUM_OF_PARAMS;
 		$fetch_tuple_sub = sub { $fetch_sth->fetchrow_arrayref };
 	    }
 	    elsif (!UNIVERSAL::isa($fetch_tuple_sub,'CODE')) {
-		return $sth->DBI::set_err(1, "ArrayTupleFetch '$fetch_tuple_sub' is not a code ref or statement handle");
+		return $sth->set_err(1, "ArrayTupleFetch '$fetch_tuple_sub' is not a code ref or statement handle");
 	    }
 
 	}
 	else {
 	    my $NUM_OF_PARAMS_given = keys %{ $sth->{ParamArrays} || {} };
-	    return $sth->DBI::set_err(1,
+	    return $sth->set_err(1,
 		    "$NUM_OF_PARAMS_given bind values supplied but $NUM_OF_PARAMS expected")
 		if defined($NUM_OF_PARAMS) && $NUM_OF_PARAMS != $NUM_OF_PARAMS_given;
 
@@ -1811,7 +1811,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $index = $names_hash->{$key_field};	# perl index not column number
 	++$index if defined $index;		# convert to column number
 	$index ||= $key_field if DBI::looks_like_number($key_field) && $key_field>=1;
-	return $sth->DBI::set_err(1, "Field '$key_field' does not exist (not one of @{[keys %$names_hash]})")
+	return $sth->set_err(1, "Field '$key_field' does not exist (not one of @{[keys %$names_hash]})")
 		unless defined $index;
 	my $key_value;
 	$sth->bind_col($index, \$key_value) or return;

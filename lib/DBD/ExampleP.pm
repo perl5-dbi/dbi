@@ -85,7 +85,7 @@
 
 	my($fields, $dir)
 		= $statement =~ m/^\s*select\s+(.*?)\s+from\s+(\S*)/i;
-	return $dbh->DBI::set_err(1, "Syntax error in select statement (\"$statement\")")
+	return $dbh->set_err(1, "Syntax error in select statement (\"$statement\")")
 		unless defined $fields and defined $dir;
 
 	my ($outer, $inner) = DBI::_new_sth($dbh, {
@@ -99,7 +99,7 @@
 	my @bad = map {
 	    defined $DBD::ExampleP::statnames{$_} ? () : $_
 	} @fields;
-	return $dbh->DBI::set_err(1, "Unknown field names: @bad")
+	return $dbh->set_err(1, "Unknown field names: @bad")
 		if @bad;
 
 	$inner->{dbd_param} = [];
@@ -137,7 +137,7 @@
 	if ($types{TABLE}) {
 	    no strict 'refs';
 	    opendir($dh, $dir)
-		or return $dbh->DBI::set_err(int($!),
+		or return $dbh->set_err(int($!),
 					"Failed to open directory $dir: $!");
 	    while (defined(my $file = readdir($dh))) {
 		next unless -d $file;
@@ -150,7 +150,7 @@
 	# We would like to simply do a DBI->connect() here. However,
 	# this is wrong if we are in a subclass like DBI::ProxyServer.
 	$dbh->{'dbd_sponge_dbh'} ||= DBI->connect("DBI:Sponge:", '','')
-	    or return $dbh->DBI::set_err($DBI::err,
+	    or return $dbh->set_err($DBI::err,
 			"Failed to connect to DBI::Sponge: $DBI::errstr");
 
 	my $attr = {
@@ -164,7 +164,7 @@
 	};
 	my $sdbh = $dbh->{'dbd_sponge_dbh'};
 	my $sth = $sdbh->prepare("SHOW TABLES FROM $dir", $attr)
-	    or return $dbh->DBI::set_err($sdbh->err(), $sdbh->errstr());
+	    or return $dbh->set_err($sdbh->err(), $sdbh->errstr());
 	$sth;
     }
 
@@ -274,11 +274,11 @@
 	}
 
 	my $dbd_param = $sth->{'dbd_param'} || [];
-	return $sth->DBI::set_err(2, @$dbd_param." values bound when 1 expected")
+	return $sth->set_err(2, @$dbd_param." values bound when 1 expected")
 	    unless @$dbd_param == 1;
 
 	$dir = $dbd_param->[0];
-	return $sth->DBI::set_err(2, "No bind parameter supplied")
+	return $sth->set_err(2, "No bind parameter supplied")
 	    unless defined $dir;
 
 	$sth->finish;
@@ -296,7 +296,7 @@
 	    $sth->{dbd_dir} = $dir;
 	    $sth->{dbd_datahandle} = Symbol::gensym(); # "DBD::ExampleP::".++$DBD::ExampleP::gensym;
 	    opendir($sth->{dbd_datahandle}, $dir)
-		or return $sth->DBI::set_err(2, "opendir($dir): $!");
+		or return $sth->set_err(2, "opendir($dir): $!");
 	}
 	$sth->STORE(Active => 1);
 	return 1;

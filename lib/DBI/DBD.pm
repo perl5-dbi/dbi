@@ -977,9 +977,9 @@ With DBD::File for example, you might catch an error when setting the
 current directory to something not existent by using the
 (driver-specific) f_dir attribute.
 
-To report an error, you use the C<DBI::set_err> method:
+To report an error, you use the C<set_err> method:
 
-  $h->DBI::set_err($errcode, $errmsg);
+  $h->set_err($err, $errmsg, $state);
 
 This will ensure that the error is recorded correctly and that
 RaiseError and PrintError etc are handled correctly.
@@ -989,7 +989,7 @@ always use the method instance, aka your method's first argument.
 As set_err always returns undef your error handling code can
 usually be simplified to something like this:
 
-  return $h->DBI::set_err($errcode, $errmsg) if ...;
+  return $h->set_err($err, $errmsg, $state) if ...;
 
 =cut
 

@@ -157,9 +157,6 @@ New ima flags: CLEAR_ERR (on entry), CHECK_ERR (on exit), CHECK_NEW_ERR
 (check if error count has been incremented by set_err).
 Then FETCH would have just CHECK_NEW_ERR.
 
-Change $h->DBI::set_err calls to $h->set_err (re subclassing etc)
-Check for other $h->DBI::foo calls
-
 Trace to tied file handle.
 
 Hooks for method entry and exit.
