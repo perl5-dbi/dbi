@@ -29,7 +29,7 @@ package DBD::File;
 
 use vars qw(@ISA $VERSION $drh $valid_attrs);
 
-$VERSION = '0.31';      # bumped from 0.22 to 0.30 with inclusion in DBI
+$VERSION = '0.32';
 
 $drh = undef;		# holds driver handle once initialised
 
@@ -152,6 +152,8 @@ sub DESTROY {
 package DBD::File::db; # ====== DATABASE ======
 
 $DBD::File::db::imp_data_size = 0;
+
+sub ping { return (shift->FETCH('Active')) ? 1 : 0 };
 
 sub prepare ($$;@) {
     my($dbh, $statement, @attribs)= @_;
