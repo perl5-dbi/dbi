@@ -530,7 +530,7 @@ my $locking = eval { flock STDOUT, 0; 1 };
 
 my $open_table_re =
     $haveFileSpec ?
-    sprintf('(?:%s|%s¦%s)',
+    sprintf('(?:%s|%s|%s)',
 	    quotemeta(File::Spec->curdir()),
 	    quotemeta(File::Spec->updir()),
 	    quotemeta(File::Spec->rootdir()))
