@@ -248,6 +248,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIcf_TaintIn     0x020000	/* check inputs for taintedness */
 #define DBIcf_TaintOut    0x040000	/* taint outgoing data */
 #define DBIcf_Executed    0x080000	/* do/execute called since commit/rollb */
+#define DBIcf_PrintWarn   0x100000	/* warn() on warning (err="0")		*/
 /* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK		/* what NOT to pass on to children */	\
@@ -360,7 +361,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIh_CLEAR_ERROR(imp_xxh) (void)( \
 	(void)SvOK_off(DBIc_ERR(imp_xxh)),    	\
 	(void)SvOK_off(DBIc_ERRSTR(imp_xxh)),	\
-	(SvPOK(DBIc_STATE(imp_xxh)) ? SvCUR(DBIc_STATE(imp_xxh))=0 : 0)	\
+	(void)SvOK_off(DBIc_STATE(imp_xxh))	\
     )
 
 

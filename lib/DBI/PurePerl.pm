@@ -118,6 +118,7 @@ my %is_flag_attribute = map {$_ =>1 } qw(
 	LongTruncOk
 	MultiThread
 	PrintError
+	PrintWarn
 	RaiseError
 	ShowErrorStatement
 	Warn
@@ -281,19 +282,22 @@ sub  _install_method {
     } if IMA_END_WORK & $bitmask;
 
     push @post_call_frag, q{
-        if ( !$keep_error && defined(my $err=$h->{err}) ) {
+        if ( !$keep_error
+	&& defined(my $err = $h->{err})
+	&& ($call_depth <= 1 && !$h->{_parent}{_call_depth})
+	) {
 
-	    my $at_top = ($call_depth <= 1 && !$h->{_parent}{_call_depth});
-	    my($pe,$re,$he) = @{$h}{qw(PrintError RaiseError HandleError)};
+	    my($pe,$pw,$re,$he) = @{$h}{qw(PrintError PrintWarn RaiseError HandleError)};
 	    my $msg;
 
-	    if ($err && $at_top && ($pe || $re || $he)	# error at top level
-	    or (!$err && $pe)				# warning/info
+	    if ($err && ($pe || $re || $he)	# error
+	    or (!$err && length($err) && $pw)	# warning
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
 		    ? ($h->{'_last_method'}||$method_name) : $method_name;
 		my $errstr = $h->{errstr} || $DBI::errstr || $err || '';
-		my $msg = sprintf "%s %s failed: %s", $imp, $last, $errstr;
+		my $msg = sprintf "%s %s %s: %s", $imp, $last,
+			($err eq "0") ? "warning" : "failed", $errstr;
 
 		if ($h->{'ShowErrorStatement'} and my $Statement = $h->{Statement}) {
 		    $msg .= ' for [``' . $Statement . "''";
@@ -306,12 +310,10 @@ sub  _install_method {
 		    }
 		    $msg .= "]";
 		}
-		# have a 'warning' (not info) and PrintError is set
-		if (defined $DBI::err and $DBI::err eq "0") {
-		    warn $msg if $pe;
+		if ($DBI::err eq "0") { # is 'warning' (not info)
+		    carp $msg if $pw;
 		}
-
-		if ($DBI::err) {
+		else {
 		    my $do_croak = 1;
 		    if (my $subsub = $h->{'HandleError'}) {
 			$do_croak = 0 if &$subsub($msg,$h,$ret[0]);
@@ -391,7 +393,7 @@ sub _setup_handle {
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained
     if ($parent) {
 	foreach (qw(
-	    RaiseError PrintError HandleError HandleSetErr
+	    RaiseError PrintError PrintWarn HandleError HandleSetErr
 	    Warn LongTruncOk ChopBlanks AutoCommit
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {
@@ -409,6 +411,7 @@ sub _setup_handle {
     }
     else {	# setting up a driver handle
         $h_inner->{Warn}		= 1;
+        $h_inner->{PrintWarn}		= $^W;
         $h_inner->{AutoCommit}		= 1;
         $h_inner->{TraceLevel}		= 0;
         $h_inner->{CompatMode}		= (1==0);

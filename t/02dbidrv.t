@@ -123,7 +123,7 @@ ok($DBI::err, 99);
 ok($DBI::errstr, "foo 42 dbh [err was 42 now 99]\nfoo");
 
 $drh->default_user("",""); # just to reset err etc
-$drh->set_err(0, "00000");
+$drh->set_err(1, "errmsg", "00000");
 ok($DBI::state, "");
 
 $drh->set_err(1, "test error 1");

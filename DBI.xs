@@ -494,10 +494,17 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	err_changed = 1;
     }
 
-    if (SvTRUE(state) && err_changed) {
-	if (SvCUR(state) != 5)
-	    croak("set_err: state must be 5 character string");
-	sv_setsv(h_state, state);
+    if (err_changed) {
+	if (SvTRUE(state)) {
+	    if (strlen(SvPV_nolen(state)) != 5) {
+		warn("set_err: state (%s) is not a 5 character string, using 'S1000' instead", neatsvpv(state,0));
+		sv_setpv(h_state, "S1000");
+	    }
+	    else
+		sv_setsv(h_state, state);
+	}
+	else
+	    (void)SvOK_off(h_state);	/* see DBIc_STATE_adjust */
     }
 
     return 1;
@@ -625,7 +632,7 @@ set_trace(SV *h, I32 level, SV *file)
 		(long)(level & ~DBIc_TRACE_LEVEL_MASK),
 		DBIc_TRACE_LEVEL(imp_xxh), DBIc_TRACE_FLAGS(imp_xxh),
 		XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
-	    if (!dowarn && level>0)
+	    if (!PL_dowarn && level>0)
 		PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBIc_LOGPIO(imp_xxh));
 	}
@@ -876,7 +883,9 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, char *imp_class, STRLEN imp_size, S
 		   |DBIcf_ACTIVE	/* drivers are 'Active' by default	*/
 		   |DBIcf_AutoCommit	/* advisory, driver must manage this	*/
 	);
-    } else {		
+	DBIc_set(imp, DBIcf_PrintWarn, PL_dowarn); /* set if warnings enabled	*/
+    }
+    else {
 	DBIc_PARENT_H(imp)    = (SV*)SvREFCNT_inc(p_h); /* ensure it lives	*/
 	DBIc_PARENT_COM(imp)  = p_imp_xxh;	 	/* shortcut for speed	*/
 	DBIc_TYPE(imp)	      = DBIc_TYPE(p_imp_xxh) + 1;
@@ -1031,10 +1040,11 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, char *msg, int level)
     if (DBIc_WARN(imp_xxh))			sv_catpv(flags,"Warn ");
     if (DBIc_COMPAT(imp_xxh))			sv_catpv(flags,"CompatMode ");
     if (DBIc_is(imp_xxh, DBIcf_ChopBlanks))	sv_catpv(flags,"ChopBlanks ");
-    if (DBIc_is(imp_xxh, DBIcf_RaiseError))	sv_catpv(flags,"RaiseError ");
-    if (DBIc_is(imp_xxh, DBIcf_PrintError))	sv_catpv(flags,"PrintError ");
     if (DBIc_is(imp_xxh, DBIcf_HandleSetErr))	sv_catpv(flags,"HandleSetErr ");
     if (DBIc_is(imp_xxh, DBIcf_HandleError))	sv_catpv(flags,"HandleError ");
+    if (DBIc_is(imp_xxh, DBIcf_RaiseError))	sv_catpv(flags,"RaiseError ");
+    if (DBIc_is(imp_xxh, DBIcf_PrintError))	sv_catpv(flags,"PrintError ");
+    if (DBIc_is(imp_xxh, DBIcf_PrintWarn))	sv_catpv(flags,"PrintWarn ");
     if (DBIc_is(imp_xxh, DBIcf_ShowErrorStatement))	sv_catpv(flags,"ShowErrorStatement ");
     if (DBIc_is(imp_xxh, DBIcf_AutoCommit))	sv_catpv(flags,"AutoCommit ");
     if (DBIc_is(imp_xxh, DBIcf_BegunWork))	sv_catpv(flags,"BegunWork ");
@@ -1363,6 +1373,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     }
     else if (strEQ(key, "PrintError")) {
 	DBIc_set(imp_xxh,DBIcf_PrintError, on);
+    }
+    else if (strEQ(key, "PrintWarn")) {
+	DBIc_set(imp_xxh,DBIcf_PrintWarn, on);
     }
     else if (strEQ(key, "HandleError")) {
 	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVCV)) ) {
@@ -1712,6 +1725,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
           case 'P':
             if (keylen==10 && strEQ(key, "PrintError")) {
                 valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_PrintError));
+            }
+            else if (keylen==9 && strEQ(key, "PrintWarn")) {
+                valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_PrintWarn));
             }
             break;
 
@@ -2463,7 +2479,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	if (trace_level >= 4 && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
 	    PerlIO *logfp = DBILOGFP;
 	    PerlIO_printf(logfp, "    !! %s: %s CLEARED by call to %s method\n",
-		SvTRUE(err_sv) ? "ERROR" : SvCUR(err_sv) ? "warn" : "info",
+		SvTRUE(err_sv) ? "ERROR" : strlen(SvPV_nolen(err_sv)) ? "warn" : "info",
 		neatsvpv(DBIc_ERR(imp_xxh),0), meth_name);
 	}
 	DBIh_CLEAR_ERROR(imp_xxh);
@@ -2618,7 +2634,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 	if (SvOK(err_sv)) {
 	    PerlIO_printf(logfp, "    %s %s %s %s\n", (keep_error) ? "  " : "!!",
-		SvTRUE(err_sv) ? "ERROR:" : SvCUR(err_sv) ? "warn:" : "info:",
+		SvTRUE(err_sv) ? "ERROR:" : strlen(SvPV_nolen(err_sv)) ? "warn:" : "info:",
 		neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0));
 	}
 	PerlIO_printf(logfp,"%c%c  <- %s",
@@ -2743,16 +2759,17 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     if (   !keep_error			/* is a new err/warn/info		*/
 	&& call_depth <= 1		/* skip nested (internal) calls		*/
 	&& (
-		   /* is an error and has RaiseError|PrintError|HandleError set	*/
+	       /* is an error and has RaiseError|PrintError|HandleError set	*/
 	   (SvTRUE(err_sv) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
-		   /* is a warn (not info) and has PrintError set		*/
-	|| (  SvOK(err_sv) && SvCUR(err_sv) && DBIc_has(imp_xxh, DBIcf_PrintError))
+	       /* is a warn (not info) and has PrintWarn set		*/
+	|| (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_PrintWarn))
 	)
 		   /* check that we're not nested inside a call to our parent	*/
 	&& (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1)
     ) {
 	SV *msg;
 	SV **statement_svp = NULL;
+	int is_warning = (!SvTRUE(err_sv) && strlen(SvPV_nolen(err_sv))==1);
 	char *err_meth_name = meth_name;
 	char intro[200];
 
@@ -2764,7 +2781,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
 	/* XXX change to vsprintf into sv directly */
 	sprintf(intro,"%s %s %s: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name,
-	    SvTRUE(err_sv) ? "failed" : SvCUR(err_sv) ? "warning" : "information");
+	    SvTRUE(err_sv) ? "failed" : is_warning ? "warning" : "information");
 	msg = sv_2mortal(newSVpv(intro,0));
 	sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
 
@@ -2857,10 +2874,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
 	}
-	if (!hook_svp) {
+	if (is_warning) {
+	    if (DBIc_has(imp_xxh, DBIcf_PrintWarn))
+		warn("%s", SvPV(msg,lna));
+	}
+	else if (!hook_svp && SvTRUE(err_sv)) {
 	    if (DBIc_has(imp_xxh, DBIcf_PrintError))
 		warn("%s", SvPV(msg,lna));
-	    if (DBIc_has(imp_xxh, DBIcf_RaiseError) && SvTRUE(err_sv))
+	    if (DBIc_has(imp_xxh, DBIcf_RaiseError))
 		croak("%s", SvPV(msg,lna));
 	}
     }
@@ -3451,7 +3472,7 @@ trace(sv, level_sv=Nullsv, file=Nullsv)
 	if (level > 0) {
 	    PerlIO_printf(DBILOGFP,"    DBI %s%s dispatch trace level set to %d (in pid %d)\n",
 		XS_VERSION, dbi_build_opt, level, (int)PerlProc_getpid());
-	    if (!dowarn)
+	    if (!PL_dowarn)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBILOGFP);
 	}

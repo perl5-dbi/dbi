@@ -27,6 +27,7 @@ ok( $dbh->{AutoCommit} );
 ok(!$dbh->{CompatMode} );
 ok(!$dbh->{InactiveDestroy} );
 ok(!$dbh->{PrintError} );
+ok( $dbh->{PrintWarn} );	# true because of perl -w above
 ok( $dbh->{RaiseError} );
 ok(!$dbh->{ShowErrorStatement} );
 ok(!$dbh->{ChopBlanks} );
@@ -68,18 +69,13 @@ ok( my $drh = $dbh->{Driver} );
 ok( UNIVERSAL::isa($drh, 'DBI::dr') );
 ok( $dbh->err );
 
-# error in $drh same as $dbh because Err/Errstr/State are set at drh level
-#ok( $drh->err );
-#is( $drh->errstr, 'Unknown field names: foo' );
-#is( $drh->state, 'S1000' );
-ok(1); ok(1); ok(1);
-
 ok( $drh->{Warn} );
 ok( $drh->{Active} );
 ok( $drh->{AutoCommit} );
 ok(!$drh->{CompatMode} );
 ok(!$drh->{InactiveDestroy} );
 ok(!$drh->{PrintError} );
+ok( $drh->{PrintWarn} );	# true because of perl -w above
 ok(!$drh->{RaiseError} );
 ok(!$drh->{ShowErrorStatement} );
 ok(!$drh->{ChopBlanks} );
@@ -127,6 +123,7 @@ ok(!$sth->{Active} );
 ok(!$sth->{CompatMode} );
 ok(!$sth->{InactiveDestroy} );
 ok(!$sth->{PrintError} );
+ok( $sth->{PrintWarn} );
 ok( $sth->{RaiseError} );
 ok(!$sth->{ShowErrorStatement} );
 ok(!$sth->{ChopBlanks} );

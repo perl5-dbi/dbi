@@ -1300,7 +1300,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    # attribute cache, i.e., boolean's and some others
 	    $attr->{$_} = $old_dbh->FETCH($_) for (qw(
 		AutoCommit ChopBlanks InactiveDestroy
-		LongTruncOk PrintError Profile RaiseError
+		LongTruncOk PrintError PrintWarn Profile RaiseError
 		ShowErrorStatement TaintIn TaintOut
 	    ));
 	}
@@ -2305,10 +2305,11 @@ whatever defaults are appropriate for the engine being accessed.
 (Oracle, for example, uses the ORACLE_SID and TWO_TASK environment
 variables if no C<$data_source> is specified.)
 
-The C<AutoCommit> and C<PrintError> attributes for each connection default to
-"on". (See L</AutoCommit> and L</PrintError> for more information.)
+The C<AutoCommit> and C<PrintError> attributes for each connection
+default to "on". (See L</AutoCommit> and L</PrintError> for more information.)
 However, it is strongly recommended that you explicitly define C<AutoCommit>
-rather than rely on the default.
+rather than rely on the default. The C<PrintWarn> attribute defaults to
+on if $^W is true, i.e., perl is running with warnings enabled.
 
 The C<\%attr> parameter can be used to alter the default settings of
 C<PrintError>, C<RaiseError>, C<AutoCommit>, and other attributes. For example:
@@ -2325,7 +2326,7 @@ over the C<$username> and C<$password> parameters.
 You can also define connection attribute values within the C<$data_source>
 parameter. For example:
 
-  dbi:DriverName(PrintError=>0,Taint=>1):...
+  dbi:DriverName(PrintWarn=>1,PrintError=>0,Taint=>1):...
 
 Individual attributes values specified in this way take precedence over
 any conflicting values specified via the C<\%attr> parameter to C<connect>.
@@ -2354,7 +2355,7 @@ the C<$dbh-E<gt>{AutoCommit}> attribute is I<undefined>, the
 C<$dbh-E<gt>{PrintError}> attribute is off, and the old C<DBI_DBNAME>
 environment variable is
 checked if C<DBI_DSN> is not defined. Beware that this "old-style"
-C<connect> will be withdrawn in a future version of DBI.
+C<connect> will soon be withdrawn in a future version of DBI.
 
 =item C<connect_cached>
 
@@ -2633,7 +2634,7 @@ A driver may return C<0> from err() to indicate a warning condition
 after a method call. Similarly, a driver may return an empty string
 to indicate a 'success with information' condition. In both these
 cases the value is false but not undef. The errstr() and state()
-methods may be used to retrieve extra information.
+methods may be used to retrieve extra information in these cases.
 
 See L</set_err> for more information.
 
@@ -2699,8 +2700,8 @@ also sets C<errstr> to undef, and C<state> to C<"">, irrespective
 of the values of the $errstr and $state parameters.
 
 The $method parameter provides an alternate method name for the
-C<RaiseError>/C<PrintError> error string instead of the fairly
-unhelpful 'C<set_err>'.
+C<RaiseError>/C<PrintError>/C<PrintWarn> error string instead of
+the fairly unhelpful 'C<set_err>'.
 
 The C<set_err> method normally returns undef.  The $rv parameter
 provides an alternate return value.
@@ -2824,10 +2825,13 @@ Example:
 
 =item C<Warn> (boolean, inherited)
 
-The C<Warn> attribute enables useful warnings for certain bad practices. Enabled by default. Some
-emulation layers, especially those for Perl 4 interfaces, disable warnings.
-Since warnings are generated using the Perl C<warn> function, they can be
-intercepted using the Perl C<$SIG{__WARN__}> hook.
+The C<Warn> attribute enables useful warnings for certain bad
+practices. It is enabled by default and should only be disable is
+rare circumstances.  Since warnings are generated using the Perl
+C<warn> function, they can be intercepted using the Perl C<$SIG{__WARN__}>
+hook.
+
+The C<Warn> attribute is not related to the C<PrintWarn> attribute.
 
 =item C<Active> (boolean, read-only)
 
@@ -2911,6 +2915,26 @@ the trace log whenever a DBI or handle trace() method is called.
 The process id also shown for I<every> method call if the DBI trace
 level (not handle trace level) is set high enough to show the trace
 from the DBI's method dispatcher, e.g. >= 9.
+
+=item C<PrintWarn> (boolean, inherited)
+
+The C<PrintWarn> attribute controls the printing of warnings recorded
+by the driver.  When set to a true value the DBI will check method
+calls to see if a warning condition has been set. If so, the DBI
+will effectively do a C<warn("$class $method warning: $DBI::errstr")>
+where C<$class> is the driver class and C<$method> is the name of
+the method which failed. E.g.,
+
+  DBD::Oracle::db execute warning: ... warning text here ...
+
+By default, C<DBI-E<gt>connect> sets C<PrintWarn> "on" if $^W is true,
+i.e., perl is running with warnings enabled.
+
+If desired, the warnings can be caught and processed using a C<$SIG{__WARN__}>
+handler or modules like CGI::Carp and CGI::ErrorWrap.
+
+See also L</set_err> for how warnings are recorded and L</HandleSetErr>
+for how to influence it.
 
 =item C<PrintError> (boolean, inherited)
 
@@ -3047,7 +3071,7 @@ It's not invoked by the failure of a method that's been caled by
 another DBI method.  HandleSetErr, on the other hand, is called
 whenever set_err() is called with a defined C<err> value, even if false.
 So it's not just for errors, despite the name, but also warn and info states.
-The set_err method, and thus HandleSetErr, may be called multiple
+The set_err() method, and thus HandleSetErr, may be called multiple
 times within a method and is usually invoked from deep within driver code.
 
 In theory a driver can use the return value from HandleSetErr via
@@ -3056,7 +3080,7 @@ an empty list, indicating that the HandleSetErr code has 'handled'
 the 'error', the driver could then continue instead of failing (if
 that's a reasonable thing to do).  This isn't excepted to be
 common and any such cases should be clearly marked in the driver
-documentation.
+documentation and discussed on the dbi-dev mailing list.
 
 
 =item C<ShowErrorStatement> (boolean, inherited)

@@ -1,7 +1,7 @@
 #!../perl -w
 
 use strict;
-use Test::More tests => 62;
+use Test::More tests => 63;
  
 $|=1;
 $^W=1;
@@ -53,16 +53,19 @@ print "test HandleSetErr\n";
 my $dbh = DBI->connect(@con_info);
 $dbh->{RaiseError} = 1;
 $dbh->{PrintError} = 1;
+$dbh->{PrintWarn} = 1;
 
-my $warn = 0;
+my %warn = ( failed => 0, warning => 0 );
 my @handlewarn = (0,0,0);
 $SIG{__WARN__} = sub {
-    if ($_[0] =~ /^DBD::ExampleP::/) {
-	++$warn;
-	print "warn called: @_\n";
+    my $msg = shift;
+    if ($msg =~ /^DBD::ExampleP::\S+\s+(\S+)\s+(\w+)/) {
+	++$warn{$2};
+	$msg =~ s/\n/\\n/g;
+	print "warn: '$msg'\n";
 	return;
     }
-    warn @_;
+    warn $msg;
 };
 #$dbh->trace(2);
 $dbh->{HandleSetErr} = sub {
@@ -85,54 +88,56 @@ is(defined $DBI::err, 1);	# true
 is($DBI::err, "");
 is($DBI::errstr, "(got info)");
 is($dbh->errstr, "(got info)");
-is($warn, 0);
+is($warn{failed}, 0);
+is($warn{warning}, 0);
 is("@handlewarn", "1 0 0");
 
-$dbh->set_err(0, "(got warn)", "AA001");
+$dbh->set_err(0, "(got warn)", "AA001");	# triggers PrintWarn
 ok(defined $DBI::err);
 is($DBI::err, "0");
 is($DBI::errstr, "(got info)\n(got warn)");
 is($dbh->errstr, "(got info)\n(got warn)");
-is($warn, 1);
+is($warn{warning}, 1);
 is("@handlewarn", "1 1 0");
 is($DBI::state, "AA001");
 
-$dbh->set_err("", "(got more info)");
+$dbh->set_err("", "(got more info)");		# triggers PrintWarn
 ok(defined $DBI::err);
 is($DBI::err, "0");	# not "", ie it's still a warn
 is($dbh->err, "0");
 is($DBI::errstr, "(got info)\n(got warn)\n(got more info)");
 is($dbh->errstr, "(got info)\n(got warn)\n(got more info)");
-is($warn, 2);
+is($warn{warning}, 2);
 is("@handlewarn", "2 1 0");
 is($DBI::state, "AA001");
 
 $dbh->{RaiseError} = 0;
-$dbh->{PrintError} = 0;
+$dbh->{PrintError} = 1;
 
 $dbh->set_err("42", "(got error)", "AA002");
 is($DBI::err, 42);
 is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)");
-is($warn, 2);
+#is($warn{failed}, 1);
+is($warn{warning}, 2);
 is("@handlewarn", "2 1 1");
 is($DBI::state, "AA002");
 
 $dbh->set_err("", "(got info)");
 is($DBI::err, 42);
 is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)");
-is($warn, 2);
+is($warn{warning}, 2);
 is("@handlewarn", "3 1 1");
 
-$dbh->set_err("0", "(got warn)");
+$dbh->set_err("0", "(got warn)"); # no PrintWarn because it's already an err
 is($DBI::err, 42);
 is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn)");
-is($warn, 2);
+is($warn{warning}, 2);
 is("@handlewarn", "3 2 1");
 
 $dbh->set_err("4200", "(got new error)", "AA003");
 is($DBI::err, 4200);
 is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn) [err was 42 now 4200] [state was AA002 now AA003]\n(got new error)");
-is($warn, 2);
+is($warn{warning}, 2);
 is("@handlewarn", "3 2 2");
 
 $dbh->set_err(undef, "foo", "bar"); # clear error
@@ -140,20 +145,21 @@ ok(!defined $dbh->errstr);
 ok(!defined $dbh->err);
 is($dbh->state, "");
 
-$warn = 0;
+
+%warn = ( failed => 0, warning => 0 );
 @handlewarn = (0,0,0);
 my @ret;
-@ret = $dbh->set_err(1, "foo");
+@ret = $dbh->set_err(1, "foo");		# PrintError
 is(scalar @ret, 1);
 ok(!defined $ret[0]);
-ok(!defined $dbh->set_err(2, "bar"));
-ok(!defined $dbh->set_err(3, "baz"));
-ok(!defined $dbh->set_err(0, "warn"));
+ok(!defined $dbh->set_err(2, "bar"));	# PrintError
+ok(!defined $dbh->set_err(3, "baz"));	# PrintError
+ok(!defined $dbh->set_err(0, "warn"));	# PrintError
 is($dbh->errstr, "foo [err was 1 now 2]\nbar [err was 2 now 3]\nbaz\nwarn");
-is($warn, 0);
+is($warn{failed}, 4);
 is("@handlewarn", "0 1 3");
 
-$dbh->set_err(undef, undef, undef); # clear error
+$dbh->set_err(undef, undef, undef);	# clear error
 @ret = $dbh->set_err(1, "foo", "AA123", "method");
 is(scalar @ret, 1);
 ok(!defined $ret[0]);
@@ -163,10 +169,12 @@ is($ret[0], "42");
 @ret = $dbh->set_err(1, "foo", "return");
 is(scalar @ret, 0);
 
-$dbh->set_err(undef, undef, undef); # clear error
+$dbh->set_err(undef, undef, undef);	# clear error
 @ret = $dbh->set_err("", "info", "override");
 is(scalar @ret, 1);
 ok(!defined $ret[0]);
 is($dbh->err,    99);
 is($dbh->errstr, "errstr99");
 is($dbh->state,  "OV123");
+
+# end

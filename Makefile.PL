@@ -49,7 +49,7 @@ my $ext_pl = $^O eq 'VMS' ? '.pl' : '';
 $::opt_v = 0;
 $::opt_thread = 1;	# thread if we can, use "-nothread" to disable
 $::opt_g = 0;
-$::opt_g = 1 if -d '.svn' && $ENV{LOGNAME} eq 'timbo'; # it's me! (probably)
+$::opt_g = 1 if -d '.svn' && $ENV{LOGNAME} && $ENV{LOGNAME} eq 'timbo'; # it's me! (probably)
 
 GetOptions(qw(v! g! thread!))
 	or die "Invalid arguments\n";
