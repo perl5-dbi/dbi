@@ -1,15 +1,15 @@
-#!perl -w
+#!perl
 use strict;
 use DBI;
 use File::Path;
 use Test::More;
-use vars qw( @mldbm_types @dbm_types );
+use vars qw( @mldbm_types @dbm_types $DB_CREATE $DB_RDONLY);
 BEGIN {
-    use lib qw(./ ../lib);
+    use lib qw(./ ../../lib);
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # uncomment next line to force use of Nano rather than default behaviour
-    # $ENV{DBI_SQL_NANO}=1;
+    $ENV{DBI_SQL_NANO}=1;
 
     # test without MLDBM
     # also test with MLDBM if both it and Data::Dumper are available
@@ -20,13 +20,11 @@ BEGIN {
 
     # test with as many of the 5 major DBM types as are available
     #
-    @dbm_types = ();
-    for (qw(SDBM_File GDBM_File NDBM_File ODBM_File DB_File)){
+    for (qw( SDBM_File GDBM_File NDBM_File ODBM_File DB_File BerkeleyDB )){
         undef $@;
         eval { require "$_.pm" };
         push @dbm_types, $_ unless $@;
     }
-
     my $num_tests = @mldbm_types * @dbm_types * 11;
     if (!$num_tests) {
         plan tests => 1;
@@ -86,6 +84,7 @@ sub do_test {
     for my $sql ( @$stmts ) {
         $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
         $sql =~ s/;$//;  # in case no final \n on last line of __DATA__
+        #diag($sql);
         my $null = '';
         my $expected_results = {
             1 => 'oranges',
@@ -114,7 +113,6 @@ sub do_test {
     $dbh->disconnect;
 }
 1;
-
 __DATA__
 DROP TABLE IF EXISTS fruit;
 CREATE TABLE fruit (dKey INT, dVal VARCHAR(10));
@@ -130,10 +128,12 @@ DROP TABLE fruit;
 DROP TABLE IF EXISTS multi_fruit;
 CREATE TABLE multi_fruit (dKey INT, dVal VARCHAR(10), qux INT);
 INSERT INTO  multi_fruit VALUES (1,'oranges'  , 11 );
-INSERT INTO  multi_fruit VALUES (2,'apples'   ,  0  );
+INSERT INTO  multi_fruit VALUES (2,'apples'   ,  0 );
 INSERT INTO  multi_fruit VALUES (3, NULL      , 13 );
 INSERT INTO  multi_fruit VALUES (4,'to_delete', 14 );
 UPDATE multi_fruit SET qux='12' WHERE dKey=2;
 DELETE FROM  multi_fruit WHERE dKey=4;
 SELECT dKey,qux FROM multi_fruit;
 DROP TABLE multi_fruit;
+
+
