@@ -2,8 +2,10 @@
 
 use strict;
 
-use Test::More tests => 110;
+use Test::More tests => 131;
 use File::Spec;
+
+$|=1;
 
 ## ----------------------------------------------------------------------------
 ## 01basic.t - test of some basic DBI functions 
@@ -240,13 +242,44 @@ cmp_ok($num_drivers, '>', 0, '... we should at least have one driver');
 cmp_ok(DBI::hash("foo1"  ), '==', -1077531989, '... should be -1077531989');
 cmp_ok(DBI::hash("foo1",0), '==', -1077531989, '... should be -1077531989');
 cmp_ok(DBI::hash("foo2",0), '==', -1077531990, '... should be -1077531990');
+cmp_ok(DBI::hash("foo1",1), '==', -1263462440, '... should be -1263462440');
+cmp_ok(DBI::hash("foo2",1), '==', -1263462437, '... should be -1263462437');
 
-# skip these if we are using DBI::PurePerl
-SKIP: {
-	skip 'using DBI::PurePerl', 2 if ($DBI::PurePerl && !eval { DBI::hash("foo1",1) });
-	cmp_ok(DBI::hash("foo1",1), '==', -1263462440, '... should be -1263462440');
-	cmp_ok(DBI::hash("foo2",1), '==', -1263462437, '... should be -1263462437');
-}
+is(data_string_desc(""), "UTF8 off, ASCII, 0 characters 0 bytes");
+is(data_string_desc(42), "UTF8 off, ASCII, 2 characters 2 bytes");
+is(data_string_desc("foo"), "UTF8 off, ASCII, 3 characters 3 bytes");
+is(data_string_desc(undef), "UTF8 off, undef");
+is(data_string_desc("bar\x{263a}"), "UTF8 on, non-ASCII, 4 characters 6 bytes");
+is(data_string_desc("\xEA"), "UTF8 off, non-ASCII, 1 characters 1 bytes");
+
+is(data_string_diff(   "",   ""), "");
+is(data_string_diff(   "",undef), "String b is undef, string a has 0 characters");
+is(data_string_diff(undef,undef), "");
+is(data_string_diff("aaa","aaa"), "");
+
+is(data_string_diff("aaa","aba"), "Strings differ at index 1: a[1]=a, b[1]=b");
+is(data_string_diff("aba","aaa"), "Strings differ at index 1: a[1]=b, b[1]=a");
+is(data_string_diff("aa" ,"aaa"), "String a truncated after 2 characters");
+is(data_string_diff("aaa","aa" ), "String b truncated after 2 characters");
+
+is(data_diff(   "",   ""), "");
+is(data_diff(undef,undef), "");
+is(data_diff("aaa","aaa"), "");
+
+is(data_diff(   "",undef),
+	join "","a: UTF8 off, ASCII, 0 characters 0 bytes\n",
+		"b: UTF8 off, undef\n",
+		"String b is undef, string a has 0 characters\n");
+is(data_diff("aaa","aba"),
+	join "","a: UTF8 off, ASCII, 3 characters 3 bytes\n",
+		"b: UTF8 off, ASCII, 3 characters 3 bytes\n",
+		"Strings differ at index 1: a[1]=a, b[1]=b\n");
+is(data_diff(pack("C",0xEA), pack("U",0xEA)),
+	join "", "a: UTF8 off, non-ASCII, 1 characters 1 bytes\n",
+		 "b: UTF8 on, non-ASCII, 1 characters 2 bytes\n",
+		 "Strings contain the same sequence of characters\n");
+is(data_diff(pack("C",0xEA), pack("U",0xEA), 1), ""); # no logical difference
+
 
 ## ----------------------------------------------------------------------------
 # restrict this test to just developers

@@ -227,7 +227,8 @@ BEGIN {
 	 SQL_CURSOR_TYPE_DEFAULT
    ) ], # for ODBC cursor types
    utils     => [ qw(
-	neat neat_list dump_results looks_like_number
+	neat neat_list $neat_maxlen dump_results looks_like_number
+	data_string_diff data_string_desc data_diff
    ) ],
    profile   => [ qw(
 	dbi_profile dbi_profile_merge dbi_time
@@ -1009,7 +1010,7 @@ sub dump_results {	# also aliased as a method in DBD::_::st
 
 
 sub data_diff {
-    my ($a, $b) = @_;
+    my ($a, $b, $logical) = @_;
     require utf8;
 
     # hacks to cater for perl 5.6 for data_string_diff() & data_string_desc()
@@ -1018,21 +1019,33 @@ sub data_diff {
     } unless defined &utf8::is_utf8;
     *utf8::valid = sub { 1 } unless defined &utf8::valid;
 
+    my $diff   = data_string_diff($a, $b);
+    return "" if $logical and !$diff;
+
     my $a_desc = data_string_desc($a);
     my $b_desc = data_string_desc($b);
-    my $diff   = data_string_diff($a, $b);
+    return "" if !$diff and $a_desc eq $b_desc;
 
-    return "" if !$diff && $a_desc eq $b_desc;
-
-    return "\$a: $a_desc\n\$b: $b_desc\n$diff";
+    $diff ||= "Strings contain the same sequence of characters"
+    	if length($a);
+    $diff .= "\n" if $diff;
+    return "a: $a_desc\nb: $b_desc\n$diff";
 }
     
 
-sub data_string_diff 
+sub data_string_diff {
     # Compares 'logical' characters, not bytes, so a latin1 string and an
     # an equivalent unicode string will compare as equal even though their
     # byte encodings are different.
     my ($a, $b) = @_;
+    unless (defined $a and defined $b) {             # one undef
+	return ""
+		if !defined $a and !defined $b;
+	return "String a is undef, string b has ".length($b)." characters"
+		if !defined $a;
+	return "String b is undef, string a has ".length($a)." characters"
+		if !defined $b;
+    }
     my @a_chars = (utf8::is_utf8($a)) ? unpack("U*", $a) : unpack("C*", $a);
     my @b_chars = (utf8::is_utf8($b)) ? unpack("U*", $b) : unpack("C*", $b);
     my $i = 0;
@@ -1051,10 +1064,10 @@ sub data_string_diff
 	    next unless $c =~ m/\\x\{08(..)}/;
 	    $c .= "='" .chr(hex($1)) ."'"
 	}
-	return sprintf "Strings differ at index $i: a[$i]=$desc[0], b[$i]=$desc[1]\n";
+	return sprintf "Strings differ at index $i: a[$i]=$desc[0], b[$i]=$desc[1]";
     }
-    return "String a truncated after $i characters\n" if @b_chars;
-    return "String b truncated after $i characters\n" if @a_chars;
+    return "String a truncated after $i characters" if @b_chars;
+    return "String b truncated after $i characters" if @a_chars;
     return "";
 }
 
@@ -1067,15 +1080,15 @@ sub data_string_desc {	# describe a data string
     #   (might be ascii so also need to check for hibit to make it worthwhile)
     # - UTF8 flag set but invalid UTF8 byte sequence
     # could do better here, but this'll do for now
-    my $is_ascii = $a =~ m/^[\000-\177]*$/;
-    return sprintf "UTF8 %s%s, %s, %d characters %d bytes%s",
+    my $utf8 = sprintf "UTF8 %s%s", 
 	utf8::is_utf8($a) ? "on" : "off",
-	utf8::valid($a) ? "" : " but INVALID encoding",
-	$is_ascii ? "ASCII" : "Non-ASCII",
+	utf8::valid($a||'') ? "" : " but INVALID encoding";
+    return "$utf8, undef" unless defined $a;
+    my $is_ascii = $a =~ m/^[\000-\177]*$/;
+    return sprintf "%s, %s, %d characters %d bytes",
+	$utf8, $is_ascii ? "ASCII" : "non-ASCII",
 	length($a), bytes::length($a);
 }
-
-#BEGIN { die data_diff("foox", "foo\x{083a}bar")}
 
 
 sub connect_test_perf {
@@ -2603,15 +2616,90 @@ tracing facilities.
 
 =head2 DBI Utility Functions
 
-In addition to the methods listed in the previous section,
-the DBI package also provides these utility functions:
+In addition to the DBI methods listed in the previous section,
+the DBI package also provides several utility functions.
+
+These can be imported into your code by listing them in
+the C<use> statement. For example:
+
+  use DBI qw(neat data_diff);
+
+Alternatively, all these utility functions (except hash) can be
+imported using the C<:utils> import tag. For example:
+
+  use DBI qw(:utils);
 
 =over 4
 
+=item C<data_string_desc>
+
+  $description = data_string_desc($string);
+
+Returns an informal description of the string. For example:
+
+  UTF8 off, ASCII, 42 characters 42 bytes
+  UTF8 off, non-ASCII, 42 characters 42 bytes
+  UTF8 on, non-ASCII, 4 characters 6 bytes
+  UTF8 on but INVALID encoding, non-ASCII, 4 characters 6 bytes
+  UTF8 off, undef
+
+The initial C<UTF8> on/off refers to Perl's internal SvUTF8 flag.
+If $string has the SvUTF8 flag set but the sequence of bytes it
+contains are not a valid UTF-8 encoding then data_string_desc()
+will report C<UTF8 on but INVALID encoding>.
+
+The C<ASCII> vs C<non-ASCII> portion shows C<ASCII> if I<all> the
+characters in the string are ASCII (have code points <= 127).
+
+=item C<data_string_diff>
+
+  $diff = data_string_diff($a, $b);
+
+Returns an informal description of the first character difference
+between the strings. If both $a and $b contain the same sequence
+of characters then data_string_diff() returns an empty string.
+For example:
+
+ Params a & b     Result
+ ------------     ------
+ 'aaa', 'aaa'     ''
+ 'aaa', 'abc'     'Strings differ at index 2: a[2]=a, b[2]=b'
+ 'aaa', undef     'String b is undef, string a has 3 characters'
+ 'aaa', 'aa'      'String b truncated after 2 characters'
+
+Unicode characters are reported in C<\x{XXXX}> format. Unicode
+code points in the range U+0800 to U+08FF are unassigned and most
+likely to occur due to double-encoding. Characters in this range
+are reported as C<\x{08XX}='C'> where C<C> is the corresponding
+latin-1 character.
+
+The data_string_diff() function only considers I<characters> and
+not the underlying encoding. See the L</data_diff> function for
+
+=item C<data_diff>
+
+  $diff = data_diff($a, $b);
+  $diff = data_diff($a, $b, $logical);
+
+Returns an informal description of the difference between two strings.
+It calls L</data_string_desc> and L</data_string_diff>
+and returns the combined results as a multi-line string.
+
+For example, C<data_diff("abc", "ab\x{263a}")> will return:
+
+  a: UTF8 off, ASCII, 3 characters 3 bytes
+  b: UTF8 on, non-ASCII, 3 characters 5 bytes
+  Strings differ at index 2: a[2]=c, b[2]=\x{263A}
+
+If $a and $b are identical in both the characters they contain and
+their physical encoding then data_diff() returns an empty string.
+If $logical is true then physical encoding differences are ignored.
+
+
 =item C<neat>
 
-  $str = DBI::neat($value);
-  $str = DBI::neat($value, $maxlen);
+  $str = neat($value);
+  $str = neat($value, $maxlen);
 
 Return a string containing a neat (and tidy) representation of the
 supplied value.
@@ -2635,15 +2723,15 @@ typically I<not> be used for formatting values for database use.
 
 =item C<neat_list>
 
-  $str = DBI::neat_list(\@listref, $maxlen, $field_sep);
+  $str = neat_list(\@listref, $maxlen, $field_sep);
 
-Calls C<DBI::neat> on each element of the list and returns a string
+Calls C<neat> on each element of the list and returns a string
 containing the results joined with C<$field_sep>. C<$field_sep> defaults
 to C<", ">.
 
 =item C<looks_like_number>
 
-  @bool = DBI::looks_like_number(@array);
+  @bool = looks_like_number(@array);
 
 Returns true for each element that looks like a number.
 Returns false for each element that does not look like a number.
