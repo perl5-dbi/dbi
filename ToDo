@@ -82,6 +82,7 @@ Effectively think of a handle as having two parts:
 attributes related to a particular connection/statement (CachedKids/NUM_OF_PARAMS)
 and attribute not-related (AutoCommit/RaiseError).
 The reset method resets the first set but not the second.
+The reset method would call uncache().
 
 Rework handle creation to use methods:
 Maybe $h->new_child(\%handle_attr)
@@ -112,6 +113,8 @@ will be deleted if a ::st::reset method exists.
 Make $DBI::err etc plain (untied) variables.
 Set them in set_err() and when returing from dispatch.
 Clear them, if appropriate, when entering dispatch dispatch().
+
+Enable drivers to provide a hash to map err codes into state values.
 
 Unified test suite infrastructure to be reused by all drivers.
 A big project.
@@ -321,6 +324,10 @@ Study alternate DBI's:
 	others?
 	ADO object model
 identify any features we could usefully support and any incompatibilities etc
+
+Add DB version (major.minor ISA major) to DbSubType ISA tree.
+
+Add API to get table create statement (ala SHOW CREATE TABLE foo in MySQL).
 
 Consider closer mapping to SQL3 CLI API for driver API.
 
