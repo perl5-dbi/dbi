@@ -235,7 +235,7 @@ cmp_ok($nhash_lc->{ctime},         '==', 0, '... checking values returned');
 cmp_ok($nhash_lc->{name},          '==', 1, '... checking values returned');
 
 my $nhash_uc = $sth->{NAME_uc_hash};
-is(ref($nhash_lc), 'HASH', '... checking type of NAME_us_hash attribute for sth');
+is(ref($nhash_uc), 'HASH', '... checking type of NAME_uc_hash attribute for sth');
 cmp_ok(scalar(keys(%{$nhash_uc})), '==', 2, '... checking number of keys returned');
 cmp_ok($nhash_uc->{CTIME},         '==', 0, '... checking values returned');
 cmp_ok($nhash_uc->{NAME},          '==', 1, '... checking values returned');
