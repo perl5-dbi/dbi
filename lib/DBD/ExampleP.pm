@@ -32,7 +32,6 @@
     die unless @statprec  == @stattypes;
 
     $drh = undef;	# holds driver handle once initialised
-    $err = 0;		# The $DBI::err value
     #$gensym = "SYM000"; # used by st::execute() for filehandles
 
     sub driver{

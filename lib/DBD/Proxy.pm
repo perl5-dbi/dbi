@@ -31,7 +31,7 @@ use RPC::PlClient 0.2000; # XXX change to 0.2017 once it's released
 
 package DBD::Proxy;
 
-use vars qw($VERSION $err $errstr $drh %ATTR);
+use vars qw($VERSION $drh %ATTR);
 
 $VERSION = "0.2004";
 

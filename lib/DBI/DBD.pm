@@ -696,21 +696,18 @@ to change the namespace.
       # environment variables to be set; this could be where you
       # validate that they are set, or default them if they are not set.
 
-      # create a 'blank' dbh (call superclass constructor)
-      my $dbh = DBI::_new_dbh($drh, {
-              'Name'         => $dbname,
-          })
-          or return undef;
+      # Assume you can attach to your database via drv_connect:
+      my $connection = drv_connect($dbname, $user, $auth);
+      return $drh->set_err(1,'Connection refused') unless $connection;
 
-      # Process attributes from the DSN; we assume ODBC syntax
-      # here, that is, the DSN looks like var1=val1;...;varN=valN
-      foreach my $var (split(/;/, $dbname)) {
-          if ($var =~ m/(.*?)=(,*)/) {
-              # Not !!! $dbh->{$var} = $val;
-              $dbh->STORE($var, $val);
-          }
-      }
-      $dbh;
+      # create a 'blank' dbh (call superclass constructor)
+      my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
+
+      $dbh->STORE('Active', 1 );
+
+      $dbh->{drv_connection} = $connection;
+
+      return $outer;
   }
 
 The Name attribute is a standard DBI attribute.
@@ -721,10 +718,12 @@ See L<DBI>.
 The constructor _new_dbh is called, returning a database handle.
 The constructor's prototype is:
 
-  $dbh = DBI::_new_dbh($drh, $public_attr, $private_attr);
+  ($outer, $inner) = DBI::_new_dbh($drh, $public_attr, $private_attr);
 
 with similar arguments to those in the I<driver handle constructor>,
 except that the C<$class> is replaced by C<$drh>.
+
+In scalar context, only the outer handle is returned.
 
 Note the use of the I<STORE> method for setting the dbh attributes.
 That's because within the driver code, the handle object you have is
@@ -807,19 +806,18 @@ There's nothing much new in the statement handle constructor.
       my ($dbh, $statement, @attribs) = @_;
 
       # create a 'blank' sth
-      my $sth = DBI::_new_sth($dbh, {
-          'Statement' => $statement,
-          });
+      my ($outer, $sth) = DBI::_new_sth($dbh, { Statement => $statement });
 
-      # Setup module specific data
-      $sth->STORE('drv_params', []);
       $sth->STORE('NUM_OF_PARAMS', ($statement =~ tr/?//));
 
-      $sth;
+      $sth->{drv_params} = [];
+
+      return $outer;
   }
 
 This is still the same: check the arguments and call the super class
 constructor I<DBI::_new_sth>.
+Again, in scalar context, only the outer handle is returned.
 The C<Statement> attribute should be cached as shown.
 Note the prefix I<drv_> in the attribute names: it is required that
 your private attributes are lowercased and use such a prefix.

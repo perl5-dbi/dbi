@@ -15,7 +15,6 @@
 #   License or the Artistic License, as specified in the Perl README file.
 
     $drh = undef;	# holds driver handle once initialised
-    $err = 0;		# The $DBI::err value
     my $methods_already_installed;
 
     sub driver{
