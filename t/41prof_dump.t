@@ -51,8 +51,9 @@ close PROF;
 # has a header?
 ok($prof =~ /^DBI::ProfileDumper\s+([\d.]+)/);
 
-# version matches VERSION?
-ok($1, $DBI::ProfileDumper::VERSION);
+# version matches VERSION? (DBI::ProfileDumper uses $self->VERSION so
+# it's a stringified version object that looks like N.N.N)
+ok($1, DBI::ProfileDumper->VERSION);
 
 # check that expected key is there
 ok($prof =~ /\+\s+1\s+\Q$sql\E/m);

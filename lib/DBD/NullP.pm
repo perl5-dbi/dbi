@@ -87,8 +87,9 @@
     use strict;
 
     sub execute {
-	my($sth, $dir) = @_;
-	$sth->{dbd_nullp_data} = $dir if $dir;
+	my($sth, $data) = @_;
+	$sth->{dbd_nullp_data} = $data if $data;
+	$sth->{NAME} = [ "fieldname" ];
 	1;
     }
 
@@ -111,7 +112,6 @@
 	my ($sth, $attrib) = @_;
 	# would normally validate and only fetch known attributes
 	# else pass up to DBI to handle
-	return [ "fieldname" ] if $attrib eq 'NAME';
 	return $sth->DBD::_::st::FETCH($attrib);
     }
 

@@ -996,6 +996,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	    hv_fetch((HV*)SvRV(h), "Statement", 9, 1); /* store writable undef */
 	    break;
 	case DBIt_ST:
+	    DBIc_NUM_FIELDS((imp_sth_t*)imp) = -1;
 	    /* cache _inner_ handle, but also see quick_FETCH */
 	    hv_store((HV*)SvRV(h), "Database", 8, newRV(SvRV(parent)), 0);
 	    /* copy (alias) Statement from the sth up into the dbh	*/
@@ -1569,6 +1570,17 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             break;
 
           case 'N':
+            if (keylen==8 && strEQ(key, "NULLABLE")) {
+                valuesv = &sv_undef;
+		break;
+	    }
+
+            if (keylen==4 && strEQ(key, "NAME")) {
+                valuesv = &sv_undef;
+		break;
+	    }
+
+	    /* deal with: NAME_(uc|lc), NAME_hash, NAME_(uc|lc)_hash */
             if ((keylen==7 || keylen==9 || keylen==12)
                 && strnEQ(key, "NAME_", 5)
                 && (	(keylen==9 && strEQ(key, "NAME_hash"))
@@ -1577,17 +1589,16 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                     )
                 ) {
                 D_imp_sth(h);
-                AV *name_av = NULL;
                 valuesv = &sv_undef;
 
                 /* fetch from tied outer handle to trigger FETCH magic */
                 svp = hv_fetch((HV*)DBIc_MY_H(imp_sth), "NAME",4, FALSE);
                 sv = (svp) ? *svp : &sv_undef;
-                if (SvGMAGICAL(sv))	/* resolve the magic		*/
-                    mg_get(sv);       /* can core dump in 5.004   */
-                name_av = (AV*)SvRV(sv);
+                if (SvGMAGICAL(sv))	/* call FETCH via magic */
+                    mg_get(sv);
 
-                if (sv && name_av) {
+                if (SvROK(sv)) {
+		    AV *name_av = (AV*)SvRV(sv);
                     char *name;
                     int upcase = (key[5] == 'u');
                     AV *av = Nullav;
@@ -1622,8 +1633,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             else if (keylen==13 && strEQ(key, "NUM_OF_FIELDS")) {
                 D_imp_sth(h);
-                valuesv = newSViv(DBIc_NUM_FIELDS(imp_sth));
-                if (DBIc_NUM_FIELDS(imp_sth) > 0)
+		IV num_fields = DBIc_NUM_FIELDS(imp_sth);
+                valuesv = (num_fields < 0) ? &sv_undef : newSViv(num_fields);
+                if (num_fields > 0)
                     cacheit = TRUE;	/* can't change once set */
             }
             else if (keylen==13 && strEQ(key, "NUM_OF_PARAMS")) {
@@ -1633,10 +1645,26 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             break;
 
-          case 'R':
-            if (keylen==11 && strEQ(key, "RowsInCache")) {
+          case 'P':
+            if (strEQ(key, "PRECISION"))
                 valuesv = &sv_undef;
-            }
+            else if (strEQ(key, "ParamValues"))
+                valuesv = &sv_undef;
+            break;
+
+          case 'R':
+            if (strEQ(key, "RowsInCache"))
+                valuesv = &sv_undef;
+            break;
+
+          case 'S':
+            if (strEQ(key, "SCALE"))
+                valuesv = &sv_undef;
+            break;
+
+          case 'T':
+            if (strEQ(key, "TYPE"))
+                valuesv = &sv_undef;
             break;
         }
         

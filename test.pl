@@ -102,8 +102,12 @@ else {
     my $td = Benchmark::timediff(Benchmark->new, $t1);
     my $tds= Benchmark::timestr($td);
     my $dur = $td->cpu_a || (1/$count); # fudge if cpu_a==0
-    printf "%d NullP sth/sec on this perl $] %s (%d in %.1f cpu+sys secs)\n\n",
-	    $count/$dur, $Config{archname}, $count, $dur;
+
+    printf "%5d NullP sth/s perl %8s %s (%s %s %s)\n\n",
+	    $count/$dur, $], $Config{archname},
+	    $Config{gccversion} ? 'gcc' : $Config{cc},
+	    (split / /, $Config{gccversion}||$Config{ccversion}||'')[0],
+	    $Config{optimize};
 
   if (0) {
     $null_dbh = DBI->connect('dbi:mysql:VC_log','','',{RaiseError=>1});

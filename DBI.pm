@@ -6501,7 +6501,8 @@ code, do:
   svn checkout http://svn.perl.org/modules/dbi/trunk
 
 If it prompts for a username and password use your perl.org account
-if you have one, else just 'guest' and 'guest'.
+if you have one, else just 'guest' and 'guest'. The source code will
+be in a new subdirectory called C<trunk>.
 
 After making your changes you can generate a patch file, but before
 you do, make sure your source is still upto date using:
@@ -6509,7 +6510,7 @@ you do, make sure your source is still upto date using:
   svn update http://svn.perl.org/modules/dbi/trunk
 
 If you get any conflicts reported you'll need to fix them first.
-Then generate the patch file using:
+Then generate the patch file from within the C<trunk> directory using:
 
   svn diff > foo.patch
 

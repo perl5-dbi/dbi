@@ -140,16 +140,20 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Kids
 	LongReadLen
 	NAME NAME_uc NAME_lc NAME_uc_hash NAME_lc_hash
+	NULLABLE
 	NUM_OF_FIELDS
 	NUM_OF_PARAMS
 	Name
+	PRECISION
 	ParamValues
 	Profile
 	Provider
 	RootClass
-	RowsInCache
 	RowCacheSize
+	RowsInCache
+	SCALE
 	Statement
+	TYPE
 	TraceLevel
 	Username
 	Version
@@ -410,6 +414,7 @@ sub _setup_handle {
 	if (ref($parent) =~ /::db$/) {
 	    $h_inner->{Database} = $parent;
 	    $parent->{Statement} = $h_inner->{Statement};
+	    $h_inner->{NUM_OF_PARAMS} = 0;
 	}
 	elsif (ref($parent) =~ /::dr$/){
 	    $h_inner->{Driver} = $parent;
@@ -597,7 +602,7 @@ sub FETCH {
     }
     if ($key =~ /^NAME.*_hash$/) {
         my $i=0;
-        for my $c(@{$h->FETCH('NAME')}) {
+        for my $c(@{$h->FETCH('NAME')||[]}) {
             $h->{'NAME_hash'}->{$c}    = $i;
             $h->{'NAME_lc_hash'}->{"\L$c"} = $i;
             $h->{'NAME_uc_hash'}->{"\U$c"} = $i;

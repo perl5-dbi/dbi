@@ -1,12 +1,12 @@
 #!perl -w
 
 use strict;
-use Test;
+use Test::More;
 use Data::Dumper;
 
 # handle tests
 
-BEGIN { plan tests => 34 }
+BEGIN { plan tests => 49 }
 
 use DBI;
 
@@ -51,7 +51,7 @@ do {
 
 my $drh = DBI->install_driver($driver);
 ok($drh);
-ok($drh->{Kids}, 0);
+is($drh->{Kids}, 0);
 
 
 # --- handle reference leak tests
@@ -74,7 +74,7 @@ foreach my $args (
 ) {
     print "ref leak using @{[ %$args ]}\n";
     work( %$args );
-    ok($drh->{Kids}, 0);
+    is($drh->{Kids}, 0);
 }
 
 # --- handle take_imp_data test
@@ -97,11 +97,11 @@ ok(length($imp_data) >= 80);
 {
 my ($tmp, $warn);
 local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /after take_imp_data/ };
-ok($tmp=$dbh->{Driver}, undef);
-ok($tmp=$dbh->{TraceLevel}, undef);
-ok($dbh->disconnect, undef);
-ok($dbh->quote(42), undef);
-ok($warn, 4);
+is($tmp=$dbh->{Driver}, undef);
+is($tmp=$dbh->{TraceLevel}, undef);
+is($dbh->disconnect, undef);
+is($dbh->quote(42), undef);
+is($warn, 4);
 }
 
 print "use dbi_imp_data\n";
@@ -113,5 +113,26 @@ ok($dbh2);
 else {
     ok(1) for (1..8);
 }
+
+print "NullP statement handle attributes without execute\n";
+my $dbh = DBI->connect("dbi:NullP:", '', '');
+my $sth = $dbh->prepare("foo bar");
+is $sth->{NUM_OF_PARAMS}, 0;
+is $sth->{NUM_OF_FIELDS}, undef;
+is $sth->{Statement}, "foo bar";
+is $sth->{NAME}, undef;
+is $sth->{TYPE}, undef;
+is $sth->{SCALE}, undef;
+is $sth->{PRECISION}, undef;
+is $sth->{NULLABLE}, undef;
+is $sth->{RowsInCache}, undef;
+is $sth->{ParamValues}, undef;
+# derived NAME attributes
+is $sth->{NAME_uc}, undef;
+is $sth->{NAME_lc}, undef;
+is $sth->{NAME_hash}, undef;
+is $sth->{NAME_uc_hash}, undef;
+is $sth->{NAME_lc_hash}, undef;
+
 
 exit 0;
