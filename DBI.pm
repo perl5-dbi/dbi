@@ -5039,12 +5039,19 @@ For example:
 
   my $sel = $dbh1->prepare("select foo, bar from table1");
   $sel->execute;
+
   my $ins = $dbh2->prepare("insert into table2 (foo, bar) values (?,?)");
-  $ins->execute;
   my $fetch_tuple_sub = sub { $sel->fetchrow_arrayref };
+
   my @tuple_status;
   $rc = $ins->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
   my @errors = grep { ref $_ } @tuple_status;
+
+Similarly, if you already have an array containing the data rows
+to be processed you'd use a subroutine to shift off and return
+each array ref in turn:
+
+  $ins->execute_for_fetch( sub { shift @array_of_arrays }, \@tuple_status);
 
 The C<execute_for_fetch> method was added in DBI 1.38.
 

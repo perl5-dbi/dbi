@@ -20,7 +20,6 @@ Document $t->parse_trace_flags etc
   Changed DBI_TRACE env var so just does this at load time:
     DBI->trace(split '=', $ENV{DBI_TRACE}, 2);
   Improved "invalid number of parameters" error message.
-  Corrected typos in docs thanks to Steffen Goeldner.
 
   Major tracing enhancement:
 
@@ -40,6 +39,11 @@ Document $t->parse_trace_flags etc
     of SQL::Statement, unless the DBI_SQL_NANO env var is true.
   Added DBD::File, modified to use DBI::SQL::Nano.
   Added DBD::DBM, an SQL interface to DBM files using DBD::File.
+
+  Documentation changes:
+
+  Corrected typos in docs thanks to Steffen Goeldner.
+  Corrected execute_for_fetch example thanks to Dean Arnold.
 
 =head1 CHANGES in DBI 1.41 (svn rev 130),    22nd February 2004
 
