@@ -156,6 +156,10 @@ the 'transport' mechanism and then multiple drivers using the base
 class with specific transports.  For example, one such transport
 could be the Spread::Queue module.
 
+* The DBI currently offers no support for distributed transactions.
+The most useful elements of the XA interface standard could be
+included into the DBI specification.  Drivers for databases which
+support distributed transactions could then be extended to support it.
 
 =head2 Extensibility
 

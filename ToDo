@@ -42,6 +42,9 @@ disconnect() implies rollback() unless AutoCommit (Driver.xst + drivers)
 
 --- Internal Changes
 
+Move DBI::xx classes to DBI::xx_base and sanction use of DBI::xx
+classes for extensions via mixins.
+
 Increase size of DBIS (dbistate) structure and imp_xxh.com structures
 and improve size/version sanity checks.
 
@@ -143,6 +146,7 @@ mx_translate_sql_parent - called by prepare() to translate sql from app
 mx_translate_sql_child  - called for each child handle so each can have different dialect
 (note that mx_translate_sql_parent could parse into internal tree
 from which mx_translate_sql_child then 'regenerates' custom sql for the child handle)
+See also http://c-jdbc.objectweb.org/
 
 ====== LATER ======
 
@@ -285,6 +289,7 @@ Add per-handle debug file pointer:
 	if not NULL then dup() via PerlIO for child handles
 	close(h->tracefp) at end of DESTROY
 	macro to do (h->tracefp || h->dbis->tracefp)
+	$h->{TraceFileHandle} ? (enable "local $h->{TraceFileHandle} = ..."?)
 
 Move TIEHASH etc to XS (and to PurePerl)
 
@@ -489,6 +494,11 @@ Alternatively, and perferably, add sufficient hooks for this to be
 done efficiently externally.
 
 Devel::Leak integration?
+
+XA transaction interface.  References:
+http://xapool.experlog.com/
+http://www.opengroup.org/publications/catalog/s423.htm
+http://www-106.ibm.com/developerworks/websphere/library/techarticles/0407_woolf/0407_woolf.html?ca=dnp-327
 
 --- DBI::Profile
 
