@@ -2,15 +2,27 @@
 
 9th August 2004
 
-This document aims to provide a high level overview of the future direction of the DBI.
+This document aims to provide a high level overview of the future
+direction of the DBI.
 
-It outlines the broad categories of changes, along with some rational,
+It outlines the broad categories of changes, along with some rationale,
 but does not go into implementation details and ignores many more
 minor planned enhancements.  More details can be found in:
 
   http://svn.perl.org/modules/dbi/trunk/ToDo
 
-(username guest, password guest)
+(login username "guest", password "guest")
+
+
+=head2 Batch Statements
+
+Currently the DBI has no standard interface for dealing with batch
+statements (e.g. a do($sql) or prepare($sql) where $sql contains
+multiple sub-statements, or the execution of a stored procedure
+where returns multiple results).
+
+After considerable discussion an interface design has been agreed
+with driver authors but has not yet been implemented.
 
 
 =head2 Unicode
