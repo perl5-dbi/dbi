@@ -3665,8 +3665,8 @@ be used with the DBI.
 
 Like L</prepare> except that the statement handle returned will be
 stored in a hash associated with the C<$dbh>. If another call is made to
-C<prepare_cached> with the same C<$statement> and C<%attr> values, then the
-corresponding cached C<$sth> will be returned without contacting the
+C<prepare_cached> with the same C<$statement> and C<%attr> parameter values,
+then the corresponding cached C<$sth> will be returned without contacting the
 database server.
 
 The C<$if_active> parameter lets you adjust the behaviour if an
