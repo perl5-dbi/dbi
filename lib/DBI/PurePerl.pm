@@ -280,12 +280,14 @@ sub  _install_method {
     my @post_call_frag;
 
     push @post_call_frag, q{
-        if ($DBI::dbi_debug & 0xF) {
+        if (my $trace_level = ($DBI::dbi_debug & 0xF)) {
 	    if ($h->{err}) {
 		printf $DBI::tfh "    !! ERROR: %s %s\n", $h->{err}, $h->{errstr};
 	    }
 	    my $ret = join " ", map { DBI::neat($_) } @ret;
-	    printf $DBI::tfh "    < $method_name= %s\n", $ret;
+	    my $msg = "    < $method_name= $ret";
+	    $msg = ($trace_level >= 2) ? Carp::shortmess($msg) : "$msg\n";
+	    print $DBI::tfh $msg;
 	}
     } if exists $ENV{DBI_TRACE}; # note use of exists
 
