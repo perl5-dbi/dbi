@@ -30,6 +30,7 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
     to Stevan Little and Andy Lester. See http://qa.perl.org/phalanx/
   Changed Test::More minimum prerequisite version to 0.40 (2001).
 
+  Added DBI->parse_dsn($dsn) method.
   Added warning if build directory path contains whitespace.
   Removed "may change" warnings from the docs for table_info(),
     primary_key_info(), and foreign_key_info() methods.

@@ -265,7 +265,7 @@ for (qw(trace_msg set_err parse_trace_flags parse_trace_flag)) {
 
 use strict;
 
-DBI->trace(split '=', $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
+DBI->trace(split /=/, $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
 $DBI::connect_via = "connect";
 
@@ -483,7 +483,16 @@ sub CLONE {
     }
     %DBI::installed_drh = ();	# clear loaded drivers so they have a chance to reinitialize
 }
-	
+
+sub parse_dsn {
+    my ($class, $dsn) = @_;
+    $dsn =~ s/^(dbi):(\w*?)(?:\((.*?)\))?://i or return;
+    my ($scheme, $driver, $attr, $attr_hash) = (lc($1), $2, $3);
+    $driver ||= $ENV{DBI_DRIVER} || '';
+    $attr_hash = { split /\s*=>?\s*|\s*,\s*/, $attr, -1 } if $attr;
+    return ($scheme, $driver, $attr, $attr_hash, $dsn);
+}
+
 
 # --- The DBI->connect Front Door methods
 
@@ -491,6 +500,7 @@ sub connect_cached {
     # For library code using connect_cached() with mod_perl
     # we redirect those calls to Apache::DBI::connect() as well
     my ($class, $dsn, $user, $pass, $attr) = @_;
+    # XXX modifies callers data!
     ($attr ||= {})->{dbi_connect_method} =
 	($DBI::connect_via eq "Apache::DBI::connect")
 	    ? 'Apache::DBI::connect' : 'connect_cached';
@@ -2263,6 +2273,23 @@ data type doesn't mean that drivers will support that data type.
 The following methods are provided by the DBI class:
 
 =over 4
+
+=item C<parse_dsn>
+
+  ($scheme, $driver, $attr_string, $attr_hash, $driver_dsn) = DBI->parse_dsn($dsn)
+      or die "Can't parse DBI DSN '$dsn'";
+
+Breaks apart a DBI Data Source Name (DSN) and returns the individual
+parts. If $dsn doesn't contain a valid DSN then parse_dsn() returns
+an empty list.
+
+$scheme is the first part of the DSN and is currently always 'dbi'.
+$driver is the driver name, possibly defaulted to $ENV{DBI_DRIVER},
+and may be undefined.  $attr_string is the optional attribute string,
+which may be undefined.  If $attr_string is true then $attr_hash
+is a reference to a hash containing the parsed attribute names and
+values. $driver_dsn is the last part of the DBI DSN string.
+
 
 =item C<connect>
 
@@ -6293,7 +6320,7 @@ The DBI_TRACE environment variable specifies the global default
 trace settings for the DBI at startup. Can also be used to direct
 trace output to a file. When the DBI is loaded it does:
 
-  DBI->trace(split '=', $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
+  DBI->trace(split /=/, $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
 So if C<DBI_TRACE> contains an "C<=>" character then what follows
 it is used as the name of the file to append the trace to.

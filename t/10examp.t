@@ -460,10 +460,10 @@ ok(@$r == $rows);
 
 print "selectall_hashref\n";
 $r = $dbh->selectall_hashref($std_sql, 'NAME', undef, $dir);
-ok($r, $r);
-ok(ref $r eq 'HASH', ref $r);
-ok(keys %$r == $rows);
-ok($r->{ $row_a[2] }{SIZE} eq $row_a[1], qq{$r->{ $row_a[2] }{SIZE} eq $row_a[1]});
+ok($r, "selectall_hashref result");
+is(ref $r, 'HASH', "selectall_hashref HASH: ".ref $r);
+is(scalar keys %$r, $rows);
+is($r->{ $row_a[2] }{SIZE}, $row_a[1], qq{$r->{ $row_a[2] }{SIZE} eq $row_a[1]});
 
 print "selectall_hashref by column number\n";
 $r = $dbh->selectall_hashref($std_sql, 3, undef, $dir);
