@@ -16,8 +16,10 @@ dbixst_bounce_method(char *methname, int params)
     int i;
     SV *sv;
     int debug = 0;
+    D_imp_xxh(ST(0));
     if (debug >= 3) {
-	PerlIO_printf(DBILOGFP, "    -> %s (trampoline call with %d (%ld) params)\n", methname, params, (long)items);
+	PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+	    "    -> %s (trampoline call with %d (%ld) params)\n", methname, params, (long)items);
 	xxx = xxx; /* avoid unused var warning */
     }
     EXTEND(SP, params);
@@ -32,7 +34,8 @@ dbixst_bounce_method(char *methname, int params)
     sv = (i) ? POPs : &sv_undef;
     PUTBACK;
     if (debug >= 3)
-	PerlIO_printf(DBILOGFP, "    <- %s= %s (trampoline call return)\n", methname, neatsvpv(sv,0));
+	PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+	    "    <- %s= %s (trampoline call return)\n", methname, neatsvpv(sv,0));
     return sv;
 }
 

@@ -415,6 +415,7 @@ set_err_char(SV *h, imp_xxh_t *imp_xxh, char *err_c, IV err_i, char *errstr, cha
 static int
 set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method)
 {
+    dPERINTERP;
     SV *h_err;
     SV *h_errstr;
     SV *h_state;
@@ -433,7 +434,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	if (SvREADONLY(state))	state  = sv_mortalcopy(state);
 	if (SvREADONLY(method))	method = sv_mortalcopy(method);
 	if (DBIS->debug >= 2)
-	    PerlIO_printf(DBILOGFP,"    -> HandleSetErr(%s, err=%s, errstr=%s, state=%s, %s)\n",
+	    PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    -> HandleSetErr(%s, err=%s, errstr=%s, state=%s, %s)\n",
 		neatsvpv(h,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
 		neatsvpv(method,0)
 	    );
@@ -449,7 +450,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	response_sv = (items) ? POPs : &sv_undef;
 	PUTBACK;
 	if (DBIS->debug >= 1)
-	    PerlIO_printf(DBILOGFP,"    <- HandleSetErr= %s (err=%s, errstr=%s, state=%s, %s)\n",
+	    PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    <- HandleSetErr= %s (err=%s, errstr=%s, state=%s, %s)\n",
 		neatsvpv(response_sv,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
 		neatsvpv(method,0)
 	    );
@@ -613,11 +614,11 @@ set_trace(SV *h, int level, SV *file)
     set_trace_file(file);
     if (level != RETVAL) {	 /* set value */
 	if (level > 0) {
-	    PerlIO_printf(DBILOGFP,"    %s trace level set to %d in DBI %s%s (pid %d)\n",
+	    PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    %s trace level set to %d in DBI %s%s (pid %d)\n",
 		neatsvpv(h,0), level, XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
 	    if (!dowarn && level>0)
-		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
-	    PerlIO_flush(DBILOGFP);
+		PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    Note: perl is running without the recommended perl -w option\n");
+	    PerlIO_flush(DBIc_LOGPIO(imp_xxh));
 	}
 	sv_setiv(dsv, level);
     }
@@ -736,7 +737,7 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
 
 
 static SV *
-dbih_setup_attrib(SV *h, char *attrib, SV *parent, int read_only, int optional)
+dbih_setup_attrib(SV *h, imp_xxh_t *imp_xxh, char *attrib, SV *parent, int read_only, int optional)
 {
     dPERINTERP;
     STRLEN len = strlen(attrib);
@@ -764,14 +765,15 @@ dbih_setup_attrib(SV *h, char *attrib, SV *parent, int read_only, int optional)
 	}
     }
     if (DBIS->debug >= 5) {
-	PerlIO_printf(DBILOGFP,"    dbih_setup_attrib(%s, %s, %s)",
+	PerlIO *logfp = DBIc_LOGPIO(imp_xxh);
+	PerlIO_printf(logfp,"    dbih_setup_attrib(%s, %s, %s)",
 	    neatsvpv(h,0), attrib, neatsvpv(parent,0));
 	if (!asvp)
-	     PerlIO_printf(DBILOGFP," undef (not defined)\n");
+	     PerlIO_printf(logfp," undef (not defined)\n");
 	else
 	if (SvOK(*asvp))
-	     PerlIO_printf(DBILOGFP," %s (already defined)\n", neatsvpv(*asvp,0));
-	else PerlIO_printf(DBILOGFP," %s (copied from parent)\n", neatsvpv(*asvp,0));
+	     PerlIO_printf(logfp," %s (already defined)\n", neatsvpv(*asvp,0));
+	else PerlIO_printf(logfp," %s (copied from parent)\n", neatsvpv(*asvp,0));
     }
     if (read_only && asvp)
 	SvREADONLY_on(*asvp);
@@ -947,7 +949,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	/* Copy some attributes from parent if not defined locally and	*/
 	/* also take address of attributes for speed of direct access.	*/
 	/* parent is null for drh, in which case h must hold the values	*/
-#define COPY_PARENT(name,ro,opt) SvREFCNT_inc(dbih_setup_attrib(h,(name),parent,ro,opt))
+#define COPY_PARENT(name,ro,opt) SvREFCNT_inc(dbih_setup_attrib(h,imp,(name),parent,ro,opt))
 #define DBIc_ATTR(imp, f) _imp2com(imp, attr.f)
 	/* XXX we should validate that these are the right type (refs etc)	*/
 	DBIc_ATTR(imp, Err)      = COPY_PARENT("Err",1,0);	/* scalar ref	*/
@@ -956,10 +958,10 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	DBIc_ATTR(imp, TraceLevel)=COPY_PARENT("TraceLevel",0,0);/* scalar (int)*/
 	DBIc_ATTR(imp, FetchHashKeyName) = COPY_PARENT("FetchHashKeyName",0,0);	/* scalar ref */
 	if (parent) {
-	    dbih_setup_attrib(h,"HandleSetErr",parent,0,1);
-	    dbih_setup_attrib(h,"HandleError",parent,0,1);
+	    dbih_setup_attrib(h,imp,"HandleSetErr",parent,0,1);
+	    dbih_setup_attrib(h,imp,"HandleError",parent,0,1);
 	    if (DBIc_has(parent_imp,DBIcf_Profile)) {
-		dbih_setup_attrib(h,"Profile",parent,0,1);
+		dbih_setup_attrib(h,imp,"Profile",parent,0,1);
 	    }
 	    DBIc_LongReadLen(imp) = DBIc_LongReadLen(parent_imp);
 	}
@@ -1010,10 +1012,10 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, char *msg, int level)
     char *pad = "      ";
     if (!msg)
 	msg = "dbih_dumpcom";
-    PerlIO_printf(DBILOGFP,"    %s (%sh 0x%lx 0x%lx, com 0x%lx, imp %s):\n",
+    PerlIO_printf(DBILOGFP,"    %s (%sh 0x%lx, com 0x%lx, imp %s):\n",
 	msg, dbih_htype_name(DBIc_TYPE(imp_xxh)),
-	(long)DBIc_MY_H(imp_xxh), (long)SvRVx(DBIc_MY_H(imp_xxh)),
-	(long)imp_xxh, HvNAME(DBIc_IMP_STASH(imp_xxh)));
+	(long)DBIc_MY_H(imp_xxh), (long)imp_xxh,
+	(dirty) ? "global destruction" : HvNAME(DBIc_IMP_STASH(imp_xxh)));
     if (DBIc_COMSET(imp_xxh))			sv_catpv(flags,"COMSET ");
     if (DBIc_IMPSET(imp_xxh))			sv_catpv(flags,"IMPSET ");
     if (DBIc_ACTIVE(imp_xxh))			sv_catpv(flags,"Active ");

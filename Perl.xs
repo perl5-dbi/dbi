@@ -38,8 +38,6 @@ foo_dummy(SV *h)
 	return 1;
 }
 
-DBISTATE_DECLARE;
-
 MODULE = DBD::Perl    PACKAGE = DBD::Perl
 
 INCLUDE: Perl.xsi

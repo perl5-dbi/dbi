@@ -163,7 +163,7 @@ sub valid_attribute {
 my $initial_setup;
 sub initial_setup {
     $initial_setup = 1;
-    warn __FILE__ . " version " . $DBI::PurePerl::VERSION . "\n" if $DBI::dbi_debug;
+    print $DBI::tfh  __FILE__ . " version " . $DBI::PurePerl::VERSION . "\n" if $DBI::dbi_debug;
     untie $DBI::err;
     untie $DBI::errstr;
     untie $DBI::state;
@@ -381,7 +381,10 @@ sub  _install_method {
 sub _setup_handle {
     my($h, $imp_class, $parent, $imp_data) = @_;
     my $h_inner = tied(%$h) || $h;
-    warn("\n_setup_handle(@_)") if $DBI::dbi_debug >= 4;
+    if ($DBI::dbi_debug >= 4) {
+	local $^W;
+	print $DBI::tfh "_setup_handle(@_)";
+    }
     $h_inner->{"imp_data"} = $imp_data;
     $h_inner->{"ImplementorClass"} = $imp_class;
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained

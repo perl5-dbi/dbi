@@ -188,7 +188,6 @@ ok( my $scale = $sth->{SCALE} );
 is( $scale->[0], 0 );
 is( $scale->[1], 0 );
 
-
 ok( my $params = $sth->{ParamValues} );
 is( $params->{1}, 'foo' );
 is( $sth->{Statement}, "select ctime, name from foo" );

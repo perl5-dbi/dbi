@@ -14,6 +14,7 @@
 void     dbd_init _((dbistate_t *dbistate));
 
 int      dbd_discon_all _((SV *drh, imp_drh_t *imp_drh));
+SV      *dbd_take_imp_data _((SV *h, imp_xxh_t *imp_xxh, void *foo));
 
 /* Support for dbd_dr_data_sources and dbd_db_do added to Driver.xst in DBI v1.33 */
 /* dbd_dr_data_sources: optional: defined by a driver that calls a C */
@@ -33,6 +34,7 @@ void     dbd_db_destroy    _((SV *dbh, imp_dbh_t *imp_dbh));
 int      dbd_db_STORE_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv, SV *valuesv));
 SV      *dbd_db_FETCH_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv));
 SV	*dbd_db_last_insert_id _((SV *dbh, SV *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
+AV      *dbd_db_data_sources _((SV *dbh, imp_dbh_t *imp_dbh, SV *attr));
 
 int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));
 int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
@@ -45,6 +47,7 @@ int      dbd_st_blob_read _((SV *sth, imp_sth_t *imp_sth,
                 int field, long offset, long len, SV *destrv, long destoffset));
 int      dbd_st_STORE_attrib _((SV *sth, imp_sth_t *imp_sth, SV *keysv, SV *valuesv));
 SV      *dbd_st_FETCH_attrib _((SV *sth, imp_sth_t *imp_sth, SV *keysv));
+SV      *dbd_st_execute_for_fetch _((SV *sth, imp_sth_t *imp_sth, SV *fetch_tuple_sub, SV *tuple_status));
 
 int      dbd_bind_ph  _((SV *sth, imp_sth_t *imp_sth,
                 SV *param, SV *value, IV sql_type, SV *attribs,
