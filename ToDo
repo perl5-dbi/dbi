@@ -80,6 +80,8 @@ force it for drivers?
 And enable xsbypass in dispatch if possible.
 Remove PERL_POLLUTE
 
+Require a CLONE method.
+
 Add function pointer for setting fetched field values into DBIS.
 Drivers would use this instead of calling sv_setpv (etc) themselves.
 
@@ -116,6 +118,8 @@ Maybe $h->new_child(\%override_attr)
 	$sth->close(???)		# to 'reset' before a different prepare()?
 need to think through prepare_cached and connect_cached
 and relationship to preparse().
+
+Fixup @DBD::Foo::ISA and ?->setup_driver issues
 
 Sort out DBIcDBISTATE() and DBIS mess. dDBIS?
 Make it cheap to get h from imp_xxh so only imp_xxh needs

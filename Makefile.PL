@@ -124,6 +124,7 @@ MSG
 my %opts = (
     NAME=> 'DBI',
     VERSION_FROM=> 'DBI.pm',
+    PREREQ_PM => { "Test::More" => 0 },
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
