@@ -52,6 +52,7 @@ sub new {
 #####################################################################
 sub prepare {
     my($self,$sql) = @_;
+    $sql =~ s/\s+$//;
     for ($sql) {
         /^\s*CREATE\s+TABLE\s+(.*?)\s*\((.+)\)\s*$/is
             &&do{
@@ -153,6 +154,8 @@ sub parse_set_clause {
 sub parse_value {
     my($self,$str) = @_;
     return undef unless defined $str;
+    $str =~ s/\s+$//;
+    $str =~ s/^\s+//;
     if ($str =~ /^\?$/) {
         push @{$self->{params}},'?';
         return { value=>'?'  ,type=> 'placeholder' };
@@ -173,7 +176,7 @@ sub parse_where_clause {
     }
     my($neg) = $str =~ s/^\s*(NOT)\s+//is;
     my $opexp = '=|<>|<=|>=|<|>|LIKE|CLIKE|IS';
-    my($val1,$op,$val2) = $str =~ /(\S+?)\s*($opexp)\s*(\S+)/is;
+    my($val1,$op,$val2) = $str =~ /^(\S.+)\s*($opexp)\s*(\S.+)$/is;
     die "Couldn't parse WHERE clause!\n"
        unless defined $val1 and defined $op and defined $val2;
     return {
