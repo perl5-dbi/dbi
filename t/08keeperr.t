@@ -88,7 +88,7 @@ is($dbh->errstr, "(got info)");
 is($warn, 0);
 is("@handlewarn", "1 0 0");
 
-$dbh->set_err("0", "(got warn)", "AA001");
+$dbh->set_err(0, "(got warn)", "AA001");
 ok(defined $DBI::err);
 is($DBI::err, "0");
 is($DBI::errstr, "(got info)\n(got warn)");

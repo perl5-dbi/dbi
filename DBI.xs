@@ -488,7 +488,8 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     if (SvTRUE(err)		/* new error: so assign			*/
 	|| !SvOK(h_err)	/* no existing warn/info: so assign	*/
 	   /* new warn ("0" len 1) > info ("" len 0): so assign		*/
-	|| (SvOK(err) && SvCUR(err) > SvCUR(h_err)) ) {
+	|| (SvOK(err) && strlen(SvPV_nolen(err)) > strlen(SvPV_nolen(h_err)))
+    ) {
 	sv_setsv(h_err, err);
 	err_changed = 1;
     }

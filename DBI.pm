@@ -316,6 +316,7 @@ my $dbd_prefix_registry = {
   ix_      => { class => 'DBD::Informix',	},
   msql_    => { class => 'DBD::mSQL',		},
   mysql_   => { class => 'DBD::mysql',		},
+  nullp_   => { class => 'DBD::NullP',		},
   odbc_    => { class => 'DBD::ODBC',		},
   ora_     => { class => 'DBD::Oracle',		},
   pg_      => { class => 'DBD::Pg',		},
