@@ -87,7 +87,11 @@ my $dbh = DBI->connect("dbi:$driver:", '', '');
 #DBI->trace(9);
 my $imp_data = $dbh->take_imp_data;
 ok($imp_data);
-ok(length($imp_data) >= 112); # 112 for 32bit, 116 for 64 bit as of DBI 1.37, but may change
+# generally length($imp_data) = 112 for 32bit, 116 for 64 bit
+# (as of DBI 1.37) but it can differ on some platforms
+# depending on structure packing by the compiler
+# so we just test that it's something reasonable:
+ok(length($imp_data) >= 80);
 #print Dumper($imp_data);
 
 {

@@ -1,4 +1,4 @@
-/* $Id: DBIXS.h,v 11.17 2003/11/13 13:04:38 timbo Exp $
+/* $Id: DBIXS.h,v 11.18 2004/02/01 11:16:16 timbo Exp $
  *
  * Copyright (c) 1994-2002  Tim Bunce  Ireland
  *
@@ -232,14 +232,14 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIcf_AutoCommit  0x000200	/* dbh only. used by drivers		*/
 #define DBIcf_LongTruncOk 0x000400	/* truncation to LongReadLen is okay	*/
 #define DBIcf_MultiThread 0x000800	/* allow multiple threads to enter	*/
-/*	spare		  0x001000						*/
+#define DBIcf_HandleSetError  0x001000	/* has coderef HandleSetError attribute	*/
 #define DBIcf_ShowErrorStatement  0x002000   /* include Statement in error	*/
 #define DBIcf_BegunWork   0x004000	/* between begin_work & commit/rollback */
 #define DBIcf_HandleError 0x008000	/* has coderef in HandleError attribute */
 #define DBIcf_Profile     0x010000	/* profile activity on this handle      */
 #define DBIcf_TaintIn     0x020000	/* check inputs for taintedness */
 #define DBIcf_TaintOut    0x040000	/* taint outgoing data */
-/* new flags may require clone() to be updated */
+/* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK		/* what NOT to pass on to children */	\
   (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY		\

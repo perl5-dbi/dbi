@@ -118,12 +118,8 @@ Tim Bunce.
 =======================================================================
 
 ---
-If you get an error like "fatal: relocation error: symbol not found: ..."
-using gcc <3.x then try not using GNU as or GNU ld on Solaris.
-
----
-If you get compiler warnings like "value computed is not used" and
-"unused variable" you can ignore them.
+If you get an error like "gcc: command not found" or "cc: command not found"
+you need to install a compiler. But also read the next item:
 
 ---
 If you get compiler errors refering to Perl's own header files
@@ -132,5 +128,13 @@ there is something wrong with your installation.  It is best to use a
 Perl that was built on the system you are trying to use and it's also
 important to use the same compiler that was used to build the Perl you
 are using.
+
+---
+If you get an error like "fatal: relocation error: symbol not found: ..."
+on Solaris when using gcc <3.x then try not using GNU as or GNU ld.
+
+---
+If you get compiler warnings like "value computed is not used" and
+"unused variable" you can ignore them.
 
 End.

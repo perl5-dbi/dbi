@@ -24,7 +24,7 @@ use Carp;
 require Symbol;
 
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
-$DBI::PurePerl::VERSION = sprintf "%d.%02d", '$Revision: 1.95 $ ' =~ /(\d+)\.(\d+)/;
+$DBI::PurePerl::VERSION = sprintf "%d.%02d", '$Revision: 1.96 $ ' =~ /(\d+)\.(\d+)/;
 $DBI::neat_maxlen ||= 400;
 
 $DBI::tfh = Symbol::gensym();
@@ -131,6 +131,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Driver
 	FetchHashKeyName
 	HandleError
+	HandleSetError
 	ImplementorClass
 	Kids
 	LongReadLen
@@ -211,23 +212,38 @@ sub  _install_method {
 	    my $keep_error = 1;
 	};
     }
-    elsif (IMA_KEEP_ERR_SUB & $bitmask) {
+    elsif (0 and IMA_KEEP_ERR_SUB & $bitmask) {
 	push @pre_call_frag, q{
 	    my $keep_error = $h->{_parent}->{_call_depth};
 	    unless ($keep_error) {
 		#warn "$method_name cleared err";
-		$h->{err} = 0;
+		$h->{err} = $DBI::err = undef;
 		$h->{errstr} = $DBI::state = '';
 	    };
 	};
     }
     else {
-	push @pre_call_frag, q{
-	    my $keep_error;
+	my $ke_init = (IMA_KEEP_ERR_SUB & $bitmask)
+		? q{= $h->{_parent}->{_call_depth} }
+		: "";
+	push @pre_call_frag, qq{
+	    my \$keep_error $ke_init;
+	};
+	my $keep_error_code = q{
 	    #warn "$method_name cleared err";
-	    $h->{err} = 0;
+	    $h->{err} = $DBI::err = undef;
 	    $h->{errstr} = $DBI::state = '';
 	};
+	$keep_error_code = q{
+	    printf $DBI::tfh "    !! %s: %s CLEARED by call to }.$method_name.q{ method\n".
+		    $h->{err}, $h->{err}
+		if $DBI::dbi_debug && defined $h->{err};
+	}. $keep_error_code
+	    if exists $ENV{DBI_TRACE};
+	push @pre_call_frag, ($ke_init)
+		? qq{ unless (\$keep_error) { $keep_error_code }}
+		: $keep_error_code
+	    unless $method_name eq 'set_err';
     }
 
     push @pre_call_frag, q{
@@ -263,33 +279,52 @@ sub  _install_method {
     } if IMA_END_WORK & $bitmask;
 
     push @post_call_frag, q{
-        if ($h->{err} && !$keep_error && $call_depth <= 1 && !$h->{_parent}{_call_depth}) {
-            my $last = ($DBI::last_method_except{$method_name})
-		? ($h->{'_last_method'}||$method_name) : $method_name;
-            my $errstr = $h->{errstr} || $DBI::errstr || $DBI::err || '';
-            my $msg = sprintf "%s %s failed: %s", $imp, $last, $errstr;
-            if ($h->{'ShowErrorStatement'} and my $Statement = $h->{Statement}) {
-		$msg .= ' for [``' . $Statement . "''";
-		my $ParamValues = $h->FETCH('ParamValues');
-		if ($ParamValues) {
-		    my $pv_idx = 0;
-		    $msg .= " with params: ";
-		    while ( my($k,$v) = each %$ParamValues ) {
-			$msg .= sprintf "%s%s=%s", ($pv_idx++==0) ? "" : ", ", $k, DBI::neat($v);
+        if ( !$keep_error && defined(my $err=$h->{err}) ) {
+
+	    my $at_top = ($call_depth <= 1 && !$h->{_parent}{_call_depth});
+	    my($pe,$re,$he,$hw) = @{$h}{qw(PrintError RaiseError HandleError HandleSetError)};
+	    my $msg;
+$hw=0;
+
+	    if ($err && $at_top && ($pe || $re || $he)	# error at top level
+	    or (!$err && ($pe || $hw))			# warning/info
+	    ) {
+		my $last = ($DBI::last_method_except{$method_name})
+		    ? ($h->{'_last_method'}||$method_name) : $method_name;
+		my $errstr = $h->{errstr} || $DBI::errstr || $err || '';
+		my $msg = sprintf "%s %s failed: %s", $imp, $last, $errstr;
+
+		if ($h->{'ShowErrorStatement'} and my $Statement = $h->{Statement}) {
+		    $msg .= ' for [``' . $Statement . "''";
+		    if (my $ParamValues = $h->FETCH('ParamValues')) {
+			my $pv_idx = 0;
+			$msg .= " with params: ";
+			while ( my($k,$v) = each %$ParamValues ) {
+			    $msg .= sprintf "%s%s=%s", ($pv_idx++==0) ? "" : ", ", $k, DBI::neat($v);
+			}
+		    }
+		    $msg .= "]";
+		}
+		if (!$err && $hw) {
+		    undef $hw unless &$hw($msg,$h,$ret[0]);
+		}
+		# still have warn (not info) and it wasn't handled by HandleSetError
+		if (!$hw and defined $DBI::err and $DBI::err eq "0") {
+		    warn $msg if $pe;
+		}
+
+		if ($DBI::err) {
+		    my $do_croak = 1;
+		    if (my $subsub = $h->{'HandleError'}) {
+			$do_croak = 0 if &$subsub($msg,$h,$ret[0]);
+		    }
+		    if ($do_croak) {
+			printf $DBI::tfh "    $method_name has failed ($h->{PrintError},$h->{RaiseError})\n"
+				if $DBI::dbi_debug >= 4;
+			carp  $msg if $pe;
+			die $msg if $h->{RaiseError};
 		    }
 		}
-		$msg .= "]";
-	    }
-	    $msg .= "\n";
-            my $do_croak = 1;
-            if (my $subsub = $h->{'HandleError'}) {
-		$do_croak = 0 if &$subsub($msg,$h,$ret[0]);
-            }
-	    if ($do_croak) {
-		printf $DBI::tfh "    $method_name has failed ($h->{PrintError},$h->{RaiseError})\n"
-			if $DBI::dbi_debug >= 4;
-  	        carp  $msg if $h->{PrintError};
-	        die $msg if $h->{RaiseError};
 	    }
 	}
     } unless IMA_KEEP_ERR & $bitmask;
@@ -340,7 +375,7 @@ sub  _install_method {
     warn "$@\n$method_code\n" if $@;
     die "$@\n$method_code\n" if $@;
     *$method = $code_ref;
-    if (0 && $method =~ 'DESTROY') { # debuging tool
+    if ( 0 and $method =~ /set_err/) { # debuging tool
 	my $l=0; # show line-numbered code for method
 	warn "*$method = ".join("\n", map { ++$l.": $_" } split/\n/,$method_code);
     }
@@ -355,7 +390,7 @@ sub _setup_handle {
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained
     if ($parent) {
 	foreach (qw(
-	    RaiseError PrintError HandleError
+	    RaiseError PrintError HandleError HandleSetError
 	    Warn LongTruncOk ChopBlanks AutoCommit
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {
@@ -606,16 +641,47 @@ sub state {
 sub set_err {
     my ($h, $errnum,$msg,$state, $method, $rv) = @_;
     $h = tied(%$h) || $h; # for code that calls $h->DBI::set_err(...)
-    $msg = $errnum unless defined $msg;
-    $h->{'_last_method'} = $method;
-    $h->{err}    = $DBI::err    = $errnum;
-    $h->{errstr} = $DBI::errstr = $msg;
-    $h->{state}  = $DBI::state  = (defined $state) ? ($state eq "00000" ? "" : $state) : ($errnum ? "S1000" : "");
+
+    if (my $hss = $h->{HandleSetError}) {
+	return if $hss->($h, $errnum, $msg, $state, $method);
+    }
+
+    if ($h->{errstr}) {
+	$h->{errstr} .= sprintf " [err was %s now %s]", $h->{err}, $errnum
+		if $h->{err} && $errnum;
+	$h->{errstr} .= sprintf " [state was %s now %s]", $h->{state}, $state
+		if $h->{state} and $h->{state} ne "S1000" && $state;
+	$h->{errstr} .= "\n$msg";
+	$DBI::errstr = $h->{errstr};
+    }
+    else {
+	$h->{errstr} = $DBI::errstr = $msg;
+    }
+
+    # assign if higher priority: err > "0" > "" > undef
+    my $err_changed;
+    if ($errnum			# new error: so assign
+	or !defined $h->{err}	# no existing warn/info: so assign
+           # new warn ("0" len 1) > info ("" len 0): so assign
+	or defined $errnum && length($errnum) > length($h->{err})
+    ) {
+        $h->{err} = $DBI::err = $errnum;
+	++$err_changed;
+    }
+
+    if ($err_changed) {
+	$state ||= "S1000" if $DBI::err;
+	$h->{state} = $DBI::state = ($state eq "00000") ? "" : $state
+	    if $state;
+    }
+
     if (my $p = $h->{Database}) { # just sth->dbh, not dbh->drh (see ::db::DESTROY)
-	$p->{err}    = $errnum;
-	$p->{errstr} = $msg;
+	$p->{err}    = $DBI::err;
+	$p->{errstr} = $DBI::errstr;
 	$p->{state}  = $DBI::state;
     }
+
+    $h->{'_last_method'} = $method;
     return $rv; # usually undef
 }
 sub trace_msg {

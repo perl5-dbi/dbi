@@ -11,10 +11,11 @@ sub ok ($$;$) {
     ++$t;
     die "sequence error, expected $n but actually $t"
         if $n and $n != $t;
-    return print "ok $t\n" if @_<3 && $got;
-    return print "ok $t\n" if $got eq $want;
-    warn "Test $n: wanted '$want', got '$got'\n";
+    my $line = (caller)[2];
+    return print "ok $t at line $line\n" if @_<3 && $got;
+    return print "ok $t at line $line\n" if $got eq $want;
     print "not ok $t\n";
+    warn "# failed test $t at line $line: wanted '$want', got '$got'\n";
 }
 
 
@@ -58,4 +59,120 @@ my $err1 = test_select( My::DBI->connect(@con_info) );
 my $err2 = test_select( DBI->connect(@con_info) );
 ::ok(0, $err2 =~ /^DBD::(ExampleP|Multiplex)::db selectrow_arrayref failed: opendir/) or print "got: $err2\n";
 
-BEGIN { $tests = 2 }
+package main;
+
+print "test HandleSetError\n";
+
+my $dbh = DBI->connect(@con_info);
+$dbh->{RaiseError} = 1;
+$dbh->{PrintError} = 1;
+
+my $warn = 0;
+my @handlewarn = (0,0,0);
+$SIG{__WARN__} = sub {
+    if ($_[0] =~ /^DBD::ExampleP::/) {
+	++$warn;
+	print "warn called: @_\n";
+	return;
+    }
+    warn @_;
+};
+#$dbh->trace(2);
+$dbh->{HandleSetError} = sub {
+    my ($h, $err, $errstr, $state) = @_;
+    ++$handlewarn[ $err ? 2 : length($err) ]; # count [info, warn, err] calls
+    return 1
+	if $state && $state eq "return";   # for tests
+    ($_[1], $_[2], $_[3]) = (99, "errstr99", "OV123")
+	if $state && $state eq "override"; # for tests
+    return 0 if $err; # be transparent for errors
+    local $^W;
+    print "HandleSetError called: h=$h, err=$err, errstr=$errstr, state=$state\n";
+    return 0;
+};
+ok(0, !defined $DBI::err, 1);
+
+$dbh->set_err("", "(got info)");
+ok(0, defined $DBI::err, 1);
+ok(0, $DBI::err, "");
+ok(0, $DBI::errstr, "(got info)");
+ok(0, $dbh->errstr, "(got info)");
+ok(0, $warn, 0);
+ok(0, "@handlewarn", "1 0 0");
+
+$dbh->set_err("0", "(got warn)", "AA001");
+ok(0, defined $DBI::err, 1);
+ok(0, $DBI::err, "0");
+ok(0, $DBI::errstr, "(got info)\n(got warn)");
+ok(0, $dbh->errstr, "(got info)\n(got warn)");
+ok(0, $warn, 1);
+ok(0, "@handlewarn", "1 1 0");
+ok(0, $DBI::state, "AA001");
+
+$dbh->set_err("", "(got more info)");
+ok(0,  defined $DBI::err);
+ok(0, $DBI::err, "0");	# not "", ie it's still a warn
+ok(0, $DBI::errstr, "(got info)\n(got warn)\n(got more info)");
+ok(0, $warn, 2);
+ok(0, "@handlewarn", "2 1 0");
+ok(0, $DBI::state, "AA001");
+
+$dbh->{RaiseError} = 0;
+$dbh->{PrintError} = 0;
+
+$dbh->set_err("42", "(got error)", "AA002");
+ok(0, $DBI::err, 42);
+ok(0, $dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)");
+ok(0, $warn, 2);
+ok(0, "@handlewarn", "2 1 1");
+ok(0, $DBI::state, "AA002");
+
+$dbh->set_err("", "(got info)");
+ok(0, $DBI::err, 42);
+ok(0, $dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)");
+ok(0, $warn, 2);
+ok(0, "@handlewarn", "3 1 1");
+
+$dbh->set_err("0", "(got warn)");
+ok(0, $DBI::err, 42);
+ok(0, $dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn)");
+ok(0, $warn, 2);
+ok(0, "@handlewarn", "3 2 1");
+
+$dbh->set_err("4200", "(got new error)", "AA003");
+ok(0, $DBI::err, 4200);
+ok(0, $dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn) [err was 42 now 4200] [state was AA002 now AA003]\n(got new error)");
+ok(0, $warn, 2);
+ok(0, "@handlewarn", "3 2 2");
+
+$dbh->ping; # just to clear error in the normal way
+
+$warn = 0;
+@handlewarn = (0,0,0);
+my @ret;
+@ret = $dbh->set_err(1, "foo");
+ok(0, @ret == 1);
+ok(0, !defined $ret[0]);
+$dbh->set_err(2, "bar");
+$dbh->set_err(3, "baz");
+$dbh->set_err(0, "warn");
+ok(0, $dbh->errstr, "foo [err was 1 now 2]\nbar [err was 2 now 3]\nbaz\nwarn");
+ok(0, $warn, 0);
+ok(0, "@handlewarn", "0 1 3");
+
+$dbh->ping; # clear error
+@ret = $dbh->set_err(1, "foo", "AA123", "method");
+ok(0, @ret == 1 && !defined $ret[0]);
+@ret = $dbh->set_err(1, "foo", "AA123", "method", "42");
+ok(0, @ret == 1 && $ret[0] eq "42");
+@ret = $dbh->set_err(1, "foo", "return");
+ok(0, @ret == 0);
+
+$dbh->ping; # clear error
+@ret = $dbh->set_err("", "info", "override");
+ok(0, @ret == 1 && !defined $ret[0]);
+ok(0, $dbh->err,    99);
+ok(0, $dbh->errstr, "errstr99");
+ok(0, $dbh->state,  "OV123");
+
+BEGIN { $tests = 51 }

@@ -40,6 +40,7 @@ $switch = DBI->internal;
 ok(0, ref $switch eq 'DBI::dr');
 
 @drivers = DBI->available_drivers(); # at least 'ExampleP' should be installed
+print "available_drivers: @drivers\n";
 ok(0, @drivers);
 ok(0, "@drivers" =~ m/ExampleP/i);	# ignore case for VMS & Win32
 
@@ -107,6 +108,8 @@ else {
   ok(0, DBI::hash("foo2",1) == -1263462437,  DBI::hash("foo2",1));
 }
 
+print "test DBI->installed_versions (for @drivers)\n";
+print "(a bad driver can kill the process here)\n";
 my $installed_versions = DBI->installed_versions;
 ok(0, ref $installed_versions eq 'HASH');
 ok(0, %$installed_versions);

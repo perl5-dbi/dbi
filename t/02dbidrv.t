@@ -24,7 +24,7 @@ my $drh;
 	$class .= "::dr";
 	($drh) = DBI::_new_drh($class, {
 		'Name' => 'Test',
-		'Version' => '$Revision: 11.10 $',
+		'Version' => '$Revision: 11.11 $',
 	    },
 	    77	# 'implementors data'
 	    );
@@ -120,8 +120,9 @@ ok($drh->err, 42);	# copied up to drh from dbh when dbh was DESTROYd
 
 $drh->set_err("99", "foo");
 ok($DBI::err, 99);
-ok($DBI::errstr, "foo");
+ok($DBI::errstr, "foo 42 dbh [err was 42 now 99]\nfoo");
 
+$drh->default_user("",""); # just to reset err etc
 $drh->set_err(0, "00000");
 ok($DBI::state, "");
 

@@ -1,6 +1,6 @@
 /* vim: ts=8:sw=4
  *
- * $Id: DBI.xs,v 11.37 2004/01/07 17:38:51 timbo Exp $
+ * $Id: DBI.xs,v 11.38 2004/02/01 11:16:16 timbo Exp $
  *
  * Copyright (c) 1994-2003  Tim Bunce  Ireland.
  *
@@ -70,7 +70,8 @@ static SV	 *dbih_event	   _((SV *h, char *name, SV*, SV*));
 static int        dbih_set_attr_k  _((SV *h, SV *keysv, int dbikey, SV *valuesv));
 static SV        *dbih_get_attr_k  _((SV *h, SV *keysv, int dbikey));
 
-static int	set_err _((SV *h, imp_xxh_t *imp_xxh, int errval, char *errstr, char *state));
+static int      set_err_char	_((SV *h, imp_xxh_t *imp_xxh, char *err, char *errstr, char *state, char *method));
+static int	set_err_sv	_((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int	dbi_hash _((char *string, long i));
 static void	dbih_dumphandle _((SV *h, char *msg, int level));
@@ -392,22 +393,96 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 
 
 static int
-set_err(SV *h, imp_xxh_t *imp_xxh, int errval, char *errstr, char *state)
+set_err_char(SV *h, imp_xxh_t *imp_xxh, char *err, char *errstr, char *state, char *method)
 {
-    STRLEN lna;
-    sv_setiv(DBIc_ERR(imp_xxh),    errval);
-    if (!errstr || !*errstr)
-	errstr = SvPV(DBIc_ERR(imp_xxh), lna);
-    sv_setpv(DBIc_ERRSTR(imp_xxh), errstr);
-    if (state && *state) {
-	if (strlen(state) != 5)
+    SV *err_sv    = (strEQ(err,"1")) ? &sv_yes : sv_2mortal(newSVpvn(err, strlen(err)));
+    SV *errstr_sv = sv_2mortal(newSVpvn(errstr, strlen(errstr)));
+    SV *state_sv  = (state && *state)   ? sv_2mortal(newSVpvn(state,  strlen(state)))  : &sv_undef;
+    SV *method_sv = (method && *method) ? sv_2mortal(newSVpvn(method, strlen(method))) : &sv_undef;
+    return set_err_sv(h, imp_xxh, err_sv, errstr_sv, state_sv, method_sv);
+}
+
+static int
+set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method)
+{
+    SV *h_err;
+    SV *h_errstr;
+    SV *h_state;
+    SV **hook_svp;
+    int err_changed = 0;
+
+    if (!SvOK(err))
+	return 0;
+
+    if (    DBIc_has(imp_xxh, DBIcf_HandleSetError)
+	&& (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetError",14,0))
+	&&  hook_svp && SvOK(*hook_svp)
+    ) {
+	dSP;
+	IV items;
+	SV *response_sv;
+	if (SvREADONLY(err))	err    = sv_mortalcopy(err);
+	if (SvREADONLY(errstr))	errstr = sv_mortalcopy(errstr);
+	if (SvREADONLY(state))	state  = sv_mortalcopy(state);
+	if (SvREADONLY(method))	method = sv_mortalcopy(method);
+	if (DBIS->debug >= 2)
+	    PerlIO_printf(DBILOGFP,"    -> HandleSetError(%s, err=%s, errstr=%s, state=%s, %s)\n",
+		neatsvpv(h,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
+		neatsvpv(method,0)
+	    );
+	PUSHMARK(SP);
+	XPUSHs(sv_2mortal(newRV((SV*)DBIc_MY_H(imp_xxh))));
+	XPUSHs(err);
+	XPUSHs(errstr);
+	XPUSHs(state);
+	XPUSHs(method);
+	PUTBACK;
+	items = perl_call_sv(*hook_svp, G_SCALAR);
+	SPAGAIN;
+	response_sv = (items) ? POPs : &sv_undef;
+	PUTBACK;
+	if (DBIS->debug >= 1)
+	    PerlIO_printf(DBILOGFP,"    <- HandleSetError= %s (err=%s, errstr=%s, state=%s, %s)\n",
+		neatsvpv(response_sv,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
+		neatsvpv(method,0)
+	    );
+	if (SvTRUE(response_sv))	/* handler says it has handled it, so... */
+	    return 0;
+    }
+
+    /* fetch these after calling HandleSetError */
+    h_err    = DBIc_ERR(imp_xxh);
+    h_errstr = DBIc_ERRSTR(imp_xxh);
+    h_state  = DBIc_STATE(imp_xxh);
+
+    if (SvTRUE(h_errstr)) {
+	/* append current err, if any, to errstr if it's going to change */
+	if (SvTRUE(h_err) && SvTRUE(err))
+	    sv_catpvf(h_errstr, " [err was %s now %s]", SvPV_nolen(h_err), SvPV_nolen(err));
+	if (SvTRUE(h_state) && SvTRUE(state))
+	    sv_catpvf(h_errstr, " [state was %s now %s]", SvPV_nolen(h_state), SvPV_nolen(state));
+	sv_catpvn(h_errstr, "\n", 1);
+        sv_catsv(h_errstr, errstr);
+    }
+    else
+	sv_setsv(h_errstr, errstr);
+
+    /* SvTRUE(err) > "0" > "" > undef */
+    if (SvTRUE(err)		/* new error: so assign			*/
+	|| !SvOK(h_err)	/* no existing warn/info: so assign	*/
+	   /* new warn ("0" len 1) > info ("" len 0): so assign		*/
+	|| (SvOK(err) && SvCUR(err) > SvCUR(h_err)) ) {
+	sv_setsv(h_err, err);
+	err_changed = 1;
+    }
+
+    if (SvTRUE(state) && err_changed) {
+	if (SvCUR(state) != 5)
 	    croak("set_err: state must be 5 character string");
-	sv_setpv(DBIc_STATE(imp_xxh), state);
+	sv_setsv(h_state, state);
     }
-    else {
-	(void)SvOK_off(DBIc_STATE(imp_xxh));
-    }
-    return 0;
+
+    return 1;
 }
 
 
@@ -869,6 +944,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	DBIc_ATTR(imp, TraceLevel)=COPY_PARENT("TraceLevel",0,0);/* scalar (int)*/
 	DBIc_ATTR(imp, FetchHashKeyName) = COPY_PARENT("FetchHashKeyName",0,0);	/* scalar ref */
 	if (parent) {
+	    dbih_setup_attrib(h,"HandleSetError",parent,0,1);
 	    dbih_setup_attrib(h,"HandleError",parent,0,1);
 	    if (DBIc_has(parent_imp,DBIcf_Profile)) {
 		dbih_setup_attrib(h,"Profile",parent,0,1);
@@ -934,6 +1010,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, char *msg, int level)
     if (DBIc_is(imp_xxh, DBIcf_ChopBlanks))	sv_catpv(flags,"ChopBlanks ");
     if (DBIc_is(imp_xxh, DBIcf_RaiseError))	sv_catpv(flags,"RaiseError ");
     if (DBIc_is(imp_xxh, DBIcf_PrintError))	sv_catpv(flags,"PrintError ");
+    if (DBIc_is(imp_xxh, DBIcf_HandleSetError))	sv_catpv(flags,"HandleSetError ");
     if (DBIc_is(imp_xxh, DBIcf_HandleError))	sv_catpv(flags,"HandleError ");
     if (DBIc_is(imp_xxh, DBIcf_ShowErrorStatement))	sv_catpv(flags,"ShowErrorStatement ");
     if (DBIc_is(imp_xxh, DBIcf_AutoCommit))	sv_catpv(flags,"AutoCommit ");
@@ -1268,6 +1345,13 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	DBIc_set(imp_xxh,DBIcf_HandleError, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
+    else if (strEQ(key, "HandleSetError")) {
+	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVCV)) ) {
+	    croak("Can't set HandleSetError to '%s'",neatsvpv(valuesv,0));
+	}
+	DBIc_set(imp_xxh,DBIcf_HandleSetError, on);
+	cacheit = 1; /* child copy setup by dbih_setup_handle() */
+    }
     else if (strEQ(key, "Profile")) {
 	char *dbi_class = "DBI::Profile";
 	if (on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) ) {
@@ -1369,6 +1453,8 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 			    || strEQ(key,"ImplementorClass")
 			    || strEQ(key,"Statement")
 			    || strEQ(key,"Username")
+	/* these are here for backwards histerical raisons */
+	|| strEQ(key,"USER") || strEQ(key,"CURRENT_USER")
     ) ) {
 	cacheit = 1;
     }
@@ -1654,6 +1740,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 	else if (!isUPPER(*key))	/* dbd_*, private_* etc */
 	    valuesv = &sv_undef;
 	else if (	(*key=='H' && strEQ(key, "HandleError"))
+		||	(*key=='H' && strEQ(key, "HandleSetError"))
 		||	(*key=='S' && strEQ(key, "Statement"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
@@ -2078,6 +2165,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     SV *st1 = ST(1);		/* used in debugging */
     SV *st2 = ST(2);		/* used in debugging */
     SV *orig_h = h;
+    SV *err_sv;
+    SV **hook_svp = 0;
     MAGIC *mg;
     STRLEN lna;
     int gimme = GIMME;
@@ -2143,8 +2232,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    if (imp_xxh && DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh))
 		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, debug);
 	    if (debug >= 3)
-                PerlIO_printf(DBILOGFP,"%c   <> DESTROY ignored for outer handle %s (inner %s)\n",
-		    (dirty?'!':' '), neatsvpv(h,0), neatsvpv(mg->mg_obj,0));
+                PerlIO_printf(DBILOGFP,
+		    "%c   <> DESTROY ignored for outer handle %s (inner %s has ref cnt %ld)\n",
+		    (dirty?'!':' '), neatsvpv(h,0), neatsvpv(mg->mg_obj,0),
+		    (long)SvREFCNT(SvRV(mg->mg_obj))
+		);
 	    /* for now we ignore it since it'll be followed soon by	*/
 	    /* a destroy of the inner hash and that'll do the real work	*/
 	    XSRETURN(0);
@@ -2326,10 +2418,12 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     /* --- dispatch --- */
 
-    if (!keep_error) {
-	if (debug >= 4 && SvTRUE(DBIc_ERR(imp_xxh))) {
+    if (!keep_error && !(*meth_name=='s' && strEQ(meth_name,"set_err"))) {
+	SV *err_sv;
+	if (debug >= 4 && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
 	    PerlIO *logfp = DBILOGFP;
-	    PerlIO_printf(logfp, "    !! ERROR: %s CLEARED by call to %s method\n",
+	    PerlIO_printf(logfp, "    !! %s: %s CLEARED by call to %s method\n",
+		SvTRUE(err_sv) ? "ERROR" : SvCUR(err_sv) ? "warn" : "info",
 		neatsvpv(DBIc_ERR(imp_xxh),0), meth_name);
 	}
 	DBIh_CLEAR_ERROR(imp_xxh);
@@ -2468,6 +2562,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     post_dispatch:
 
+    err_sv = DBIc_ERR(imp_xxh);
+
     if (debug >= 1
 	&& !(debug == 1 /* don't trace nested calls at level 1 */
 	    && call_depth <= 1
@@ -2480,11 +2576,10 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    /* skip the 'middle' rows to reduce output */
 	    goto skip_meth_return_trace;
 	}
-	if (SvTRUE(DBIc_ERR(imp_xxh))) {
-	    PerlIO_printf(logfp,
-		(keep_error) ? "       error: %s %s\n"
-			     : "    !! ERROR: %s %s\n",
-		neatsvpv(DBIc_ERR(imp_xxh),0), neatsvpv(DBIc_ERRSTR(imp_xxh),0));
+	if (SvOK(err_sv)) {
+	    PerlIO_printf(logfp, "    %s %s %s %s\n", (keep_error) ? "  " : "!!",
+		SvTRUE(err_sv) ? "ERROR:" : SvCUR(err_sv) ? "warn:" : "info:",
+		neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0));
 	}
 	PerlIO_printf(logfp,"%c%c  <- %s",
 		    (call_depth > 1)  ? '0'+call_depth-1 : (dirty?'!':' '),
@@ -2506,9 +2601,17 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    if ( SvROK(s) && SvTYPE(SvRV(s))==SVt_PVAV) {
 		AV *av = (AV*)SvRV(s);
 		int avi;
+		int avi_last = SvIV(DBIS->neatsvpvlen) / 10;
+		if (avi_last < 39)
+		    avi_last = 39;
 		PerlIO_printf(logfp, " [");
-		for(avi=0; avi <= AvFILL(av); ++avi)
+		for (avi=0; avi <= AvFILL(av); ++avi) {
 		    PerlIO_printf(logfp, " %s",  neatsvpv(AvARRAY(av)[avi],0));
+		    if (avi >= avi_last && AvFILL(av) - avi > 1) {
+			PerlIO_printf(logfp, " ... %ld others skipped", AvFILL(av) - avi);
+			break;
+		    }
+		}
 		PerlIO_printf(logfp, " ]");
 	    }
 	    else {
@@ -2595,15 +2698,18 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
 
-    if (   !keep_error				/* so would be a new error	*/
-	&& SvTRUE(DBIc_ERR(imp_xxh))		/* and an error exists		*/
-	&& call_depth <= 1			/* skip nested (internal) calls	*/
-	&& DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError)
-	/* check that we're not nested inside a call to our parent */
+    if (   !keep_error			/* is a new err/warn/info		*/
+	&& call_depth <= 1		/* skip nested (internal) calls		*/
+	&& (
+		   /* is an error and has RaiseError|PrintError|HandleError set	*/
+	   (SvTRUE(err_sv) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
+		   /* is a warn (not info) and has PrintError set		*/
+	|| (  SvOK(err_sv) && SvCUR(err_sv) && DBIc_has(imp_xxh, DBIcf_PrintError))
+	)
+		   /* check that we're not nested inside a call to our parent	*/
 	&& (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1)
     ) {
 	SV *msg;
-	SV **hook_svp = 0;
 	SV **statement_svp = NULL;
 	char *err_meth_name = meth_name;
 	char intro[200];
@@ -2614,7 +2720,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		err_meth_name = SvPV(*sem_svp,lna);
 	}
 
-	sprintf(intro,"%s %s failed: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name);
+	/* XXX change to vsprintf into sv directly */
+	sprintf(intro,"%s %s %s: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name,
+	    SvTRUE(err_sv) ? "failed" : SvCUR(err_sv) ? "warning" : "information");
 	msg = sv_2mortal(newSVpv(intro,0));
 	sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
 
@@ -2656,9 +2764,10 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    }
 	}
 
-	if (DBIc_has(imp_xxh, DBIcf_HandleError)
-		&& (hook_svp=hv_fetch((HV*)SvRV(h),"HandleError",11,0))
-		&&  hook_svp && SvOK(*hook_svp)
+	if (    SvTRUE(err_sv)
+	    &&  DBIc_has(imp_xxh, DBIcf_HandleError)
+	    && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleError",11,0))
+	    &&  hook_svp && SvOK(*hook_svp)
 	) {
 	    dSP;
 	    PerlIO *logfp = DBILOGFP;
@@ -2690,8 +2799,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    SPAGAIN;
 	    status = (items) ? POPs : &sv_undef;
 	    PUTBACK;
-	    if (!SvTRUE(status)) /* handler says it didn't handle it, so... */
-		hook_svp = 0;  /* pretend we didn't have a handler...     */
 	    if (debug)
 		PerlIO_printf(logfp,"    <- HandleError= %s%s%s%s\n",
 		    neatsvpv(status,0),
@@ -2699,6 +2806,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    (!outitems ? "" : neatsvpv(result,0)),
 		    (!outitems ? "" : ")")
 		);
+	    if (!SvTRUE(status)) /* handler says it didn't handle it, so... */
+		hook_svp = 0;  /* pretend we didn't have a handler...     */
 	}
 
 	if (profile_t1) { /* see also dbi_profile() call a few lines below */
@@ -2709,7 +2818,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	if (!hook_svp) {
 	    if (DBIc_has(imp_xxh, DBIcf_PrintError))
 		warn("%s", SvPV(msg,lna));
-	    if (DBIc_has(imp_xxh, DBIcf_RaiseError))
+	    if (DBIc_has(imp_xxh, DBIcf_RaiseError) && SvTRUE(err_sv))
 		croak("%s", SvPV(msg,lna));
 	}
     }
@@ -2985,7 +3094,7 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
                    if (pln != idx) {
 			char buf[99];
 			sprintf(buf, "preparse found placeholder :%d out of sequence, expected :%d", pln, idx);
-			set_err(dbh, imp_xxh, 1, buf, 0);
+			set_err_char(dbh, imp_xxh, "1", buf, 0, "preparse");
 			return &sv_undef;
                    }
 		   while(isDIGIT(*src)) src++;
@@ -3016,7 +3125,7 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
 	if (laststyle && style != laststyle) {
 	    char buf[99];
 	    sprintf(buf, "preparse found mixed placeholder styles (%s / %s)", style, laststyle);
-	    set_err(dbh, imp_xxh, 1, buf, 0);
+	    set_err_char(dbh, imp_xxh, "1", buf, 0, "preparse");
             return &sv_undef;
         }
 	laststyle = style;
@@ -3027,19 +3136,19 @@ preparse(SV *dbh, char *statement, IV ps_return, IV ps_accept, void *foo)
     switch (in_quote)
     {
     case '\'':
-	    set_err(dbh, imp_xxh, 1, "preparse found unterminated single-quoted string", 0);
+	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated single-quoted string", 0, "preparse");
 	    break;
     case '\"':
-	    set_err(dbh, imp_xxh, 1, "preparse found unterminated double-quoted string", 0);
+	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated double-quoted string", 0, "preparse");
 	    break;
     }
     switch (in_comment)
     {
     case DBIpp_L_BRACE:
-	    set_err(dbh, imp_xxh, 1, "preparse found unterminated bracketed {...} comment", 0);
+	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated bracketed {...} comment", 0, "preparse");
 	    break;
     case '/':
-	    set_err(dbh, imp_xxh, 1, "preparse found unterminated bracketed C-style comment", 0);
+	    set_err_char(dbh, imp_xxh, "1", "preparse found unterminated bracketed C-style comment", 0, "preparse");
 	    break;
     }
 
@@ -3490,7 +3599,7 @@ take_imp_data(h)
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
 	clear_cached_kids(h, imp_xxh, "take_imp_data", DBIc_DEBUGIV(imp_xxh));
     if (DBIc_KIDS(imp_xxh)) {	/* safety check, may be relaxed later to DBIc_ACTIVE_KIDS */
-	set_err(h, imp_xxh, 1, "Can't take_imp_data from handle while it still has kids", 0);
+	set_err_char(h, imp_xxh, "1", "Can't take_imp_data from handle while it still has kids", 0, "take_imp_data");
 	XSRETURN(0);
     }
     dbih_getcom2(h, &mg);	/* get the MAGIC so we can change it	*/
@@ -3815,41 +3924,38 @@ errstr(h)
 
 
 void
-set_err(h, errval, errstr=&sv_no, state=&sv_undef, method=&sv_undef, result=Nullsv)
+set_err(h, err, errstr=&sv_no, state=&sv_undef, method=&sv_undef, result=Nullsv)
     SV *	h
-    SV *	errval
+    SV *	err
     SV *	errstr
     SV *	state
     SV *	method
     SV *	result
-    CODE:
+    PPCODE:
     {
     D_imp_xxh(h);
-    STRLEN lna;
     SV **sem_svp;
-    sv_setsv(DBIc_ERR(imp_xxh),    errval);
-    if (errstr==&sv_no || !SvOK(errstr))
-	errstr = errval;
-    sv_setsv(DBIc_ERRSTR(imp_xxh), errstr);
-    if (SvTRUE(state)) {
-	STRLEN len;
-	if (SvPV(state, len) && len != 5)
-	    croak("set_err: state must be 5 character string");
-	sv_setsv(DBIc_STATE(imp_xxh), state);
+
+    if (DBIc_has(imp_xxh, DBIcf_HandleSetError) && SvREADONLY(method))
+	method = sv_mortalcopy(method); /* HandleSetError may want to change it */
+
+    if (!set_err_sv(h, imp_xxh, err, errstr, state, method)) {
+	/* set_err was canceled by HandleSetError,		*/
+	/* don't set "dbi_set_err_method", return an empty list	*/
     }
     else {
-	(void)SvOK_off(DBIc_STATE(imp_xxh));
+	/* store provided method name so handler code can find it */
+	sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, 1);
+	if (SvOK(method)) {
+	    sv_setpv(*sem_svp, SvPV_nolen(method));
+	}
+	else
+	    (void)SvOK_off(*sem_svp);
+	EXTEND(SP, 1);
+	PUSHs( result ? result : &sv_undef );
     }
-    /* store provided method name so handler code can find it */
-    sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, 1);
-    if (SvOK(method))
-	sv_setpv(*sem_svp, SvPV(method,lna));
-    else
-	(void)SvOK_off(*sem_svp);
-
     /* We don't check RaiseError and call die here because that must be	*/
-    /* done by returning theough dispatch and letting the DBI handle it	*/
-    ST(0) = (result ? result : &sv_undef);
+    /* done by returning through dispatch and letting the DBI handle it	*/
     }
 
 

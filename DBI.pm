@@ -1,4 +1,4 @@
-# $Id: DBI.pm,v 11.42 2004/01/08 14:03:46 timbo Exp $
+# $Id: DBI.pm,v 11.43 2004/02/01 11:16:16 timbo Exp $
 # vim: ts=8:sw=4
 #
 # Copyright (c) 1994-2004  Tim Bunce  Ireland
@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.40"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.41"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -118,8 +118,8 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.40
-(C<$Date: 2004/01/08 14:03:46 $>).
+This is the DBI specification that corresponds to the DBI version 1.41
+(C<$Date: 2004/02/01 11:16:16 $>).
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -150,7 +150,7 @@ L<"http://search.cpan.org/search?query=DBI&mode=all">.
 
 package DBI;
 
-my $Revision = substr(q$Revision: 11.42 $, 10);
+my $Revision = substr(q$Revision: 11.43 $, 10);
 
 use Carp();
 use DynaLoader ();
@@ -532,7 +532,7 @@ sub connect {
 
     # Set $driver. Old style driver, if specified, overrides new dsn style.
     $driver = $old_driver || $1 || $ENV{DBI_DRIVER}
-	or Carp::croak("Can't connect(@_), no database driver specified "
+	or Carp::croak("Can't connect to data source $dsn, no database driver specified "
 		."and DBI_DSN env var not set");
 
     if ($ENV{DBI_AUTOPROXY} && $driver ne 'Proxy' && $driver ne 'Sponge' && $driver ne 'Switch') {
@@ -594,6 +594,7 @@ sub connect {
 	    $errstr = '(no error string)' if !defined $errstr;
 	    my $msg = "$class connect('$dsn','$user',...) failed: $errstr";
 	    DBI->trace_msg("       $msg\n");
+	    # XXX HandleWarn
 	    unless ($attr->{HandleError} && $attr->{HandleError}->($msg, $drh, $dbh)) {
 		Carp::croak($msg) if $attr->{RaiseError};
 		Carp::carp ($msg) if $attr->{PrintError};
@@ -633,7 +634,7 @@ sub connect {
 		$dbh->{$a} = delete $attr->{$a};
 	    }
 	    foreach $a (keys %$attr) {
-		$dbh->{$a} = $attr->{$a};
+		eval { $dbh->{$a} = $attr->{$a} } or $@ && warn $@;
 	    }
 	}
 
@@ -1719,7 +1720,8 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub execute_for_fetch {
 	my ($sth, $fetch_tuple_sub, $tuple_status) = @_;
-	@$tuple_status = () if $tuple_status; # reset the status array
+	# start with empty status array
+	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
 
 	my ($err_count, %errstr_cache);
 	while ( my $tuple = &$fetch_tuple_sub() ) {
@@ -2214,7 +2216,7 @@ Returns a database handle object if the connection succeeds. Use
 C<$dbh-E<gt>disconnect> to terminate the connection.
 
 If the connect fails (see below), it returns C<undef> and sets both C<$DBI::err>
-and C<$DBI::errstr>. (It does I<not> set C<$!>, etc.) You should generally
+and C<$DBI::errstr>. (It does I<not> explicitly set C<$!>.) You should generally
 test the return status of C<connect> and C<print $DBI::errstr> if it has failed.
 
 Multiple simultaneous connections to multiple databases through multiple
@@ -2593,30 +2595,47 @@ method called. The code is typically an integer but you should not
 assume that.
 
 The DBI resets $h->err to undef before most DBI method calls, so the
-value only has a short lifespan. Also, most drivers share the same
-error variables across all their handles, so calling a method on
-one handle will typically reset the error on all the other handles
-that are children of that driver.
+value only has a short lifespan. Also, for most drivers, the statement
+handles share the same error variable as the parent database handle,
+so calling a method on one handle may reset the error on the
+related handles.
 
 If you need to test for individual errors I<and> have your program be
 portable to different database engines, then you'll need to determine
 what the corresponding error codes are for all those engines and test for
 all of them.
 
+A driver may return C<0> from err() to indicate a warning condition
+after a method call. Similarly, a driver may return an empty string
+to indicate a 'success with information' condition. In both these
+cases the value is false but not undef. The errstr() and state()
+methods may be used to retrieve extra information.
+
+See L</set_err> for more information.
+
 =item C<errstr>
 
   $str = $h->errstr;
 
-Returns the native database engine error message from the last driver
+Returns the native database engine error message from the last DBI
 method called. This has the same lifespan issues as the L</err> method
 described above.
+
+The returned string may contain multiple messages separated by
+newline characters.
+
+The errstr() method should not be used to test for errors, use err()
+for that, because drivers may return 'success with information' or
+warning messages via errstr() for methods that have not 'failed'.
+
+See L</set_err> for more information.
 
 =item C<state>
 
   $str = $h->state;
 
-Returns an error code in the standard SQLSTATE five character format.
-Note that the specific success code C<00000> is translated to 'C<>'
+Returns a state code in the standard SQLSTATE five character format.
+Note that the specific success code C<00000> is translated to any empty string
 (false). If the driver does not support SQLSTATE (and most don't),
 then state will return C<S1000> (General Error) for all errors.
 
@@ -2624,24 +2643,60 @@ The driver is free to return any value via C<state>, e.g., warning
 codes, even if it has not declared an error by returning a true value
 via the L</err> method described above.
 
+The state() method should not be used to test for errors, use err()
+for that, because drivers may return a 'success with information' or
+warning state code via errstr() for methods that have not 'failed'.
+
 =item C<set_err>
 
   $rv = $h->set_err($err, $errstr);
+  $rv = $h->set_err($err, $errstr, $state);
   $rv = $h->set_err($err, $errstr, $state, $method);
   $rv = $h->set_err($err, $errstr, $state, $method, $rv);
 
 Set the C<err>, C<errstr>, and C<state> values for the handle.
-This will trigger the normal DBI error handling mechanisms,
-such as C<RaiseError> and C<HandleError>, if they are enabled.
 This method is typically only used by DBI drivers and DBI subclasses.
 
-The $method parameter provides an alternate method name, instead
-of the fairly unhelpful 'C<set_err>', for the
-C<RaiseError>/C<PrintError> error string.
+If the L</HandleSetError> attribute holds a reference to a subroutine
+it is called first. The subroutine can alter the $err, $errstr, $state,
+and $method values. See L</HandleSetError> for full details.
+If the subroutine returns a true value then the handle C<err>,
+C<errstr>, and C<state> values are not altered and set_err() returns
+an empty list (it normally returns $rv which defaults to undef, see below).
+
+Setting C<err> to a I<true> value indicates an error and will trigger
+the normal DBI error handling mechanisms, such as C<RaiseError> and
+C<HandleError>, if they are enabled, when execution returns from
+the DBI back to the application.
+
+Setting C<err> to C<""> indicates an 'information' state, and setting
+it to C<"0"> indicates a 'warning' state.
+
+The $method parameter provides an alternate method name for the
+C<RaiseError>/C<PrintError> error string instead of the fairly
+unhelpful 'C<set_err>'.
 
 The C<set_err> method normally returns undef.  The $rv parameter
-provides an alternate return value. The C<HandleError> subroutine
-can access and alter this value.
+provides an alternate return value.
+
+Some special rules apply if the C<err> or C<errstr>
+values for the handle are already set...
+
+If C<errstr> is true then: "C< [err was %s now %s]>" is appended if
+$err is true and C<err> is already true; "C< [state was %s now %s]>"
+is appended if $state is true and C<state> is already true; then
+"C<\n>" and the new $errstr are appended. Obviously the C<%s>'s
+above are replaced by the corresponding values.
+
+The handle C<err> value is set to $err if: $err is true; or handle
+C<err> value is undef; or $err is defined and the length is greater
+than the handle C<err> length. The effect is that an 'information'
+state only overides undef; a 'warning' overrides undef or 'information',
+and an 'error' state overrides anything.
+
+The handle C<state> value is set to $state if $state is true and
+the handle C<err> value was set (by the rules above).
+
 
 =item C<trace>
 
@@ -2917,7 +2972,7 @@ and altering the return value of the failed method. For example:
   $h->{HandleError} = sub {
     return 0 unless $_[0] =~ /^\S+ fetchrow_arrayref failed:/;
     return 0 unless $_[1]->err == 1234; # the error to 'hide'
-    $h->set_err(0,"");	# turn off the error
+    $h->set_err(undef,undef);	# turn off the error
     $_[2] = [ ... ];	# supply alternative return value
     return 1;
   };
@@ -2926,6 +2981,40 @@ This only works for methods which return a single value and is hard
 to make reliable (avoiding infinite loops, for example) and so isn't
 recommended for general use!  If you find a I<good> use for it then
 please let me know.
+
+=item C<HandleSetError> (code ref, inherited)
+
+The C<HandleSetError> attribute can be used to intercept
+the setting of handle C<err>, C<errstr>, and C<state> values.
+If set to a reference to a subroutine then that subroutine is called
+whenever set_err() is called, typically by the driver or a subclass.
+
+The subroutine is called with five arguments, the first five that
+were passed to set_err(): the handle, the C<err>, C<errstr>, and
+C<state> values being set, and the method name. These can be altered
+by changing the values in the @_ array. The return value affects
+set_err() behaviour, see L</set_err> for details.
+
+It is possible to 'stack' multiple HandleSetError handlers by using
+closures. See L</HandleError> for an example.
+
+The C<HandleSetError> and C<HandleError> subroutines differ in subtle
+but significant ways. HandleError is only invoked at the point where
+the DBI is about to return to the application with C<err> set true.
+It's not invoked by the failure of a method that's been caled by
+another DBI method.  HandleSetError, on the other hand, is called
+whenever set_err() is called with a defined C<err> value, even if false.
+So it's not just for errors, despite the name, but also warn and info states.
+The set_err method, and thus HandleSetError, may be called multiple
+times within a method and is usually invoked from deep within driver code.
+
+In theory a driver can use the return value from HandleSetError via
+set_err() to decide whether to continue or not. If set_err() returns
+an empty list, indicating that the HandleSetError code has 'handled'
+the 'error', the driver could then continue instead of failing (if
+that's a reasonable thing to do).  This isn't excepted to be
+common and any such cases should be clearly marked in the driver
+documentation.
 
 
 =item C<ShowErrorStatement> (boolean, inherited)
@@ -2973,11 +3062,12 @@ does not support it must arrange to return C<undef> as the attribute value.
 
 =item C<LongReadLen> (unsigned integer, inherited)
 
-The C<LongReadLen> attribute may be used to control the maximum length of long fields
-("blob", "memo", etc.) which the driver will read from the
-database automatically when it fetches each row of data.  The
-C<LongReadLen> attribute only relates to fetching and reading long values; it
-is not involved in inserting or updating them.
+The C<LongReadLen> attribute may be used to control the maximum
+length of 'long' fields ("blob", "memo", etc.) which the driver will
+read from the database automatically when it fetches each row of data.
+
+The C<LongReadLen> attribute only relates to fetching and reading
+long values; it is not involved in inserting or updating them.
 
 A value of 0 means not to automatically fetch any long data. (C<fetch>
 should return C<undef> for long fields when C<LongReadLen> is 0.)
@@ -2987,23 +3077,36 @@ Applications fetching long fields should set this value to slightly
 larger than the longest long field value to be fetched.
 
 Some databases return some long types encoded as pairs of hex digits.
-For these types, C<LongReadLen> relates to the underlying data length and not the
-doubled-up length of the encoded string.
+For these types, C<LongReadLen> relates to the underlying data
+length and not the doubled-up length of the encoded string.
 
 Changing the value of C<LongReadLen> for a statement handle after it
 has been C<prepare>'d will typically have no effect, so it's common to
 set C<LongReadLen> on the C<$dbh> before calling C<prepare>.
 
-Note that the value used here has a direct effect on the memory used
-by the application, so don't be too generous.
+For most drivers the value used here has a direct effect on the
+memory used by the statement handle while it's active, so don't be
+too generous. If you can't be sure what value to use you could
+execute an extra select statement to determine the longest value.
+For example:
+
+  $dbh->{LongReadLen} = $dbh->selectrow_array{qq{
+      SELECT MAX(long_column_name) FROM table WHERE ...
+  });
+  $sth = $dbh->prepare(qq{
+      SELECT long_column_name, ... FROM table WHERE ...
+  });
+
+You may need to take etra care if the table can be modified between
+the first select and the second being executed.
 
 See L</LongTruncOk> for more information on truncation behaviour.
 
 =item C<LongTruncOk> (boolean, inherited)
 
-The C<LongTruncOk> attribute may be used to control the effect of fetching a long
-field value which has been truncated (typically because it's longer
-than the value of the C<LongReadLen> attribute).
+The C<LongTruncOk> attribute may be used to control the effect of
+fetching a long field value which has been truncated (typically
+because it's longer than the value of the C<LongReadLen> attribute).
 
 By default, C<LongTruncOk> is false and so fetching a long value that
 needs to be truncated will cause the fetch to fail.
@@ -3625,19 +3728,22 @@ unknown or unimplemented information types. For example:
 See L</"Standards Reference Information"> for more detailed information
 about the information types and their meanings and possible return values.
 
-The DBI curently doesn't provide a name to number mapping for the
-information type codes or the results. Applications are expected to use
-the integer values directly, with the name in a comment, or define
-their own named values using something like the L<constant> pragma.
+The DBI::Const::GetInfoType module exports a %GetInfoType hash that
+can be used to map info type names to numbers. For example:
+
+  $database_version = $dbh->get_info( $GetInfoType{SQL_DBMS_VER} );
+
+The names are a merging of the ANSI and ODBC standards (which differ
+in some cases). See L<DBI::Const::GetInfoType> for more details.
 
 Because some DBI methods make use of get_info(), drivers are strongly
 encouraged to support I<at least> the following very minimal set
 of information types to ensure the DBI itself works properly:
 
  Type  Name                        Example A     Example B
- ----  --------------------------  ------------  ------------
+ ----  --------------------------  ------------  ----------------
    17  SQL_DBMS_NAME               'ACCESS'      'Oracle'
-   18  SQL_DBMS_VER                '03.50.0000'  '08.01.0721'
+   18  SQL_DBMS_VER                '03.50.0000'  '08.01.0721 ...'
    29  SQL_IDENTIFIER_QUOTE_CHAR   '`'           '"'
    41  SQL_CATALOG_NAME_SEPARATOR  '.'           '@'
   114  SQL_CATALOG_LOCATION        1             2
@@ -4809,8 +4915,9 @@ The execute_for_fetch() method calls $fetch_tuple_sub, without any
 parameters, until it returns a false value. Each tuple returned is
 used to provide bind values for an $sth->execute(@$tuple) call.
 
-The number of tuples executed is returned, regardless of the success
-or failure of those executions. Use tuple_status to check.
+The number of tuples executed is returned I<only if> there were no errors.
+If there were any errors then C<undef> is returned and the @tuple_status
+array can be used to discover which tuples failed and with what errors.
 
 If \@tuple_status is passed then the execute_for_fetch method uses
 it to return status information. The tuple_status array holds one
@@ -4824,7 +4931,8 @@ to call $sth->execute(@$tuple_array_ref) the exact timing may vary.
 Drivers are free to accumulate sets of tuples to pass to the
 database server in bulk group operations for more efficient execution.
 However, the $fetch_tuple_sub is specifically allowed to return
-the same array reference each time.
+the same array reference each time (which is what fetchrow_arrayref()
+usually does).
 
 For example:
 
@@ -5173,7 +5281,7 @@ of these attributes are read-only.
 Changes to these statement handle attributes do not affect any other
 existing or future statement handles.
 
-Attempting to set or get the value of an unknown attribute is fatal,
+Attempting to set or get the value of an unknown attribute is I<fatal>,
 except for private driver specific attributes (which all have names
 starting with a lowercase letter).
 
@@ -5181,8 +5289,13 @@ Example:
 
   ... = $h->{NUM_OF_FIELDS};	# get/read
 
-Note that some drivers cannot provide valid values for some or all of
-these attributes until after C<$sth-E<gt>execute> has been called.
+Some drivers cannot provide valid values for some or all of these
+attributes until after C<$sth-E<gt>execute> has been successfully
+called. Typically the attribute will be C<undef> in these situations.
+
+Some attributes, like NAME, are not appropriate to some types of
+statement, like SELECT. Typically the attribute will be C<undef>
+in these situations.
 
 See also L</finish> to learn more about the effect it
 may have on some attributes.
@@ -5510,10 +5623,13 @@ databases can't usually know in advance the length of the longest long
 that will be returned from a C<SELECT> statement (unlike other data
 types), some special handling is required.
 
-In this situation, the value of the C<$h-E<gt>{LongReadLen}> attribute is used
-to determine how much buffer space to allocate when fetching such
-fields.  The C<$h-E<gt>{LongTruncOk}> attribute is used to determine how to
-behave if a fetched value can't fit into the buffer.
+In this situation, the value of the C<$h-E<gt>{LongReadLen}>
+attribute is used to determine how much buffer space to allocate
+when fetching such fields.  The C<$h-E<gt>{LongTruncOk}> attribute
+is used to determine how to behave if a fetched value can't fit
+into the buffer.
+
+See the description of L</LongReadLen> for more information.
 
 When trying to insert long or binary values, placeholders should be used
 since there are often limits on the maximum size of an C<INSERT>
@@ -5583,7 +5699,6 @@ quotes that may be used in the SQL statement. Use the double-quote like
 C<qq{...}> operator if you want to interpolate variables into the string.
 See L<perlop/"Quote and Quote-like Operators"> for more details.
 
-
 =head2 Threads and Thread Safety
 
 Perl 5.7 and later support a new threading model called iThreads.
@@ -5616,7 +5731,8 @@ one thread to enter the code, even if I<not> at the same time,
 can cause problems. You have been warned.
 
 Using DBI with perl threads is not yet recommended for production
-environments.
+environments. For more information see
+L<http://www.perlmonks.org/index.pl?node_id=288022>
 
 Note: There is a bug in perl 5.8.2 when configured with threads
 and debugging enabled (bug #24463) which causes a DBI test to fail.

@@ -1,0 +1,129 @@
+From Alan.Burlison@uk.sun.com  Tue Sep  1 15:59:25 1998
+Return-Path: <Alan.Burlison@uk.sun.com>
+Received: from oink by toad.ig.co.uk (SMI-8.6/SMI-SVR4)
+	id PAA22488; Tue, 1 Sep 1998 15:59:25 +0100
+Received: from punt-21.mail.demon.net by oink with SMTP (PP) id <06585-2@oink>;
+          Tue, 1 Sep 1998 15:59:10 +0100
+Received: from punt-2.mail.demon.net by mailstore for Tim.Bunce@ig.co.uk 
+          id 904661840:20:01389:18; Tue, 01 Sep 98 14:57:20 GMT
+Received: from mercury.sun.com ([192.9.25.1]) by punt-2.mail.demon.net 
+          id aa2126473; 1 Sep 98 14:56 GMT
+Received: from UK.Sun.COM ([129.156.85.58]) 
+          by mercury.Sun.COM (SMI-8.6/mail.byaddr) with SMTP id HAA04025;
+          Tue, 1 Sep 1998 07:55:48 -0700
+Received: from sale-wts by UK.Sun.COM (SMI-8.6/SMI-SVR4-sd.fkk205) id PAA10080;
+          Tue, 1 Sep 1998 15:55:46 +0100
+Received: from fubar by sale-wts (SMI-8.6/SMI-SVR4-se.fkk202) id PAA00631;
+          Tue, 1 Sep 1998 15:55:45 +0100
+Message-Id: <199809011455.PAA00631@sale-wts>
+Date: Tue, 1 Sep 1998 15:54:06 +0100 (BST)
+From: Alan Burlison <Alan.Burlison@UK.Sun.COM>
+Reply-To: Alan Burlison <Alan.Burlison@UK.Sun.COM>
+Subject: Re: Looking for some XS MAGIC examples...
+To: larry@wall.org, Tim.Bunce@ig.co.uk
+Cc: nik@tiuk.ti.com, ilya@math.ohio-state.edu, nick@ni-s.u-net.com,
+        sugalskd@osshe.edu, perl5-porters@perl.org
+MIME-Version: 1.0
+Content-Type: MULTIPART/mixed; BOUNDARY=Swarm_of_Eels_714_000
+X-Mailer: dtmail 1.2.1 CDE Version 1.2.1 SunOS 5.6 sun4u sparc
+Status: RO
+Content-Length: 3504
+Lines: 96
+
+--Swarm_of_Eels_714_000
+Content-Type: TEXT/plain; charset=us-ascii
+Content-MD5: 5P2HlF1KvE3Z7HYkMbTwJA==
+
+Tim,
+
+> > I'm making pleasing progress thanks to all the help I have received - I
+> > have now got a grasp on blessing from an XSUB.  I'm now trying to 
+figure
+> > out how to create a tied hash from within a XSUB.
+> 
+> Hint: follow pp_tie in pp_sys.c.
+> 
+> A doc patch with an example to the appropriate perl*.pod would be nice.
+
+Thanks - got it sussed.  Hope this will suffice as a doc patch.
+
+Alan Burlison
+
+--Swarm_of_Eels_714_000
+Content-Type: TEXT/plain; name="perlguts.patch"; charset=us-ascii; x-unix-mode=0644
+Content-Description: perlguts.patch
+Content-MD5: Szv+VXYcGKk63sRK0CjTCg==
+
+*** perlguts.pod.orig	Tue Sep  1 14:46:49 1998
+--- perlguts.pod	Tue Sep  1 15:48:40 1998
+***************
+*** 861,868 ****
+  
+  When the SV is read from or written to, the C<uf_val> or C<uf_set>
+  function will be called with C<uf_index> as the first arg and a
+! pointer to the SV as the second.
+  
+  Note that because multiple extensions may be using '~' or 'U' magic,
+  it is important for extensions to take extra care to avoid conflict.
+  Typically only using the magic on objects blessed into the same class
+--- 861,881 ----
+  
+  When the SV is read from or written to, the C<uf_val> or C<uf_set>
+  function will be called with C<uf_index> as the first arg and a
+! pointer to the SV as the second.  A simple example of how to add 'U'
+! magic is shown below.  Note that the ufuncs structure is copied by
+! sv_magic, so you can safely allocate it on the stack.
+  
++     void
++     Umagic(sv)
++         SV *sv;
++     PREINIT:
++         struct ufuncs uf;
++     CODE:
++         uf.uf_val   = &my_get_fn;
++         uf.uf_set   = &my_set_fn;
++         uf.uf_index = 0;
++         sv_magic(sv, 0, 'U', (char*)&uf, sizeof(uf));
++ 
+  Note that because multiple extensions may be using '~' or 'U' magic,
+  it is important for extensions to take extra care to avoid conflict.
+  Typically only using the magic on objects blessed into the same class
+***************
+*** 907,912 ****
+--- 920,952 ----
+  you find yourself actually applying such information in this section, be
+  aware that the behavior may change in the future, umm, without warning.
+  
++ The perl tie function associates a variable with an object that implements
++ the various GET, SET etc methods.  To perform the equivalent of the perl
++ tie function from an XSUB, you must mimic this behaviour.  The code below
++ carries out the necessary steps - firstly it creates a new hash, and then
++ creates a second hash which it blesses into the class which will implement
++ the tie methods. Lastly it ties the two hashes together, and returns a
++ reference to the new tied hash.  Note that the code below does NOT call the
++ TIEHASH method in the MyTie class -
++ see L<Calling Perl Routines from within C Programs> for details on how
++ to do this.
++ 
++     SV*
++     mytie()
++     PREINIT:
++         HV *hash;
++         HV *stash;
++         SV *tie;
++     CODE:
++         hash = newHV();
++         tie = newRV_noinc((SV*)newHV());
++         stash = gv_stashpv("MyTie", TRUE);
++         sv_bless(tie, stash);
++         hv_magic(hash, tie, 'P');
++         RETVAL = newRV_noinc(hash);
++     OUTPUT:
++         RETVAL
++ 
+  The C<av_store> function, when given a tied array argument, merely
+  copies the magic of the array onto the value to be "stored", using
+  C<mg_copy>.  It may also return NULL, indicating that the value did not
+
+--Swarm_of_Eels_714_000--
+

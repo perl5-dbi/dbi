@@ -15,6 +15,7 @@ use strict;
 use DBI;
 use DBI::Profile;
 use File::Spec;
+use Config;
 
 BEGIN {
     if ($DBI::PurePerl) {
@@ -92,6 +93,11 @@ ok((grep { defined($_)                } @$data) == 7);
 ok((grep { DBI::looks_like_number($_) } @$data) == 7);
 ok((grep { $_ >= 0                    } @$data) == 7) or warn "profile data: [@$data]\n";
 my ($count, $total, $first, $shortest, $longest, $time1, $time2) = @$data;
+if ($shortest < 0) {
+    warn "Time went backwards at some point during the test on this $Config{archname} system!\n";
+    warn "Perhaps you have time sync software (like NTP) that adjusted the clock\n";
+    warn "backwards by more than $shortest seconds during the test.\n";
+}
 ok($count > 3);
 ok($total > $first);
 ok($total > $longest) or warn "total $total > longest $longest: failed\n";

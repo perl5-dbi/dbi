@@ -3,7 +3,7 @@
 use strict;
 use Test;
 
-BEGIN { plan tests => 34 }
+BEGIN { plan tests => 39 }
 
 use Data::Dumper;
 $Data::Dumper::Indent = 0;
@@ -68,6 +68,25 @@ ok( $dumped, "[[1,42,undef,'a'],[2,42,undef,'b'],[3,42,undef,'c']]");
 $dumped = Dumper($tuple_status);
 ok( $dumped, "[1,1,1]");
 
+# --- with no values for bind params, should execute zero times
+
+@$rows = ();
+ok( $sth->execute_array( { ArrayTupleStatus => $tuple_status },
+        [], [], [], [],
+    ),
+    0);
+ok( @$rows, 0 );
+ok( @$tuple_status, 0 );
+
+# --- catch 'undefined value' bug with zero bind values
+
+@$rows = ();
+my $sth_other = $dbh->prepare("insert", {
+	rows => $rows,		# where to 'insert' (push) the rows
+	NUM_OF_PARAMS => 1,
+});
+ok( $sth_other->execute_array( {}, [] ), 0 ); # no ArrayTupleStatus
+ok( @$rows, 0);
 
 # --- ArrayTupleFetch code-ref tests ---
 

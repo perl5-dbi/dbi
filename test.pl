@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 
-# $Id: test.pl,v 11.6 2003/02/26 17:56:01 timbo Exp $
+# $Id: test.pl,v 11.7 2004/02/01 11:16:16 timbo Exp $
 #
 # Copyright (c) 1994-1998 Tim Bunce
 #
@@ -14,7 +14,7 @@
 
 BEGIN {
     print "$0 @ARGV\n";
-    print q{DBI test application $Revision: 11.6 $}."\n";
+    print q{DBI test application $Revision: 11.7 $}."\n";
     $| = 1;
 }
 
@@ -102,8 +102,8 @@ else {
     my $td = Benchmark::timediff(Benchmark->new, $t1);
     my $tds= Benchmark::timestr($td);
     my $dur = $td->cpu_a || (1/$count); # fudge if cpu_a==0
-    printf "$count NullP statement handles cycled in %.1f cpu+sys seconds (%d per sec)\n\n",
-	    $dur, $count / $dur;
+    printf "%d NullP sth/sec on this perl $] %s (%d in %.1f cpu+sys secs)\n\n",
+	    $count/$dur, $Config{archname}, $count, $dur;
 
   if (0) {
     $null_dbh = DBI->connect('dbi:mysql:VC_log','','',{RaiseError=>1});

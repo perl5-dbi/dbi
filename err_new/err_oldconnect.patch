@@ -1,0 +1,225 @@
+diff -u -r DBI-1.38/Changes DBI-1.39/Changes
+--- DBI-1.38/DBI.pm	Fri Aug 22 22:25:36 2003
++++ DBI-1.39/DBI.pm	Tue Oct 21 16:19:28 2003
+@@ -403,7 +403,7 @@
+ 	selectall_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
+ 	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'] },
+ 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
+-	ping       	=> { U =>[1,1], O=>0x0404 },
++	ping       	=> { U =>[1,2,'$skip_time'], O=>0x0404 },
+ 	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800 },
+ 	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
+ 	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
+@@ -485,82 +485,80 @@
+     DBI->trace_msg(sprintf "CONE DBI for new thread %s\n",
+ 	$DBI::PurePerl ? "" : sprintf("(dbis %x -> %x)",$olddbis, $DBI::_dbistate));
+ }
+-	
++
++
++sub parse_dsn {
++    my ($class, $dsn) = @_;
++    $dsn =~ s/^(dbi):(\w*?)(?:\((.*?)\))?://i or return;
++    my ($scheme, $driver, $attr, $attr_hash) = (lc($1), $2, $3);
++    $driver ||= $ENV{DBI_DRIVER} || '';
++    $attr_hash = { split /\s*=>?\s*|\s*,\s*/, $attr, -1 } if $attr;
++    return ($scheme, $driver, $attr, $attr_hash, $dsn);
++}
++
+ 
+ # --- The DBI->connect Front Door methods
+ 
+ sub connect_cached {
+     # XXX we expect Apache::DBI users to still call connect()
+     my ($class, $dsn, $user, $pass, $attr) = @_;
+-    ($attr ||= {})->{dbi_connect_method} = 'connect_cached';
++    # XXX modifies callers data
++    ($attr ||= {})->{dbi_connect_method} ||= 'connect_cached';
+     return $class->connect($dsn, $user, $pass, $attr);
+ }
+ 
+ sub connect {
+     my $class = shift;
+-    my ($dsn, $user, $pass, $attr, $old_driver) = my @orig_args = @_;
+-    my $driver;
+-
+-    if ($attr and !ref($attr)) { # switch $old_driver<->$attr if called in old style
+-	Carp::carp("DBI->connect using 'old-style' syntax is deprecated and will be an error in future versions");
+-        ($old_driver, $attr) = ($attr, $old_driver);
+-    }
++    my ($dsn, $user, $pass, $attr) = @_;
+ 
+-    my $connect_meth = $attr->{dbi_connect_method};
+-    $connect_meth ||= $DBI::connect_via;	# fallback to default
+-
+-    $dsn ||= $ENV{DBI_DSN} || $ENV{DBI_DBNAME} || '' unless $old_driver;
++    $dsn ||= $ENV{DBI_DSN};
++    my $connect_meth = $attr->{dbi_connect_method} || $DBI::connect_via;
+ 
+     if ($DBI::dbi_debug) {
++	my @args = @_;
++	$args[0] = $dsn;
++	$args[2] = '****'; # hide password
+ 	local $^W = 0;
+-	pop @_ if $connect_meth ne 'connect';
+-	my @args = @_; $args[2] = '****'; # hide password
+ 	DBI->trace_msg("    -> $class->$connect_meth(".join(", ",@args).")\n");
+     }
+     Carp::croak('Usage: $class->connect([$dsn [,$user [,$passwd [,\%attr]]]])')
+-	if (ref $old_driver or ($attr and not ref $attr) or ref $pass);
++	if (($attr and not ref $attr) or ref $pass or ref $user);
+ 
+-    # extract dbi:driver prefix from $dsn into $1
+-    $dsn =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i
+-			or '' =~ /()/; # ensure $1 etc are empty if match fails
+-    my $driver_attrib_spec = $2 || '';
+-
+-    # Set $driver. Old style driver, if specified, overrides new dsn style.
+-    $driver = $old_driver || $1 || $ENV{DBI_DRIVER}
+-	or Carp::croak("Can't connect(@_), no database driver specified "
+-		."and DBI_DSN env var not set");
++    my (undef, $driver, $driver_attrib_spec, $driver_attrib_hash, $driver_dsn)
++	    = $class->parse_dsn($dsn)
++	or Carp::croak("Can't parse $class DSN '$dsn'");
++    $driver or Carp::croak("Can't connect using $dsn, no database driver specified");
+ 
+     if ($ENV{DBI_AUTOPROXY} && $driver ne 'Proxy' && $driver ne 'Sponge' && $driver ne 'Switch') {
+-	my $proxy = 'Proxy';
+-	if ($ENV{DBI_AUTOPROXY} =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i) {
+-	    $proxy = $1;
+-	    my $attr_spec = $2 || '';
+-	    $driver_attrib_spec = ($driver_attrib_spec) ? "$driver_attrib_spec,$attr_spec" : $attr_spec;
+-	}
+-	$dsn = "$ENV{DBI_AUTOPROXY};dsn=dbi:$driver:$dsn";
+-	$driver = $proxy;
+-	DBI->trace_msg("       DBI_AUTOPROXY: dbi:$driver($driver_attrib_spec):$dsn\n");
+-    }
+-
+-    my %attributes;	# take a copy we can delete from
+-    if ($old_driver) {
+-	%attributes = %$attr if $attr;
+-    }
+-    else {		# new-style connect so new default semantics
+-	%attributes = (
+-	    PrintError => 1,
+-	    AutoCommit => 1,
+-	    ref $attr           ? %$attr : (),
+-	    # attributes in DSN take precedence over \%attr connect parameter
+-	    $driver_attrib_spec ? (split /\s*=>?\s*|\s*,\s*/, $driver_attrib_spec, -1) : (),
+-	);
++	my (undef, $proxy_driver, $proxy_attrib_spec, $proxy_attrib_hash, $proxy_dsn)
++	    = $class->parse_dsn($ENV{DBI_AUTOPROXY});
++	if ($proxy_driver) {
++	    $proxy_attrib_spec ||= '';
++	    $driver_attrib_spec = ($driver_attrib_spec)
++		? "$driver_attrib_spec,$proxy_attrib_spec"
++		: $proxy_attrib_spec;
++	    $driver_dsn = "$proxy_dsn;dsn=dbi:$driver:$driver_dsn";
++	    $driver = $proxy_driver;;
++	}
++	else {
++	    $driver_dsn = "$ENV{DBI_AUTOPROXY};dsn=dbi:$driver:$driver_dsn";
++	    $driver = 'Proxy';
++	}
++	DBI->trace_msg("       DBI_AUTOPROXY: dbi:$driver($driver_attrib_spec):$driver_dsn\n");
+     }
++
++    my %attributes = (	# take a lexical copy we (and the driver) can delete from
++	PrintError => 1,
++	AutoCommit => 1,
++	ref $attr ? %$attr : (),
++	# attributes in DSN take precedence over \%attr connect parameter
++	$driver_attrib_spec ? (split /\s*=>?\s*|\s*,\s*/, $driver_attrib_spec, -1) : (),
++    );
+     $attr = \%attributes; # now set $attr to refer to our local copy
+ 
+     my $drh = $DBI::installed_drh{$driver} || $class->install_driver($driver)
+ 	or die "panic: $class->install_driver($driver) failed";
+ 
+-    # attributes in DSN take precedence over \%attr connect parameter
+     $user =        $attr->{Username} if defined $attr->{Username};
+     $pass = delete $attr->{Password} if defined $attr->{Password};
+ 
+@@ -582,12 +580,12 @@
+ 	#warn "connect_closure: ".Data::Dumper::Dumper([\%attributes, $override_attr]);
+ 
+ 	my $dbh;
+-	unless ($dbh = $drh->$connect_meth($dsn, $user, $pass, $attr)) {
++	unless ($dbh = $drh->$connect_meth($driver_dsn, $user, $pass, $attr)) {
+ 	    $user = '' if !defined $user;
+-	    $dsn = '' if !defined $dsn;
++	    $driver_dsn = '' if !defined $driver_dsn;
+ 	    my $errstr = $drh->errstr;
+ 	    $errstr = '(no error string)' if !defined $errstr;
+-	    my $msg = "$class connect('$dsn','$user',...) failed: $errstr";
++	    my $msg = "$class connect('$driver_dsn','$user',...) failed: $errstr";
+ 	    DBI->trace_msg("       $msg\n");
+ 	    unless ($attr->{HandleError} && $attr->{HandleError}->($msg, $drh, $dbh)) {
+ 		Carp::croak($msg) if $attr->{RaiseError};
+@@ -633,7 +631,7 @@
+ 	}
+ 
+ 	# if we've been subclassed then let the subclass know that we're connected
+-	$dbh->connected($dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
++	$dbh->connected($driver_dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
+ 
+ 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
+ 
+@@ -2204,6 +2202,23 @@
+ 
+ =over 4
+ 
++=item C<parse_dsn>
++
++  ($scheme, $driver, $attr, $attr_hash, $driver_dsn) = DBI->parse_dsn($dsn)
++      or die "Can't parse DBI DSN '$dsn'";
++
++Breaks apart a DBI Data Source Name (DSN) and returns the individual
++parts. If $dsn doesn't contain a valid DSN then parse_dsn() returns
++an empty list.
++
++$scheme is the first part of the DSN and is currently always 'dbi'.
++$driver is the driver name, possibly defaulted to $ENV{DBI_DRIVER},
++and may be undefined.  $attr is the optional attribute string, which
++may be undefined.  If $attr is true then $attr_hash is a reference
++to a hash containing the parsed attribute names and values. $driver_dsn
++is the last part of the DBI DSN string.
++
++
+ =item C<connect>
+ 
+   $dbh = DBI->connect($data_source, $username, $password)
+@@ -2321,20 +2336,6 @@
+ cursors (typically read-only) and another for your short update
+ transactions.
+ 
+-For compatibility with old DBI scripts, the driver can be specified by
+-passing its name as the fourth argument to C<connect> (instead of C<\%attr>):
+-
+-  $dbh = DBI->connect($data_source, $user, $pass, $driver);
+-
+-In this "old-style" form of C<connect>, the C<$data_source> should not start
+-with "C<dbi:driver_name:>". (If it does, the embedded driver_name
+-will be ignored). Also note that in this older form of C<connect>,
+-the C<$dbh-E<gt>{AutoCommit}> attribute is I<undefined>, the
+-C<$dbh-E<gt>{PrintError}> attribute is off, and the old C<DBI_DBNAME>
+-environment variable is
+-checked if C<DBI_DSN> is not defined. Beware that this "old-style"
+-C<connect> will be withdrawn in a future version of DBI.
+-
+ =item C<connect_cached>
+ 
+   $dbh = DBI->connect_cached($data_source, $username, $password)
+@@ -5818,12 +5821,6 @@
+ an empty string) as the password argument.
+ Be extra wary of the security implications of using this.
+ 
+-=head2 DBI_DBNAME (obsolete)
+-
+-The DBI_DBNAME environment variable takes a string value that is used only when the
+-obsolescent style of DBI->connect (with driver name as fourth parameter) is used, and
+-when no value is provided for the first (database name) argument.
+-
+ =head2 DBI_TRACE
+ 
+ The DBI_TRACE environment variable takes an integer value that
