@@ -429,13 +429,13 @@ sub execute {
 
     # start of by finishing any previous execution if still active
     $sth->finish if $sth->{Active};
-    $sth->{'Active'}=1;
     my $stmt = $sth->{'f_stmt'};
     my $result = eval { $stmt->execute($sth, $params); };
     return $sth->set_err(1,$@) if $@;
     if ($stmt->{'NUM_OF_FIELDS'}  &&  !$sth->FETCH('NUM_OF_FIELDS')) {
 	$sth->STORE('NUM_OF_FIELDS', $stmt->{'NUM_OF_FIELDS'});
     }
+    $sth->{'Active'}=1 if $stmt->{'NUM_OF_FIELDS'};
     return $result;
 }
 sub finish {
