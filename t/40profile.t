@@ -25,7 +25,7 @@ BEGIN {
 }
 
 use Test;
-BEGIN { plan tests => 57; }
+BEGIN { plan tests => 59; }
 
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -137,15 +137,18 @@ $sql = "select name from .";
 $sth = $dbh->prepare($sql);
 $sth->execute();
 while ( my $hash = $sth->fetchrow_hashref ) {}
+$dbh->do($sql); # check dbh do() gets associated with right statement
 
 # check that the resulting tree fits the expected layout
 $data = $dbh->{Profile}{Data};
 ok($data);
 ok(exists $data->{$sql});
-ok(keys %{$data->{$sql}} == 3);
+ok(keys %{$data->{$sql}}, 5);
 ok(exists $data->{$sql}{prepare});
 ok(exists $data->{$sql}{execute});
 ok(exists $data->{$sql}{fetchrow_hashref});
+ok(exists $data->{$sql}{do});
+ok(exists $data->{$sql}{DESTROY});
 
 
 

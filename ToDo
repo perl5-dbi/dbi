@@ -13,8 +13,7 @@ Default TaintOut=>1 in perl taint mode but exclude placeholders?
 Remove support for "old-style" connect syntax
 (where the driver name is the 4th parameter).
 
-Remove undocumented DBI->err and DBI->errstr methods.
-Or maybe add DBI->state for consistency? Or maybe keep but warn?
+Change undocumented DBI->err and DBI->errstr methods to warn.
 
 Remove old informix fudge in tables() (would only impact people
 using very old DBD::Informix versions as it now has it's own).
@@ -140,7 +139,16 @@ Also standard way to 'reset/reconfigure' a statement handle.
 change *.xst to treat either that or -2 as an error. (The -2 is
 a transition for old drivers.)
 
+Consider making $DBI::err etc plain (untied) variables and setting them
+in set_err() and clearing them, if appropriate, in dispatch().
+Requires drivers to use set_err but they'll have to to get full
+error/warn/info semantics anyway.
+
 --- Other changes
+
+Ensure child $h has err reset after connect_cached() or prepare_cached()
+or else document that $DBI:err may be true after those methods even
+though they haven't failed. Umm.
 
 Change t/zz_*_pp.t to be t/zXX_*.t where XX is a combination of:
  - 'pp' (for DBI_PUREPERL=2)
@@ -160,6 +168,8 @@ debug() method from internals.
 Macro to get new statement handle for XS code
 
 Trace to tied file handle.
+
+Add method to try to make the connection (session) read-only.
 
 preparse() - incl ability to split statements on semicolon
 
@@ -399,6 +409,8 @@ by calling perl_call("DBI::dbi_time") x100 at boot time for profile,
 and add 1/100 (x2) to each sample. Beware Win32 where resolution
 is too small and overhead will be 0 normally but may be eg 100ms
 if overhead probe is on cusp of time unit.
+
+Fix dbi_time for Windows by using or linking-to Time::HiRes code.
 
 Add a C call to return boolean for is a number' for a given SV.
 Needs to do the right thing for a non-numeric string SV that's been

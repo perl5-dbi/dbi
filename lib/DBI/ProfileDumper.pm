@@ -30,12 +30,12 @@ You can also activate DBI::ProfileDumper from within your code:
   # another way to say it
   use DBI::Profile qw(DBIprofile_Statement);
   $dbh->{Profile} = DBI::ProfileDumper->new(
-                      { Path => [ DBIprofile_Statement ]
-                        File => 'dbi.prof' });
+                        Path => [ DBIprofile_Statement ]
+                        File => 'dbi.prof' );
 
   # using a custom path
-  $dbh->{Profile} = DBI::ProfileDumper->new({ Path => [ "foo", "bar" ],
-                                              File => 'dbi.prof' });
+  $dbh->{Profile} = DBI::ProfileDumper->new( Path => [ "foo", "bar" ],
+                                             File => 'dbi.prof' );
 
 
 =head1 DESCRIPTION
@@ -61,8 +61,8 @@ can construct the DBI::ProfileDumper object yourself:
 
   use DBI::Profile qw(DBIprofile_Statement);
   $dbh->{Profile} = DBI::ProfileDumper->new(
-                      { Path => [ DBIprofile_Statement ]
-                        File => 'dbi.prof' });
+                        Path => [ DBIprofile_Statement ]
+                        File => 'dbi.prof' );
 
 The C<Path> option takes the same values as in
 L<DBI::Profile|DBI:Profile>.  The C<File> option gives the name of the
