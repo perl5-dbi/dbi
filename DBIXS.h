@@ -490,7 +490,7 @@ struct dbistate_st {
 	    ? SvPV_nolen(*svp) : (dflt))
 
 #define DBD_ATTRIB_DELETE(attribs, key, klen)			\
-	hv_delete((HV*)attribs, key, len, G_DISCARD)
+	hv_delete((HV*)attribs, key, klen, G_DISCARD)
 
 #endif /* DBIXS_VERSION */
 /* end of DBIXS.h */

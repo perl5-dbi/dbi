@@ -11,6 +11,7 @@ Document $t->trace_flags etc
   Fixed $sth->{NUM_OF_FIELDS} of non-executed statement handle
     to be undef as per the docs (it was 0).
   Fixed t/41prof_dump.t to work with perl5.9.1.
+  Fixed DBD_ATTRIB_DELETE macro thanks to Marco Paskamp.
 
   Changed attributes (NAME, TYPE etc) of non-executed statement
     handle to be undef instead of triggering an error.
