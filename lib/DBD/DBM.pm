@@ -79,6 +79,8 @@ sub connect ($$;$$$) {
         #
         # the attrs here *must* start with dbm_ or foo_
         #
+        # see the STORE methods below for how to check these attrs
+        #
         $this->{dbm_valid_attrs} = {
             dbm_tables            => 1  # per-table information
           , dbm_type              => 1  # the global DBM type e.g. SDBM_File
