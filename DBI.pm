@@ -1,7 +1,7 @@
-# $Id: DBI.pm,v 11.40 2003/11/27 23:29:06 timbo Exp $
+# $Id: DBI.pm,v 11.42 2004/01/08 14:03:46 timbo Exp $
 # vim: ts=8:sw=4
 #
-# Copyright (c) 1994-2003  Tim Bunce  Ireland
+# Copyright (c) 1994-2004  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #
@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.39"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.40"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -84,10 +84,9 @@ I<The synopsis above only lists the major methods and parameters.>
 
 =head2 GETTING HELP
 
-If you have questions about DBI, you can get help from
-the I<dbi-users@perl.org> mailing list.
-You can get help on subscribing and using the list by emailing
-I<dbi-users-help@perl.org>.
+If you have questions about DBI, or DBD driver modules, you can get
+help from the I<dbi-users@perl.org> mailing list.  You can get help
+on subscribing and using the list by emailing I<dbi-users-help@perl.org>.
 
 (To help you make the best use of the dbi-users mailing list,
 and any other lists or forums you may use, I I<strongly>
@@ -119,8 +118,8 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.39
-(C<$Date: 2003/11/27 23:29:06 $>).
+This is the DBI specification that corresponds to the DBI version 1.40
+(C<$Date: 2004/01/08 14:03:46 $>).
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -151,7 +150,7 @@ L<"http://search.cpan.org/search?query=DBI&mode=all">.
 
 package DBI;
 
-my $Revision = substr(q$Revision: 11.40 $, 10);
+my $Revision = substr(q$Revision: 11.42 $, 10);
 
 use Carp();
 use DynaLoader ();
@@ -394,7 +393,7 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	last_insert_id	=> { U =>[3,4,'$table_name, $field_name [, \%attr ]'], O=>0x0100 },
 	preparse    	=> {  }, # XXX
 	prepare    	=> { U =>[2,3,'$statement [, \%attr]'], O=>0x0200 },
-	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $allow_active ] ]'] },
+	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'] },
 	selectrow_array	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
 	selectrow_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
 	selectrow_hashref=>{ U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
@@ -479,18 +478,26 @@ END {
 sub CLONE {
     my $olddbis = $DBI::_dbistate;
     _clone_dbis() unless $DBI::PurePerl; # clone the DBIS structure
-    %DBI::installed_drh = ();	# clear loaded drivers so they have a chance to reinitialize
     DBI->trace_msg(sprintf "CLONE DBI for new thread %s\n",
 	$DBI::PurePerl ? "" : sprintf("(dbis %x -> %x)",$olddbis, $DBI::_dbistate));
+    while ( my ($driver, $drh) = each %DBI::installed_drh) {
+	no strict 'refs';
+	next if defined &{"DBD::${driver}::CLONE"};
+	warn("$driver has no driver CLONE() function so is unsafe threaded\n");
+    }
+    %DBI::installed_drh = ();	# clear loaded drivers so they have a chance to reinitialize
 }
 	
 
 # --- The DBI->connect Front Door methods
 
 sub connect_cached {
-    # XXX we expect Apache::DBI users to still call connect()
+    # For library code using connect_cached() with mod_perl
+    # we redirect those calls to Apache::DBI::connect() as well
     my ($class, $dsn, $user, $pass, $attr) = @_;
-    ($attr ||= {})->{dbi_connect_method} = 'connect_cached';
+    ($attr ||= {})->{dbi_connect_method} =
+	($DBI::connect_via eq "Apache::DBI::connect")
+	    ? 'Apache::DBI::connect' : 'connect_cached';
     return $class->connect($dsn, $user, $pass, $attr);
 }
 
@@ -1234,16 +1241,8 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub default_user {
 	my ($drh, $user, $pass, $attr) = @_;
-	unless (defined $user) {
-	    $user = $ENV{DBI_USER};
-	    Carp::carp("DBI connect: user not defined and DBI_USER env var not set")
-		if 0 && !defined $user && $drh->{Warn};	# XXX enable later
-	}
-	unless (defined $pass) {
-	    $pass = $ENV{DBI_PASS};
-	    Carp::carp("DBI connect: password not defined and DBI_PASS env var not set")
-		if 0 && !defined $pass && $drh->{Warn};	# XXX enable later
-	}
+	$user = $ENV{DBI_USER} unless defined $user;
+	$pass = $ENV{DBI_PASS} unless defined $pass;
 	return ($user, $pass);
     }
 
@@ -1452,7 +1451,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     }
 
     sub prepare_cached {
-	my ($dbh, $statement, $attr, $allow_active) = @_;
+	my ($dbh, $statement, $attr, $if_active) = @_;
 	# Needs support at dbh level to clear cache before complaining about
 	# active children. The XS template code does this. Drivers not using
 	# the template must handle clearing the cache themselves.
@@ -1462,12 +1461,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $key = ($attr) ? join("~~", $statement, @attr_keys, @{$attr}{@attr_keys}) : $statement;
 	my $sth = $cache->{$key};
 	if ($sth) {
-	    if ($sth->FETCH('Active') && ($allow_active||0) != 2) {
-		Carp::carp("prepare_cached($statement) statement handle $sth was still active")
-		    if !$allow_active;
-		$sth->finish;
-	    }
-	    return $sth;
+	    return $sth unless $sth->FETCH('Active');
+	    Carp::carp("prepare_cached($statement) statement handle $sth still active")
+		unless ($if_active ||= 0);
+	    $sth->finish if $if_active <= 1;
+	    return $sth  if $if_active <= 2;
 	}
 	$sth = $dbh->prepare($statement, $attr);
 	$cache->{$key} = $sth if $sth;
@@ -2286,8 +2284,7 @@ variables if no C<$data_source> is specified.)
 The C<AutoCommit> and C<PrintError> attributes for each connection default to
 "on". (See L</AutoCommit> and L</PrintError> for more information.)
 However, it is strongly recommended that you explicitly define C<AutoCommit>
-rather than rely on the default. Future versions of
-the DBI may issue a warning if C<AutoCommit> is not explicitly defined.
+rather than rely on the default.
 
 The C<\%attr> parameter can be used to alter the default settings of
 C<PrintError>, C<RaiseError>, C<AutoCommit>, and other attributes. For example:
@@ -3434,13 +3431,35 @@ be used with the DBI.
 
   $sth = $dbh->prepare_cached($statement)
   $sth = $dbh->prepare_cached($statement, \%attr)
-  $sth = $dbh->prepare_cached($statement, \%attr, $allow_active)
+  $sth = $dbh->prepare_cached($statement, \%attr, $if_active)
 
 Like L</prepare> except that the statement handle returned will be
 stored in a hash associated with the C<$dbh>. If another call is made to
 C<prepare_cached> with the same C<$statement> and C<%attr> values, then the
 corresponding cached C<$sth> will be returned without contacting the
 database server.
+
+The C<$if_active> parameter lets you adjust the behaviour if an
+already cached statement handle is still Active.  There are several
+alternatives:
+
+=over 4
+
+B<0>: A warning will be generated, and finish() will be called on
+the statement handle before it is returned.  This is the default
+behaviour if $if_active is not passed.
+
+B<1>: finish() will be called on the statement handle, but the
+warning is suppressed.
+
+B<2>: Disables any checking.
+
+B<3>: The existing active statement handle will be removed from the
+cache and a new statement handle prepared and cached in its place.
+This is the safest option because it doesn't affect the state of the
+old handle, it just removes it from the cache. [Added in DBI 1.40]
+
+=back
 
 Here are some examples of C<prepare_cached>:
 
@@ -3469,10 +3488,12 @@ but it can also cause problems and should be used with care. Here
 is a contrived case where caching would cause a significant problem:
 
   my $sth = $dbh->prepare_cached('SELECT * FROM foo WHERE bar=?');
-  $sth->execute($bar);
+  $sth->execute(...);
   while (my $data = $sth->fetchrow_hashref) {
+
+    # later, in some other code called within the loop...
     my $sth2 = $dbh->prepare_cached('SELECT * FROM foo WHERE bar=?');
-    $sth2->execute($data->{bar});
+    $sth2->execute(...);
     while (my $data2 = $sth2->fetchrow_arrayref) {
       do_stuff(...);
     }
@@ -3485,30 +3506,14 @@ Typically the the inner fetch loop will work normally, fetching all
 the records and terminating when there are no more, but now $sth
 is the same as $sth2 the outer fetch loop will also terminate.
 
-The C<$allow_active> parameter lets you adjust DBI's behaviour when
-prepare_cached is returning a statement handle that is still active.
-There are three settings:
+You'll know if you run into this problem because prepare_cached()
+will generate a warning by default (when $if_active is false).
 
-=over 4
+The cache used by prepare_cached() is keyed by both the statement
+and any attributes so you can also avoid this issue by doing something
+like:
 
-B<0>: A warning will be generated, and C<finish> will be called on
-the statement handle before it is returned.  This is the default
-behaviour if C<$allow_active> is not passed.
-
-B<1>: C<finish> will be called on the statement handle, but the
-warning is suppressed.
-
-B<2>: DBI will not touch the statement handle before returning it.
-You will need to check C<$sth-E<gt>{Active}> on the returned
-statement handle and deal with it in your own code.
-
-=back
-
-Because the cache used by prepare_cached() is keyed by all the
-parameters, including any attributes passed, you can also avoid
-this issue by doing something like:
-
-  my $sth = $dbh->prepare_cached("...", { dbi_dummy => __FILE__.__LINE__ });
+  $sth = $dbh->prepare_cached("...", { dbi_dummy => __FILE__.__LINE__ });
 
 which will ensure that prepare_cached only returns statements cached
 by that line of code in that source file. 
@@ -4008,7 +4013,8 @@ See L</table_info> for a description of the parameters.
 If C<$dbh-E<gt>get_info(29)> returns true (29 is SQL_IDENTIFIER_QUOTE_CHAR)
 then the table names are constructed and quoted by L</quote_identifier>
 to ensure they are usable even if they contain whitespace or reserved
-words etc.
+words etc. This means that the table names returned will include
+quote characters.
 
 =item C<type_info_all>
 
@@ -4998,6 +5004,7 @@ value to be used for the key for the returned hash.  For example:
 
   $dbh->{FetchHashKeyName} = 'NAME_lc';
   $sth = $dbh->prepare("SELECT FOO, BAR, ID, NAME, BAZ FROM TABLE");
+  $sth->execute;
   $hash_ref = $sth->fetchall_hashref('id');
   print "Name for id 42 is $hash_ref->{42}->{name}\n";
 
@@ -5611,6 +5618,8 @@ can cause problems. You have been warned.
 Using DBI with perl threads is not yet recommended for production
 environments.
 
+Note: There is a bug in perl 5.8.2 when configured with threads
+and debugging enabled (bug #24463) which causes a DBI test to fail.
 
 =head2 Signal Handling and Canceling Operations
 
@@ -5962,18 +5971,19 @@ Some of these are rather dated now but may still be useful.
   http://www.altavista.com/query?q=sql+tutorial
 
 
-=head2 Books and Journals
+=head2 Books and Articles
 
- Programming the Perl DBI, by Alligator Descartes and Tim Bunce.
+Programming the Perl DBI, by Alligator Descartes and Tim Bunce.
+L<http://books.perl.org/book/154>
 
- Programming Perl 3rd Ed. by Larry Wall, Tom Christiansen & Jon Orwant.
+Programming Perl 3rd Ed. by Larry Wall, Tom Christiansen & Jon Orwant.
+L<http://books.perl.org/book/134>
 
- Learning Perl by Randal Schwartz.
+Learning Perl by Randal Schwartz.
+L<http://books.perl.org/book/101>
 
- Dr Dobb's Journal, November 1996.
-
- The Perl Journal, April 1997.
-
+Details of many other books related to perl can be found at L<http://books.perl.org>
+  
 =head2 Perl Modules
 
 Index of DBI related modules available from CPAN:
@@ -6096,13 +6106,59 @@ Leffler, Jeff Urlwin, Michael Peppler, Henrik Tougaard, Edwin Pratomo,
 Davide Migliavacca, Jan Pazdziora, Peter Haworth, Edmund Mergl, Steve
 Williams, Thomas Lowery, and Phlip Plumlee. Without them, the DBI would
 not be the practical reality it is today.  I'm also especially grateful
-to Alligator Descartes for starting work on the "Programming the Perl
-DBI" book and letting me jump on board.
+to Alligator Descartes for starting work on the first edition of the
+"Programming the Perl DBI" book and letting me jump on board.
 
-Much of the DBI and DBD::Oracle was developed while I was Technical
+The DBI and DBD::Oracle were originally developed while I was Technical
 Director (CTO) of the Paul Ingram Group (www.ig.co.uk).  So I'd
 especially like to thank Paul for his generosity and vision in
 supporting this work for many years.
+
+=head1 CONTRIBUTING
+
+As you can see above, many people have contributed to the DBI and
+drivers in many ways over many years.
+
+If you'd like the DBI to do something new or different the best way
+to make that happen is to do it yourself and send me a patch to the
+source code that shows the changes.
+
+=head2 How to create a patch
+
+Unpack a fresh copy of the distribution:
+
+  tar xfz DBI-1.40.tar.gz
+
+Rename the newly created top level directory:
+
+  mv DBI-1.40 DBI-1.40.your_foo
+
+Edit the contents of DBI-1.40.your_foo/* till it does what you want.
+
+Test your changes and then remove all temporary files:
+
+  make test && make distclean
+
+Go back to the directory you originally unpacked the distribution:
+
+  cd ..
+
+Unpack I<another> copy of the original distribution you started with:
+
+  tar xfz DBI-1.40.tar.gz
+
+Then create a patch file by performing a recursive C<diff> on the two
+top level directories:
+
+  diff -r -u DBI-1.40 DBI-1.40.your_foo > DBI-1.40.your_foo.patch
+
+=head2 Speak before you patch
+
+For anything non-trivial or possibly controversial it's a good idea
+to discuss (on dbi-dev@perl.org) the changes you propose before
+actually spending time working on them. Otherwise you run the risk
+of them being rejected because they don't fit into some larger plans
+you may not be aware of.
 
 =head1 TRANSLATIONS
 

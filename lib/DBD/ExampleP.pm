@@ -6,9 +6,9 @@
     use DBI qw(:sql_types);
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.11 $ =~ /(\d+)\.(\d+)/o);
+    $VERSION = sprintf("%d.%02d", q$Revision: 11.12 $ =~ /(\d+)\.(\d+)/o);
 
-#   $Id: ExampleP.pm,v 11.11 2003/10/21 15:13:43 timbo Exp $
+#   $Id: ExampleP.pm,v 11.12 2004/01/07 17:38:51 timbo Exp $
 #
 #   Copyright (c) 1994,1997,1998 Tim Bunce
 #
@@ -47,8 +47,8 @@
 	$drh;
     }
 
-    sub default_user {
-	return ('','');
+    sub CLONE {
+	undef $drh;
     }
 }
 

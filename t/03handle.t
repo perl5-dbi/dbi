@@ -6,15 +6,53 @@ use Data::Dumper;
 
 # handle tests
 
-BEGIN { plan tests => 18 }
+BEGIN { plan tests => 34 }
 
 use DBI;
 
 my $driver = "ExampleP";
 
+do {
+    my $dbh = DBI->connect("dbi:$driver:", '', '');
+
+    my $sql = "select name from ?";
+    my $sth1 = $dbh->prepare_cached($sql);
+    ok($sth1->execute("."));
+    my $ck = $dbh->{CachedKids};
+    ok(keys %$ck == 1);
+
+    my $warn = 0;
+    local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /still active/ };
+    my $sth2 = $dbh->prepare_cached($sql);
+    ok($sth1 == $sth2);
+    ok($warn == 1);
+    ok(!$sth1->{Active});
+
+       $sth2 = $dbh->prepare_cached($sql, { foo => 1 });
+    ok($sth1 != $sth2);
+    ok(keys %$ck == 2);
+
+    ok($sth1->execute("."));
+    ok($sth1->{Active});
+       $sth2 = $dbh->prepare_cached($sql, undef, 3);
+    ok($sth1 != $sth2);
+    ok($sth1->{Active}); # active but no longer cached
+    $sth1->finish;
+
+    ok($sth2->execute("."));
+    ok($sth2->{Active});
+       $sth1 = $dbh->prepare_cached($sql, undef, 1);
+    ok($sth1 == $sth2);
+    ok(!$sth2->{Active});
+
+    ok($warn == 1);
+    $dbh->disconnect;
+};
+
 my $drh = DBI->install_driver($driver);
 ok($drh);
 ok($drh->{Kids}, 0);
+
 
 # --- handle reference leak tests
 
@@ -50,7 +88,7 @@ my $dbh = DBI->connect("dbi:$driver:", '', '');
 my $imp_data = $dbh->take_imp_data;
 ok($imp_data);
 ok(length($imp_data) >= 112); # 112 for 32bit, 116 for 64 bit as of DBI 1.37, but may change
-print Dumper($imp_data);
+#print Dumper($imp_data);
 
 {
 my ($tmp, $warn);

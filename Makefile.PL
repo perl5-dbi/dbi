@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-# $Id: Makefile.PL,v 11.19 2003/11/12 10:02:10 timbo Exp $
+# $Id: Makefile.PL,v 11.20 2004/01/08 14:03:46 timbo Exp $
 #
 #  Copyright (c) 1994-2002  Tim Bunce  England
 #
@@ -196,6 +196,7 @@ package MY;
 sub postamble {
 warn <<EOT;
 
+    I see you're using perl $] on $Config::Config{archname}, okay.
     Remember to actually *read* the README file!
     Use  'make' to build the software (dmake or nmake on Windows).
     Then 'make test' to execute self tests.

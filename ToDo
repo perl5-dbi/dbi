@@ -1,123 +1,131 @@
+*** Changes for DBI v2 ***
 
-*** Assorted to-do items and random thoughts *** IN NO PARTICULAR ORDER ***
-
-Ability to remove an sth from the prepare_cached cache.
-	$sth->uncache;
-and	$dbh->uncache; for connect_cached
-implies duplication of key key code or iterate through cache.
-$h->uncache and/or option to prepare_cache to discard (and replace)
-cached $sth if it's still active. Or weak refs?
+New connect() code using parse_dsn()
 
 Add PERL_NO_GET_CONTEXT for multiplicity/threads?
+force it for drivers
 And enable xsbypass if possible.
+
+Need to add docs for DbTypeSubclass (ala DBIx::AnyDBD)
+Move TIEHASH etc to XS (and pureperl)
+
+$dbh->{Statement} can be wrong because fetch doesn't update value
+maybe imp_dbh holds imp_sth (or inner handle) of last sth method
+called (if not DESTROY) and sth outer DESTROY clears it (to reduce ref count)
+Then $dbh->{LastSth} would work (returning outer handle if valid).
+Then $dbh->{Statement} would be the same as $dbh->{LastSth}->{Statement}
+Also $dbh->{ParamValues} would be the same as $dbh->{LastSth}->{ParamValues}.
+
+Add more macro hooks to Driver.xst: ping, quote etc.
+
+Make common data a separate SV? Or sv_grow existing imp data sv and
+place com struct at end? But both still mean com pointer is invalid after clone.
+Maybe just increase size of it and check/improve size sanity checks.
+
+Sort out DBIcDBISTATE() and DBIS mess. dDBIS?
+Make it cheap to get h from imp_xxh so only imp_xxh needs
+to be passed around?
+
+Define consise DBI<>DBD interface with view towards parrot.
+	note that parrot will use more method calls instead of
+	'sideways' hooks into DBIS and the driver C code.
+Update DBI::DBD with overview (at least) recommend Driver.xst strongly.
+Find XS drivers that don't use it and talk to authors.
+Ship separate DBD::TemplateP and DBD::TemplateXS drivers as examples.
+
+UTF8
+
+Rename finish to discard_pending_rows :-) [or just add an alias and docs :-]
+Or maybe to 'close' (the ODBC equiv - study close() options)
+
+Rework handle creation to use methods. Maybe $h->new_child(\%override_attr)
+
+    dr::connect =>
+	$dbh = $drh->new_child(\%attr);
+	$dbh->connect(...)
+and
+    db::prepare =>
+	$sth = $dbh->new_child(\%attr);
+	$sth->prepare($statement)	# once only?
+	$sth->close(???)		# to 'reset' before a different prepare()?
+need to think through prepare_cached and connect_cached
+and relationship to preparse.
+
+Sponge behave_like - generalize into new_child()
+	copy RaiseError, PrintError, HandleError etc from the specified handle
+	but which attributes? LongReadLen, LongTruncOk etc? Presumably all
+	as we're acting as a proxy behind the scenes.
+	Should behave_like handle be dbh or sth or either or same as parent?
+
+Phalanx?
+
+Study alternate DBI's:
+	ruby
+	python
+	php
+	others?
+	ADO object model
+identify any features we need to support and any incompatibilities etc
 
 Perhaps $h->{PrintWarn} $h->{RaiseWarn} $h->{HandleWarn}
 or better still, a more general event mechanism
 but one that makes the above very easy: $h->{HandleEvent}
 but need to classify 'events'. At least SUCCESS_WITH_INFO
 (which covers eg mysql warnings), and something for 'messages'
-from the server while exevuting stored procedures.
-
-$dbh->ping($skip_seconds) - skip the ping if ping'd less than $skip_seconds ago
-Change connect_cached to use ping($skip_seconds || 10);
-
-Polish up and document _dbtype_names with an external interface and using get_info.
-
-$sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
-
-Give handles names: $h->{Id} ?
-Useful for reporting, Multiplex, DBD::AnyData etc etc
-May become useful for weakrefs etc
-
-Add architecture info to DBI and DBI::DBD build messages so
-users error reports are more useful.
-
-$dbh->get_inner_handle / set_inner_handle
-		use to make $dbh->connect return same handle
-Hook to call code ref on each fetch, pass fbav ref
-datarow_array(), datarow_arrayref(), datarow_hashref()
-remove sth from prepare_cached cache.
-
-DBI->setup_driver alias for _setup_driver, and make idempotent.
-
-Devel::Leak
-
-DBIx::DWIW
-
+from the server while executing stored procedures.
 The DBI needs some standard way to handle the 'success with info' concept:
 	$h->{HandleEvent}
+	(event_type (== SUCCESS_WITH_INFO)
+	event_msg
+	event_info	driver-specific
+	)
 
-Maybe have fetchrow_arrayref return not a new reference to the same
-array each time, but the same reference to the same array each time.
-That would save a new/mortal/free for each row. Need to consider
-safety in case application assigns to the ref etc. Could sanity
-check in get_fbav that SvRV still points to the row array.
-But maybe it's not worth it if perl's "tmp stealing" works for refs.
+Add per-handle debug file pointer:
+	NULL => default => DBIS->tracefp
+	if not NULL then dup() for child handles
+	close(h->tracefp) at end of DESTROY
+	macro to do (h->tracefp || DBIS->tracefp)
+Maybe also need to add locking to prevent file contents being mangled
+by multiple threads/interpreters (esp mod_perl v2 and ActivePerl)?
 
-DBI::Profile: add simple way to normalise the sql (convert constants
-to placeholders) so profiling is more effective for drivers/applications
-which don't use placeholders.
-
-DBI::Profile: Add calc of approx XS method call and timing overhead
-by calling perl_call("DBI::dbi_time") at boot time for profile, and
-add to each sample.
-
-Sort out DBIcDBISTATE() and DBIS mess
-
-fetchall_hashref: may be better to call (the optimized) fetchall_arrayref
-then convert to hashes
-
-Sponge behave_like - generalize?
-
-Update DBI::DBD with overview (at least) recommend Driver.xst strongly.
-Find XS drivers that don't use it and talk to authors.
-Ship separate DBD::TemplateP and DBD::TemplateXS drivers as examples.
-
-Check: local($h->{PrintError})=0; resets $DBI::errstr at end of scope?
-
-Add UnimpMethodHook (in XS)
-Test and integrate with DProf?
-FetchHashReuse attrib (=1 or ={}) copy from dbh to sth.
-Record attrib STOREs so can be replayed (or use subclass?)
-
-Merge/document  DBIx::AnyDBD functionality into the DBI
-
-make lasth return outer handle
-
-Add $h->swap_internal_handle($other_h)
-
-Add a C call to return boolean for is a number' for a given SV.
-Needs to do the right thing for a non-numeric string SV that's been
-tested in a numeric context (eg $a='S23'; foo() if $a==-1; $sth->execute($a))
-So if SvNVOK is true but the value is 0 then should also do looks_like_number()
-to be sure.
-
-Rename finish to discard_pending_rows :-) [or just add an alias and docs :-]
-Or maybe to 'close' (the ODBC equiv)
-
-add details of the DBI book to the docs
-test shell /connect user etc
-
-document dbi_fetchall_arrayref_attr attr of selectall_arrayref().
-
-Count execute()s (and do's?) (in ima struct? not thread safe).
-Reset count in commit/rollback.
-In $dbh->DESTROY don't issue warning if count == 0.
+Look for existing CPAN module that reblesses an object into a unique subclass
+and supports SUPER:: from that subclass up into the original class.
+In order to emulate a common perl6 implementation approach.
 
 #define a large negative number to mean 'error' from st_execute and
 change *.xst to treat eaither that or -2 as an error. (The -2 is
-a transition or old drivers.)
+a transition for old drivers.)
+
+Remove old informix fudge in tables() (DBD::Informix now has it's own)
+
+*** Small/quick/simple changes/checks ***
+
+
+*** Assorted to-do items and random thoughts *** IN NO PARTICULAR ORDER ***
+
+Document DBIx::AnyDBD functionality into the DBI
+Polish up and document _dbtype_names with an external interface and using get_info.
+DBI->setup_driver alias for _setup_driver, and make idempotent?
+
+Limit trace array/hash dump eg return from fetchall_arrayref()
+
+DBIx::DWIW
+
+make lasth return outer handle?
+
+document dbi_fetchall_arrayref_attr attr of selectall_arrayref().
 
 ODBC 3.5 date and intervals types and subtypes (from unixODBC?)
 http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
 
-Proxy: allow config to speficy SQL to allow/deny via regexen
+Proxy: allow config to specify SQL to allow/deny via regexen
 Docs for connect_cached and test with proxy.
 
 BINDING:
 
 Add to docs & tutorial re wrong bind type on a param may cause
 index to not be used! (Find real examples first)
+check using EXPLAIN SELECT * WHERE int_indexed_col='42' vs =42.
 
 > And note that if you are using bind_param_inout as 'bind_param_by_ref',
 > then the $maxlen parameter is redundant.  I suspect all drivers could
@@ -129,19 +137,9 @@ index to not be used! (Find real examples first)
 Okay. I'll take that as a vote for bind_param_by_ref as an alias for
 bind_param_inout. >>todo.
 
-LOGGING:
-
-Seperate log for sql statements?
-
-Add per-handle debug file pointer (or at least a macro that _looks_ like that).
-Or, better yet, a function pointer so we can do more clever things.
-Maybe also need to add locking to prevent file contents being mangled
-by multiple threads/interpreters (esp mod_perl v2 and ActivePerl).
+------
 
 OTHERS:
-
-Enable warnings in default_user().
-Add prompt for user/pass in default_user()?
 
 Change bind_column to save the info for get_fbav to use when
 first called. Thus making bind before execute work for all drivers.
@@ -149,78 +147,44 @@ first called. Thus making bind before execute work for all drivers.
 Add a handle flag to say that the driver has a hash that maps error
 codes into SQLSTATE values. The error event mechanism could check for
 the flag and lookup the SQLSTATE value for the error from the hash.
+Allow code hook as well. $dbh->{SQLSTATE_map} = code or hash ref
+
+Add minimum subset of ODBC3 SQLSTATE values that should be supported
+(and corresponding ODBC2 values?)
 
 ODBC attribute defining if transactions are supported
 http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
 
-$dbh-level __WARN__ and __DIE__. Initially just provide DBIXS hooks
-for DBD's to use (and pass h and imp_xxh to). Thus $dbh can redirect
-errors etc from all children in one go.
-
-Informix inspired changes.
+Informix inspired changes?
 
 Add hook to DBI::DBD to write a myconfig.txt file into the
 source directory containing key driver and config info.
 
-attribute for 'last inserted id'?
-
 test suite
 http://www.mipt.sw.ru/en/products/ots/
 
-$sth->more_results, now and $sth->become($sth2) later
+Review drivers for handling of multiple result sets
+to define common api for all.
+$sth->more_results, maybe via $sth->become($sth2) later (or transplant/swap)
+
+Add $h->swap_internal_handle($other_h)
 
 dbish - state AutoCommit status clearly at connect time.
 (And try to set AutoCommit off in eval?)
-
-Add thread CV locks (not method locks)
-to &DBI::connect and &DBI::connect_cached
-in xs dbi_init code.
-
-fetch_scroll handling via get_fbav.
-Also add:
-	getrow_array       (or getdata_?)
-	getrow_arrayref?
-	getrow_hashref?
-
-test that $dbh->do will RaiseError
-RaiseError in %attr - doc it not working - hints.
-
-Consider making all SQL_ known to the DBI. Want to check for
-valid spelling. Also would like C<exists $h->{Attrib}> to
-work. Maybe auto load a module that defines a private hash
-that just serves to list known attributes.
-Or DBI->SQL_FOO and/or DBI::SQL_FOO.
+test shell "/connect user pass" etc
 
 check out http://tegan.deltanet.com/~phlip/DBUIframe.html
 
-Auto proxying for individual drivers: DBI_PROXY_foo=...
-Else more generic dsn-rewrite via env vars
-
 Check DBD::Proxy connect&fetch latency (e.g. CGI use).
 
-Add SCALE to DBD::Sponge
-
-Rework handle creation for
-$h->clone ?, and maybe
-$dbh->connect([$user, $passwd])	# to reconnect, possibly as a different user
-
-Add (ODBC) attribute to indicate if placeholders are supported.
+Indentify get_info(?) to indicate if placeholders are supported.
 http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
-
-Fix shared error codes between (dbh) handles, maybe.
-
-Add problem reporting info to DBI.pm
-
-Add 'break handling' when field values change? Use two fbav's so 'previous
-record' is available. Define break fields and handlers. Call them via
-an alternate fetch_with_break method.
-Jan 2002: Also now see DBIx::FetchLoop (Brendan Fagan)
 
 ---
 > > Is there any way to know whether a particular DBD needs a separate
 > > connection for nested operations or not?
 
-Umm, it looks like $dbh->{SQL_ACTIVE_STATEMENTS} would be the one.
+Umm, it looks like $dbh->get_info(SQL_ACTIVE_STATEMENTS) would be the one.
 It defines the max number of statements that can be active on a
 the $dbh. 0 means unknown or no specific limit.
 I'll add that to the DBI and DBI spec.
@@ -258,10 +222,101 @@ suggestion on that one.
 Umm. I see what you mean. It's reasonable to assume that a driver
 will 'freeze' the value of applicable attributes at prepare or execute
 time. The driver should probably document that kind of thing.
+Clarify docs about $sth->{LongReadLen} being readonly for some drivers.
 
-I think the DBI's template .xst file will probably grow some code
-to handle attributes to prepare semi-automatically, sometime.
 
-Tim.
------------ 
+****** Less urgent changes ******
+
+$dbh->ping($skip_seconds) - skip the ping if ping'd less than $skip_seconds ago
+and $h->err is false
+Change connect_cached() to use ping($skip_seconds || 1);
+
+
+$dbh->get_inner_handle / set_inner_handle
+		use to make $dbh->connect return same handle
+Hook to call code ref on each fetch, pass fbav ref
+datarow_array(), datarow_arrayref(), datarow_hashref()
+remove sth from prepare_cached cache.
+
+
+fetchall_hashref: may be better to call (the optimized) fetchall_arrayref
+then convert to hashes:
+	$_ = do { my %h; @h{@names} = @$_; \%h } for @$rows;
+
+
+Give handles names: $h->{Id} ?
+Useful for reporting, Multiplex, DBD::AnyData etc etc
+May become useful for weakrefs etc
+
+
+fetch_scroll() handling via get_fbav.
+Also add:
+	row_array(offset)
+	row_arrayref(offset)
+	row_hashref(offset)
+get_fbav has three modes:
+	single row - return cached RV to same cached AV
+	alternate rows - return RV to AV[row % 2]
+	row set - return RV to AV[++row]
+
+Bless row into DBI::Row ?
+Bless row set into DBI::Rowset ?
+Give get/set access to entire rowset via method calls?
+	want to be able to plug in pre-loaded data row cache to new sth
+	so it'll return the same data.
+
+
+Maybe have fetchrow_arrayref return not a new reference to the same
+array each time, but the same reference to the same array each time.
+That would save a new/mortal/free for each row. Need to consider
+safety in case application assigns to the ref etc. Could sanity
+check in get_fbav that SvRV still points to the row array.
+But maybe it's not worth it if perl's "tmp stealing" works for refs.
+
+
+Add 'break handling' when field values change?
+Use two fbav's so 'previous record' is available.
+Define break fields and handlers.
+Call them via an alternate fetch_with_break method.
+Jan 2002: Also now see DBIx::FetchLoop (Brendan Fagan)
+
+
+DBI::Profile: add simple way to normalise the sql (convert constants
+to placeholders) so profiling is more effective for drivers/applications
+which don't use placeholders. Requires preparse()?
+
+
+Devel::Leak
+
+$sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
+
+DBI::Profile: some way to get count of 'executions' only, not all method calls.
+So avg time is totaltime/executions not totaltime/methodcalls.
+
+FetchHashReuse attrib (=1 or ={}) copy from dbh to sth.
+Record attrib STOREs so can be replayed (or use subclass?)
+
+DBI::Profile: Add calc of approx XS method call and timing overhead
+by calling perl_call("DBI::dbi_time") x100 at boot time for profile,
+and add 1/100 (x2) to each sample. Beware Win32 where resolution
+is too small and overhead will be 0 normally but may be eg 100ms
+if overhead probe is on cusp of time unit.
+
+Add a C call to return boolean for is a number' for a given SV.
+Needs to do the right thing for a non-numeric string SV that's been
+tested in a numeric context (eg $a='S23'; foo() if $a==-1; $sth->execute($a))
+So if SvNVOK is true but the value is 0 then should also do looks_like_number()
+to be sure. [Does perl's looks_like_number() do this already, if not what code do
+callers of looks_like_number() use?]
+
+Count execute()s (and do's?) in imp_dbh. Reset count in commit/rollback.
+In $dbh->DESTROY don't issue warning if count == 0.
+
+Change CachedKids to be a simple attribute cached in the handle hash
+to remove FETCH method call overhead in prepare_cached().
+
+Ability to remove an sth from the prepare_cached cache.
+	$sth->uncache;
+and	$dbh->uncache; for connect_cached
+implies duplication of key key code or iterate through cache.
 

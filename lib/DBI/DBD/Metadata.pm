@@ -1,6 +1,6 @@
 package DBI::DBD::Metadata;
 
-# $Id: Metadata.pm,v 1.3 2003/05/10 23:30:28 timbo Exp $
+# $Id: Metadata.pm,v 1.4 2004/01/07 17:38:51 timbo Exp $
 #
 # Copyright (c) 1997-2003 Jonathan Leffler, Jochen Wiedmann,
 # Steffen Goeldner and Tim Bunce
@@ -21,7 +21,7 @@ use DBI::Const::GetInfoType qw(%GetInfoType);
 use strict;
 
 my
-$VERSION = sprintf("%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/);
 
 =head1 NAME
 
@@ -168,8 +168,9 @@ sub sql_data_source_name {
 
 sub sql_user_name {
     my $dbh = shift;
-    # Non-standard attribute
-    return $dbh->{CURRENT_USER};
+    # CURRENT_USER is a non-standard attribute, probably undef
+    # Username is a standard DBI attribute
+    return $dbh->{CURRENT_USER} || $dbh->{Username};
 }
 
 PERL

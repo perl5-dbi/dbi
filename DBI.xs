@@ -1,6 +1,6 @@
 /* vim: ts=8:sw=4
  *
- * $Id: DBI.xs,v 11.36 2003/11/27 23:29:06 timbo Exp $
+ * $Id: DBI.xs,v 11.37 2004/01/07 17:38:51 timbo Exp $
  *
  * Copyright (c) 1994-2003  Tim Bunce  Ireland.
  *
@@ -2135,6 +2135,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	/* refs if the application ceases to use the handle.		*/
 	if (is_DESTROY) {
 	    imp_xxh = DBIh_COM(mg->mg_obj);
+#ifdef DBI_USE_THREADS
+	    if (imp_xxh && DBIc_THR_USER(imp_xxh) != my_perl) {
+		goto is_DESTROY_wrong_thread;
+	    }
+#endif
 	    if (imp_xxh && DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh))
 		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, debug);
 	    if (debug >= 3)
@@ -2169,6 +2174,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     if (h_perl != my_perl) {
 	/* XXX could call a 'handle clone' method here, for dbh's at least */
 	if (is_DESTROY) {
+    is_DESTROY_wrong_thread:
 	    if (debug >= 2) {
 		PerlIO_printf(DBILOGFP,"    DESTROY ignored because DBI %sh handle (%s) is owned by thread %p not current thread %p\n",
 		      dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)), h_perl, my_perl) ;

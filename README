@@ -1,16 +1,15 @@
 DBI - The Perl Database Interface by Tim Bunce.
 
-Copyright (c) 1994-2003  Tim Bunce  Ireland.
+Copyright (c) 1994-2004  Tim Bunce  Ireland.
 
 See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
+See GETTING HELP section in DBI.pm for how to get help.
+
 RECENT NEWS:
 
-    The DBI comes bundled with DBI::Shell, DBD::Proxy and
-    DBI::ProxyServer modules. Those are still alpha releases.
-
-    Note that recent additions to the DBI spec (marked *NEW*) may
-    take a little while to be fully supported by individual drivers.
+  Note: There is a bug in perl 5.8.2 when configured with threads
+  and debugging enabled (bug #24463) which causes a DBI test to fail.
 
 QUICK START GUIDE:
 
@@ -27,6 +26,7 @@ QUICK START GUIDE:
     Then delete the source directory tree since it's no longer needed.
 
     Use the 'perldoc DBI' command to read the DBI documentation.
+    See GETTING HELP section in DBI.pm for how to get help.
 
     Fetch the DBD::* driver module you wish to use and unpack it.
     http://search.cpan.org/ (or www.activestate.com if on Windows)
@@ -67,7 +67,6 @@ BUILDING
     make
     make test
     make test TEST_VERBOSE=1   (if any of the t/* tests fail)
-
     make install (if the tests look okay)
 
 IF YOU HAVE PROBLEMS:

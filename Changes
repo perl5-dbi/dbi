@@ -4,18 +4,24 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-Need to add docs for DbTypeSubclass (ala DBIx::AnyDBD)
-Move TIEHASH etc to XS (and pureperl)
-
-$dbh->{Statement} can be wrong because fetch doesn't update value
-maybe imp_dbh holds imp_sth (or inner handle) of last sth method
-called (if not DESTROY) and sth outer DESTROY clears it (to reduce ref count)
-Then $dbh->{LastSth} would work (returning outer handle if valid).
-Then $dbh->{Statement} would be the same as $dbh->{LastSth}->{Statement}
-Also $dbh->{ParamValues} would be the same as $dbh->{LastSth}->{ParamValues}.
-Add more macro hooks to Driver.xst: ping, quote etc.
-
 =head1 CHANGES
+
+=head2 Changes in DBI 1.40,    7th January 2004
+
+  Fixed handling of CachedKids when DESTROYing threaded handles.
+  Fixed sql_user_name() in DBI::DBD::Metadata (used by write_getinfo_pm)
+    to use $dbh->{Username}. Driver authors please update your code.
+
+  Changed connect_cached() when running under Apache::DBI
+    to route calls to Apache::DBI::connect().
+
+  Added CLONE() to DBD::Sponge and DBD::ExampleP.
+  Added warning when starting a new thread about any loaded driver
+    which does not have a CLONE() function.
+  Added new prepare_cache($sql, \%attr, 3) option to manage Active handles.
+  Added SCALE and NULLABLE support to DBD::Sponge.
+  Added missing execute() in fetchall_hashref docs thanks to Iain Truskett.
+  Added a CONTRIBUTING section to the docs with notes on creating patches.
 
 =head2 Changes in DBI 1.39,    27th November 2003
 

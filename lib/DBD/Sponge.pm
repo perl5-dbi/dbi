@@ -5,9 +5,9 @@
     require Carp;
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.9 $ =~ /(\d+)\.(\d+)/o);
+    $VERSION = sprintf("%d.%02d", q$Revision: 11.10 $ =~ /(\d+)\.(\d+)/o);
 
-#   $Id: Sponge.pm,v 11.9 2003/08/20 00:15:24 timbo Exp $
+#   $Id: Sponge.pm,v 11.10 2004/01/07 17:38:51 timbo Exp $
 #
 #   Copyright (c) 1994-2003 Tim Bunce Ireland
 #
@@ -32,8 +32,8 @@
 	$drh;
     }
 
-    sub default_user {
-        return ('','');
+    sub CLONE {
+        undef $drh;
     }
 }
 
@@ -93,6 +93,10 @@
 		    || [ (DBI::SQL_VARCHAR()) x $numFields ];
 	    $sth->{PRECISION} = $attribs->{PRECISION}
 		    || [ map { length($sth->{NAME}->[$_]) } 0..$numFields -1 ];
+	    $sth->{SCALE} = $attribs->{SCALE}
+		    || [ (0) x $numFields ];
+	    $sth->{NULLABLE} = $attribs->{NULLABLE}
+		    || [ (2) x $numFields ];
 	}
 
 	$outer;

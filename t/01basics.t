@@ -1,5 +1,7 @@
 #!../../perl -w
 
+use Config qw(%Config);
+
 $^W=1;
 $|=1;
 
@@ -20,7 +22,8 @@ sub ok ($$;$) {
 
 use DBI qw(:sql_types :utils);
 
-warn " \tUsing DBI::PurePerl (DBI_PUREPERL=$DBI::PurePerl)\n" if $DBI::PurePerl;
+warn "   Using DBI::PurePerl (DBI_PUREPERL=$DBI::PurePerl) on $Config{archname}\n"
+    if $DBI::PurePerl;
 
 if (-f "/dev/null") {
     DBI->trace(42,"/dev/null");

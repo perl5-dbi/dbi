@@ -2,10 +2,10 @@ package DBI::DBD;
 
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
-$VERSION = sprintf("%d.%02d", q$Revision: 11.19 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("%d.%02d", q$Revision: 11.20 $ =~ /(\d+)\.(\d+)/o);
 
 
-# $Id: DBD.pm,v 11.19 2003/11/12 10:02:10 timbo Exp $
+# $Id: DBD.pm,v 11.20 2004/01/07 17:38:51 timbo Exp $
 #
 # Copyright (c) 1997-2003 Jonathan Leffler, Jochen Wiedmann, Steffen
 # Goeldner and Tim Bunce
@@ -58,8 +58,8 @@ DBI::DBD - Perl DBI Database Driver Writer's Guide
 
 =head2 Version and volatility
 
-  $Revision: 11.19 $
-  $Date: 2003/11/12 10:02:10 $
+  $Revision: 11.20 $
+  $Date: 2004/01/07 17:38:51 $
 
 This document is I<still> a minimal draft which is in need of further work.
 
@@ -708,7 +708,7 @@ version 1.10 to precede version 1.9, so that using a raw CVS, RCS or
 SCCS version number is probably not appropriate (despite being very
 common). For RCS or CVS you can use this code:
 
-  $VERSION = sprintf "%d.%02d", '$Revision: 11.19 $ ' =~ /(\d+)\.(\d+)/;
+  $VERSION = sprintf "%d.%02d", '$Revision: 11.20 $ ' =~ /(\d+)\.(\d+)/;
 
 which pads out the fractional part with leading zeros so all is well
 (so long as you don't go past x.99)
@@ -3627,7 +3627,7 @@ sub dbd_dbi_arch_dir {
     my @xst = grep { -f "$_/Driver.xst" } @try;
     Carp::croak("Unable to locate Driver.xst in @try") unless @xst;
     Carp::carp( "Multiple copies of Driver.xst found in: @xst") if @xst > 1;
-    print "Using DBI $DBI::VERSION installed in $xst[0]\n";
+    print "Using DBI $DBI::VERSION (for perl $] on $Config{archname}) installed in $xst[0]\n";
     return $xst[0];
 }
 
