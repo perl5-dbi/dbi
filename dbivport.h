@@ -18,7 +18,7 @@
 */
 #define DBIh_SET_ERR_CHAR(h, imp_xxh, err_c, err_i, errstr, state, method) \
         sv_setiv(DBIc_ERR(imp_xxh), err_i); \
-        (state) ? sv_setpv(DBIc_STATE(imp_xxh), state) : SvOK_off(DBIc_STATE(imp_xxh)); \
+        (state) ? (void)sv_setpv(DBIc_STATE(imp_xxh), state) : (void)SvOK_off(DBIc_STATE(imp_xxh)); \
         sv_setpv(DBIc_ERRSTR(imp_xxh), errstr)
 #endif
 

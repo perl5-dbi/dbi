@@ -441,6 +441,7 @@ sub finish {
     my $sth = shift;
     $sth->{Active}=0;
     delete $sth->{f_stmt}->{data};
+    return 1;
 }
 sub fetch ($) {
     my $sth = shift;

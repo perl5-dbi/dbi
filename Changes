@@ -6,7 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.44 (svn rev ???),    XXX
 
+fix utf8 leakage
+
   Fixed build issues on VMS thanks to Jakob Snoer.
+  Fixed DBD::File finish() method to return 1 thanks to Jan Dubois.
 
   Changed bind_param_array() so it doesn't require all bind arrays
     to have the same number of elements.

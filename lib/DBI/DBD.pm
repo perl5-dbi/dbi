@@ -3684,14 +3684,14 @@ sub dbd_edit_mm_attribs {
 	# so 'make' creates them and 'make clean' deletes them
 	my %test_variants = (
 	    pp => {	name => "DBI::PurePerl",
-			add => [ '$ENV{DBI_PUREPERL}=2;' ],
+			add => [ 'local $ENV{DBI_PUREPERL} = 2;' ],
 	    },
 	    mx => {	name => "DBD::Multiplex",
-			add => [ q{$ENV{DBI_AUTOPROXY}='dbi:Multiplex:';} ],
+			add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
 	    }
 	#   px => {	name => "DBD::Proxy",
 	#		need mechanism for starting/stopping the proxy server
-	#		add => [ q{$ENV{DBI_AUTOPROXY}='dbi:Proxy:XXX';} ],
+	#		add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Proxy:XXX';} ],
 	#   }
 	);
 	# currently many tests fail - DBD::Multiplex needs more work

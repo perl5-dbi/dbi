@@ -521,7 +521,7 @@ sub hash {
     elsif ($type == 1) {	# Fowler/Noll/Vo hash
         # see http://www.isthe.com/chongo/tech/comp/fnv/
         require Math::BigInt;   # feel free to reimplement w/o BigInt!
-	my $version = $Math::BigInt::VERSION || 0;
+	(my $version = $Math::BigInt::VERSION || 0) =~ s/_.*//; # eg "1.70_01"
 	if ($version >= 1.56) {
 	    $hash = Math::BigInt->new(0x811c9dc5);
 	    for my $uchar (unpack ("C*", $key)) {
