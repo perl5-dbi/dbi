@@ -3677,26 +3677,45 @@ sub dbd_edit_mm_attribs {
     if ($dbd_attr->{create_pp_tests}) {
 	# XXX need to convert this to work within the generated Makefile
 	# so 'make' creates them and 'make clean' deletes them
-	die "Can't create DBI::PurePerl tests unless 't' directory exists"
-		unless -d 't';
-	opendir DIR, 't';
+	my %test_variants = (
+	    pp => {	name => "DBI::PurePerl",
+			add => [ '$ENV{DBI_PUREPERL}=2;' ],
+	    },
+	    mx => {	name => "DBD::Multiplex",
+			add => [ q{$ENV{DBI_AUTOPROXY}='dbi:Multiplex:';} ],
+	    }
+	#   px => {	name => "DBD::Proxy",
+	#		need mechanism for starting/stopping the proxy server
+	#		add => [ q{$ENV{DBI_AUTOPROXY}='dbi:Proxy:XXX';} ],
+	#   }
+	);
+	# currently many tests fail - DBD::Multiplex needs more work
+	# to bring it up to date and improve transparency.
+	delete $test_variants{mx}; # unless -f "lib/DBD/Multiplex.pm";
+
+	opendir DIR, 't' or die "Can't create variants of tests in 't' directory: $!";
 	my @tests = grep { /\.t$/ } readdir DIR;
 	closedir DIR;
+
+	# XXX one day we may try combinations here, ie pp+mx!
+
 	foreach my $test (sort @tests) {
-	    next if $test =~ /^zz_.*_pp\.t$/;
-	    $test =~ s/\.t$//;
-	    my $pp_test = "t/zz_${test}_pp.t";
+	    next if $test !~ /^[0-8]/;
 	    my $usethr = ($test =~ /(\d+|\b)thr/ && $] >= 5.008 && $Config{useithreads});
-	    printf "Creating extra DBI::PurePerl test: $pp_test %s\n",
-		($usethr) ? "(use threads)" : "";
-	    open PPT, ">$pp_test" or warn "Can't create $pp_test: $!";
-	    print PPT "#!perl -w\n";
-	    print PPT "use threads;\n" if $usethr;
-	    print PPT "\$ENV{DBI_PUREPERL}=2;\n";
-	    print PPT "do 't/$test.t' or warn \$!;\n";
-	    print PPT 'die if $@;'."\n";
-	    print PPT "exit 0\n";
-	    close PPT or warn "Error writing $pp_test: $!";
+
+	    while ( my ($v_type, $v_info) = each %test_variants ) {
+		my $v_test = "t/zv${v_type}_$test";
+		printf "Creating %-16s test variant: $v_test %s\n",
+		    $v_info->{name}, ($usethr) ? "(use threads)" : "";
+		open PPT, ">$v_test" or warn "Can't create $v_test: $!";
+		print PPT "#!perl -w\n";
+		print PPT "use threads;\n" if $usethr;
+		print PPT "$_\n" foreach @{$v_info->{add}};
+		print PPT "do 't/$test' or warn \$!;\n";
+		print PPT 'die if $@;'."\n";
+		print PPT "exit 0\n";
+		close PPT or warn "Error writing $v_test: $!";
+	    }
 	}
     }
     return %$mm_attr;

@@ -58,5 +58,6 @@ t/42prof_data.t
 t/50dbm.t
 t/60preparse.t
 t/80proxy.t
+t/pod.t
 test.pl				A very simple test harness using ExampleP.pm
 typemap

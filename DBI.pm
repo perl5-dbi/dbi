@@ -6585,6 +6585,11 @@ If you'd like the DBI to do something new or different the best way
 to make that happen is to do it yourself and send me a patch to the
 source code that shows the changes.
 
+=head2 Browsing the source code repository
+
+Use http://svn.perl.org/modules/dbi/trunk (basic)
+or  http://svn.perl.org/viewcvs/modules/ (more useful)
+
 =head2 How to create a patch using Subversion
 
 The DBI source code is maintained using Subversion (a replacement

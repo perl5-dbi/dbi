@@ -22,7 +22,7 @@ my %parent_only_attr = (
     # mx needs to manage errors from children
     RaiseError => 1, PrintError => 1, HandleError => 1,
     # Kids would give wrong counts
-    Kids => 1, ActiveKids => 1, CachedKids => 1,
+    Kids => 1, ActiveKids => 1, CachedKids => 0,
     Profile => 1,	# profile at the mx level
     Statement => 1,	# else first_success + mx_shuffle of prepare() give wrong results
 );
@@ -208,12 +208,18 @@ sub mx_do_calls {
 	    $parent_handle->trace_msg(" mx ++ calling $child_handle->$method(".DBI::neat_list($args).")\n");
 	}
 
+# XXX need to always force RaiseError on the child handles so we can let the DBI
+# work out when an error has happened rather than have to duplicate the logic here
+# (which is difficult and slow given FETCH and ErrorCount behaviour)
+
+	local $@;
 	# Here, the actual method being multiplexed is being called.
 	push @results, ($wantarray) 
-		? [        $child_handle->$method(@$args) ]
-		: [ scalar $child_handle->$method(@$args) ];
+		? [ eval {        $child_handle->$method(@$args) } ]
+		: [ eval { scalar $child_handle->$method(@$args) } ];
 
-	if (my $child_err = $child_handle->err) {
+	if ($@) {
+	    my $child_err = $child_handle->err;
 	    my $child_errstr = $child_handle->errstr;
 	    my $error_info = [ $child_err, $child_errstr, $child_handle ];
 	    $errors[@results - 1] = $error_info;
@@ -347,6 +353,7 @@ sub connect {
 
     # delete error handling attribute that we want handled only at top level
     delete $child_connect_attr{$_} for (qw(RaiseError HandleError));
+    $child_connect_attr{RaiseError} = 1; # explicitly silence default
     $child_connect_attr{PrintError} = 0; # explicitly silence default
 
     # delete any multiplex specific attributes from child connect
