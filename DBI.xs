@@ -657,10 +657,10 @@ set_trace(SV *h, SV *level_sv, SV *file)
     if (level != RETVAL) { /* set value */
 	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
 	    PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-		"    %s trace level set to 0x%lx/%ld (DBI @ Ox%lx/%ld) in DBI %s%s (pid %d)\n",
+		"    %s trace level set to 0x%lx/%ld (DBI @ 0x%lx/%ld) in DBI %s%s (pid %d)\n",
 		neatsvpv(h,0),
-		(long)(level &  DBIc_TRACE_LEVEL_MASK),
-		(long)(level & ~DBIc_TRACE_LEVEL_MASK),
+		(long)(level & DBIc_TRACE_FLAGS_MASK),
+		(long)(level & DBIc_TRACE_LEVEL_MASK),
 		DBIc_TRACE_LEVEL(imp_xxh), DBIc_TRACE_FLAGS(imp_xxh),
 		XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
 	    if (!PL_dowarn)
@@ -2288,7 +2288,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     int is_DESTROY;
     int is_FETCH;
     int keep_error = FALSE;
-    UV  ErrCount = ~0;
+    UV  ErrCount = UV_MAX;
     int i, outitems;
     int call_depth;
     double profile_t1 = 0.0;
@@ -3555,10 +3555,10 @@ trace(class, level_sv=&sv_undef, file=Nullsv)
         set_trace_file(file);
     if (level != RETVAL) {
 	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
-	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to Ox%lx/%ld (in pid %d)\n",
+	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d)\n",
 		XS_VERSION, dbi_build_opt,
-                (long)(level &  DBIc_TRACE_LEVEL_MASK),
-                (long)(level & ~DBIc_TRACE_LEVEL_MASK),
+                (long)(level & DBIc_TRACE_FLAGS_MASK),
+                (long)(level & DBIc_TRACE_LEVEL_MASK),
 		(int)PerlProc_getpid());
 	    if (!PL_dowarn)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
