@@ -116,6 +116,7 @@ else {
   ok(0, DBI::hash("foo2",1) == -1263462437,  DBI::hash("foo2",1));
 }
 
+if (-d ".svn") { # restrict this test to developers
 print "Test DBI->installed_versions (for @drivers)\n";
 print "(If one of those drivers, or the configuration for it, is bad\n";
 print "then these tests can kill or freeze the process here. That's not the DBI's fault.)\n";
@@ -130,6 +131,10 @@ ok(0, %$installed_versions);
 my @installed_drivers = DBI->installed_versions;
 ok(0, @installed_drivers >= 1);
 ok(0, grep { $_ eq 'Sponge' } @installed_drivers);
+}
+else {
+ok(0,1) for (1..4);
+}
 
 BEGIN { $tests = 47 }
 exit 0;
