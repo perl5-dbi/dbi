@@ -41,7 +41,7 @@ my($sth, $col0, $col1, $col2, $rows);
 # etc etc
 
 # --- fetchall_hashref
-my @fetchall_hashref_results = (
+my @fetchall_hashref_results = (	# single keys
   C1 => {
     41  => { C1 => 41, C2 => 'BBB', C3 => 9 },
     42  => { C1 => 42, C2 => 'BBB', C3 => undef },
@@ -54,9 +54,29 @@ my @fetchall_hashref_results = (
     DDD => { C1 => 44, C2 => 'DDD', C3 => 6 },
     ccc => { C1 => 43, C2 => 'ccc', C3 => 7 }
   },
-#  [ 'C1' ] => undef,
-#  [ 'C2' ] => undef,
-#  [ 'C1', 'C2' ] => undef,
+  [ 'C2' ] => {				# single key within arrayref
+    AAA => { C1 => 41, C2 => 'AAA', C3 => 9 },
+    BBB => { C1 => 42, C2 => 'BBB', C3 => undef },
+    DDD => { C1 => 44, C2 => 'DDD', C3 => 6 },
+    ccc => { C1 => 43, C2 => 'ccc', C3 => 7 }
+  },
+);
+push @fetchall_hashref_results, (	# multiple keys
+  [ 'C1', 'C2' ] => {
+    '41' => {
+      AAA => { C1 => '41', C2 => 'AAA', C3 => 9 },
+      BBB => { C1 => '41', C2 => 'BBB', C3 => 9 }
+    },
+    '42' => {
+      BBB => { C1 => '42', C2 => 'BBB', C3 => undef }
+    },
+    '43' => {
+      ccc => { C1 => '43', C2 => 'ccc', C3 => 7 }
+    },
+    '44' => {
+      DDD => { C1 => '44', C2 => 'DDD', C3 => 6 }
+    }
+  },
 );
 
 while (my $keyfield = shift @fetchall_hashref_results) {

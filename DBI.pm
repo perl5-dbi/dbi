@@ -1942,23 +1942,32 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return \@rows;
     }
 
-    sub fetchall_hashref {	# XXX may be better to fetchall_arrayref then convert to hashes
+    sub fetchall_hashref {
 	my ($sth, $key_field) = @_;
 
-	my $hash_key_name = $sth->{FetchHashKeyName};
-	my $names_hash = $sth->FETCH("${hash_key_name}_hash");
-	my $index = $names_hash->{$key_field};	# perl index not column number
-	++$index if defined $index;		# convert to column number
-	$index ||= $key_field if DBI::looks_like_number($key_field) && $key_field>=1;
-	return $sth->set_err(1, "Field '$key_field' does not exist (not one of @{[keys %$names_hash]})")
-		unless defined $index;
-	my $key_value;
-	$sth->bind_col($index, \$key_value) or return;
-	my %rows;
-	while (my $row = $sth->fetchrow_hashref($hash_key_name)) {
-	    $rows{ $key_value } = $row;
-	}
-	return \%rows;
+        my $hash_key_name = $sth->{FetchHashKeyName} || 'NAME';
+        my $names_hash = $sth->FETCH("${hash_key_name}_hash");
+        my @key_fields = (ref $key_field) ? @$key_field : ($key_field);
+        my @key_indexes;
+        my $num_of_fields = $sth->FETCH('NUM_OF_FIELDS');
+        foreach (@key_fields) {
+           my $index = $names_hash->{$_};  # perl index not column
+           $index = $_ - 1 if !defined $index && DBI::looks_like_number($_) && $_>=1 && $_ <= $num_of_fields;
+           return $sth->set_err(1, "Field '$_' does not exist (not one of @{[keys %$names_hash]})")
+                unless defined $index;
+           push @key_indexes, $index;
+        }
+        my $rows = {};
+        my $NAME = $sth->FETCH($hash_key_name);
+        my @row;
+        push @row, undef for (1..$num_of_fields);
+        $sth->bind_columns(\(@row));
+        while ($sth->fetch) {
+            my $ref = $rows;
+            $ref = $ref->{$row[$_]} ||= {} for @key_indexes;
+            @{$ref}{@$NAME} = @row;
+        }
+        return $rows;
     }
 
     *dump_results = \&DBI::dump_results;
@@ -3948,9 +3957,11 @@ passing to C</fetchall_arrayref>.
 
 This utility method combines L</prepare>, L</execute> and
 L</fetchall_hashref> into a single call. It returns a reference to a
-hash containing one entry for each row. The key for each row entry is
-specified by $key_field. The value is a reference to a hash returned by
-C<fetchrow_hashref>.
+hash containing one entry, at most, for each row.  
+The C<$key_field> parameter can be the name of the key field for tables
+with a single column primary key, otherwise an array reference to the primary 
+key columns can be given. The value is a reference to a hash returned by
+C<fetchall_hashref>.
 
 The C<$statement> parameter can be a previously prepared statement handle,
 in which case the C<prepare> is skipped. This is recommended if the
@@ -5667,6 +5678,13 @@ This method is normally used only where the key field value for each
 row is unique.  If multiple rows are returned with the same value for
 the key field then later rows overwrite earlier ones.
 
+For tables with a multiple columns primary key, an array reference 
+can be specified:
+
+  $sth = $dbh->prepare("SELECT date, account, revenue, profit FROM TABLE");
+  $sth->execute;
+  $hash_ref = $sth->fetchall_hashref([qw(date account)]);
+  print "Revenue for account 42 on 2005-02-18 is $hash_ref->{'2005-02-18'}{42}{revenue}\n";
 
 =item C<finish>
 
