@@ -10,6 +10,8 @@ Document $t->parse_trace_flags etc
 
   Fixed compiler warning thanks to Paul Marquess.
   Fixed "trace level set to" trace message thanks to H.Merijn Brand.
+  Fixed DBD::DBM $dbh->{dbm_tables}->{...} to be keyed by the
+    table name not the file name thanks to Jeff Zucker.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.
