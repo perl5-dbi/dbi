@@ -4,7 +4,7 @@ use strict;
 use Test::More;
 use DBI;
 
-BEGIN { plan tests => 147 }
+BEGIN { plan tests => 149 }
 
 $|=1;
 
@@ -123,7 +123,9 @@ ok( $sth->{Executed} );	# even though it failed
 ok( $dbh->{Executed} );	# due to $sth->prepare, even though it failed
 
 is( $sth->{ErrCount}, 1 );
-$sth->{ErrCount} = 42;
+eval { $sth->{ErrCount} = 42 };
+ok($@);
+ok($@ =~ m/STORE failed:/);
 is( $sth->{ErrCount}, 42 );
 $sth->{ErrCount} = 0;
 is( $sth->{ErrCount}, 0 );

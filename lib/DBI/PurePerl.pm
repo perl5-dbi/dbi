@@ -250,6 +250,10 @@ sub  _install_method {
     }
 
     push @pre_call_frag, q{
+	my $ErrCount = $h->{ErrCount};
+    };
+
+    push @pre_call_frag, q{
         if (($DBI::dbi_debug & 0xF) >= 2) {
 	    local $^W;
 	    my $args = join " ", map { DBI::neat($_) } ($h, @_);
@@ -283,6 +287,8 @@ sub  _install_method {
     } if IMA_END_WORK & $bitmask;
 
     push @post_call_frag, q{
+	$keep_error = 0 if $keep_error && $h->{ErrCount} > $ErrCount;
+
         if ( !$keep_error
 	&& defined(my $err = $h->{err})
 	&& ($call_depth <= 1 && !$h->{_parent}{_call_depth})
@@ -328,7 +334,7 @@ sub  _install_method {
 		}
 	    }
 	}
-    } unless IMA_KEEP_ERR & $bitmask;
+    };
 
 
     my $method_code = q[

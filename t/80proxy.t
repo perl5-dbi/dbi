@@ -308,7 +308,7 @@ while (defined(my $file = readdir(DIR))) {
     $dirs{$file} = 1 if -d $file;
 }
 closedir(DIR);
-my $sth = $dbh->table_info();
+my $sth = $dbh->table_info(undef, undef, undef, undef);
 Test($sth) or warn "table_info failed: ", $dbh->errstr(), "\n";
 %missing = %dirs;
 %unexpected = ();

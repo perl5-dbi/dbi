@@ -2228,6 +2228,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     int is_DESTROY;
     int is_FETCH;
     int keep_error = FALSE;
+    UV  ErrCount = ~0;
     int i, outitems;
     int call_depth;
     double profile_t1 = 0.0;
@@ -2492,6 +2493,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 	DBIh_CLEAR_ERROR(imp_xxh);
     }
+    else	/* we check for change in ErrCount during call */
+	ErrCount = DBIc_ErrCount(imp_xxh);
 
     /* The "quick_FETCH" logic...					*/
     /* Shortcut for fetching attributes to bypass method call overheads */
@@ -2625,6 +2628,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     }
 
     post_dispatch:
+
+    /* if we didn't clear err before the call, check if ErrCount has gone up */
+    /* if so, we turn off keep_error so error is acted on                    */
+    if (keep_error && DBIc_ErrCount(imp_xxh) > ErrCount)
+	keep_error = 0;
 
     err_sv = DBIc_ERR(imp_xxh);
 
@@ -3407,21 +3415,21 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     {
     dPERINTERP;
     /* install another method name/interface for the DBI dispatcher	*/
-    int debug = (DBIS_TRACE_LEVEL >= 10);
+    SV *trace_msg = (DBIS_TRACE_LEVEL >= 10) ? sv_2mortal(newSVpv("",0)) : Nullsv;
     CV *cv;
     SV **svp;
     dbi_ima_t *ima = NULL;
     dbi_class = dbi_class;		/* avoid 'unused variable' warning	*/
 
-    if (debug)
-	PerlIO_printf(DBILOGFP,"install_method %s\t", meth_name);
-
     if (strnNE(meth_name, "DBI::", 5))	/* XXX m/^DBI::\w+::\w+$/	*/
-	croak("install_method: invalid name '%s'", meth_name);
+	croak("install_method %s: invalid class", meth_name);
 
-    if (attribs && SvROK(attribs)) {
-	SV *sv;
+    if (trace_msg)
+	sv_catpvf(trace_msg, "install_method %-21s", meth_name);
+
+    if (attribs && SvOK(attribs)) {
 	/* convert and store method attributes in a fast access form	*/
+	SV *sv;
 	if (SvTYPE(SvRV(attribs)) != SVt_PVHV)
 	    croak("install_method %s: bad attribs", meth_name);
 
@@ -3432,6 +3440,11 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 	DBD_ATTRIB_GET_IV(attribs, "T",1, svp, ima->trace_level);
 	DBD_ATTRIB_GET_IV(attribs, "H",1, svp, ima->hidearg);
 
+	if (trace_msg) {
+	    if (ima->flags)	  sv_catpvf(trace_msg, ", flags 0x%04x", ima->flags);
+	    if (ima->trace_level) sv_catpvf(trace_msg, ", T %d", ima->trace_level);
+	    if (ima->hidearg)	  sv_catpvf(trace_msg, ", H %d", ima->hidearg);
+	}
 	if ( (svp=DBD_ATTRIB_GET_SVP(attribs, "U",1)) != NULL) {
 	    STRLEN lna;
 	    AV *av = (AV*)SvRV(*svp);
@@ -3440,20 +3453,15 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 			      svp = av_fetch(av, 2, 0);
 	    ima->usage_msg  = savepv( (svp) ? SvPV(*svp,lna) : "");
 	    ima->flags |= IMA_HAS_USAGE;
-	    if (debug)
-		PerlIO_printf(DBILOGFP,"    usage: min %d, max %d, '%s', tl %d\n",
-			ima->minargs, ima->maxargs, ima->usage_msg, ima->trace_level);
+	    if (trace_msg && DBIS_TRACE_LEVEL >= 11)
+		sv_catpvf(trace_msg, ",\n    usage: min %d, max %d, '%s'",
+			ima->minargs, ima->maxargs, ima->usage_msg);
 	}
-	if (debug)
-	    PerlIO_printf(DBILOGFP,", flags 0x%x", ima->flags);
-
-    } else if (attribs && SvOK(attribs)) {
-	croak("install_method %s: attributes not a ref", meth_name);
     }
+    if (trace_msg)
+	PerlIO_printf(DBILOGFP,"%s\n", SvPV_nolen(trace_msg));
     cv = newXS(meth_name, XS_DBI_dispatch, file);
     CvXSUBANY(cv).any_ptr = ima;
-    if (debug)
-	PerlIO_printf(DBILOGFP,"\n");
     ST(0) = &sv_yes;
     }
 

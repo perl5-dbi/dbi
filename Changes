@@ -26,7 +26,7 @@ FETCH would be err_keep_in and err_chknew_rtn
     so that fetchall_arrayref(), for example, doesn't flood the trace.
   Changed trace level to be a four bit integer (levels 0 thru 15)
     and a set of topic flags (no topics have been assigned yet).
-  Change table_info() and column_info() to check argument count.
+  Changed column_info() to check argument count.
   Extended bind_param() TYPE attribute specification to imply
     standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
 

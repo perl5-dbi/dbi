@@ -408,7 +408,7 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	rows       	=> $keeperr,
 
 	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x0200 },
-	table_info      => { U =>[5,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x0200|0x0800 },
+	table_info      => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x0200|0x0800 },
 	column_info     => { U =>[5,6,'$catalog, $schema, $table, $column [, \%attr ]'],O=>0x0200|0x0800 },
 	primary_key_info=> { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200|0x0800 },
 	primary_key     => { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200 },
@@ -1500,7 +1500,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub tables {
 	my ($dbh, @args) = @_;
-	my $sth    = $dbh->table_info(@args) or return;
+	my $sth    = $dbh->table_info(@args[0,1,2,3,4]) or return;
 	my $tables = $sth->fetchall_arrayref or return;
 	my @tables;
 	if ($dbh->get_info(29)) { # SQL_IDENTIFIER_QUOTE_CHAR
