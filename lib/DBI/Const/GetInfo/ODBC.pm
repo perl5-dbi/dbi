@@ -328,6 +328,7 @@ See: mk:@MSITStore:X:\dm\cli\mdac\sdk26\Docs\odbc.chm::/htm/odbcsqlgetinfo.htm
 , SQL_CURSOR_SENSITIVITY              => 'SQLUINTEGER'         # 10001
 , SQL_DATA_SOURCE_NAME                => 'SQLCHAR'             #     2
 , SQL_DATA_SOURCE_READ_ONLY           => 'SQLCHAR'             #    25
+, SQL_DATABASE_NAME                   => 'SQLCHAR'             #    16 
 , SQL_DATETIME_LITERALS               => 'SQLUINTEGER bitmask' #   119
 , SQL_DBMS_NAME                       => 'SQLCHAR'             #    17
 , SQL_DBMS_VER                        => 'SQLCHAR'             #    18
