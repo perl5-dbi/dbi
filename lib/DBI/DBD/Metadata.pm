@@ -243,7 +243,7 @@ A possible implementation of DBD::Driver::type_info_all() may look like:
   sub type_info_all {
     my ($dbh) = @_;
     require DBD::Driver::TypeInfo;
-    return $DBD::Driver::TypeInfo::type_info_all;
+    return [ @$DBD::Driver::TypeInfo::type_info_all ];
   }
 
 Please replace Driver (or "<foo>") with the name of your driver.
@@ -326,7 +326,7 @@ package DBD::${driver}::db;         # This line can be removed once transferred.
     {
         my (\$dbh) = \@_;
         require DBD::${driver}::TypeInfo;
-        return \$DBD::${driver}::TypeInfo::type_info_all;
+        return [ \@\$DBD::${driver}::TypeInfo::type_info_all ];
     }
 
 # Transfer this to lib/DBD/${driver}/TypeInfo.pm.

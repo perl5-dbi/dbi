@@ -295,6 +295,7 @@ tie %DBI::DBI => 'DBI::DBI_tie';
 my $dbd_prefix_registry = {
   ad_      => { class => 'DBD::AnyData',	},
   ado_     => { class => 'DBD::ADO',		},
+  amzn_    => { class => 'DBD::Amazon',		},
   best_    => { class => 'DBD::BestWins',	},
   csv_     => { class => 'DBD::CSV',		},
   db2_     => { class => 'DBD::DB2',		},
@@ -328,6 +329,7 @@ my $dbd_prefix_registry = {
   uni_     => { class => 'DBD::Unify',		},
   xbase_   => { class => 'DBD::XBase',		},
   xl_      => { class => 'DBD::Excel',		},
+  yaswi_   => { class => 'DBD::Yaswi',		},
 };
 
 sub dump_dbd_registry {
@@ -3339,9 +3341,25 @@ If C<PrintError> is also on, then the C<PrintError> is done first (naturally).
 
 Typically C<RaiseError> is used in conjunction with C<eval { ... }>
 to catch the exception that's been thrown and followed by an
-C<if ($@) { ... }> block to handle the caught exception. In that eval
-block the $DBI::lasth variable can be useful for diagnosis and reporting.
-For example, $DBI::lasth->{Type} and $DBI::lasth->{Statement}.
+C<if ($@) { ... }> block to handle the caught exception.
+For example:
+
+  eval {
+    ...
+    $sth->execute();
+    ...
+  };
+  if ($@) {
+    # $sth->err and $DBI::err will be true if error was from DBI
+    warn $@; # print the error
+    ... # do whatever you need to deal with the error
+  }
+
+In that eval block the $DBI::lasth variable can be useful for
+diagnosis and reporting if you can't be sure which handle triggered
+the error.  For example, $DBI::lasth->{Type} and $DBI::lasth->{Statement}.
+
+See also L</Transactions>.
 
 If you want to temporarily turn C<RaiseError> off (inside a library function
 that is likely to fail, for example), the recommended way is like this:
