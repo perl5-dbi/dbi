@@ -4,10 +4,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head1 CHANGES in DBI 1.41 (svn rev XX),    17th February 2004
-
-Split keep_err ima into err_keep_call err_ignore_rtn, err_chknew_rtn
-FETCH would be err_keep_in and err_chknew_rtn
+=head1 CHANGES in DBI 1.41 (svn rev 130),    22nd February 2004
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.

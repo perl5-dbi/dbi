@@ -4036,6 +4036,9 @@ For example:
   $sth = $dbh->primary_key_info( undef, $user, 'foo' );
   $data = $sth->fetchall_arrayref;
 
+The statement handle will return one row per column, ordered by
+TABLE_CAT, TABLE_SCHEM, TABLE_NAME, and KEY_SEQ.
+
 Note: The support for the selection criteria, such as $catalog, is
 driver specific.  If the driver doesn't support catalogs and/or
 schemas, it may ignore these criteria.
