@@ -2,20 +2,19 @@
 # vim:sw=4:ts=8
 
 use strict;
-use Test::More;
-use DBI;
+use Test::More tests => 66;
 
-BEGIN { plan tests => 65 }
+BEGIN { use_ok( 'DBI' ); }
 
 $|=1;
 
 # Connect to the example driver.
-ok( my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
+my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
                            { PrintError => 0,
                              RaiseError => 1,
                              PrintWarn => 1,
-                           })
-);
+                           });
+isa_ok( $dbh, 'DBI::db' );
 
 # Clean up when we're done.
 END { $dbh->disconnect if $dbh };
@@ -70,7 +69,8 @@ is $dbh->{TraceLevel}, $all_flags;
 
 {
 print "inherit\n";
-ok( my $sth = $dbh->prepare("select ctime, name from foo") );
+my $sth = $dbh->prepare("select ctime, name from foo");
+isa_ok( $sth, 'DBI::st' );
 is( $sth->{TraceLevel}, $all_flags );
 }
 

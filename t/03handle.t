@@ -1,19 +1,18 @@
 #!perl -w
 
 use strict;
-use Test::More;
+use Test::More tests => 68;
 use Data::Dumper;
 
 # handle tests
 
-BEGIN { plan tests => 52 }
-
-use DBI;
+BEGIN { use_ok( 'DBI' ) }
 
 my $driver = "ExampleP";
 
 do {
     my $dbh = DBI->connect("dbi:$driver:", '', '');
+    isa_ok( $dbh, 'DBI::db' );
 
     my $sql = "select name from ?";
     my $sth1 = $dbh->prepare_cached($sql);
@@ -25,7 +24,7 @@ do {
     local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /still active/ };
     my $sth2 = $dbh->prepare_cached($sql);
     ok($sth1 == $sth2);
-    ok($warn == 1);
+    is($warn, 1);
     ok(!$sth1->{Active});
 
        $sth2 = $dbh->prepare_cached($sql, { foo => 1 });
@@ -35,6 +34,7 @@ do {
     ok($sth1->execute("."));
     ok($sth1->{Active});
        $sth2 = $dbh->prepare_cached($sql, undef, 3);
+    isa_ok( $sth2, 'DBI::st' );
     ok($sth1 != $sth2);
     ok($sth1->{Active}); # active but no longer cached
     $sth1->finish;
@@ -42,6 +42,7 @@ do {
     ok($sth2->execute("."));
     ok($sth2->{Active});
        $sth1 = $dbh->prepare_cached($sql, undef, 1);
+    isa_ok( $sth2, 'DBI::st' );
     ok($sth1 == $sth2);
     ok(!$sth2->{Active});
 
@@ -50,7 +51,7 @@ do {
 };
 
 my $drh = DBI->install_driver($driver);
-ok($drh);
+isa_ok( $drh, 'DBI::dr' );
 is($drh->{Kids}, 0);
 
 
@@ -59,9 +60,20 @@ is($drh->{Kids}, 0);
 sub work {
     my (%args) = @_;
     my $dbh = DBI->connect("dbi:$driver:", '', '');
-    ok(ref $dbh->{Driver}) if $args{Driver};
+    isa_ok( $dbh, 'DBI::db' );
+    if ( $args{Driver} ) {
+        isa_ok( $dbh->{Driver}, 'DBI::dr' );
+    } else {
+        pass( "No driver passed" );
+    }
+
     my $sth = $dbh->prepare_cached("select name from ?");
-    ok(ref $sth->{Database}) if $args{Database};
+    isa_ok( $sth, 'DBI::st' );
+    if ( $args{Database} ) {
+        isa_ok( $sth->{Database}, 'DBI::db' );
+    } else {
+        pass( "No database passed" );
+    }
     $dbh->disconnect;
     # both handles should be freed here
 }

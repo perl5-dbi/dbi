@@ -29,13 +29,13 @@ $DBI::neat_maxlen = 12345;
 my @connect_args = ("dbi:ExampleP:", '', '');
 
 my $dbh_parent = DBI->connect_cached(@connect_args);
-ok($dbh_parent);
+isa_ok( $dbh_parent, 'DBI::db' );
 
 sub tests1 {
   is($DBI::neat_maxlen, 12345);
 
   my $dbh = DBI->connect_cached(@connect_args);
-  ok($dbh);
+  isa_ok( $dbh, 'DBI::db' );
   isnt($dbh, $dbh_parent);
   is($dbh->{Driver}->{Kids}, 1) unless $DBI::PurePerl && ok(1);
 }

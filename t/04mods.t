@@ -1,15 +1,11 @@
 #!perl -w
 
 use strict;
-use Test;
+use Test::More tests=>6;
 
-BEGIN { plan tests => 3 }
-
-use DBI;
-
-use DBI::Const::GetInfoType qw(%GetInfoType);
-
-use DBI::Const::GetInfoReturn qw(%GetInfoReturnTypes %GetInfoReturnValues);
+BEGIN { use_ok( 'DBI' ); }
+BEGIN { use_ok( 'DBI::Const::GetInfoType', qw(%GetInfoType) ); }
+BEGIN { use_ok( 'DBI::Const::GetInfoReturn',  qw(%GetInfoReturnTypes %GetInfoReturnValues) ); }
 
 ok(keys %GetInfoType);
 

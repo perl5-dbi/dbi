@@ -640,8 +640,8 @@ sub connect {
 
 	# if the caller has provided a callback then call it
 	# especially useful with connect_cached() XXX not enabled/tested/documented
-	if (0 && $dbh && my $oc = $dbh->{OnConnect}) { # XXX
-	    $oc->($dbh, $dsn, $user, $auth, $attr) if ref $oc eq 'CODE';
+	if (0 and $dbh and my $oc = $dbh->{OnConnect}) { # XXX
+	    $oc->($dbh, $dsn, $user, $pass, $attr) if ref $oc eq 'CODE';
 	}
 
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;

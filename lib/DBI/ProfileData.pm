@@ -625,6 +625,8 @@ END
 
 __END__
 
+=back
+
 =head1 AUTHOR
 
 Sam Tregar <sam@tregar.com>

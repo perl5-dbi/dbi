@@ -88,7 +88,7 @@ sub do_test {
     else {
         print $dbh->func('dbm_versions');
     }
-    ok($dbh);
+    isa_ok($dbh, 'DBI::db');
 
     # test if it correctly accepts valid $dbh attributes
     #

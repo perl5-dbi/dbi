@@ -187,6 +187,8 @@ case-sensitively.  Defaults to off.
 
 Print the dbiprof version number and exit.
 
+=back
+
 =head1 AUTHOR
 
 Sam Tregar <sam@tregar.com>

@@ -1,19 +1,18 @@
 #!perl -w
 
 use strict;
-use Test::More;
-use DBI;
+use Test::More tests => 144;
 
-BEGIN { plan tests => 143 }
+BEGIN { use_ok( 'DBI' ) }
 
 $|=1;
 
 # Connect to the example driver.
-ok( my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
+my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
                            { PrintError => 0,
                              RaiseError => 1,
-                           })
-);
+                           });
+isa_ok( $dbh, 'DBI::db' );
 
 # Clean up when we're done.
 END { $dbh->disconnect if $dbh };
@@ -68,7 +67,7 @@ is( $dbh->{ErrCount}, 1 );
 # ------ Test the driver handle attributes.
 
 ok( my $drh = $dbh->{Driver} );
-ok( UNIVERSAL::isa($drh, 'DBI::dr') );
+isa_ok( $drh, 'DBI::dr' );
 ok( $dbh->err );
 
 is( $drh->{ErrCount}, 0 );
@@ -114,7 +113,7 @@ is( $sth->{ErrCount}, 0 );
 eval { $sth->execute };
 ok( $err = $@ );
 # we don't check actual opendir error msg because of locale differences
-ok( $err =~ /^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i ) or print "\$\@=$err\n";
+like( $err, qr/^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i );
 
 # Test all of the statement handle attributes.
 ok( $sth->errstr =~ /^opendir\(foo\): / ) or print "errstr: ".$sth->errstr."\n";
@@ -125,7 +124,7 @@ ok( $dbh->{Executed} );	# due to $sth->prepare, even though it failed
 is( $sth->{ErrCount}, 1 );
 eval { $sth->{ErrCount} = 42 };
 ok($@);
-ok($@ =~ m/STORE failed:/);
+like($@, qr/STORE failed:/);
 is( $sth->{ErrCount}, 42 );
 $sth->{ErrCount} = 0;
 is( $sth->{ErrCount}, 0 );
