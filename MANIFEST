@@ -1,4 +1,4 @@
-Changes
+Changes				History of significant changes to the DBI
 DBI.pm				The Database Interface Module Perl code
 DBI.xs				The Database Interface Module XS code
 DBIXS.h				The DBI XS public interface for Drivers (DBD::...)
@@ -9,6 +9,7 @@ META.yml			Module meta-data in YAML
 Makefile.PL			The Makefile generator
 Perl.xs				Test harness (currently) for Driver.xst
 README
+Roadmap.pod			Planned changes and enhancements for the DBI
 ToDo				Occasional random notes about what's missing
 dbd_xsh.h			Prototypes for standard Driver.xst interface
 dbi_sql.h			Definitions based on SQL CLI / ODBC (#inc'd by DBIXS.h)
@@ -17,10 +18,10 @@ dbiprof.PL
 dbiproxy.PL			Frontend for DBI::ProxyServer
 dbivport.h			DBI version portability macros (for drivers to copy)
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
-lib/DBD/ExampleP.pm		A very simple example Driver module
-lib/DBD/NullP.pm		An empty example Driver module
-lib/DBD/File.pm			A driver base class for simple drivers
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
+lib/DBD/ExampleP.pm		A very simple example Driver module
+lib/DBD/File.pm			A driver base class for simple drivers
+lib/DBD/NullP.pm		An empty example Driver module
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
 lib/DBI/Const/GetInfo/ANSI.pm	GetInfo data based on ANSI standard

@@ -1,10 +1,13 @@
-=head1 DBI ROADMAP
+=head1 NAME
 
-By Tim Bunce - 27th September 2004
+DBI ROADMAP - Planned Changes and Enhancements for the DBI
 
-=head2 Summary
+Tim Bunce - 5th October 2004
 
-This document gives a high level overview of the future of the Perl DBI module.
+=head2 SYNOPSIS
+
+This document gives a high level overview of the future of
+the Perl DBI module.
 
 The DBI module is the standard database interface for Perl applications.
 It is used worldwide in countless applications, in every kind of
@@ -24,13 +27,14 @@ Addressing these issues now, in coordinated way, will help ensure
 maximum future functionality with minimal disruptive (incompatible)
 upgrades.
 
-
-=head2 Scope
+=head2 SCOPE
 
 Broad categories of changes are outlined here along with some rationale,
 but implementation details and minor planned enhancements are omitted.
 More details can be found in: L<http://svn.perl.org/modules/dbi/trunk/ToDo>
 
+
+=head1 CHANGES AND ENHANCEMENTS
 
 =head2 Batch Statements
 
@@ -276,7 +280,8 @@ The project stalled, due to Parrot not having key functionality at the time.
 That has been resolved but the project has not yet restarted.
 
 Each language targeting Parrot would implement their own small
-language-specific method dispatcher over the Parrot DBDI interface.
+language-specific method dispatcher (a "Perl6 DBI", "Python DBI",
+"PHP DBI" etc) layered over the common Parrot DBDI interface and drivers.
 
 The major benefit of the DBDI project is that a much wider community
 of developers share the same database drivers. There would be more
@@ -323,7 +328,7 @@ Once DBI v2.0 is available, the other enhancements can be implemented
 incrementally on the updated foundations. Priorities for those
 changes have not yet been set.
 
-=head1 Resources and Contributions
+=head1 RESOURCES AND CONTRIBUTIONS
 
 This roadmap does not address the resources required to implement
 in a timely manner the changes for DBI v2.0 and beyond.
