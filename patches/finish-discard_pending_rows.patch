@@ -1,0 +1,121 @@
+Index: DBI.xs
+===================================================================
+--- DBI.xs	(revision 139)
++++ DBI.xs	(working copy)
+@@ -3926,10 +3926,13 @@
+ 
+ 
+ void
+-finish(sth)
++discard_pending_rows(sth)
+     SV *	sth
++    ALIAS:
++	finish = 1
+     CODE:
+     D_imp_sth(sth);
++    ix = ix; /* avoid unused variable warning */
+     DBIc_ACTIVE_off(imp_sth);
+     ST(0) = &sv_yes;
+ 
+Index: t/03handle.t
+===================================================================
+--- t/03handle.t	(revision 137)
++++ t/03handle.t	(working copy)
+@@ -133,6 +133,7 @@
+ is $sth->{NAME_hash}, undef;
+ is $sth->{NAME_uc_hash}, undef;
+ is $sth->{NAME_lc_hash}, undef;
++$sth->finish;
+ 
+ 
+ exit 0;
+Index: lib/DBD/NullP.pm
+===================================================================
+--- lib/DBD/NullP.pm	(revision 137)
++++ lib/DBD/NullP.pm	(working copy)
+@@ -104,10 +104,6 @@
+ 	return undef;
+     }
+ 
+-    sub finish {
+-	my($sth) = @_;
+-    }
+-
+     sub FETCH {
+ 	my ($sth, $attrib) = @_;
+ 	# would normally validate and only fetch known attributes
+Index: Driver.xst
+===================================================================
+--- Driver.xst	(revision 63)
++++ Driver.xst	(working copy)
+@@ -620,12 +620,15 @@
+ 
+ 
+ void
+-finish(sth)
++discard_pending_rows(sth)
+     SV *	sth
++    ALIAS:
++	finish = 1
+     CODE:
+     D_imp_sth(sth);
+     D_imp_dbh_from_sth;
+     if (!DBIc_ACTIVE(imp_sth)) {
++	ix = ix;  /* avoid unused variable warning */
+ 	/* No active statement to finish	*/
+ 	XSRETURN_YES;
+     }
+Index: DBI.pm
+===================================================================
+--- DBI.pm	(revision 140)
++++ DBI.pm	(working copy)
+@@ -446,7 +446,8 @@
+ 	blob_copy_to_file => { U =>[3,3,'$field, $filename_or_handleref'] },
+ 	dump_results => { U =>[1,5,'$maxfieldlen, $linesep, $fieldsep, $filehandle'] },
+ 	more_results => { U =>[1,1] },
+-	finish     => 	{ U =>[1,1] },
++	discard_pending_rows => { U =>[1,1] },
++	finish     => 	{ U =>[1,1] },	# old alias for discard_pending_rows
+ 	cancel     => 	{ U =>[1,1], O=>0x0800 },
+ 	rows       =>	$keeperr,
+ 
+@@ -749,19 +750,32 @@
+ 
+ sub setup_driver {
+     my ($class, $driver_class) = @_;
+-    my $type;
+-    foreach $type (qw(dr db st)){
+-	my $class = $driver_class."::$type";
++    foreach my $type (qw(dr db st)){
++	my $dbd_h_class = $driver_class."::$type";
+ 	no strict 'refs';
+-	push @{"${class}::ISA"},     "DBD::_::$type"
+-	    unless UNIVERSAL::isa($class, "DBD::_::$type");
++	push @{"${dbd_h_class}::ISA"}, "DBD::_::$type"
++	    unless UNIVERSAL::isa($dbd_h_class, "DBD::_::$type");
++	$class->_setup_aliases($dbd_h_class, { discard_pending_rows => 'finish' })
++	    if $type eq 'st';
+ 	my $mem_class = "DBD::_mem::$type";
+-	push @{"${class}_mem::ISA"}, $mem_class
+-	    unless UNIVERSAL::isa("${class}_mem", $mem_class)
++	push @{"${dbd_h_class}_mem::ISA"}, $mem_class
++	    unless UNIVERSAL::isa("${dbd_h_class}_mem", $mem_class)
+ 	    or $DBI::PurePerl;
+     }
+ }
+ 
++sub _setup_aliases {
++    my ($class, $h_class, $aliases) = @_;
++    my %aliases = (%$aliases, reverse %$aliases);
++    while ( my ($a, $b) = each %aliases ) {
++	no strict 'refs';
++	$a = $h_class.'::'.$a;
++	next if defined &$a;
++	$b = $h_class.'::'.$b;
++	$class->trace_msg("    .. $a aliased to $b\n") if $DBI::dbi_debug;
++	*$a = \&$b;
++    }
++}
+ 
+ sub _rebless {
+     my $dbh = shift;
