@@ -3738,8 +3738,8 @@ sub dbd_dbi_arch_dir {
     _inst_checks();
     return '$(INST_ARCHAUTODIR)' if $is_dbi;
     my $dbidir = dbd_dbi_dir();
-    my @try = map { "$_/auto/DBI" } @INC;
-    my @xst = grep { -f "$_/Driver.xst" } @try;
+    my @try = map  {    vmsify( unixify($_) . "/auto/DBI/"  ) } @INC;
+    my @xst = grep { -f vmsify( unixify($_) . "/Driver.xst" ) } @try;
     Carp::croak("Unable to locate Driver.xst in @try") unless @xst;
     Carp::carp( "Multiple copies of Driver.xst found in: @xst") if @xst > 1;
     print "Using DBI $DBI::VERSION (for perl $] on $Config{archname}) installed in $xst[0]\n";

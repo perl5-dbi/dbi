@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.44 (svn rev ???),    XXX
 
-  Fixed build warnings on VMS reported by Jakob Snoer.
+  Fixed build issues on VMS thanks to Jakob Snoer.
 
   Changed bind_param_array() so it doesn't require all bind arrays
     to have the same number of elements.
@@ -15,7 +15,7 @@ DBI::Changes - List of significant changes to the DBI
   Changed execute_array() to return "0E0" for 0 as per the docs.
   Changed execute_for_fetch() definition, and default implementation,
     to return "0E0" for 0 like execute() and execute_array().
-  Changed Test::More prerequisite to Test::Simple, which is also the name
+  Changed Test::More prerequisite to Test::Simple (which is also the name
     of the distribution both are packaged in) to work around ppm behaviour.
 
   Corrected docs to say that get/set of unknown attribute generates
