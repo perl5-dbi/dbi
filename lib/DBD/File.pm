@@ -209,7 +209,7 @@ sub csv_cache_sql_parser_object {
 }
 sub disconnect ($) {
     shift->STORE('Active',0);
-    undef $DBD::File::drh;
+    undef $DBD::File::drh; # XXX why?
     1;
 }
 sub FETCH ($$) {
@@ -266,9 +266,8 @@ sub STORE ($$$) {
 }
 
 sub DESTROY ($) {
-    # for backwards compatibility only, remove eventually
-    shift->STORE('Active',0);
-    undef;
+    my $dbh = shift;
+    $dbh->disconnect if $dbh->SUPER::FETCH('Active');
 }
 
 sub type_info_all ($) {
@@ -427,20 +426,20 @@ sub execute {
 	$params = $sth->{'f_params'};
     }
 
-    # start of by finishing any previous execution if still active
-    $sth->finish if $sth->{Active};
+    $sth->finish;
     my $stmt = $sth->{'f_stmt'};
     my $result = eval { $stmt->execute($sth, $params); };
     return $sth->set_err(1,$@) if $@;
-    if ($stmt->{'NUM_OF_FIELDS'}  &&  !$sth->FETCH('NUM_OF_FIELDS')) {
-	$sth->STORE('NUM_OF_FIELDS', $stmt->{'NUM_OF_FIELDS'});
+    if ($stmt->{'NUM_OF_FIELDS'}) { # is a SELECT statement
+	$sth->STORE(Active => 1);
+	$sth->STORE('NUM_OF_FIELDS', $stmt->{'NUM_OF_FIELDS'})
+	 if !$sth->FETCH('NUM_OF_FIELDS');
     }
-    $sth->{'Active'}=1 if $stmt->{'NUM_OF_FIELDS'};
     return $result;
 }
 sub finish {
     my $sth = shift;
-    $sth->{Active}=0;
+    $sth->SUPER::STORE(Active => 0);
     delete $sth->{f_stmt}->{data};
     return 1;
 }
@@ -453,7 +452,7 @@ sub fetch ($) {
     }
     my $dav = shift @$data;
     if (!$dav) {
-        $sth->{Active} = 0; # mark as no longer active
+        $sth->finish;
 	return undef;
     }
     if ($sth->FETCH('ChopBlanks')) {
@@ -491,14 +490,15 @@ sub STORE ($$$) {
     my ($sth, $attrib, $value) = @_;
     if ($attrib eq (lc $attrib)) {
 	# Private driver attributes are lower cased
- 	$sth->{$attrib} = $value;
+	$sth->{$attrib} = $value;
 	return 1;
     }
     return $sth->SUPER::STORE($attrib, $value);
 }
 
 sub DESTROY ($) {
-    undef;
+    my $sth = shift;
+    $sth->finish if $sth->SUPER::FETCH('Active');
 }
 
 sub rows ($) { shift->{'f_stmt'}->{'NUM_OF_ROWS'} };
