@@ -45,8 +45,9 @@ DBI::Changes - List of significant changes to the DBI
 
   Major update to signal handling docs thanks to Lincoln Baxter.
   Corrected dbiproxy usage doc thanks to Christian Hammers.
-  Clarified that $sth->{PRECISION} is OCTET_LENGTH for char types.
+  Corrected type_info_all index hash docs thanks to Steffen Goeldner.
   Corrected type_info COLUMN_SIZE to chars not bytes thanks to Dean Arnold.
+  Clarified that $sth->{PRECISION} is OCTET_LENGTH for char types.
 
 =head2 Changes in DBI 1.40,    7th January 2004
 

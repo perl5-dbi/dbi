@@ -4193,11 +4193,10 @@ For example:
 	LOCAL_TYPE_NAME   => 12,
 	MINIMUM_SCALE     => 13,
 	MAXIMUM_SCALE     => 14,
-	NUM_PREC_RADIX    => 15,
-	SQL_DATA_TYPE     => 16,
-	SQL_DATETIME_SUB  => 17,
-	NUM_PREC_RADIX    => 18,
-	INTERVAL_PRECISION=> 19,
+	SQL_DATA_TYPE     => 15,
+	SQL_DATETIME_SUB  => 16,
+	NUM_PREC_RADIX    => 17,
+	INTERVAL_PRECISION=> 18,
     },
     [ 'VARCHAR', SQL_VARCHAR,
 	undef, "'","'", undef,0, 1,1,0,0,0,undef,1,255, undef
@@ -4207,7 +4206,7 @@ For example:
     ],
   ];
 
-Note that more than one row may have the same value in the C<DATA_TYPE>
+More than one row may have the same value in the C<DATA_TYPE>
 field if there are different ways to spell the type name and/or there
 are variants of the type with different attributes (e.g., with and
 without C<AUTO_UNIQUE_VALUE> set, with and without C<UNSIGNED_ATTRIBUTE>, etc).
@@ -4216,22 +4215,22 @@ The rows are ordered by C<DATA_TYPE> first and then by how closely each
 type maps to the corresponding ODBC SQL data type, closest first.
 
 The meaning of the fields is described in the documentation for
-the L</type_info> method. The index values shown above (e.g.,
-C<NULLABLE =>E<gt> C<6>) are for illustration only. Drivers may define the
-fields with a different order.
+the L</type_info> method.
 
-This method is not normally used directly. The L</type_info> method
-provides a more useful interface to the data.
+An 'index' hash is provided so you don't need to rely on index
+values defined above.  However, using DBD::ODBC with some old ODBC
+drivers may return older names, shown as comments in the example above.
+Another issue with the index hash is that the lettercase of the
+keys is not defined. It is usually uppercase, as show here, but
+drivers may return names with any lettercase.
 
-Even though an 'index' hash is provided, all the field names in the
-index hash defined above will always have the index values defined
-above.  This is defined behaviour so that you don't need to rely on the
-index hash, which is handy because the lettercase of the keys is not
-defined. It is usually uppercase, as show here, but drivers are free to
-return names with any lettercase. Drivers are also free to return extra
-driver-specific columns of information - though it's recommended that
-they start at column index 50 to leave room for expansion of the
-DBI/ODBC specification.
+Drivers are also free to return extra driver-specific columns of
+information - though it's recommended that they start at column
+index 50 to leave room for expansion of the DBI/ODBC specification.
+
+The type_info_all() method is not normally used directly.
+The L</type_info> method provides a more usable and useful interface
+to the data.
 
 =item C<type_info>
 
@@ -4251,7 +4250,7 @@ information for the I<first> type in the array that has any matches.
 
 The keys of the hash follow the same letter case conventions as the
 rest of the DBI (see L</Naming Conventions and Name Space>). The
-following items should exist:
+following uppercase items should always exist, though may be undef:
 
 =over 4
 
