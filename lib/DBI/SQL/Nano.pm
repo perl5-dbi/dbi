@@ -310,7 +310,7 @@ sub SELECT ($$$) {
     if ( $self->{order_clause} ) {
         my( $sort_col, $desc ) = each %{$self->{order_clause}};
         undef $desc unless $desc eq 'DESC';
-        my @sortCols = ( $self->column_nums($table,$sort_col) );
+        my @sortCols = ( $self->column_nums($table,$sort_col,1) );
         my($c, $d, $colNum);
         my $sortFunc = sub {
             my $result;
@@ -399,13 +399,19 @@ sub verify_columns {
    }
 }
 sub column_nums {
-    my($self,$table,$stmt_col_name)=@_;
+    my($self,$table,$stmt_col_name,$find_in_stmt)=@_;
     my %dbd_nums = %{ $table->{col_nums} };
     my @dbd_cols = @{ $table->{col_names} };
     my %stmt_nums;
-    if ($stmt_col_name) {
+    if ($stmt_col_name and !$find_in_stmt) {
         while(my($k,$v)=each %dbd_nums) {
             return $v if uc $k eq uc $stmt_col_name;
+        }
+        die "No such column '$stmt_col_name'\n";
+    }
+    if ($stmt_col_name and $find_in_stmt) {
+        for my $i(0..@{$self->{column_names}}) {
+            return $i if uc $stmt_col_name eq uc $self->{column_names}->[$i];
         }
         die "No such column '$stmt_col_name'\n";
     }
