@@ -2821,13 +2821,15 @@ The C<Executed> attribute is true if the handle object has been "executed".
 Currently only the $dbh do() method and the $sth execute(), execute_array(),
 and execute_for_fetch() methods set the C<Executed> attribute.
 
-When it's on a handle it is also set on the parent handle at the
+When it's set on a handle it is also set on the parent handle at the
 same time. So calling execute() on a $sth also sets the C<Executed>
 attribute on the parent $dbh.
 
-The C<Executed> attribute for a $dbh is cleared by the commit() and
-rollback() methods. (The C<Executed> attribute of any child statement
-handles are not cleared.)
+The C<Executed> attribute for a database handle is cleared by the
+commit() and rollback() methods. The C<Executed> attribute of a
+statement handle is not cleared by the DBI under any circumstances
+and so acts as a permenant record of whether the statement handle
+was ever used.
 
 =item C<Kids> (integer, read-only)
 
