@@ -174,8 +174,8 @@ sub initial_setup {
     untie $DBI::err;
     untie $DBI::errstr;
     untie $DBI::state;
+    untie $DBI::rows;
     #tie $DBI::lasth,  'DBI::var', '!lasth';  # special case: return boolean
-    #tie $DBI::rows,   'DBI::var', '&rows';   # call &rows   in last used pkg
 }
 
 sub  _install_method {
@@ -439,12 +439,15 @@ sub constant {
 }
 sub trace {
     my ($h, $level, $file) = @_;
+    $level = $h->parse_trace_flags($level)
+	if defined $level and !DBI::looks_like_number($level);
     my $old_level = $DBI::dbi_debug;
     _set_trace_file($file);
     if (defined $level) {
 	$DBI::dbi_debug = $level;
 	print $DBI::tfh "    DBI $DBI::VERSION (PurePerl) "
-                . "dispatch trace level set to $DBI::dbi_debug\n" if $DBI::dbi_debug;
+                . "dispatch trace level set to $DBI::dbi_debug\n"
+		if $DBI::dbi_debug & 0xF;
         if ($level==0 and fileno($DBI::tfh)) {
 	    _set_trace_file("");
         }
@@ -534,19 +537,16 @@ sub looks_like_number {
         if (!defined $thing or $thing eq '') {
             push @new, undef;
         }
-	elsif ( ($thing & ~ $thing) eq "0") { # magic from Randal
-            push @new, 1;
-	}
         else {
-	    push @new, 0;
-	}
+            push @new, ($thing =~ /^([+-]?)(?=\d|\.\d)\d*(\.\d*)?([Ee]([+-]?\d+))?$/) ? 1 : 0;
+        }
     }
     return (@_ >1) ? @new : $new[0];
 }
 sub neat {
     my $v = shift;
     return "undef" unless defined $v;
-    return $v      if looks_like_number($v);
+    return $v if (($v & ~ $v) eq "0"); # is SvNIOK
     my $maxlen = shift || $DBI::neat_maxlen;
     if ($maxlen && $maxlen < length($v) + 2) {
 	$v = substr($v,0,$maxlen-5);
@@ -562,7 +562,7 @@ sub FETCH {
     my($key)=shift;
     return $DBI::err     if $$key eq '*err';
     return $DBI::errstr  if $$key eq '&errstr';
-    Carp::croak("FETCH $key not supported when using DBI::PurePerl");
+    Carp::confess("FETCH $key not supported when using DBI::PurePerl");
 }
 
 package
@@ -570,6 +570,8 @@ package
 
 sub trace {	# XXX should set per-handle level, not global
     my ($h, $level, $file) = @_;
+    $level = $h->parse_trace_flags($level)
+	if defined $level and !DBI::looks_like_number($level);
     my $old_level = $DBI::dbi_debug;
     DBI::_set_trace_file($file) if defined $file;
     if (defined $level) {
@@ -754,7 +756,7 @@ sub fetchrow_hashref {
 sub dbih_setup_fbav {
     my $h = shift;
     return $h->{'_fbav'} || do {
-        $DBI::PurePerl::var->{rows} = $h->{'_rows'} = 0;
+        $DBI::rows = $h->{'_rows'} = 0;
         my $fields = $h->{'NUM_OF_FIELDS'}
                   or DBI::croak("NUM_OF_FIELDS not set");
         my @row = (undef) x $fields;
@@ -764,14 +766,14 @@ sub dbih_setup_fbav {
 sub _get_fbav {
     my $h = shift;
     my $av = $h->{'_fbav'} ||= dbih_setup_fbav($h);
-    ++$h->{'_rows'};
+    $DBI::rows = ++$h->{'_rows'};
     return $av;
 }
 sub _set_fbav {
     my $h = shift;
     my $fbav = $h->{'_fbav'};
     if ($fbav) {
-	++$h->{'_rows'};
+	$DBI::rows = ++$h->{'_rows'};
     }
     else {
 	$fbav = $h->_get_fbav;
@@ -805,7 +807,7 @@ sub finish {
 }
 sub rows {
     my $h = shift;
-    my $rows = $h->{'_rows'} || $DBI::PurePerl::var->{rows};
+    my $rows = $h->{'_rows'};
     return -1 unless defined $rows;
     return $rows;
 }

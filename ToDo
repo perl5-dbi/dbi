@@ -168,6 +168,8 @@ Also $dbh->{ParamValues} would be the same as $dbh->{LastSth}->{ParamValues}.
 
 Remove dummy 'Switch' driver.
 
+Add %time to per-node DBI::Profile dump
+
 Sponge behave_like - generalize into new_child()
 	copy RaiseError, PrintError, HandleError etc from the specified handle
 	but which attributes? LongReadLen, LongTruncOk etc? Presumably all

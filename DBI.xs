@@ -219,7 +219,7 @@ INIT_PERINTERP;
     DBIS->logmsg      = dbih_logmsg;
     DBIS->logfp	      = PerlIO_stderr();
     DBIS->debug	      = (parent_dbis) ? parent_dbis->debug
-			    : atoi((p=getenv("DBI_TRACE")) ? p : "0");
+			    : SvIV(perl_get_sv("DBI::dbi_debug",0x5));
     DBIS->neatsvpvlen = (parent_dbis) ? parent_dbis->neatsvpvlen
 				      : perl_get_sv("DBI::neat_maxlen", GV_ADDMULTI);
 #ifdef DBI_USE_THREADS
@@ -618,24 +618,52 @@ set_trace_file(SV *file)
 }
 
 
+static IV
+parse_trace_flags(SV *h, SV *level_sv, IV old_level)
+{
+    IV level;
+    if (SvTRUE(level_sv)) {
+	if (looks_like_number(level_sv) && SvIV(level_sv)>=0)
+	    level = SvIV(level_sv);	/* number: number	*/
+	else {				/* string: parse it	*/
+	    dSP;
+	    PUSHMARK(sp);
+	    XPUSHs(h);
+	    XPUSHs(level_sv);
+	    PUTBACK;
+	    if (perl_call_method("parse_trace_flags", G_SCALAR) != 1)
+		croak("panic: parse_trace_flags");/* should never happen */
+	    SPAGAIN;
+	    level = POPi;
+	    PUTBACK;
+	}
+    }
+    else if (SvOK(level_sv))
+	level = 0;			/* defined but false: 0	*/
+    else
+	level = old_level;		/* undef: no change	*/
+    return level;
+}
+
+
 static int
-set_trace(SV *h, I32 level, SV *file)
+set_trace(SV *h, SV *level_sv, SV *file)
 {
     dPERINTERP;
     D_imp_xxh(h);
-    /* Return trace level in effect now. No change if new value not given */
-    int RETVAL = DBIS->debug;
+    int RETVAL = DBIS->debug; /* Return trace level in effect now */
+    IV level = parse_trace_flags(h, level_sv, RETVAL);
     set_trace_file(file);
-    if (level != RETVAL) {	 /* set value */
-	if (level > 0) {
+    if (level != RETVAL) { /* set value */
+	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
 	    PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-		"    %s trace level set to %ld/%ld (DBI @ %ld/%ld) in DBI %s%s (pid %d)\n",
+		"    %s trace level set to 0x%lx/%ld (DBI @ Ox%lx/%ld) in DBI %s%s (pid %d)\n",
 		neatsvpv(h,0),
 		(long)(level &  DBIc_TRACE_LEVEL_MASK),
 		(long)(level & ~DBIc_TRACE_LEVEL_MASK),
 		DBIc_TRACE_LEVEL(imp_xxh), DBIc_TRACE_FLAGS(imp_xxh),
 		XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
-	    if (!PL_dowarn && level>0)
+	    if (!PL_dowarn)
 		PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBIc_LOGPIO(imp_xxh));
 	}
@@ -1476,7 +1504,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	DBIc_set(imp_xxh,DBIcf_BegunWork, on);
     }
     else if (keylen==10  && strEQ(key, "TraceLevel")) {
-	set_trace(h, (int)SvIV(valuesv), Nullsv);
+	set_trace(h, valuesv, Nullsv);
     }
     else if (keylen==9  && strEQ(key, "TraceFile")) { /* XXX undocumented and readonly */
 	set_trace_file(valuesv);
@@ -2462,12 +2490,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     /* record this inner handle for use by DBI::var::FETCH	*/
     if (is_DESTROY) {
-	SV *lhp = DBIc_PARENT_H(imp_xxh);
 
 	if (DBIc_TYPE(imp_xxh) <= DBIt_DB ) {	/* is dbh or drh */
 	    imp_xxh_t *parent_imp;
 
-	    if (SvTRUE(DBIc_ERR(imp_xxh)) && (parent_imp = DBIc_PARENT_COM(imp_xxh)) ) {
+	    if (SvOK(DBIc_ERR(imp_xxh)) && (parent_imp = DBIc_PARENT_COM(imp_xxh)) ) {
 		/* copy err/errstr/state values to $DBI::err etc still work */
 		sv_setsv(DBIc_ERR(parent_imp),    DBIc_ERR(imp_xxh));
 		sv_setsv(DBIc_ERRSTR(parent_imp), DBIc_ERRSTR(imp_xxh));
@@ -2479,6 +2506,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	if (DBI_IS_LAST_HANDLE(h)) {	/* if destroying _this_ handle */
+	    SV *lhp = DBIc_PARENT_H(imp_xxh);
 	    if (lhp && SvROK(lhp)) {
 		DBI_SET_LAST_HANDLE(lhp);
 	    }
@@ -2680,9 +2708,10 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		SvTRUE(err_sv) ? "ERROR:" : strlen(SvPV_nolen(err_sv)) ? "warn:" : "info:",
 		neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0));
 	}
-	PerlIO_printf(logfp,"%c%c  <- %s",
+	PerlIO_printf(logfp,"%c%c  <%c %s",
 		    (call_depth > 1)  ? '0'+call_depth-1 : (dirty?'!':' '),
 		    (DBIc_is(imp_xxh, DBIcf_TaintIn|DBIcf_TaintOut)) ? 'T' : ' ',
+		    (qsv) ? '>' : '-',
 		    meth_name);
 	if (trace_level==1 && items>=2) { /* make level 1 more useful */
 	    /* we only have the first two parameters available here */
@@ -3491,8 +3520,8 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 
 
 int
-trace(sv, level_sv=Nullsv, file=Nullsv)
-    SV *	sv
+trace(class, level_sv=&sv_undef, file=Nullsv)
+    SV *	class
     SV *	level_sv
     SV *	file
     ALIAS:
@@ -3500,18 +3529,20 @@ trace(sv, level_sv=Nullsv, file=Nullsv)
     CODE:
     {
     dPERINTERP;
+    /* Return old/current value. No change if new value not given.	*/
+    IV level = parse_trace_flags(class, level_sv, (RETVAL = (DBIS) ? DBIS->debug : 0));
     if (!DBIS) {
-	sv=sv; ix=ix;		/* avoid 'unused variable' warnings	*/
+	ix=ix;		/* avoid 'unused variable' warnings	*/
 	croak("DBI not initialised");
     }
-    /* Return old/current value. No change if new value not given.	*/
-    RETVAL = DBIS->debug;
     set_trace_file(file);	/* always call this regardless of level */
-    if (level_sv && SvOK(level_sv) && SvIV(level_sv) != RETVAL) {
-	int level = SvIV(level_sv);
-	if (level > 0) {
-	    PerlIO_printf(DBILOGFP,"    DBI %s%s dispatch trace level set to %d (in pid %d)\n",
-		XS_VERSION, dbi_build_opt, level, (int)PerlProc_getpid());
+    if (level != RETVAL) {
+	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
+	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to Ox%lx/%ld (in pid %d)\n",
+		XS_VERSION, dbi_build_opt,
+                (long)(level &  DBIc_TRACE_LEVEL_MASK),
+                (long)(level & ~DBIc_TRACE_LEVEL_MASK),
+		(int)PerlProc_getpid());
 	    if (!PL_dowarn)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBILOGFP);
@@ -4033,7 +4064,7 @@ set_err(h, err, errstr=&sv_no, state=&sv_undef, method=&sv_undef, result=Nullsv)
 int
 trace(h, level=0, file=Nullsv)
     SV *h
-    I32	level
+    SV *level
     SV *file
     ALIAS:
     debug = 1

@@ -375,6 +375,7 @@ ok(0, "@{$r->[0]}{qw(MODE SIZE NAME)}" eq "@row_a", "'@{$r->[0]}{qw(MODE SIZE NA
 $rows = $csr_b->rows;
 ok(0, $rows > 0, "row count $rows");
 ok(0, $rows == @$r, "$rows vs ".@$r);
+ok(0, $rows == $DBI::rows, "$rows vs $DBI::rows");
 #$csr_b->trace(0);
 
 # ---
@@ -671,4 +672,4 @@ ok(0, !$dbh->{Active});
 
 exit 0;
 
-BEGIN { $tests = 245; }
+BEGIN { $tests = 246; }

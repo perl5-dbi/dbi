@@ -6,31 +6,40 @@ DBI::Changes - List of significant changes to the DBI
 
 =head1 CHANGES in DBI 1.42 (svn rev XX),    XXnd February 2004
 
-Document $t->trace_flags etc
+Document $t->parse_trace_flags etc
 
   Fixed $sth->{NUM_OF_FIELDS} of non-executed statement handle
     to be undef as per the docs (it was 0).
   Fixed t/41prof_dump.t to work with perl5.9.1.
   Fixed DBD_ATTRIB_DELETE macro thanks to Marco Paskamp.
+  Fixed DBI::PurePerl looks_like_number() and $DBI::rows.
 
   Changed attributes (NAME, TYPE etc) of non-executed statement
     handle to be undef instead of triggering an error.
   Changed ShowErrorStatement to apply to more $dbh methods.
+  Changed DBI_TRACE env var so just does this at load time:
+    DBI->trace(split '=', $ENV{DBI_TRACE}, 2);
   Improved "invalid number of parameters" error message.
   Corrected typos in docs thanks to Steffen Goeldner.
 
-  Added $h->trace_flags("foo,SQL,7") to map a set of
-    trace flags into the corresponding trace flag bits:
-    $h->{TraceLevel} = $h->trace_flags("foo,SQL,7");
+  Major tracing enhancement:
 
-  Major additions that Jeff Zucker and I have been working on:
+  Added $h->parse_trace_flags("foo|SQL|7") to map a group of
+    trace flags into the corresponding trace flag bits.
+  Added automatic calling of parse_trace_flags() if
+    setting the trace level to a non-numeric value:
+    $h->{TraceLevel}="foo|SQL|7"; $h->trace("foo|SQL|7");
+    DBI->connect("dbi:Driver(TraceLevel=SQL|foo):...", ...);
+  Added to and reworked the trace documentation.
+
+  Major driver additions that Jeff Zucker and I have been working on:
 
   Added DBI::SQL::Nano a 'smaller than micro' SQL parser
     with an SQL::Statement compatible API. If SQL::Statement
     is installed then DBI::SQL::Nano becomes an empty subclass
     of SQL::Statement, unless the DBI_SQL_NANO env var is true.
   Added DBD::File, modified to use DBI::SQL::Nano.
-  Added DBD::DBM that provides an SQL interface to DBM files.
+  Added DBD::DBM, an SQL interface to DBM files using DBD::File.
 
 =head1 CHANGES in DBI 1.41 (svn rev 130),    22nd February 2004
 

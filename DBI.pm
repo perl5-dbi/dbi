@@ -230,7 +230,7 @@ BEGIN {
    ) ], # notionally "in" DBI::Profile and normally imported from there
 );
 
-$DBI::dbi_debug = $ENV{DBI_TRACE} || $ENV{PERL_DBI_DEBUG} || 0;
+$DBI::dbi_debug = 0;
 $DBI::neat_maxlen = 400;
 
 # If you get an error here like "Can't find loadable object ..."
@@ -251,10 +251,15 @@ Exporter::export_ok_tags(keys %EXPORT_TAGS);
 
 }
 
-*trace_msg = \&DBD::_::common::trace_msg;
-*set_err   = \&DBD::_::common::set_err;
+# Alias some handle methods to also be DBI class methods
+for (qw(trace_msg set_err parse_trace_flags parse_trace_flag)) {
+  no strict;
+  *$_ = \&{"DBD::_::common::$_"};
+}
 
 use strict;
+
+DBI->trace(split '=', $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
 $DBI::connect_via = "connect";
 
@@ -264,23 +269,7 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
     DBI->trace_msg("DBI connect via $DBI::connect_via in $INC{'Apache/DBI.pm'}\n");
 }
 
-
-if ($DBI::dbi_debug) {
-    @DBI::dbi_debug = ($DBI::dbi_debug);
-
-    unless (DBI::looks_like_number($DBI::dbi_debug)) {
-	# dbi_debug is a file name to write trace log to.
-	# Default level is 2 but if file starts with "digits=" then the
-	# digits (and equals) are stripped off and used as the level
-	unshift @DBI::dbi_debug, 2;
-	@DBI::dbi_debug = ($1,$2) if $DBI::dbi_debug =~ m/^(\d+)=(.*)/;
-	$DBI::dbi_debug = $DBI::dbi_debug[0];
-    }
-    DBI->trace(@DBI::dbi_debug);
-}
-
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
-
 
 # Setup special DBI dynamic variables. See DBI::var::FETCH for details.
 # These are dynamically associated with the last handle used.
@@ -367,8 +356,8 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	set_err =>	{ U =>[3,6,'$err, $errmsg [, $state, $method, $rv]'], O=>0x0010 },
 	_not_impl =>	undef,
 	can	=>	{ O=>0x0100 }, # special case, see dispatch
-	trace_flag   =>	{ U =>[2,2,'$name'],	O=>0x0404, T=>8 },
-	trace_flags  =>	{ U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
+	parse_trace_flag   =>	{ U =>[2,2,'$name'],	O=>0x0404, T=>8 },
+	parse_trace_flags  =>	{ U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
 );
 
 %DBI::DBI_methods = ( # Define the DBI interface methods per class:
@@ -1235,30 +1224,33 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	DBI->_install_method("DBI::${subtype}::$method", "$filename at line $line", \%attr);
     }
 
-    sub trace_flags {
+    sub parse_trace_flags {
 	my ($h, $spec) = @_;
 	my $level = 0;
 	my $flags = 0;
 	my @unknown;
-	for my $word (split /[|&]/, $spec) {
-	    if (DBI::looks_like_number($word) && $word <= 0xF) {
+	for my $word (split /\s*[|&]\s*/, $spec) {
+	    if (DBI::looks_like_number($word) && $word <= 0xF && $word >= 0) {
 		$level = $word;
-	    } elsif (my $flag = $h->trace_flag($word)) {
+	    } elsif ($word eq 'ALL') {
+		$flags = 0x7FFFFFFF; # XXX last bit causes negative headaches
+		last;
+	    } elsif (my $flag = $h->parse_trace_flag($word)) {
 		$flags |= $flag;
 	    }
 	    else {
 		push @unknown, $word;
 	    }
 	}
-	if (@unknown && $h->FETCH('Warn')) {
-	    warn "Unknown trace flags ignored: ".
-		join(", ", map { DBI::neat($_) } @unknown);
+	if (@unknown && (ref $h ? $h->FETCH('Warn') : 1)) {
+	    Carp::carp("$h->parse_trace_flags($spec): Unknown trace flags ignored: ".
+		join(" ", map { DBI::neat($_) } @unknown));
 	}
 	$flags |= $level;
 	return $flags;
     }
 
-    sub trace_flag {
+    sub parse_trace_flag {
 	my ($h, $name) = @_;
 	#      0xddDDDDrL (driver, DBI, reserved, Level)
 	return 0x00000100 if $name eq 'SQL';
@@ -2480,47 +2472,19 @@ There is also a data_sources() method defined for database handles.
 
 =item C<trace>
 
-  DBI->trace($trace_level)
-  DBI->trace($trace_level, $trace_filename)
-  $trace_level = DBI->trace;
+  DBI->trace($trace_setting)
+  DBI->trace($trace_setting, $trace_filename)
+  $trace_setting = DBI->trace;
 
-DBI trace information can be enabled for all handles using the C<trace>
-DBI class method. It sets the I<global default minimum> trace level.
-To enable trace information for a specific handle, use the similar
-C<$h-E<gt>trace> method described elsewhere.
+The C<DBI-E<gt>trace> method sets the I<global default> trace
+settings and returns the I<previous> trace settings. It can also
+be used to change where the trace output is sent.
 
-Trace levels are as follows:
+There's a similar method, C<$h-E<gt>trace>, which sets the trace
+settings for the specific handle it's called on.
 
-  0 - Trace disabled.
-  1 - Trace DBI method calls returning with results or errors.
-  2 - Trace method entry with parameters and returning with results.
-  3 - As above, adding some high-level information from the driver
-      and some internal information from the DBI.
-  4 - As above, adding more detailed information from the driver.
-  5 and above - As above but with more and more obscure information.
-
-Trace level 1 is best for a simple overview of what's happening.
-Trace level 2 is a good choice for general purpose tracing.  Levels 3
-and above (up to 9) are best reserved for investigating a
-specific problem, when you need to see "inside" the driver and DBI.
-
-The trace output is detailed and typically very useful. Much of the
-trace output is formatted using the L</neat> function, so strings
-in the trace output may be edited and truncated.
-
-Initially trace output is written to C<STDERR>.  If C<$trace_filename> is
-specified and can be opened in append mode then all trace
-output (including that from other handles) is redirected to that file.
-A warning is generated is the file can't be opened.
-Further calls to C<trace> without a C<$trace_filename> do not alter where
-the trace output is sent. If C<$trace_filename> is undefined, then
-trace output is sent to C<STDERR> and the previous trace file is closed.
-The C<trace> method returns the I<previous> tracelevel.
-
-See also the C<$h-E<gt>trace> and C<$h-E<gt>trace_msg> methods and the
-L</DEBUGGING> section
-for information about the C<DBI_TRACE> environment variable.
-
+See the L</TRACING> section for full details about the DBI's powerful
+tracing facilities.
 
 =back
 
@@ -2759,37 +2723,19 @@ Support for warning and information states was added in DBI 1.41.
 
 =item C<trace>
 
-  $h->trace($trace_level);
-  $h->trace($trace_level, $trace_filename);
+  $h->trace($trace_settings);
+  $h->trace($trace_settings, $trace_filename);
+  $trace_settings = $h->trace;
 
-DBI trace information can be enabled for a specific handle (and any
-future children of that handle) by setting the trace level using the
-C<trace> method.
+The trace() method is used to alter the trace settings for a handle
+(and any future children of that handle).  It can also be used to
+change where the trace output is sent.
 
-The $trace_level is an integer where the lowest 4 bits are used to
-set the general 'trace level' and the higher bits are 'trace flags'
-used to enable tracing of particular 'topics'.
+There's a similar method, C<DBI-E<gt>trace>, which sets the global
+default trace settings.
 
-Trace level 1 is best for a simple overview of what's happening.
-Trace level 2 is a good choice for general purpose tracing.  Levels 3
-and above (up to 15) are best reserved for investigating a
-specific problem, when you need to see "inside" the driver and DBI.
-Set C<$trace_level> to 0 to disable the trace.
-
-The trace output is detailed and typically very useful. Much of the
-trace output is formatted using the L</neat> function, so strings
-in the trace output may be edited and truncated.
-
-Initially, trace output is written to C<STDERR>.  If C<$trace_filename> is
-specified, then the file is opened in append mode and I<all> trace
-output (including that from other handles) is redirected to that file.
-Further calls to trace without a C<$trace_filename> do not alter where
-the trace output is sent. If C<$trace_filename> is undefined, then
-trace output is sent to C<STDERR> and the previous trace file is closed.
-
-See also the C<DBI-E<gt>trace> method, the C<$h-E<gt>{TraceLevel}> attribute,
-and L</DEBUGGING> for information about the C<DBI_TRACE> environment variable.
-
+See the L</TRACING> section for full details about the DBI's powerful
+tracing facilities.
 
 =item C<trace_msg>
 
@@ -3155,8 +3101,9 @@ end of the Statement text in the error message.
 
 =item C<TraceLevel> (integer, inherited)
 
-The C<TraceLevel> attribute can be used as an alternative to the L</trace> method
-to set the DBI trace level for a specific handle.
+The C<TraceLevel> attribute can be used as an alternative to the
+L</trace> method to set the DBI trace level and trace flags for a
+specific handle.
 
 =item C<FetchHashKeyName> (string, inherited)
 
@@ -6177,34 +6124,88 @@ via C<$h-E<gt>{private_..._*}>.  See the entry under L</ATTRIBUTES
 COMMON TO ALL HANDLES> for info and important caveats.
 
 
-=head1 DEBUGGING
+=head1 TRACING
+
+The DBI has a powerful tracing mechanism built in. It enables you
+to see what's going on 'behind the scenes', both within the DBI and
+the drivers you're using.
+
+=head2 Trace Settings
+
+Which details are written to the trace output is controlled by a
+combination of a I<trace level>, an integer from 0 to 15, and a set
+of I<trace flags> that are either on or off. Together these are known
+as the I<trace settings> and are stored together in a single integer.
+For normal use you only need to set the trace level, and generally
+only to a value between 1 and 4.
+
+Each handle has it's own trace settings, and so does the DBI.
+When you call a method the DBI merges the handles settings into its
+own for the duration of the call. The highest trace level of the
+two is used and the trace flags are OR'd together.
+
+=head1 Enabling Trace
+
+The C<$h-E<gt>trace> method sets the trace settings for a handle
+and C<DBI-E<gt>trace> does the same for the DBI.
 
 In addition to the L</trace> method, you can enable the same trace
-information by setting the C<DBI_TRACE> environment variable before
-starting Perl.
+information, and direct the output to a file, by setting the
+C<DBI_TRACE> environment variable before starting Perl.
+See L</DBI_TRACE> for more information.
 
-On Unix-like systems using a Bourne-like shell, you can do this easily
-on the command line:
+Finally, you can set, or get, the trace settings for a handle using
+the C<TraceLevel> attribute.
 
-  DBI_TRACE=2 perl your_test_script.pl
+=head2 Trace Levels
 
-If C<DBI_TRACE> is set to a non-numeric value, then it is assumed to
-be a file name and the trace level will be set to 2 with all trace
-output appended to that file. If the name begins with a number
-followed by an equal sign (C<=>), then the number and the equal sign are
-stripped off from the name, and the number is used to set the trace
-level. For example:
+Trace levels are as follows:
 
-  DBI_TRACE=1=dbitrace.log perl your_test_script.pl
+  0 - Trace disabled.
+  1 - Trace DBI method calls returning with results or errors.
+  2 - Trace method entry with parameters and returning with results.
+  3 - As above, adding some high-level information from the driver
+      and some internal information from the DBI.
+  4 - As above, adding more detailed information from the driver.
+  5 and above - As above but with more and more obscure information.
 
-See also the L</trace> method.
+Trace level 1 is best for a simple overview of what's happening.
+Trace level 2 is a good choice for general purpose tracing.
+Levels 3 and above are best reserved for investigating a specific
+problem, when you need to see "inside" the driver and DBI.
+
+The trace output is detailed and typically very useful. Much of the
+trace output is formatted using the L</neat> function, so strings
+in the trace output may be edited and truncated.
+
+=head2 Trace Output
+
+Initially trace output is written to C<STDERR>.  Both the
+C<$h-E<gt>trace> and C<DBI-E<gt>trace> methods take an optional
+$trace_filename parameter. If specified and can be opened in
+append mode then all trace output (including that from other handles)
+is redirected to that file.  A warning is generated if the file
+can't be opened.
+
+Further calls to trace() without a $trace_filename do not alter where
+the trace output is sent. If $trace_filename is undefined, then
+trace output is sent to C<STDERR> and the previous trace file is closed.
+
+Currently $trace_filename can't be a filehandle. But meanwhile you
+can use the special strings C<"STDERR"> and C<"STDOUT"> to select
+those filehandles.
+
+=head2 Tracing Tips
+
+You can add tracing to your own application code using the
+C<$h-E<gt>trace_msg> method.
 
 It can sometimes be handy to compare trace files from two different
 runs of the same script. However using a tool like C<diff> doesn't work
 well because the trace file is full of object addresses that may
 differ each run. Here's a handy little command to strip those out:
 
- perl -pe 's/\b0x[\da-f]{6,}/0xNNNN/gi; s/\b[\da-f]{6,}/<long number>/gi'
+  perl -pe 's/\b0x[\da-f]{6,}/0xNNNN/gi; s/\b[\da-f]{6,}/<long number>/gi'
 
 
 =head1 DBI ENVIRONMENT VARIABLES
@@ -6257,9 +6258,28 @@ when no value is provided for the first (database name) argument.
 
 =head2 DBI_TRACE
 
-The DBI_TRACE environment variable takes an integer value that
-specifies the trace level for DBI at startup. Can also be used to
-direct trace output to a file. See L</DEBUGGING> for more information.
+The DBI_TRACE environment variable specifies the global default
+trace settings for the DBI at startup. Can also be used to direct
+trace output to a file. When the DBI is loaded it does:
+
+  DBI->trace(split '=', $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
+
+So if C<DBI_TRACE> contains an "C<=>" character then what follows
+it is used as the name of the file to append the trace to.
+
+output appended to that file. If the name begins with a number
+followed by an equal sign (C<=>), then the number and the equal sign are
+stripped off from the name, and the number is used to set the trace
+level. For example:
+
+  DBI_TRACE=1=dbitrace.log perl your_test_script.pl
+
+On Unix-like systems using a Bourne-like shell, you can do this easily
+on the command line:
+
+  DBI_TRACE=2 perl your_test_script.pl
+
+See L</TRACING> for more information.
 
 =head2 PERL_DBI_DEBUG (obsolete)
 

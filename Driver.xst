@@ -323,9 +323,9 @@ DESTROY(dbh)
     if (!DBIc_IMPSET(imp_dbh)) {	/* was never fully set up	*/
 	STRLEN lna;
 	if (DBIc_WARN(imp_dbh) && !dirty && DBIc_DBISTATE(imp_dbh)->debug >= 2)
-	     PerlIO_printf(DBILOGFP,
+	     PerlIO_printf(DBIc_LOGPIO(imp_dbh),
 		"         DESTROY for %s ignored - handle not initialised\n",
-			SvPV(dbh,lna));
+		    SvPV(dbh,lna));
     }
     else {
 	/* pre-disconnect checks and tidy-ups */
@@ -703,7 +703,7 @@ DESTROY(sth)
 	STRLEN lna;
 	if (DBIc_WARN(imp_sth) && !dirty && DBIc_DBISTATE(imp_sth)->debug >= 2)
 	     PerlIO_printf(DBIc_LOGPIO(imp_sth),
-		"Statement handle %s DESTROY ignored - never set up\n",
+		"         DESTROY for %s ignored - handle not initialised\n",
 		    SvPV(sth,lna));
     }
     else {

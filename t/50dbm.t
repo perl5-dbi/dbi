@@ -57,6 +57,7 @@ for my $sql (split /;\s*\n+/,join '',<DATA>) {
     is $DBI::rows, keys %$expected_results;
 }
 
+1;
 __DATA__
 DROP TABLE fruit;
 CREATE TABLE fruit (dKey INT, dVal VARCHAR(10));

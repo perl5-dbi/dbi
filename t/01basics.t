@@ -81,18 +81,21 @@ DBI->trace_msg("Test DBI->trace_msg text.\n", 1);
 
 ok(0, SQL_VARCHAR == 12);
 ok(0, SQL_ALL_TYPES == 0);
-ok(0, neat(1+1) eq "2");
-ok(0, neat("2") eq "'2'");
-ok(0, neat(undef) eq "undef");
-ok(0, neat_list([1+1, "2", undef, "foobarbaz"], 8, "|") eq "2|'2'|undef|'foo...'");
 
-my @is_num = looks_like_number(undef, "", "foo", 1, ".");
+my @is_num = looks_like_number(undef, "", "foo", 1, ".", 2, "2");
 ok(0, !defined $is_num[0]);	# undef -> undef
 ok(0, !defined $is_num[1]);	# "" -> undef (eg "don't know")
 ok(0,  defined $is_num[2]);	# "foo" -> defined false
 ok(0,         !$is_num[2]);	# "foo" -> defined false
 ok(0,          $is_num[3]); # 1 -> true
 ok(0,         !$is_num[4]); # "." -> false
+ok(0,          $is_num[5]); # 1 -> true
+ok(0,          $is_num[6]); # 1 -> true
+
+ok(0, neat(1+1) eq "2");
+ok(0, neat("2") eq "'2'");
+ok(0, neat(undef) eq "undef");
+ok(0, neat_list([1+1, "2", undef, "foobarbaz"], 8, "|") eq "2|'2'|undef|'foo...'");
 
 ok(0, DBI::hash("foo1"  ) == -1077531989,  DBI::hash("foo1"));
 ok(0, DBI::hash("foo1",0) == -1077531989,  DBI::hash("foo1",0));
@@ -117,5 +120,5 @@ my @installed_drivers = DBI->installed_versions;
 ok(0, @installed_drivers >= 1);
 ok(0, grep { $_ eq 'Sponge' } @installed_drivers);
 
-BEGIN { $tests = 43 }
+BEGIN { $tests = 45 }
 exit 0;

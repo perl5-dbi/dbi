@@ -249,14 +249,14 @@
 	grep { $_ =~ /$re/ } $dbh->tables();
     }
 
-    sub trace_flag {
+    sub parse_trace_flag {
 	my ($h, $name) = @_;
 	return 0x01000000 if $name eq 'foo';
 	return 0x02000000 if $name eq 'bar';
 	return 0x04000000 if $name eq 'baz';
 	return 0x08000000 if $name eq 'boo';
 	return 0x10000000 if $name eq 'bop';
-	return $h->SUPER::trace_flag($name);
+	return $h->SUPER::parse_trace_flag($name);
     }
 
 }
@@ -395,7 +395,7 @@
 
     sub DESTROY { undef }
 
-    *trace_flag = \&DBD::ExampleP::db::trace_flag;
+    *parse_trace_flag = \&DBD::ExampleP::db::parse_trace_flag;
 }
 
 1;
