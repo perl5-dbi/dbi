@@ -154,7 +154,7 @@ ok(eq_array(
 	), '... got correct datasources from DBI->data_sources("Test")'
 );
 
-# create scope to test DESTROY behaviour
+# create scope to test $dbh DESTROY behaviour
 do {				
 
 	my $dbh = $drh->connect;
