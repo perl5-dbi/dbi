@@ -587,7 +587,10 @@ sub connect {
 	unless ($dbh = $drh->$connect_meth($dsn, $user, $pass, $attr)) {
 	    $user = '' if !defined $user;
 	    $dsn = '' if !defined $dsn;
-	    my $errstr = $drh->errstr;
+	    # $drh->errstr isn't safe here because $dbh->DESTROY may not have
+	    # been called yet and so the dbh errstr would not have been copied
+	    # up to the drh errstr. Certainly true for connect_cached!
+	    my $errstr = $DBI::errstr;
 	    $errstr = '(no error string)' if !defined $errstr;
 	    my $msg = "$class connect('$dsn','$user',...) failed: $errstr";
 	    DBI->trace_msg("       $msg\n");
@@ -3836,8 +3839,6 @@ of information types to ensure the DBI itself works properly:
 
 =item C<table_info>
 
-B<Warning:> This method is experimental and may change.
-
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
   $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
 
@@ -4027,8 +4028,6 @@ See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
 =item C<primary_key_info>
 
-B<Warning:> This method is experimental and may change.
-
   $sth = $dbh->primary_key_info( $catalog, $schema, $table );
 
 Returns an active statement handle that can be used to fetch information
@@ -4080,8 +4079,6 @@ the column names that comprise the primary key of the specified table.
 The list is in primary key column sequence order.
 
 =item C<foreign_key_info>
-
-B<Warning:> This method is experimental and may change.
 
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table
                                , $fk_catalog, $fk_schema, $fk_table );

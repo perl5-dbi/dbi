@@ -146,6 +146,8 @@ error/warn/info semantics anyway.
 
 --- Other changes
 
+See comment under $drh->$connect_meth in DBI.pm about $drh->errstr
+
 Ensure child $h has err reset after connect_cached() or prepare_cached()
 or else document that $DBI:err may be true after those methods even
 though they haven't failed. Umm.

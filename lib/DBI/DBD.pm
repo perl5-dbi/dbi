@@ -3644,6 +3644,11 @@ sub _inst_checks {
 	    "in the current directory path ($cwd) may cause problems\a\n\n";
         sleep 2;
     }
+    if ($cwd =~ /\s/) {
+	warn "*** Warning: whitespace characters ",
+	    "in the current directory path ($cwd) may cause problems\a\n\n";
+        sleep 2;
+    }
     if (   $^O eq 'MSWin32'
 	&& $Config{cc} eq 'cl'
 	&& !(exists $ENV{'LIB'} && exists $ENV{'INCLUDE'}))
