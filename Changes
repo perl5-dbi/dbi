@@ -6,10 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =head1 CHANGES
 
-set_err -> set_state?
-Add clear_state / clear_err
-Document smarts in set_err
+Change to let drivers use set_err to record errors
 Drivers to change how they get debug level (with masked bits).
+Extra hooks in Driver.xst for bind_col etc
 
   Fixed execute_for_array() so tuple_status parameter is optional
     as per docs, thanks to Ed Avis.
@@ -30,12 +29,16 @@ Drivers to change how they get debug level (with masked bits).
     Both values are false and so don't trigger RaiseError etc.
     Warnings (err="0") are automatically printed if PrintError is set.
     Thanks to Steffen Goeldner for the original idea.
-  Added $h->{HandleSetError} = sub { ... } to be called at the
+  Added $h->{HandleSetErr} = sub { ... } to be called at the
     point that an error, warn, or info state is recorded.
     The code can alter the err, errstr, and state values
     (e.g., to promote an error to a warning, or the reverse).
   Added details of DBI::Const::GetInfoType module to get_info() docs.
   Added ref count of inner handle to "DESTROY ignored for outer" msg.
+  Added Win32 build config checks to DBI::DBD thanks to Andy Hassall.
+
+  Major update to signal handling docs thanks to Lincoln Baxter.
+  Corrected dbiproxy usage doc thanks to Christian Hammers.
 
 =head2 Changes in DBI 1.40,    7th January 2004
 

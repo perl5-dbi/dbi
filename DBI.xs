@@ -411,11 +411,8 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     SV **hook_svp;
     int err_changed = 0;
 
-    if (!SvOK(err))
-	return 0;
-
-    if (    DBIc_has(imp_xxh, DBIcf_HandleSetError)
-	&& (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetError",14,0))
+    if (    DBIc_has(imp_xxh, DBIcf_HandleSetErr)
+	&& (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetErr",12,0))
 	&&  hook_svp && SvOK(*hook_svp)
     ) {
 	dSP;
@@ -426,7 +423,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	if (SvREADONLY(state))	state  = sv_mortalcopy(state);
 	if (SvREADONLY(method))	method = sv_mortalcopy(method);
 	if (DBIS->debug >= 2)
-	    PerlIO_printf(DBILOGFP,"    -> HandleSetError(%s, err=%s, errstr=%s, state=%s, %s)\n",
+	    PerlIO_printf(DBILOGFP,"    -> HandleSetErr(%s, err=%s, errstr=%s, state=%s, %s)\n",
 		neatsvpv(h,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
 		neatsvpv(method,0)
 	    );
@@ -442,7 +439,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	response_sv = (items) ? POPs : &sv_undef;
 	PUTBACK;
 	if (DBIS->debug >= 1)
-	    PerlIO_printf(DBILOGFP,"    <- HandleSetError= %s (err=%s, errstr=%s, state=%s, %s)\n",
+	    PerlIO_printf(DBILOGFP,"    <- HandleSetErr= %s (err=%s, errstr=%s, state=%s, %s)\n",
 		neatsvpv(response_sv,0), neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0),
 		neatsvpv(method,0)
 	    );
@@ -450,7 +447,12 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 	    return 0;
     }
 
-    /* fetch these after calling HandleSetError */
+    if (!SvOK(err)) {	/* clear err / errstr / state */
+	DBIh_CLEAR_ERROR(imp_xxh);
+	return 1;
+    }
+
+    /* fetch these after calling HandleSetErr */
     h_err    = DBIc_ERR(imp_xxh);
     h_errstr = DBIc_ERRSTR(imp_xxh);
     h_state  = DBIc_STATE(imp_xxh);
@@ -944,7 +946,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	DBIc_ATTR(imp, TraceLevel)=COPY_PARENT("TraceLevel",0,0);/* scalar (int)*/
 	DBIc_ATTR(imp, FetchHashKeyName) = COPY_PARENT("FetchHashKeyName",0,0);	/* scalar ref */
 	if (parent) {
-	    dbih_setup_attrib(h,"HandleSetError",parent,0,1);
+	    dbih_setup_attrib(h,"HandleSetErr",parent,0,1);
 	    dbih_setup_attrib(h,"HandleError",parent,0,1);
 	    if (DBIc_has(parent_imp,DBIcf_Profile)) {
 		dbih_setup_attrib(h,"Profile",parent,0,1);
@@ -1010,7 +1012,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, char *msg, int level)
     if (DBIc_is(imp_xxh, DBIcf_ChopBlanks))	sv_catpv(flags,"ChopBlanks ");
     if (DBIc_is(imp_xxh, DBIcf_RaiseError))	sv_catpv(flags,"RaiseError ");
     if (DBIc_is(imp_xxh, DBIcf_PrintError))	sv_catpv(flags,"PrintError ");
-    if (DBIc_is(imp_xxh, DBIcf_HandleSetError))	sv_catpv(flags,"HandleSetError ");
+    if (DBIc_is(imp_xxh, DBIcf_HandleSetErr))	sv_catpv(flags,"HandleSetErr ");
     if (DBIc_is(imp_xxh, DBIcf_HandleError))	sv_catpv(flags,"HandleError ");
     if (DBIc_is(imp_xxh, DBIcf_ShowErrorStatement))	sv_catpv(flags,"ShowErrorStatement ");
     if (DBIc_is(imp_xxh, DBIcf_AutoCommit))	sv_catpv(flags,"AutoCommit ");
@@ -1345,11 +1347,11 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	DBIc_set(imp_xxh,DBIcf_HandleError, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
-    else if (strEQ(key, "HandleSetError")) {
+    else if (strEQ(key, "HandleSetErr")) {
 	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVCV)) ) {
-	    croak("Can't set HandleSetError to '%s'",neatsvpv(valuesv,0));
+	    croak("Can't set HandleSetErr to '%s'",neatsvpv(valuesv,0));
 	}
-	DBIc_set(imp_xxh,DBIcf_HandleSetError, on);
+	DBIc_set(imp_xxh,DBIcf_HandleSetErr, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
     else if (strEQ(key, "Profile")) {
@@ -1740,7 +1742,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 	else if (!isUPPER(*key))	/* dbd_*, private_* etc */
 	    valuesv = &sv_undef;
 	else if (	(*key=='H' && strEQ(key, "HandleError"))
-		||	(*key=='H' && strEQ(key, "HandleSetError"))
+		||	(*key=='H' && strEQ(key, "HandleSetErr"))
 		||	(*key=='S' && strEQ(key, "Statement"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
@@ -3936,11 +3938,11 @@ set_err(h, err, errstr=&sv_no, state=&sv_undef, method=&sv_undef, result=Nullsv)
     D_imp_xxh(h);
     SV **sem_svp;
 
-    if (DBIc_has(imp_xxh, DBIcf_HandleSetError) && SvREADONLY(method))
-	method = sv_mortalcopy(method); /* HandleSetError may want to change it */
+    if (DBIc_has(imp_xxh, DBIcf_HandleSetErr) && SvREADONLY(method))
+	method = sv_mortalcopy(method); /* HandleSetErr may want to change it */
 
     if (!set_err_sv(h, imp_xxh, err, errstr, state, method)) {
-	/* set_err was canceled by HandleSetError,		*/
+	/* set_err was canceled by HandleSetErr,		*/
 	/* don't set "dbi_set_err_method", return an empty list	*/
     }
     else {

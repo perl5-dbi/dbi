@@ -2657,9 +2657,9 @@ warning state code via errstr() for methods that have not 'failed'.
 Set the C<err>, C<errstr>, and C<state> values for the handle.
 This method is typically only used by DBI drivers and DBI subclasses.
 
-If the L</HandleSetError> attribute holds a reference to a subroutine
+If the L</HandleSetErr> attribute holds a reference to a subroutine
 it is called first. The subroutine can alter the $err, $errstr, $state,
-and $method values. See L</HandleSetError> for full details.
+and $method values. See L</HandleSetErr> for full details.
 If the subroutine returns a true value then the handle C<err>,
 C<errstr>, and C<state> values are not altered and set_err() returns
 an empty list (it normally returns $rv which defaults to undef, see below).
@@ -2670,7 +2670,9 @@ C<HandleError>, if they are enabled, when execution returns from
 the DBI back to the application.
 
 Setting C<err> to C<""> indicates an 'information' state, and setting
-it to C<"0"> indicates a 'warning' state.
+it to C<"0"> indicates a 'warning' state. Setting C<err> to C<undef>
+also sets C<errstr> to undef, and C<state> to C<"">, irrespective
+of the values of the $errstr and $state parameters.
 
 The $method parameter provides an alternate method name for the
 C<RaiseError>/C<PrintError> error string instead of the fairly
@@ -2680,7 +2682,7 @@ The C<set_err> method normally returns undef.  The $rv parameter
 provides an alternate return value.
 
 Some special rules apply if the C<err> or C<errstr>
-values for the handle are already set...
+values for the handle are I<already> set...
 
 If C<errstr> is true then: "C< [err was %s now %s]>" is appended if
 $err is true and C<err> is already true; "C< [state was %s now %s]>"
@@ -2982,9 +2984,9 @@ to make reliable (avoiding infinite loops, for example) and so isn't
 recommended for general use!  If you find a I<good> use for it then
 please let me know.
 
-=item C<HandleSetError> (code ref, inherited)
+=item C<HandleSetErr> (code ref, inherited)
 
-The C<HandleSetError> attribute can be used to intercept
+The C<HandleSetErr> attribute can be used to intercept
 the setting of handle C<err>, C<errstr>, and C<state> values.
 If set to a reference to a subroutine then that subroutine is called
 whenever set_err() is called, typically by the driver or a subclass.
@@ -2995,22 +2997,22 @@ C<state> values being set, and the method name. These can be altered
 by changing the values in the @_ array. The return value affects
 set_err() behaviour, see L</set_err> for details.
 
-It is possible to 'stack' multiple HandleSetError handlers by using
+It is possible to 'stack' multiple HandleSetErr handlers by using
 closures. See L</HandleError> for an example.
 
-The C<HandleSetError> and C<HandleError> subroutines differ in subtle
+The C<HandleSetErr> and C<HandleError> subroutines differ in subtle
 but significant ways. HandleError is only invoked at the point where
 the DBI is about to return to the application with C<err> set true.
 It's not invoked by the failure of a method that's been caled by
-another DBI method.  HandleSetError, on the other hand, is called
+another DBI method.  HandleSetErr, on the other hand, is called
 whenever set_err() is called with a defined C<err> value, even if false.
 So it's not just for errors, despite the name, but also warn and info states.
-The set_err method, and thus HandleSetError, may be called multiple
+The set_err method, and thus HandleSetErr, may be called multiple
 times within a method and is usually invoked from deep within driver code.
 
-In theory a driver can use the return value from HandleSetError via
+In theory a driver can use the return value from HandleSetErr via
 set_err() to decide whether to continue or not. If set_err() returns
-an empty list, indicating that the HandleSetError code has 'handled'
+an empty list, indicating that the HandleSetErr code has 'handled'
 the 'error', the driver could then continue instead of failing (if
 that's a reasonable thing to do).  This isn't excepted to be
 common and any such cases should be clearly marked in the driver
@@ -6351,7 +6353,31 @@ If you'd like the DBI to do something new or different the best way
 to make that happen is to do it yourself and send me a patch to the
 source code that shows the changes.
 
-=head2 How to create a patch
+=head2 How to create a patch using Subversion
+
+The DBI source code is maintained using Subversion (a replacement
+for CVS, see L<http://subversion.tigris.org/>). To access the source
+you'll need to install a Subversion client. Then, to get the source
+code, do:
+
+  svn checkout http://svn.perl.org/modules/dbi/trunk
+
+If it prompts for a username and password use your perl.org account
+if you have one, else just 'guest' and 'guest'.
+
+After making your changes you can generate a patch file, but before
+you do, make sure your source is still upto date using:
+
+  svn update http://svn.perl.org/modules/dbi/trunk
+
+If you get any conflicts reported you'll need to fix them first.
+Then generate the patch file using:
+
+  svn diff > foo.patch
+
+Read the patch file, as a sanity check, and then email it to dbi-dev@perl.org.
+
+=head2 How to create a patch without Subversion
 
 Unpack a fresh copy of the distribution:
 

@@ -3566,11 +3566,33 @@ BEGIN {
     require DBI unless $is_dbi;
 }
 
-sub _cwd_check {
+my $done_inst_checks;
+
+sub _inst_checks {
+    return if $done_inst_checks++;
     my $cwd = cwd();
-    return unless $cwd =~ /$Config{path_sep}/;
-    warn "*** Warning: Path separator characters (`$Config{path_sep}') in the current directory path ($cwd) may cause problems\a\n";
-    sleep 2;
+    if ($cwd =~ /$Config{path_sep}/) {
+	warn "*** Warning: Path separator characters (`$Config{path_sep}') ",
+	    "in the current directory path ($cwd) may cause problems\a\n\n";
+        sleep 2;
+    }
+    if (   $^O eq 'MSWin32'
+	&& $Config{cc} eq 'cl'
+	&& !(exists $ENV{'LIB'} && exists $ENV{'INCLUDE'}))
+    {
+	print <<EOT;
+*** You're using Microsoft Visual C++ compiler but the LIB and INCLUDE environment
+    variables are not both set. If you have 'unresolved external symbol'
+    errors during linking, run the vcvars32.bat batch file to set up your
+    LIB and INCLUDE environment variables, and try again.
+    A copy of vcvars32.bat can typically be found in the following
+    directories under your Visual Studio install directory:
+        Visual C++ 6.0:     vc98\\bin
+        Visual Studio .NET: vc7\\bin
+
+EOT
+	sleep 2;
+    }
 }
 
 sub dbd_edit_mm_attribs {
@@ -3579,7 +3601,7 @@ sub dbd_edit_mm_attribs {
     my $dbd_attr = shift || {};
     croak "dbd_edit_mm_attribs( \%makemaker [, \%other ]): too many parameters"
 	if @_;
-    _cwd_check();
+    _inst_checks();
 
     # decide what needs doing
 
@@ -3613,6 +3635,7 @@ sub dbd_edit_mm_attribs {
 }
 
 sub dbd_dbi_dir {
+    _inst_checks();
     return '.' if $is_dbi;
     my $dbidir = $INC{'DBI.pm'} || die "DBI.pm not in %INC!";
     $dbidir =~ s:/DBI\.pm$::;
@@ -3620,7 +3643,7 @@ sub dbd_dbi_dir {
 }
 
 sub dbd_dbi_arch_dir {
-    _cwd_check();
+    _inst_checks();
     return '$(INST_ARCHAUTODIR)' if $is_dbi;
     my $dbidir = dbd_dbi_dir();
     my @try = map { "$_/auto/DBI" } @INC;
@@ -3633,7 +3656,7 @@ sub dbd_dbi_arch_dir {
 
 sub dbd_postamble {
     my $self = shift;
-    _cwd_check();
+    _inst_checks();
     my $dbidir = dbd_dbi_dir();
     my $xstdir = dbd_dbi_arch_dir();
     my $xstfile= '$(DBI_INSTARCH_DIR)/Driver.xst';
@@ -3674,6 +3697,8 @@ $(BASEEXT).xsi: $(DBI_DRIVER_XST) '.$xstf_h.'
 }
 
 package DBDI; # just to reserve it via PAUSE for the future
+
+1;
 
 __END__
 

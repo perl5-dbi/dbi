@@ -61,7 +61,7 @@ my $err2 = test_select( DBI->connect(@con_info) );
 
 package main;
 
-print "test HandleSetError\n";
+print "test HandleSetErr\n";
 
 my $dbh = DBI->connect(@con_info);
 $dbh->{RaiseError} = 1;
@@ -78,8 +78,9 @@ $SIG{__WARN__} = sub {
     warn @_;
 };
 #$dbh->trace(2);
-$dbh->{HandleSetError} = sub {
+$dbh->{HandleSetErr} = sub {
     my ($h, $err, $errstr, $state) = @_;
+    return 0 unless defined $err;
     ++$handlewarn[ $err ? 2 : length($err) ]; # count [info, warn, err] calls
     return 1
 	if $state && $state eq "return";   # for tests
@@ -87,13 +88,13 @@ $dbh->{HandleSetError} = sub {
 	if $state && $state eq "override"; # for tests
     return 0 if $err; # be transparent for errors
     local $^W;
-    print "HandleSetError called: h=$h, err=$err, errstr=$errstr, state=$state\n";
+    print "HandleSetErr called: h=$h, err=$err, errstr=$errstr, state=$state\n";
     return 0;
 };
 ok(0, !defined $DBI::err, 1);
 
 $dbh->set_err("", "(got info)");
-ok(0, defined $DBI::err, 1);
+ok(0, defined $DBI::err, 1);	# true
 ok(0, $DBI::err, "");
 ok(0, $DBI::errstr, "(got info)");
 ok(0, $dbh->errstr, "(got info)");
@@ -145,7 +146,10 @@ ok(0, $dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 no
 ok(0, $warn, 2);
 ok(0, "@handlewarn", "3 2 2");
 
-$dbh->ping; # just to clear error in the normal way
+$dbh->set_err(undef, "foo", "bar"); # clear error
+ok(0, !defined $dbh->err);
+ok(0, !defined $dbh->errstr);
+ok(0, $dbh->state, "");
 
 $warn = 0;
 @handlewarn = (0,0,0);
@@ -160,7 +164,7 @@ ok(0, $dbh->errstr, "foo [err was 1 now 2]\nbar [err was 2 now 3]\nbaz\nwarn");
 ok(0, $warn, 0);
 ok(0, "@handlewarn", "0 1 3");
 
-$dbh->ping; # clear error
+$dbh->set_err(undef, undef, undef); # clear error
 @ret = $dbh->set_err(1, "foo", "AA123", "method");
 ok(0, @ret == 1 && !defined $ret[0]);
 @ret = $dbh->set_err(1, "foo", "AA123", "method", "42");
@@ -168,11 +172,11 @@ ok(0, @ret == 1 && $ret[0] eq "42");
 @ret = $dbh->set_err(1, "foo", "return");
 ok(0, @ret == 0);
 
-$dbh->ping; # clear error
+$dbh->set_err(undef, undef, undef); # clear error
 @ret = $dbh->set_err("", "info", "override");
 ok(0, @ret == 1 && !defined $ret[0]);
 ok(0, $dbh->err,    99);
 ok(0, $dbh->errstr, "errstr99");
 ok(0, $dbh->state,  "OV123");
 
-BEGIN { $tests = 51 }
+BEGIN { $tests = 54 }

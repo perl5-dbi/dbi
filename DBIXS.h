@@ -232,7 +232,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIcf_AutoCommit  0x000200	/* dbh only. used by drivers		*/
 #define DBIcf_LongTruncOk 0x000400	/* truncation to LongReadLen is okay	*/
 #define DBIcf_MultiThread 0x000800	/* allow multiple threads to enter	*/
-#define DBIcf_HandleSetError  0x001000	/* has coderef HandleSetError attribute	*/
+#define DBIcf_HandleSetErr 0x001000	/* has coderef HandleSetErr attribute	*/
 #define DBIcf_ShowErrorStatement  0x002000   /* include Statement in error	*/
 #define DBIcf_BegunWork   0x004000	/* between begin_work & commit/rollback */
 #define DBIcf_HandleError 0x008000	/* has coderef in HandleError attribute */

@@ -216,7 +216,7 @@ EOT
 
 sub libscan {
     my($self, $path) = @_;
-    ($path =~ /\~$/) ? undef : $path;
+    ($path =~ /\~$|\B\.svn\b/) ? undef : $path;
 }
 
 sub const_cccmd {

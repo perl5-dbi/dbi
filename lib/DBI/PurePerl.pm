@@ -131,7 +131,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Driver
 	FetchHashKeyName
 	HandleError
-	HandleSetError
+	HandleSetErr
 	ImplementorClass
 	Kids
 	LongReadLen
@@ -215,7 +215,7 @@ sub  _install_method {
     elsif (0 and IMA_KEEP_ERR_SUB & $bitmask) {
 	push @pre_call_frag, q{
 	    my $keep_error = $h->{_parent}->{_call_depth};
-	    unless ($keep_error) {
+	    unless ($keep_error) {	# see also set_err
 		#warn "$method_name cleared err";
 		$h->{err} = $DBI::err = undef;
 		$h->{errstr} = $DBI::state = '';
@@ -282,7 +282,7 @@ sub  _install_method {
         if ( !$keep_error && defined(my $err=$h->{err}) ) {
 
 	    my $at_top = ($call_depth <= 1 && !$h->{_parent}{_call_depth});
-	    my($pe,$re,$he,$hw) = @{$h}{qw(PrintError RaiseError HandleError HandleSetError)};
+	    my($pe,$re,$he,$hw) = @{$h}{qw(PrintError RaiseError HandleError HandleSetErr)};
 	    my $msg;
 $hw=0;
 
@@ -308,7 +308,7 @@ $hw=0;
 		if (!$err && $hw) {
 		    undef $hw unless &$hw($msg,$h,$ret[0]);
 		}
-		# still have warn (not info) and it wasn't handled by HandleSetError
+		# still have warn (not info) and it wasn't handled by HandleSetErr
 		if (!$hw and defined $DBI::err and $DBI::err eq "0") {
 		    warn $msg if $pe;
 		}
@@ -390,7 +390,7 @@ sub _setup_handle {
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained
     if ($parent) {
 	foreach (qw(
-	    RaiseError PrintError HandleError HandleSetError
+	    RaiseError PrintError HandleError HandleSetErr
 	    Warn LongTruncOk ChopBlanks AutoCommit
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {
@@ -642,8 +642,14 @@ sub set_err {
     my ($h, $errnum,$msg,$state, $method, $rv) = @_;
     $h = tied(%$h) || $h; # for code that calls $h->DBI::set_err(...)
 
-    if (my $hss = $h->{HandleSetError}) {
+    if (my $hss = $h->{HandleSetErr}) {
 	return if $hss->($h, $errnum, $msg, $state, $method);
+    }
+
+    if (!defined $errnum) {
+	$h->{err} = $DBI::err = undef;
+	$h->{errstr} = $DBI::state = '';
+        return;
     }
 
     if ($h->{errstr}) {
