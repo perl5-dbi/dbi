@@ -148,16 +148,13 @@ Change t/zz_*_pp.t to be t/zXX_*.t where XX is a combination of:
 mx and pr wouldn't both apply to the same test
 
 Add data structure describing attributes
-Use the data structure to replace similar data in Proxy and PurePerl code
+Use the data structure to replace similar data in Proxy, Multiplex,
+PurePerl and other places.
+
+Add OnConnect attribute to connect() esp. for connect_cached()
 
 Remove _not_impl. Alias debug to trace in DBI::(dr/db/st) ad remove
 debug() method from internals.
-
-Mechanism to 'unset' the keep_error flag for the current call, which
-could then be used by FETCH when appropriate. Or, better:
-New ima flags: CLEAR_ERR (on entry), CHECK_ERR (on exit), CHECK_NEW_ERR
-(check if error count has been incremented by set_err).
-Then FETCH would have just CHECK_NEW_ERR.
 
 Macro to get new statement handle for XS code
 

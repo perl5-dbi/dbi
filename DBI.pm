@@ -638,6 +638,12 @@ sub connect {
 	# if we've been subclassed then let the subclass know that we're connected
 	$dbh->connected($dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
 
+	# if the caller has provided a callback then call it
+	# especially useful with connect_cached() XXX not enabled/tested/documented
+	if (0 && $dbh && my $oc = $dbh->{OnConnect}) { # XXX
+	    $oc->($dbh, $dsn, $user, $auth, $attr) if ref $oc eq 'CODE';
+	}
+
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
 
 	return $dbh;
@@ -5200,7 +5206,14 @@ all the rows in one go. Here's an example:
     ...
   }
 
-That is the fastest way to fetch and process lots of rows using the DBI.
+That can be the fastest way to fetch and process lots of rows using the DBI,
+but it depends on the relative cost of method calls vs memory allocation.
+
+A standard C<while> loop with column binding is often faster because
+the cost of allocating memory for the batch of rows is greater than
+the saving by reducing method calls. It's possible that the DBI may
+provide a way to reuse the memory of a previous batch in future, which
+would then shift the balance back towards fetchall_arrayref().
 
 
 =item C<fetchall_hashref>
