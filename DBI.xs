@@ -1,6 +1,6 @@
 /* vim: ts=8:sw=4
  *
- * $Id: DBI.xs,v 11.32 2003/08/21 22:34:45 timbo Exp $
+ * $Id: DBI.xs,v 11.36 2003/11/27 23:29:06 timbo Exp $
  *
  * Copyright (c) 1994-2003  Tim Bunce  Ireland.
  *
@@ -148,24 +148,19 @@ typedef struct {
 
 #if defined(MULTIPLICITY) || defined(PERL_OBJECT) || defined(PERL_CAPI)
 
-#   if (PATCHLEVEL == 4) && (SUBVERSION < 68)
-#     define dPERINTERP_SV                                     \
-        SV *perinterp_sv = get_sv(MY_VERSION, FALSE)
-#   else
 #     define dPERINTERP_SV                                     \
         SV *perinterp_sv = *hv_fetch(PL_modglobal, MY_VERSION, \
                                  sizeof(MY_VERSION)-1, TRUE)
-#   endif
 
 #   define dPERINTERP_PTR(T,name)                            \
-	T name = (T)(perinterp_sv && SvIOK(perinterp_sv)     \
-                 ? (T)SvIVX(perinterp_sv) : NULL)
+	T name = (perinterp_sv && SvIOK(perinterp_sv)     \
+                 ? INT2PTR(T, SvIVX(perinterp_sv)) : (T)NULL)
 #   define dPERINTERP                                        \
 	dPERINTERP_SV; dPERINTERP_PTR(PERINTERP_t *, PERINTERP)
 #   define INIT_PERINTERP \
 	dPERINTERP;                                          \
 	Newz(0,PERINTERP,1,PERINTERP_t);                     \
-	sv_setiv(perinterp_sv, (IV)PERINTERP)
+	sv_setiv(perinterp_sv, PTR2IV(PERINTERP))
 
 #   undef DBIS
 #   define DBIS			(PERINTERP->dbi_state)
@@ -203,6 +198,7 @@ check_version(char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int drc_s
 static void
 dbi_bootinit(dbistate_t * parent_dbis)
 {
+    char *p = Nullch;
 INIT_PERINTERP;
 
     Newz(dummy, DBIS, 1, dbistate_t);
@@ -215,7 +211,8 @@ INIT_PERINTERP;
 
     DBIS->logmsg      = dbih_logmsg;
     DBIS->logfp	      = PerlIO_stderr();
-    DBIS->debug	      = (parent_dbis) ? parent_dbis->debug : 0;
+    DBIS->debug	      = (parent_dbis) ? parent_dbis->debug
+			    : atoi((p=getenv("DBI_TRACE")) ? p : "0");
     DBIS->neatsvpvlen = (parent_dbis) ? parent_dbis->neatsvpvlen
 				      : perl_get_sv("DBI::neat_maxlen", GV_ADDMULTI);
 #ifdef DBI_USE_THREADS
@@ -223,9 +220,14 @@ INIT_PERINTERP;
 #endif
 
     /* publish address of dbistate so dynaloaded DBD's can find it	*/
-    sv_setiv(perl_get_sv(DBISTATE_PERLNAME,1), (IV)DBIS);
+    sv_setiv(perl_get_sv(DBISTATE_PERLNAME,1), PTR2IV(DBIS));
 
     DBISTATE_INIT; /* check DBD code to set DBIS from DBISTATE_PERLNAME	*/
+
+    if (DBIS->debug) {
+	if (DBIS->debug >= 9)
+	    sv_dump(DBISTATE_ADDRSV);
+    }
 
     /* store some function pointers so DBD's can call our functions	*/
     DBIS->getcom      = dbih_getcom;
@@ -281,6 +283,8 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
     char *v, *quote;
 
     /* We take care not to alter the supplied sv in any way at all.	*/
+    /* (but if it is SvGMAGICAL we have to call mg_get and that can	*/
+    /* have side effects, especially as it may e called twice overall.) */
 
     if (!sv)
 	return "Null!";				/* should never happen	*/
@@ -522,8 +526,8 @@ set_trace(SV *h, int level, SV *file)
     set_trace_file(file);
     if (level != RETVAL) {	 /* set value */
 	if (level > 0) {
-	    PerlIO_printf(DBILOGFP,"    %s trace level set to %d in DBI %s%s\n",
-		neatsvpv(h,0), level, XS_VERSION, dbi_build_opt);
+	    PerlIO_printf(DBILOGFP,"    %s trace level set to %d in DBI %s%s (pid %d)\n",
+		neatsvpv(h,0), level, XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
 	    if (!dowarn && level>0)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBILOGFP);
@@ -2189,7 +2193,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    char *can_meth = SvPV(st1,lna);
 		    SV *dbi_msv = Nullsv;
 		    SV	*imp_msv; /* handle implementors method (GV or CV) */
-		    if ( (imp_msv = (SV*)gv_fetchmethod(DBIc_IMP_STASH(imp_xxh), can_meth)) ) {
+		    if ( (imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), can_meth, FALSE)) ) {
 			/* return DBI's CV, not the implementors CV (else we'd bypass dispatch) */
 			/* and anyway, we may have hit a private method not part of the DBI	*/
 			GV *gv = gv_fetchmethod_autoload(SvSTASH(SvRV(orig_h)), can_meth, FALSE);
@@ -2201,10 +2205,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 			PerlIO_printf(logfp,"    <- %s(%s) = %p (%s %p)\n", meth_name, can_meth, dbi_msv,
 				(imp_msv && isGV(imp_msv)) ? HvNAME(GvSTASH(imp_msv)) : "?", imp_msv);
 		    }
-		    if (dbi_msv) {
-			ST(0) = sv_2mortal(newRV(dbi_msv));
-			XSRETURN(1);
-		    }
+		    ST(0) = (dbi_msv) ? sv_2mortal(newRV(dbi_msv)) : &PL_sv_undef;
+		    XSRETURN(1);
 		}
 		XSRETURN(0);
 	    }
@@ -2318,8 +2320,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     /* --- dispatch --- */
 
-    if (!keep_error)
+    if (!keep_error) {
+	if (debug >= 4 && SvTRUE(DBIc_ERR(imp_xxh))) {
+	    PerlIO *logfp = DBILOGFP;
+	    PerlIO_printf(logfp, "    !! ERROR: %s CLEARED by call to %s method\n",
+		neatsvpv(DBIc_ERR(imp_xxh),0), meth_name);
+	}
 	DBIh_CLEAR_ERROR(imp_xxh);
+    }
 
     /* The "quick_FETCH" logic...					*/
     /* Shortcut for fetching attributes to bypass method call overheads */
@@ -2354,13 +2362,13 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
 	if (debug) {
 	    SAVEI32(DBIS->debug);	/* fall back to orig value later */
+	    DBIS->debug = debug;	/* make value global (for now)	 */
 	    if (ima && debug < ima->trace_level) {
 		debug = 0;		/* silence dispatch log for this method	*/
 	    }
-	    DBIS->debug = debug;	/* make value global (for now)	 */
 	}
 
-	imp_msv = (SV*)gv_fetchmethod(DBIc_IMP_STASH(imp_xxh), meth_name);
+	imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), meth_name, FALSE);
 
 	if (debug >= 2) {
 	    PerlIO *logfp = DBILOGFP;
@@ -2436,6 +2444,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
 	}
 	else {
+	    /* sv_dump(imp_msv); */
 	    outitems = perl_call_sv(isGV(imp_msv) ? (SV*)GvCV(imp_msv) : imp_msv,
 		(is_DESTROY ? gimme | G_EVAL | G_KEEPERR : gimme) );
 	}
@@ -2453,7 +2462,11 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     post_dispatch:
 
-    if (debug >= 1) {
+    if (debug >= 1
+	&& !(debug == 1 /* don't trace nested calls at level 1 */
+	    && call_depth <= 1
+	    && (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1))
+    ) {
 	PerlIO *logfp = DBILOGFP;
 	int is_fetch  = (*meth_name=='f' && DBIc_TYPE(imp_xxh)==DBIt_ST && strnEQ(meth_name,"fetch",5));
 	int row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
@@ -3279,8 +3292,8 @@ trace(sv, level=-1, file=Nullsv)
     set_trace_file(file);	/* always call this regardless of level */
     if (level != DBIS->debug) {
 	if (level > 0) {
-	    PerlIO_printf(DBILOGFP,"    DBI %s%s dispatch trace level set to %d\n",
-		XS_VERSION, dbi_build_opt, level);
+	    PerlIO_printf(DBILOGFP,"    DBI %s%s dispatch trace level set to %d (in pid %d)\n",
+		XS_VERSION, dbi_build_opt, level, (int)PerlProc_getpid());
 	    if (!dowarn)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBILOGFP);

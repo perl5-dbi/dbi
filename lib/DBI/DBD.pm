@@ -2,10 +2,10 @@ package DBI::DBD;
 
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
-$VERSION = sprintf("%d.%02d", q$Revision: 11.18 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("%d.%02d", q$Revision: 11.19 $ =~ /(\d+)\.(\d+)/o);
 
 
-# $Id: DBD.pm,v 11.18 2003/08/20 00:15:24 timbo Exp $
+# $Id: DBD.pm,v 11.19 2003/11/12 10:02:10 timbo Exp $
 #
 # Copyright (c) 1997-2003 Jonathan Leffler, Jochen Wiedmann, Steffen
 # Goeldner and Tim Bunce
@@ -58,8 +58,8 @@ DBI::DBD - Perl DBI Database Driver Writer's Guide
 
 =head2 Version and volatility
 
-  $Revision: 11.18 $
-  $Date: 2003/08/20 00:15:24 $
+  $Revision: 11.19 $
+  $Date: 2003/11/12 10:02:10 $
 
 This document is I<still> a minimal draft which is in need of further work.
 
@@ -708,7 +708,7 @@ version 1.10 to precede version 1.9, so that using a raw CVS, RCS or
 SCCS version number is probably not appropriate (despite being very
 common). For RCS or CVS you can use this code:
 
-  $VERSION = sprintf "%d.%02d", '$Revision: 11.18 $ ' =~ /(\d+)\.(\d+)/;
+  $VERSION = sprintf "%d.%02d", '$Revision: 11.19 $ ' =~ /(\d+)\.(\d+)/;
 
 which pads out the fractional part with leading zeros so all is well
 (so long as you don't go past x.99)
@@ -1229,6 +1229,9 @@ The DBI will actually store and fetch driver-specific attributes (with all
 lowercase names) without warning or error, so there's actually no need to
 implement driver-specific any code in your FETCH and STORE methods unless
 you need extra logic/checks, beyond getting or setting the value.
+
+Unless your driver documentation indicates otherwise, the return value of
+the STORE method is unspecified and the caller shouldn't use that value.
 
 =cut
 
@@ -3086,6 +3089,8 @@ You should review the output to ensure that it is sensible.
 
 =pod
 
+=back
+
 =over 2
 
 =item Generating the type_info method
@@ -3117,12 +3122,14 @@ your Driver.pm file and the code that should be written to
 lib/DBD/Driver/TypeInfo.pm.
 You should review the output to ensure that it is sensible.
 
+=back
+
 =head2 Writing DBD::Driver::db::get_info
 
-If you use the DBI::DBD::GetInfo module, then the code you need is
+If you use the DBI::DBD::Metadata module, then the code you need is
 generated for you.
 
-If you decide not to use the DBI::DBD::GetInfo module, you should
+If you decide not to use the DBI::DBD::Metadata module, you should
 probably borrow the code from a driver that has done so (eg
 DBD::Informix from version 1.05 onwards) and crib the code from there,
 or look at the code that generates that module and follow that.
@@ -3137,10 +3144,10 @@ below.
 
 =head2 Writing DBD::Driver::db::type_info_all
 
-If you use the DBI::DBD::TypeInfo module, then the code you need is
+If you use the DBI::DBD::Metadata module, then the code you need is
 generated for you.
 
-If you decide not to use the DBI::DBD::TypeInfo module, you should
+If you decide not to use the DBI::DBD::Metadata module, you should
 probably borrow the code from a driver that has done so (eg
 DBD::Informix from version 1.05 onwards) and crib the code from there,
 or look at the code that generates that module and follow that.
@@ -3561,9 +3568,8 @@ BEGIN {
 
 sub _cwd_check {
     my $cwd = cwd();
-    return unless $cwd =~ m/:/;
-    return if $^O eq 'darwin';
-    warn "*** Warning: Colons in the current directory path ($cwd) may cause problems\a\n";
+    return unless $cwd =~ /$Config{path_sep}/;
+    warn "*** Warning: Path separator characters (`$Config{path_sep}') in the current directory path ($cwd) may cause problems\a\n";
     sleep 2;
 }
 
@@ -3673,7 +3679,7 @@ __END__
 
 Jonathan Leffler <jleffler@us.ibm.com> (previously <jleffler@informix.com>),
 Jochen Wiedmann <joe@ispsoft.de>,
-Steffen Goeldner <s.goeldner@eurodata.de>,
+Steffen Goeldner <sgoeldner@cpan.org>,
 and Tim Bunce <dbi-users@perl.org>.
 
 =cut

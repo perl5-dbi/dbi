@@ -1,6 +1,6 @@
 DBI - The Perl Database Interface by Tim Bunce.
 
-Copyright (c) 1994-2002  Tim Bunce  Ireland.
+Copyright (c) 1994-2003  Tim Bunce  Ireland.
 
 See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
@@ -14,7 +14,8 @@ RECENT NEWS:
 
 QUICK START GUIDE:
 
-    The DBI requires one or more 'driver' modules to talk to databases.
+    The DBI requires one or more 'driver' modules to talk to databases,
+    but they are not needed to build or install the DBI.
 
     Check that a DBD::* module exists for the database you wish to use.
 
@@ -56,7 +57,7 @@ See also http://search.cpan.org/
 
 BEFORE BUILDING, TESTING AND INSTALLING this you will need to:
 
-    Build, test and install Perl 5 (5.005_03 or later).
+    Build, test and install Perl 5 (5.6 or later).
     It is very important to test it and actually install it!
     (You can use "Configure -Dprefix=..." to build a private copy.)
 

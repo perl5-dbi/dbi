@@ -6,9 +6,9 @@
     use DBI qw(:sql_types);
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.10 $ =~ /(\d+)\.(\d+)/o);
+    $VERSION = sprintf("%d.%02d", q$Revision: 11.11 $ =~ /(\d+)\.(\d+)/o);
 
-#   $Id: ExampleP.pm,v 11.10 2003/05/10 23:30:28 timbo Exp $
+#   $Id: ExampleP.pm,v 11.11 2003/10/21 15:13:43 timbo Exp $
 #
 #   Copyright (c) 1994,1997,1998 Tim Bunce
 #
@@ -358,10 +358,10 @@
 	# either return dynamic values that cannot be precomputed
 	# or fetch and cache attribute values too expensive to prefetch.
 	if ($attrib eq 'TYPE'){
-	    return [ @DBD::ExampleP::stattypes{ @{ $sth->{NAME_lc} } } ];
+	    return [ @DBD::ExampleP::stattypes{ @{ $sth->FETCH(q{NAME_lc}) } } ];
 	}
 	elsif ($attrib eq 'PRECISION'){
-	    return [ @DBD::ExampleP::statprec{  @{ $sth->{NAME_lc} } } ];
+	    return [ @DBD::ExampleP::statprec{  @{ $sth->FETCH(q{NAME_lc}) } } ];
 	}
 	elsif ($attrib eq 'ParamValues') {
 	    my $dbd_param = $sth->{dbd_param} || [];

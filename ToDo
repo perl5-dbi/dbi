@@ -1,10 +1,27 @@
 
 *** Assorted to-do items and random thoughts *** IN NO PARTICULAR ORDER ***
 
-Polish up and document _dbtype_names with an external interface and using get_info.
+Ability to remove an sth from the prepare_cached cache.
+	$sth->uncache;
+and	$dbh->uncache; for connect_cached
+implies duplication of key key code or iterate through cache.
+$h->uncache and/or option to prepare_cache to discard (and replace)
+cached $sth if it's still active. Or weak refs?
 
-Don't show attrib FETCH from cache if trace level is 1
-Always show fetch/fetchrow_arrayref return even at level 1?
+Add PERL_NO_GET_CONTEXT for multiplicity/threads?
+And enable xsbypass if possible.
+
+Perhaps $h->{PrintWarn} $h->{RaiseWarn} $h->{HandleWarn}
+or better still, a more general event mechanism
+but one that makes the above very easy: $h->{HandleEvent}
+but need to classify 'events'. At least SUCCESS_WITH_INFO
+(which covers eg mysql warnings), and something for 'messages'
+from the server while exevuting stored procedures.
+
+$dbh->ping($skip_seconds) - skip the ping if ping'd less than $skip_seconds ago
+Change connect_cached to use ping($skip_seconds || 10);
+
+Polish up and document _dbtype_names with an external interface and using get_info.
 
 $sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
 
@@ -20,10 +37,6 @@ $dbh->get_inner_handle / set_inner_handle
 Hook to call code ref on each fetch, pass fbav ref
 datarow_array(), datarow_arrayref(), datarow_hashref()
 remove sth from prepare_cached cache.
-$sth/$dbh->last_insert_id
-
-Ability to remove an sth from the prepare_cached cache.
-	$sth->uncache;
 
 DBI->setup_driver alias for _setup_driver, and make idempotent.
 
@@ -62,7 +75,6 @@ Ship separate DBD::TemplateP and DBD::TemplateXS drivers as examples.
 
 Check: local($h->{PrintError})=0; resets $DBI::errstr at end of scope?
 
-ShowTracePid attrib	( or just add to trace level change message)
 Add UnimpMethodHook (in XS)
 Test and integrate with DProf?
 FetchHashReuse attrib (=1 or ={}) copy from dbh to sth.
@@ -252,3 +264,4 @@ to handle attributes to prepare semi-automatically, sometime.
 
 Tim.
 ----------- 
+

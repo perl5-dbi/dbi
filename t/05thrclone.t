@@ -17,6 +17,8 @@ use Test::More tests => 20;
 
 # ---
 
+{ package threads_sub; use base qw(threads); }
+
 use DBI;
 
 #threads->create( sub { 1 } )->join; warn 2; exit 0;
@@ -29,7 +31,7 @@ sub tests1 {
 
 my @thr;
 foreach (1..10) {
-    push @thr, threads->create( \&tests1 );
+    push @thr, threads_sub->create( \&tests1 );
     tests1();
 }
 $_->join foreach @thr;

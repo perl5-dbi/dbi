@@ -1,6 +1,6 @@
 # -*- perl -*-
 #
-# $Id: Makefile.PL,v 11.18 2003/08/20 00:15:24 timbo Exp $
+# $Id: Makefile.PL,v 11.19 2003/11/12 10:02:10 timbo Exp $
 #
 #  Copyright (c) 1994-2002  Tim Bunce  England
 #
@@ -74,9 +74,9 @@ else {
 	print "of perl threading (now known as '5005 threads'). It is badly flawed\n";
 	print "and could never be safe to use in production environments.\n\n";
 	print "If you are using multiple threads you are *strongly* encouraged to\n";
-	print "upgrade to perl 5.8.x or later.\n";
+	print "upgrade to perl 5.8.2 or later.\n";
 	print "If you are not using multiple threads you are *strongly* encouraged to\n";
-	print "upgrade to at least 5.6.x (preferably perl 5.8.x or later.)\n";
+	print "upgrade to at least 5.6.1 (preferably perl 5.8.2 or later.)\n";
 	print "or at the very least rebuild this version with threading disabled.\n";
 	print "If you have stick with your current build of perl...\n";
 	print "then you also have to stick with DBI 1.28 for safety.\n";
@@ -111,12 +111,13 @@ MSG
 if (@missing) {
     print <<'MSG';
 Optional modules are available from any CPAN mirror, in particular
+    http://search.cpan.org/
     http://www.perl.com/CPAN/modules/by-module
     http://www.perl.org/CPAN/modules/by-module
     ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
 
 MSG
-	sleep 5;
+    sleep 4;
 }
 
  

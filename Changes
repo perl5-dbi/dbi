@@ -17,6 +17,33 @@ Add more macro hooks to Driver.xst: ping, quote etc.
 
 =head1 CHANGES
 
+=head2 Changes in DBI 1.39,    27th November 2003
+
+  Fixed STORE to not clear error during nested DBI call, again/better,
+    thanks to Tony Bowden for the report and helpful test case.
+  Fixed DBI dispatch to not try to use AUTOLOAD for driver methods unless
+    the method has been declared (as methods should be when using AUTOLOAD).
+    This fixes a problem when the Attribute::Handlers module is loaded.
+  Fixed cwd check code to use $Config{path_sep} thanks to Steve Hay.
+  Fixed unqualified croak() calls thanks to Steffen Goeldner.
+  Fixed DBD::ExampleP TYPE and PRECISION attributes thanks to Tom Lowery.
+  Fixed tracing of methods that only get traced at high trace levels.
+
+  The level 1 trace no longer includes nested method calls so it generally
+    just shows the methods the application explicitly calls.
+  Added line to trace log (level>=4) when err/errstr is cleared.
+  Updated docs for InactiveDestroy and point out where and when the
+    trace includes the process id.
+  Update DBI::DBD docs thanks to Steffen Goeldner.
+  Removed docs saying that the DBI->data_sources method could be
+    passed a $dbh. The $dbh->data_sources method should be used instead.
+  Added link to 'DBI recipes' thanks to Giuseppe Maxia:
+    http://gmax.oltrelinux.com/dbirecipes.html (note that this
+    is not an endorsement that the recipies are 'optimal')
+
+  Note: There is a bug in perl 5.8.2 when configured with threads
+  and debugging enabled (bug #24463) which causes a DBI test to fail.
+
 =head2 Changes in DBI 1.38,    21th August 2003
 
   NOTE: The DBI now requires perl version 5.6.0 or later.

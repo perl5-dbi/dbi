@@ -47,6 +47,9 @@ package MyDBI::st;
 sub fetch {
     my($sth, @args) = @_;
     ++$calls;
+    # this is just to trigger (re)STORE on exit to test that the STORE
+    # doesn't clear any erro condition
+    local $sth->{Taint} = 0;
     my $row = $sth->SUPER::fetch(@args);
     if ($row) {
 	# modify fetched data as an example
@@ -79,7 +82,7 @@ sub ok ($$$) {
     return print "ok $t at $line\n"
 	if(	( defined($got) && defined($want) && $got eq $want)
 	||	(!defined($got) && !defined($want)) );
-    warn "Test $n: wanted '$want', got '$got'\n";
+    warn sprintf "Test $n: wanted %s, got %s\n", DBI::neat($want), DBI::neat($got);
     print "not ok $t at $line\n";
 }
 

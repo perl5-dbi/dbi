@@ -1,4 +1,4 @@
-/* $Id: DBIXS.h,v 11.15 2003/05/26 23:28:42 timbo Exp $
+/* $Id: DBIXS.h,v 11.17 2003/11/13 13:04:38 timbo Exp $
  *
  * Copyright (c) 1994-2002  Tim Bunce  Ireland
  *
@@ -416,19 +416,19 @@ struct dbistate_st {
 # define DBISTATE_ASSIGN(st)
 # define DBISTATE_INIT
 # undef DBIS
-# define DBIS (*(dbistate_t**)&SvIVX(DBISTATE_ADDRSV))
+# define DBIS (*(INT2PTR(dbistate_t**, &SvIVX(DBISTATE_ADDRSV))))
 /* 'dbis' is temp for bad drivers using 'dbis' instead of 'DBIS' */
-# define dbis (*(dbistate_t**)&SvIVX(DBISTATE_ADDRSV))
+# define dbis (*(INT2PTR(dbistate_t**, &SvIVX(DBISTATE_ADDRSV))))
 
 #else	/* plain and simple non perl object / multiplicity case */
 
 # define DBISTATE_DECLARE	static dbistate_t *DBIS
 # define DBISTATE_ASSIGN(st)	(DBIS = (st))
-# define DBISTATE_INIT_DBIS	DBISTATE_ASSIGN((dbistate_t*)SvIV(DBISTATE_ADDRSV))
+# define DBISTATE_INIT_DBIS	DBISTATE_ASSIGN(INT2PTR(dbistate_t*, SvIV(DBISTATE_ADDRSV)))
 # define DBISTATE_INIT {	/* typically use in BOOT: of XS file	*/    \
     DBISTATE_INIT_DBIS;	\
     if (DBIS == NULL)	\
-	croak("Unable to get DBI state. DBI not loaded.");	\
+	croak("Unable to get DBI state from %s at %p. DBI not loaded.", DBISTATE_PERLNAME, DBISTATE_ADDRSV); \
     DBIS->check_version(__FILE__, DBISTATE_VERSION, sizeof(*DBIS), NEED_DBIXS_VERSION, \
 		sizeof(dbih_drc_t), sizeof(dbih_dbc_t), sizeof(dbih_stc_t), sizeof(dbih_fdc_t) \
     ); \
