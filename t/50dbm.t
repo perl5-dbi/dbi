@@ -1,4 +1,5 @@
-#!perl
+#!perl -w
+
 use strict;
 use File::Path;
 use Test::More;
@@ -42,14 +43,13 @@ BEGIN {
     print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
     my $num_tests = (1+@mldbm_types) * @dbm_types * 11;
+	
     if (!$num_tests) {
-        plan tests => 1;
-        SKIP: {
-            skip("No DBM modules available",1);
-        }
-        exit;
+        plan skip_all => "No DBM modules available";
     }
-    plan tests => $num_tests;
+	else {
+		plan tests => $num_tests;
+	}
 }
 
 my $dir = './test_output';

@@ -1,6 +1,7 @@
-#!../perl -w
+#!perl -w
 
 use strict;
+
 use Test::More tests => 63;
  
 $|=1;

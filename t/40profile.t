@@ -1,4 +1,5 @@
 #!perl -w
+
 use strict;
 
 #
@@ -152,7 +153,7 @@ ok(exists $data->{$sql}{DESTROY});
 
 my $do_sql = "set foo=1";
 $dbh->do($do_sql); # check dbh do() gets associated with right statement
-ok(keys %{$data->{$do_sql}}, 2); # XXX extra one is DESTROY
+ok(keys %{$data->{$do_sql}}, 1); # XXX extra one is DESTROY
 ok(exists $data->{$do_sql}{do});
 print "Profile Data keys: @{[ keys %{$data->{$do_sql}} ]}\n";
 

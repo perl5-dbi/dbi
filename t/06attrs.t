@@ -1,17 +1,22 @@
 #!perl -w
 
 use strict;
+
 use Test::More tests => 144;
 
-BEGIN { use_ok( 'DBI' ) }
+BEGIN { 
+	use_ok( 'DBI' ) 
+}
 
 $|=1;
 
 # Connect to the example driver.
 my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
-                           { PrintError => 0,
+                           { 
+							 PrintError => 0,
                              RaiseError => 1,
                            });
+
 isa_ok( $dbh, 'DBI::db' );
 
 # Clean up when we're done.

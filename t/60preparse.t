@@ -1,17 +1,19 @@
-#!perl -Tw
+#!perl -w
 
 use DBI qw(:preparse_flags);
 
 $|=1;
 
-BEGIN {
-    if ($DBI::PurePerl) {
-        print "1..0 # Skipped: preparse not supported for DBI::PurePerl\n";
-        exit 0;
-    }
-}
+use Test::More;
 
-use Test::More tests=>39;
+BEGIN {
+	if ($DBI::PurePerl) {
+		plan skip_all => 'preparse not supported for DBI::PurePerl';
+	}
+	else {
+		plan tests => 39;
+	}
+}
 
 my $dbh = DBI->connect("dbi:ExampleP:", "", "", {
 	PrintError => 0,

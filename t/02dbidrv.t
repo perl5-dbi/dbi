@@ -1,7 +1,6 @@
-#!perl
+#!perl -w
 
 use strict;
-use warnings;
 
 use Test::More tests => 48;
 
@@ -201,7 +200,7 @@ SKIP: {
 	eval { 
 		$DBI::rows = 1 
 	};
-	like($@, qr/Can't modify/, '... trying to assign to $DBI::rows should throw an excpetion');
+	like($@, qr/Can't modify/, '... trying to assign to $DBI::rows should throw an excpetion'); #'
 }
 
 is($drh->{FetchHashKeyName}, 'NAME', '... FetchHashKeyName is NAME');

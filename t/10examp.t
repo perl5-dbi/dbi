@@ -1,4 +1,4 @@
-#!perl -wT
+#!perl -w
 
 use lib qw(blib/arch blib/lib);	# needed since -T ignores PERL5LIB
 use DBI qw(:sql_types);

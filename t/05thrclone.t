@@ -5,24 +5,27 @@
 use strict;
 use Config qw(%Config);
 
+use Test::More;
+
 BEGIN {
-    if (!$Config{useithreads} || $] < 5.008) {
-	print "1..0 # Skipped: this $^O perl $] not configured to support iThreads\n";
-	exit 0;
-    }
+	if (!$Config{useithreads} || $] < 5.008) {
+		plan skip_all => "this $^O perl $] not configured to support iThreads";
+	}
+	else {
+		plan tests => 11;
+	}
+}
+
+BEGIN {
+	use_ok('DBI');
 }
 
 use threads;
-use Test::More tests => 10;
-
-# ---
 
 {
     package threads_sub;
     use base qw(threads);
 }
-
-use DBI;
 
 $DBI::neat_maxlen = 12345;
 

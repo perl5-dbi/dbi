@@ -5,7 +5,6 @@ use strict;
 $|=1;
 $^W=1;
 
-use vars qw($tests);
 my $calls = 0;
 
 

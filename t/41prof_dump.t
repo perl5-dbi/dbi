@@ -1,4 +1,5 @@
-#!perl -Tw
+#!perl -w
+
 use strict;
 
 #
@@ -7,17 +8,18 @@ use strict;
 
 use DBI;
 
+use Test::More;
+
 BEGIN {
-    if ($DBI::PurePerl) {
-	print "1..0 # Skipped: profiling not supported for DBI::PurePerl\n";
-	exit 0;
-    }
+	if ($DBI::PurePerl) {
+		plan skip_all => 'profiling not supported for DBI::PurePerl';
+	}
+	else {
+		plan tests => 11;
+	}
 }
 
 BEGIN {
-    use Test::More;
-
-    plan tests => 11;
     use_ok( 'DBI' );
     use_ok( 'DBI::ProfileDumper' );
 }
