@@ -22,6 +22,7 @@ standard formating of value, eg SQL_DATE implies 'YYYY-MM-DD'.
   Fixed _load_class to propagate $@ thanks to Drew Taylor.
   Fixed compile warnings on Win32 thanks to Robert Baron.
   Fixed problem building with recent versions of MakeMaker.
+  Fixed DBD::Sponge not to generate warning with threads.
 
   Changed selectall_arrayref() to call finish() if
     $attr->{MaxRows} is defined.

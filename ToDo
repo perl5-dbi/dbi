@@ -54,7 +54,7 @@ and	$dbh->uncache; for connect_cached
 Add discard_pending_rows() as an alias
 for finish() - which will be deprecated.
 
-$sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
+$sth->{ParamAttr} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
 
 $h->{KidsHandles} = ref to cache (array or hash?)
 of weakrefs to child handles.
@@ -424,7 +424,9 @@ if overhead probe is on cusp of time unit.
 
 Add mechanism so "call path" can be included in the Path of the
 profile data. Something like "<basename>@<linenum>;..." or
-optionally just the basename part.
+optionally just the basename part. (See log_where())
+
+Allow code ref in Path and use result as string for that element of the Path.
 
 Fix dbi_time for Windows by using or linking-to Time::HiRes code.
 

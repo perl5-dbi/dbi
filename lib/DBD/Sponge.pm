@@ -16,11 +16,13 @@
 
     $drh = undef;	# holds driver handle once initialised
     $err = 0;		# The $DBI::err value
+    my $methods_already_installed;
 
     sub driver{
 	return $drh if $drh;
 
-	DBD::Sponge::db->install_method("sponge_test_installed_method");
+	DBD::Sponge::db->install_method("sponge_test_installed_method")
+		unless $methods_already_installed++;
 
 	my($class, $attr) = @_;
 	$class .= "::dr";
