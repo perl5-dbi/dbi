@@ -1091,10 +1091,6 @@ as above for dbh's.
 A trivial C<finish> method to discard the stored data and do
 $sth->SUPER::finish;
 
-A C<table_info> method to return details of available tables.
-
-A C<type_info_all> method to return details of supported types.
-
 If you've defined a parse_trace_flag() method in ::db you'll also want
 it in ::st, so just alias it in:
 

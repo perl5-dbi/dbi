@@ -12,6 +12,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed potential undef warning from connect_cached().
   Fixed $DBI::lasth handling for DESTROY so lasth points to
     parent even if DESTROY called other methods.
+  Fixed DBD::Proxy method calls to not alter $@.
+  Fixed DBD::File problem with encoding pragma thanks to Erik Rijkers.
 
   Changed error handling so undef errstr doesn't cause warning.
   Changed DBI::DBD docs to use =head3/=head4 pod thanks to
@@ -20,6 +22,7 @@ DBI::Changes - List of significant changes to the DBI
   Changed DBD::Proxy to treat Username as a local attribute
     so recent DBI version can be used with old DBI::ProxyServer.
   Changed driver handle caching in DBD::File.
+  Added $GetInfoType{SQL_DATABASE_NAME} thanks to Steffen Goeldner.
 
   Updated docs to recommend some common DSN string attributes.
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
@@ -27,6 +30,7 @@ DBI::Changes - List of significant changes to the DBI
   Updated err/errstr/state docs for DBD authors thanks to Steffen Goeldner.
   Updated handle/attribute docs for DBD authors thanks to Steffen Goeldner.
   Corrected and updated LongReadLen docs thanks to Bart Lateur.
+  Added DBD::JDBC as a registered driver.
 
 =head2 Changes in DBI 1.46 (svn rev 584),    16th November 2004
 

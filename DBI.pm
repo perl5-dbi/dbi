@@ -306,6 +306,7 @@ my $dbd_prefix_registry = {
   ib_      => { class => 'DBD::InterBase',	},
   ing_     => { class => 'DBD::Ingres',		},
   ix_      => { class => 'DBD::Informix',	},
+  jdbc_    => { class => 'DBD::JDBC',		},
   msql_    => { class => 'DBD::mSQL',		},
   mysql_   => { class => 'DBD::mysql',		},
   mx_      => { class => 'DBD::Multiplex',	},
@@ -3524,7 +3525,8 @@ For example:
 You may need to take extra care if the table can be modified between
 the first select and the second being executed. You may also need to
 use a different function if OCTET_LENGTH() does not work for long
-types in your database. For example, for Sybase use DATALENGTH().
+types in your database. For example, for Sybase use DATALENGTH() and
+for Oracle use LENGTHB().
 
 See also L</LongTruncOk> for information on truncation of long types.
 

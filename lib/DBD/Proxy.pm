@@ -237,7 +237,6 @@ sub AUTOLOAD {
 	  'type' => $type,
 	  'h' => "DBI::_::$type"
 	);
-    local $SIG{__DIE__} = 'DEFAULT';
     my $method_code = UNIVERSAL::can($expand{'h'}, $method) ?
 	q/package ~class~;
           sub ~method~ {
@@ -260,8 +259,9 @@ sub AUTOLOAD {
           }
          /;
     $method_code =~ s/\~(\w+)\~/$expand{$1}/eg;
-    eval $method_code;
-    die $@ if $@;
+    local $SIG{__DIE__} = 'DEFAULT';
+    my $err = do { local $@; eval $method_code.2; $@ };
+    die $err if $err;
     goto &$AUTOLOAD;
 }
 
@@ -307,6 +307,7 @@ sub STORE ($$$) {
 
     if ($type eq 'remote'  ||  $type eq 'cached') {
         local $SIG{__DIE__} = 'DEFAULT';
+	local $@;
 	my $result = eval { $dbh->{'proxy_dbh'}->STORE($attr => $val) };
 	return DBD::Proxy::proxy_set_err($dbh, $@) if $@; # returns undef
 	$dbh->{$attr} = $val if $type eq 'cached';
@@ -327,6 +328,7 @@ sub FETCH ($$) {
     return $dbh->SUPER::FETCH($attr) unless $type eq 'remote';
 
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     my $result = eval { $dbh->{'proxy_dbh'}->FETCH($attr) };
     return DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     return $result;
@@ -346,6 +348,7 @@ sub prepare ($$;$) {
       $sth->{'proxy_attr_cache'} = {cache_filled => 0};
       my $rdbh = $dbh->{'proxy_dbh'};
       local $SIG{__DIE__} = 'DEFAULT';
+      local $@;
       my $rsth = eval { $rdbh->prepare($sth->{'Statement'}, $sth->{'proxy_attr'}, undef, $proto_ver) };
       return DBD::Proxy::proxy_set_err($sth, $@) if $@;
       return DBD::Proxy::proxy_set_err($sth, "Constructor didn't return a handle: $rsth")
@@ -384,6 +387,7 @@ sub quote {
     # for example.
     # Jochen
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     my $result = eval { $dbh->{'proxy_dbh'}->quote(@_) };
     return DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     return $result;
@@ -394,6 +398,7 @@ sub table_info {
     my $rdbh = $dbh->{'proxy_dbh'};
     #warn "table_info(@_)";
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     my($numFields, $names, $types, @rows) = eval { $rdbh->table_info(@_) };
     return DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     my ($sth, $inner) = DBI::_new_sth($dbh, {
@@ -427,6 +432,7 @@ sub tables {
 sub type_info_all {
     my $dbh = shift;
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     my $result = eval { $dbh->{'proxy_dbh'}->type_info_all(@_) };
     return DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     return $result;
@@ -478,6 +484,7 @@ sub execute ($@) {
     my ($numRows, @outData);
 
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     if ( $proto_ver > 1 ) {
       ($numRows, @outData) = eval { $rsth->execute($params, $proto_ver) };
       return DBD::Proxy::proxy_set_err($sth, $@) if $@;
@@ -558,6 +565,7 @@ sub fetch ($) {
 	}
 	my $num_rows = $sth->FETCH('RowCacheSize') || 20;
 	local $SIG{__DIE__} = 'DEFAULT';
+	local $@;
 	my @rows = eval { $rsth->fetch($num_rows) };
 	return DBD::Proxy::proxy_set_err($sth, $@) if $@;
 	unless (@rows == $num_rows) {
@@ -591,6 +599,7 @@ sub finish ($) {
 	: $sth->FETCH('Database')->{'proxy_no_finish'};
     unless ($no_finish) {
         local $SIG{__DIE__} = 'DEFAULT';
+	local $@;
 	my $result = eval { $rsth->finish() };
 	return DBD::Proxy::proxy_set_err($sth, $@) if $@;
 	return $result;
@@ -614,6 +623,7 @@ sub STORE ($$$) {
     if ($type eq 'remote') {
 	my $rsth = $sth->{'proxy_sth'}  or  return undef;
         local $SIG{__DIE__} = 'DEFAULT';
+	local $@;
 	my $result = eval { $rsth->STORE($attr => $val) };
 	return DBD::Proxy::proxy_set_err($sth, $@) if ($@);
 	return $result;
@@ -644,6 +654,7 @@ sub FETCH ($$) {
     if ($type ne 'local') {
 	my $rsth = $sth->{'proxy_sth'}  or  return undef;
         local $SIG{__DIE__} = 'DEFAULT';
+	local $@;
 	my $result = eval { $rsth->FETCH($attr) };
 	return DBD::Proxy::proxy_set_err($sth, $@) if $@;
 	return $result;

@@ -1,4 +1,5 @@
 #!perl -w                                         # -*- perl -*-
+# vim:sw=4:ts=8
 
 require 5.004;
 use strict;
@@ -70,7 +71,7 @@ unlink $config_file;
     or die "Failed to create config file $config_file: $!";
 
 my($handle, $port);
-my $numTests = 117;
+my $numTests = 119;
 if (@ARGV) {
     $port = $ARGV[0];
 } else {
@@ -118,9 +119,17 @@ print "example_driver_path=$dbh->{example_driver_path}\n";
 Test($dbh->{example_driver_path});
 
 print "Setting AutoCommit\n";
+$@ = "old-error";	# should be preserved across DBI calls
 Test($dbh->{AutoCommit} = 1);
 Test($dbh->{AutoCommit});
+Test($@ eq "old-error", "\$@ now '$@'");
 #$dbh->trace(2);
+
+eval {
+    local $dbh->{ AutoCommit } = 1;   # This breaks die!
+    die "BANG!!!\n";
+};
+Test($@ eq "BANG!!!\n", "\$@ value lost");
 
 print "Doing a ping.\n";
 Test($dbh->ping);

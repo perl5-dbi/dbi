@@ -99,6 +99,7 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.3 $ ' =~ /(\d+)\.(\d+)/;
 , SQL_CURSOR_SENSITIVITY              => 10001
 , SQL_DATA_SOURCE_NAME                =>     2
 , SQL_DATA_SOURCE_READ_ONLY           =>    25
+, SQL_DATABASE_NAME                   =>    16 
 , SQL_DATETIME_LITERALS               =>   119
 , SQL_DBMS_NAME                       =>    17
 , SQL_DBMS_VER                        =>    18
