@@ -29,7 +29,7 @@ package DBD::File;
 
 use vars qw(@ISA $VERSION $drh $valid_attrs);
 
-$VERSION = '0.30';      # bumped from 0.22 to 0.30 with inclusion in DBI
+$VERSION = '0.31';      # bumped from 0.22 to 0.30 with inclusion in DBI
 
 $drh = undef;		# holds driver handle once initialised
 
@@ -97,6 +97,7 @@ sub connect ($$;$$$) {
           , sql_statement_version => 1  # S:S version
         };
     }
+    $this->STORE('Active',1);
     return set_versions($this);
 }
 
@@ -194,6 +195,8 @@ sub prepare ($$;@) {
 }
 
 sub disconnect ($) {
+    shift->STORE('Active',0);
+    undef $DBD::File::drh;
     1;
 }
 
@@ -251,6 +254,8 @@ sub STORE ($$$) {
 }
 
 sub DESTROY ($) {
+    # for backwards compatibility only, remove eventually
+    shift->STORE('Active',0);
     undef;
 }
 
@@ -409,6 +414,10 @@ sub execute {
     } else {
 	$params = $sth->{'f_params'};
     }
+
+    # start of by finishing any previous execution if still active
+    $sth->finish if $sth->{Active};
+    $sth->{'Active'}=1;
     my $stmt = $sth->{'f_stmt'};
     my $result = eval { $stmt->execute($sth, $params); };
     return $sth->set_err(1,$@) if $@;
@@ -427,10 +436,11 @@ sub fetch ($) {
     }
     my $dav = shift @$data;
     if (!$dav) {
+        $sth->{Active} = 0; # mark as no longer active
 	return undef;
     }
     if ($sth->FETCH('ChopBlanks')) {
-	map { $_ =~ s/\s+$//; } @$dav;
+	map { $_ =~ s/\s+$// if $_; $_ } @$dav;
     }
     $sth->_set_fbav($dav);
 }
