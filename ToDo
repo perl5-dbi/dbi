@@ -24,6 +24,7 @@ using very old DBD::Informix versions as it now has it's own).
 Increase size of com struct (requires driver rebuild)
 and improve size sanity checks.
 
+Reconsider clone() API
 
 --- Additions and other changes visible to applications:
 
@@ -86,6 +87,11 @@ Remove PERL_POLLUTE
 
 Add function pointer for setting fetched field values into DBIS.
 Drivers would use this instead of calling sv_setpv (etc) themselves.
+
+Add log_where() to "trace level set to" log message.
+
+Add "imp_xxh_t* imp_xxh;" element to com struct that points back at
+itself so macros can be written to work with imp_??h without needing casts.
 
 Add bind_col($n, \$foo, { OnFetch => sub { ... } });
 
@@ -451,3 +457,14 @@ callers of looks_like_number() use?]
 
 Record attrib STOREs so can be replayed (or use subclass?)
 
+--- Test suite (random thoughts beyond the basic architecture in my head)
+
+one test file = one scenario setup (fixture)
+random order of subtests
+cleanup (destroy all data, disconnect etc)
+leak detection after cleanup
+repeat tests with different data types (implies changing fixtures?)
+test with overloaded and other kinds of 'magical' values
+Good to have 'behavior' tests were the outcome is noted but doesn't trigger failure
+e.g.  limitation tests: data values out of range, eg truncation, may or may not
+cause an error depending on the database.
