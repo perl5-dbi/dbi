@@ -134,6 +134,10 @@ Add utility function that does SvUTF8_on(sv) if the sv contains
 valid-looking utf8. To be used (perhaps via OnFetch hook) where
 utf8 data is being stored in a non-utf8 aware database.
 
+Add DBIS->carp(varargs) to simplify access to Carp::carp so warnings
+like "execute called with 1 bind variables when 0 are needed" fr do()
+get reported against caller's file and line number and not a line in DBI.pm
+
 pre and post call hooks via ima structure?
 
 Remove _not_impl. Alias debug to trace in DBI::(dr/db/st) and remove

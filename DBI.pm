@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.44"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.45"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -118,7 +118,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.44.
+This is the DBI specification that corresponds to the DBI version 1.45.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -148,8 +148,6 @@ L<"http://search.cpan.org/search?query=DBI&mode=all">.
 
 
 package DBI;
-
-my $Revision = substr(q$Revision: 11.43 $, 10);
 
 use Carp();
 use DynaLoader ();
@@ -1321,7 +1319,12 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $key = join "~~", $dsn, $user||'', $auth||'',
 		$attr ? (@attr_keys,@{$attr}{@attr_keys}) : ();
 	my $dbh = $cache->{$key};
-	return $dbh if $dbh && $dbh->FETCH('Active') && eval { $dbh->ping };
+	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
+	    # XXX warn if BegunWork?
+	    # XXX warn if $dbh->FETCH('AutoCommit') != $attr->{AutoCommit} ?
+	    # but that's just one (bad) case of a more general issue.
+	    return $dbh;
+	}
 	$dbh = $drh->connect(@_);
 	$cache->{$key} = $dbh;	# replace prev entry, even if connect failed
 	return $dbh;

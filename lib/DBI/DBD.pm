@@ -1,4 +1,5 @@
 package DBI::DBD;
+# vim:ts=8:sw=4
 
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
@@ -3613,12 +3614,18 @@ use vars qw(
     $is_dbi
 );
 
-BEGIN { if ($^O eq 'VMS') {
-    require vmsish;
-    import  vmsish;
-    require VMS::Filespec;
-    import  VMS::Filespec;
-}}
+BEGIN {
+    if ($^O eq 'VMS') {
+	require vmsish;
+	import  vmsish;
+	require VMS::Filespec;
+	import  VMS::Filespec;
+    }
+    else {
+	*vmsify  = sub { return $_[0] };
+	*unixify = sub { return $_[0] };
+    }
+}
 
 @ISA = qw(Exporter);
 

@@ -1656,10 +1656,10 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                             av_store(av, i, sv);
                         else {
                             hv_store(hv, name, SvCUR(sv), newSViv(i), 0);
-			    sv_2mortal(sv);
+			    sv_free(sv);
 			}
                     }
-                    valuesv = newRV(sv_2mortal( (av ? (SV*)av : (SV*)hv) ));
+                    valuesv = newRV_noinc( (av ? (SV*)av : (SV*)hv) );
                     cacheit = TRUE;	/* can't change */
                 }
             }
@@ -1862,10 +1862,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
     }
     
     if (cacheit) {
-	svp = hv_fetch((HV*)SvRV(h), key, keylen, TRUE);
-	sv = *svp;
-	*svp = SvREFCNT_inc(valuesv);
-	sv_free(sv);
+	hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
     }
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    .. FETCH %s %s = %s%s\n", neatsvpv(h,0),
