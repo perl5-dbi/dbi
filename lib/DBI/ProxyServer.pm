@@ -33,12 +33,6 @@ require Config;
 package DBI::ProxyServer;
 
 
-my $haveFileSpec = eval { require File::Spec };
-my $tmpDir = $haveFileSpec ? File::Spec->tmpdir() :
-    ($ENV{'TMP'} || $ENV{'TEMP'} || '/tmp');
-my $defaultPidFile = $haveFileSpec ?
-    File::Spec->catdir($tmpDir, "dbiproxy.pid") : "/tmp/dbiproxy.pid";
-
 
 ############################################################################
 #
@@ -109,7 +103,8 @@ my %DEFAULT_SERVER_OPTIONS;
     } else {
 	$o->{'mode'} = 'single';
     }
-    $o->{'pidfile'}    = $defaultPidFile;
+    # No pidfile by default, configuration must provide one if needed
+    $o->{'pidfile'}    = 'none';
     $o->{'user'}       = undef;
 };
 
@@ -406,8 +401,7 @@ used as the basis for a local version modified to meet your needs.
 =head1 OPTIONS
 
 When calling the DBI::ProxyServer::main() function, you supply an
-array of options. (@ARGV, the array of command line options is used,
-if you don't.) These options are parsed by the Getopt::Long module.
+array of options. These options are parsed by the Getopt::Long module.
 The ProxyServer inherits all of RPC::PlServer's and hence Net::Daemon's
 options and option handling, in particular the ability to read
 options from either the command line or a config file. See
@@ -517,7 +511,7 @@ mode with "--mode=single".
 =item I<pidfile> (B<--pidfile=file>)
 
 (UNIX only) If this option is present, a PID file will be created at the
-given location.
+given location. Default is to not create a pidfile.
 
 =item I<user> (B<--user=uid>)
 
@@ -609,7 +603,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
     {
 	# This shall run in a shell or a DOS-window 
 	# facility => 'daemon',
-	pidfile => 'dbiproxy.pid',
+	pidfile => 'your_dbiproxy.pid',
 	logfile => 1,
 	debug => 0,
 	mode => 'single',

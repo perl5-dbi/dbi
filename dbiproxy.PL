@@ -146,7 +146,7 @@ mode with "--mode=single".
 =item B<--pidfile=file>
 
 (UNIX only) If this option is present, a PID file will be created at the
-given location.
+given location. Default is to not create a pidfile.
 
 =item B<--user=uid>
 
