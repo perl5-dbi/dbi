@@ -15,6 +15,7 @@ dbi_sql.h			Definitions based on SQL CLI / ODBC (#inc'd by DBIXS.h)
 dbipport.h			Perl portability macros (from Devel::PPort)
 dbiprof.PL
 dbiproxy.PL			Frontend for DBI::ProxyServer
+dbivport.h			DBI version portability macros (for drivers to copy)
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/ExampleP.pm		A very simple example Driver module
 lib/DBD/NullP.pm		An empty example Driver module

@@ -130,7 +130,7 @@ my %opts = (
     clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zz_*.t"
 			." dbiproxy$ext_pl dbiprof$ext_pl dbitrace.log dbi.prof ndtest.prt" },
     dist  => {
-	DIST_DEFAULT=> 'clean distcheck disttest ci tardist',
+	DIST_DEFAULT=> 'clean distcheck disttest tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',
 	COMPRESS => 'gzip -v9', SUFFIX => 'gz',
     },
