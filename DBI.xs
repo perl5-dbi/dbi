@@ -1541,12 +1541,8 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	    char *hint = "";
 	    if (strEQ(key, "NUM_FIELDS"))
 		hint = ", perhaps you meant NUM_OF_FIELDS";
-	    /* special dispensation for DBI::ProxyServer to reduce problems	*/
-	    /* when clients are using newer version of the DBI. Ought to be a	*/
-	    /* more general mechanism (eg event with event handler in proxysvr)	*/
-	    (gv_fetchpv("DBI::ProxyServer::ISA", FALSE, SVt_PVAV))
-		? warn( msg, neatsvpv(h,0), key, hint)
-	        : croak(msg, neatsvpv(h,0), key, hint);
+	    warn(msg, neatsvpv(h,0), key, hint);
+	    return FALSE;	/* don't store it */
 	}
 	/* Allow private_* attributes to be stored in the cache.	*/
 	/* This is designed to make life easier for people subclassing	*/
@@ -1845,21 +1841,20 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 
     /* finally check the actual hash just in case	*/
     if (valuesv == Nullsv) {
+	valuesv = &sv_undef;
+	cacheit = 0;
 	svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
 	if (svp)
 	    valuesv = newSVsv(*svp);	/* take copy to mortalize */
-	else if (!isUPPER(*key))	/* dbd_*, private_* etc */
-	    valuesv = &sv_undef;
-	else if (	(*key=='H' && strEQ(key, "HandleError"))
+	else if (!(	(*key=='H' && strEQ(key, "HandleError"))
 		||	(*key=='H' && strEQ(key, "HandleSetErr"))
 		||	(*key=='S' && strEQ(key, "Statement"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
 		||	(*key=='C' && strEQ(key, "CursorName"))
-	)
-	    valuesv = &sv_undef;
-	else
-	    croak("Can't get %s->{%s}: unrecognised attribute",neatsvpv(h,0),key);
+		||	!isUPPER(*key)	/* dbd_*, private_* etc */
+	))
+	    warn("Can't get %s->{%s}: unrecognised attribute",neatsvpv(h,0),key);
     }
     
     if (cacheit) {

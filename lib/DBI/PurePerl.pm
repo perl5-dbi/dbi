@@ -626,7 +626,7 @@ sub FETCH {
 	return $DBI::dbi_debug if $key eq 'TraceLevel';
 	if (!$is_valid_attribute{$key} and $key =~ m/^[A-Z]/) {
 	    local $^W; # hide undef warnings
-	    Carp::croak( sprintf "Can't get %s->{%s}: unrecognised attribute (@{[ %$h ]})",$h,$key )
+	    Carp::carp( sprintf "Can't get %s->{%s}: unrecognised attribute (@{[ %$h ]})",$h,$key )
 	}
     }
     return $v;
@@ -647,7 +647,7 @@ sub STORE {
 	return 1;
     }
     elsif (!$is_valid_attribute{$key} && $key =~ /^[A-Z]/ && !exists $h->{$key}) {
-       Carp::croak(sprintf "Can't set %s->{%s}: unrecognised attribute or invalid value %s",
+       Carp::carp(sprintf "Can't set %s->{%s}: unrecognised attribute or invalid value %s",
 	    $h,$key,$value);
     }
     $h->{$key} = $is_flag_attribute{$key} ? !!$value : $value;

@@ -390,6 +390,11 @@ get_fbav has three modes:
 	alternate rows - return RV to AV[row % 2]
 	row set - return RV to AV[++row]
 
+Enable fetchall_arrayref() to reuse a cached rowset so the overhead
+of allocating and freeing the individual row arrays and the rowset
+array can be avoided. fetchall_arrayref would then return the same
+arrayref each time. Most useful when combined with $maxrows.
+
 Bless row into DBI::Row ?
 Bless row set into DBI::Rowset ?
 Give get/set access to entire rowset via method calls?

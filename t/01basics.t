@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 109;
+use Test::More tests => 110;
 
 ## ----------------------------------------------------------------------------
 ## 01basic.t - test of some basic DBI functions 
@@ -195,17 +195,21 @@ cmp_ok($switch->{ActiveKids}, '==', 0, '... this should be zero');
 
 ok($switch->{Active}, '... Active flag is true');
 
-# test attribute exceptions
-
-eval { 
+# test attribute warnings
+{
+	my $warn = "";
+	local $SIG{__WARN__} = sub { $warn .= "@_" };
 	$switch->{FooBarUnknown} = 1;
-};
-like($@, qr/Can't set.*FooBarUnknown/, '... we should get an exception here');
+	like($warn, qr/Can't set.*FooBarUnknown/, '... we should get a warning here');
 
-eval { 
+	$warn = "";
 	$_ = $switch->{BarFooUnknown};
-};
-like($@, qr/Can't get.*BarFooUnknown/, '... we should get an exception here');
+	like($warn, qr/Can't get.*BarFooUnknown/, '... we should get a warning here');
+
+	$warn = "";
+	my $dummy = $switch->{$_} for qw(private_foo dbd_foo dbi_foo); # special cases
+	cmp_ok($warn, 'eq', "", '... we should get no warnings here');
+}
 
 # is this here for a reason? Are we testing anything? 
 
