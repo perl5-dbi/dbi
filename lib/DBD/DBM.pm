@@ -777,7 +777,7 @@ Each "flavor" of DBM stores its files in a different format and has different ca
 
 By default, DBD::DBM uses the SDBM_File type of storage since SDBM_File comes with Perl itself.  But if you have other types of DBM storage available, you can use any of them with DBD::DBM also.
 
-You can specify the DBM type using the "dbm_type" attribute which can be set in the connection string or with the $dbh->{dbm_type} attribute for global settings or with the $dbh->{dbm_tables}->{$table_name}->{dbm_type} attribute for per-table settings in cases where a single script is accessing more than one kind of DBM file.
+You can specify the DBM type using the "dbm_type" attribute which can be set in the connection string or with the $dbh->{dbm_type} attribute for global settings or with the $dbh->{dbm_tables}->{$table_name}->{type} attribute for per-table settings in cases where a single script is accessing more than one kind of DBM file.
 
 In the connection string, just set type=TYPENAME where TYPENAME is any DBM type such as GDBM_File, DB_File, etc.  Do I<not> use MLDBM as your dbm_type, that is set differently, see below.
 
@@ -795,11 +795,11 @@ If you are going to have several tables in your script that come from different 
  #
  # sets global default of GDBM_File
 
- my $dbh->{dbm_tables}->{foo}->{dbm_type} = 'DB_File';
+ my $dbh->{dbm_tables}->{foo}->{type} = 'DB_File';
  #
  # over-rides the global setting, but only for the table called "foo"
 
- print $dbh->{dbm_tables}->{foo}->{dbm_type};
+ print $dbh->{dbm_tables}->{foo}->{type};
  #
  # prints the dbm_type for the table "foo"
 
@@ -819,8 +819,8 @@ Some examples:
  $dbh=DBI->connect(
     'dbi:DBM:mldbm=MySerializer'           # use MLDBM with a user defined module
  );
- $dbh->{mldbm} = 'MySerializer';           # same as above
- print $dbh->{mldbm}                       # show the MLDBM serializer
+ $dbh->{dbm_mldbm} = 'MySerializer';       # same as above
+ print $dbh->{dbm_mldbm}                   # show the MLDBM serializer
  $dbh->{dbm_tables}->{foo}->{mldbm}='Data::Dumper';   # set Data::Dumper for table "foo"
  print $dbh->{dbm_tables}->{foo}->{mldbm}; # show serializer for table "foo"
 
