@@ -1419,6 +1419,10 @@ I<fetchrow_arrayref>:
 Note the use of the method I<_set_fbav>: This is required so that
 I<bind_col> and I<bind_columns> work.
 
+If an error occurs which leaves the $sth in a state where remaining rows
+can't be fetched then Active should be turned off
+before the method returns.
+
 =cut
 
 #=head4 Statement attributes
@@ -2771,6 +2775,10 @@ Are errors permitted if another fetch occurs after the first fetch
 that reports no more data. (Permitted, not required.)
 
 =back
+
+If an error occurs which leaves the $sth in a state where remaining
+rows can't be fetched then Active should be turned off before the
+method returns.
 
 =cut
 

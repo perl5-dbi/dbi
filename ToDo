@@ -33,15 +33,10 @@ a particular column should be flagged as uft8 to help drivers
 that are not able to determine that themselves.
 The DBI won't support automatic character set conversions.
 
-Assign "topic bits" to TraceLevel.
-Lowest 4 bits will be used for the "level", as now.
-The next 4 bits are reserved. The next 16bits are each
-associated with a particular topic defined by the DBI.
-The top 8 bits are from for the driver to use.
-
+Define "topic bits" for TraceLevel.
 %DBI::TraceTopics & %DBD::Foo::TraceTopics
-
-Need to decide which drivers should use, DBIS->debug or imp_xxh->debug.
+"Lint" topic for extra checking, eg warn on $sth DESTROY if still Active
+"Verbose" topic adds verbosity to any other enabled topics
 Change macro to get debug level to only return last 4 bits.
 Add macro framework for 'topic' bits.
 Use one bit for logging just the SQL statement executed
@@ -83,6 +78,7 @@ and use to optimise fetchrow_hash
 Add PERL_NO_GET_CONTEXT for multiplicity/threads?
 force it for drivers?
 And enable xsbypass in dispatch if possible.
+Remove PERL_POLLUTE
 
 Add function pointer for setting fetched field values into DBIS.
 Drivers would use this instead of calling sv_setpv (etc) themselves.

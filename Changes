@@ -29,7 +29,7 @@ Document $t->parse_trace_flags etc
     setting the trace level to a non-numeric value:
     $h->{TraceLevel}="foo|SQL|7"; $h->trace("foo|SQL|7");
     DBI->connect("dbi:Driver(TraceLevel=SQL|foo):...", ...);
-  Added to and reworked the trace documentation.
+  Added to, and reworked, the trace documentation.
 
   Major driver additions that Jeff Zucker and I have been working on:
 
