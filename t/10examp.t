@@ -109,7 +109,7 @@ ok(0, $dbh->quote_identifier('foo',undef,'bar') eq '"bar"@"foo"', $dbh->quote_id
 
 print "others\n";
 eval { $dbh->commit('dummy') };
-ok(0, $@ =~ m/DBI commit: invalid number of parameters: handle \+ 1/)
+ok(0, $@ =~ m/DBI commit: invalid number of arguments:/, $@)
 	unless $DBI::PurePerl && ok(0,1);
 
 ok(0, $dbh->ping);

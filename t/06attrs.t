@@ -4,7 +4,7 @@ use strict;
 use Test::More;
 use DBI;
 
-BEGIN { plan tests => 149 }
+BEGIN { plan tests => 143 }
 
 $|=1;
 
@@ -96,7 +96,7 @@ is( $drh->{ActiveKids}, 1 );
 else { ok(1); ok(1); }
 ok( ! defined $drh->{CachedKids} );
 ok( ! defined $drh->{HandleError} );
-is( $drh->{TraceLevel}, 0 );
+is( $drh->{TraceLevel}, $DBI::dbi_debug & 0xF );
 is( $drh->{FetchHashKeyName}, 'NAME', );
 ok( ! defined $drh->{Profile} );
 is( $drh->{LongReadLen}, 80 );
@@ -203,19 +203,7 @@ is( $params->{1}, 'foo' );
 is( $sth->{Statement}, "select ctime, name from foo" );
 ok( ! defined $sth->{RowsInCache} );
 
-my $trace_file = "dbitrace.log";
-1 while unlink $trace_file;
-$sth->trace(2, $trace_file);
-ok( -f $trace_file );
-is( $sth->{TraceLevel}, 2 );
-$sth->{TraceLevel} = 0;
-is( $sth->{TraceLevel}, 0 );
-$sth->{TraceLevel} = 3;
-is( $sth->{TraceLevel}, 3 );
-$sth->trace(0);			# set to 0 before return to STDERR
-is( $sth->{TraceLevel}, 0 );
-$sth->trace(0, "STDERR");	# close $trace_file
-ok( -s $trace_file );
+# $h->{TraceLevel} tests are in t/09trace.t
 
 1;
 # end

@@ -90,12 +90,12 @@ struct imp_fdh_st { dbih_fdc_t com; };
 /* Internal Method Attributes (attached to dispatch methods when installed) */
 
 typedef struct dbi_ima_st {
-    short minargs;
-    short maxargs;
-    short hidearg;
+    U8 minargs;
+    U8 maxargs;
+    U8 hidearg;
+    U8 trace_level;
     char *usage_msg;
-    U16   flags;
-    U16   trace_level;
+    U32   flags;
 } dbi_ima_t;
 
 /* These values are embedded in the data passed to install_method	*/
@@ -105,13 +105,14 @@ typedef struct dbi_ima_st {
 #define IMA_KEEP_ERR_SUB	0x0008	/*  '' if in a nested call	*/
 #define IMA_NO_TAINT_IN   	0x0010	/* don't check for tainted args	*/
 #define IMA_NO_TAINT_OUT   	0x0020	/* don't taint results		*/
-#define IMA_COPY_STMT   	0x0040	/* copy sth Statement to dbh	*/
+#define IMA_COPY_UP_STMT   	0x0040	/* copy sth Statement to dbh	*/
 #define IMA_END_WORK	   	0x0080	/* set on commit & rollback	*/
 #define IMA_STUB		0x0100	/* donothing eg $dbh->connected */
 #define IMA_CLEAR_STMT   	0x0200	/* clear Statement before call	*/
-#define IMA_PROF_EMPTY_STMT   	0x0400	/* profile as empty Statement	*/
+#define IMA_UNRELATED_TO_STMT	0x0400	/* profile as empty Statement	*/
 #define IMA_NOT_FOUND_OKAY   	0x0800	/* no error if not found	*/
 #define IMA_EXECUTE	   	0x1000	/* do/execute: DBIcf_Executed	*/
+#define IMA_SHOW_ERR_STMT   	0x2000	/* dbh meth relates to Statement*/
 
 #define DBIc_STATE_adjust(imp_xxh, state)				 \
     (SvOK(state)	/* SQLSTATE is implemented by driver   */	 \
@@ -2422,10 +2423,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
 	    if (ima->minargs && (items < ima->minargs
 				|| (ima->maxargs>0 && items > ima->maxargs))) {
-		/* the error reporting is a little tacky here */
 		sprintf(msg,
-		    "DBI %s: invalid number of parameters: handle + %ld\n",
-		    meth_name, (long)items-1);
+		    "DBI %s: invalid number of arguments: got handle + %ld, expected handle + between %d and %d\n",
+		    meth_name, (long)items-1, (int)ima->minargs-1, (int)ima->maxargs-1);
 		err = msg;
 	    }
 	    /* arg type checking could be added here later */
@@ -2499,7 +2499,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	call_depth = ++DBIc_CALL_DEPTH(imp_xxh);
 
 	if (ima) {
-	    if (ima->flags & IMA_COPY_STMT) { /* execute() */
+	    if (ima->flags & IMA_COPY_UP_STMT) { /* execute() */
 		SV *parent = DBIc_PARENT_H(imp_xxh);
 		SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
 		/* XXX sv_copy() if Profiling? */
@@ -2829,11 +2829,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
 
 	if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
-	    && (DBIc_TYPE(imp_xxh) == DBIt_ST
-		|| strEQ(err_meth_name,"prepare")	/* XXX use IMA flag for this */
-		|| strEQ(err_meth_name,"do")
-		|| strnEQ(err_meth_name,"select",6)
-		)
+	    && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima->flags & IMA_SHOW_ERR_STMT)
+	    && !(ima->flags & IMA_UNRELATED_TO_STMT)	/* error unrelated to Statement */
 	    && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
 	    &&  statement_svp && SvOK(*statement_svp)
 	) {
@@ -2913,7 +2910,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	if (profile_t1) { /* see also dbi_profile() call a few lines below */
-	    char *Statement = (ima && ima->flags & IMA_PROF_EMPTY_STMT) ? "" : Nullch;
+	    char *Statement = (ima && ima->flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
 	    dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
 	}
@@ -2929,7 +2926,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
     else if (profile_t1) { /* see also dbi_profile() call a few lines above */
-	char *Statement = (ima && ima->flags & IMA_PROF_EMPTY_STMT) ? "" : Nullch;
+	char *Statement = (ima && ima->flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
 	dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
     }

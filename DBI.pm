@@ -363,10 +363,12 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	private_data =>	{ U =>[1,1],			O=>0x0004 },
 	err     =>	$keeperr,
 	errstr  =>	$keeperr,
-	state   =>	{ U =>[1,1],	O=>0x0004 },
-	set_err =>	{		O=>0x0010 },
+	state   =>	$keeperr,
+	set_err =>	{ U =>[3,6,'$err, $errmsg [, $state, $method, $rv]'], O=>0x0010 },
 	_not_impl =>	undef,
 	can	=>	{ O=>0x0100 }, # special case, see dispatch
+	trace_flag   =>	{ U =>[2,2,'$name'],	O=>0x0404, T=>8 },
+	trace_flags  =>	{ U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
 );
 
 %DBI::DBI_methods = ( # Define the DBI interface methods per class:
@@ -390,32 +392,32 @@ my @Common_IF = (	# Interface functions common to all DBI classes
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800 },
-	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x1200 },
-	last_insert_id	=> { U =>[3,4,'$table_name, $field_name [, \%attr ]'], O=>0x0100 },
+	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
+	last_insert_id	=> { U =>[3,4,'$table_name, $field_name [, \%attr ]'],     O=>0x2100 },
 	preparse    	=> {  }, # XXX
-	prepare    	=> { U =>[2,3,'$statement [, \%attr]'], O=>0x0200 },
-	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'] },
-	selectrow_array	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
-	selectrow_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
-	selectrow_hashref=>{ U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
-	selectall_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
-	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'] },
-	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'] },
+	prepare    	=> { U =>[2,3,'$statement [, \%attr]'],                    O=>0x2200 },
+	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'],   O=>0x2200 },
+	selectrow_array	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectrow_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectrow_hashref=>{ U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectall_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
 	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800 },
 	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
 	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
 	rows       	=> $keeperr,
 
-	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x0200 },
-	table_info      => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x0200|0x0800 },
-	column_info     => { U =>[5,6,'$catalog, $schema, $table, $column [, \%attr ]'],O=>0x0200|0x0800 },
-	primary_key_info=> { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200|0x0800 },
-	primary_key     => { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x0200 },
-	foreign_key_info=> { U =>[7,8,'$pk_catalog, $pk_schema, $pk_table, $fk_catalog, $fk_schema, $fk_table [, \%attr ]' ], O=>0x0200|0x0800 },
-	type_info_all	=> { U =>[1,1], O=>0x0200|0x0800 },
-	type_info	=> { U =>[1,2,'$data_type'], O=>0x0200 },
-	get_info	=> { U =>[2,2,'$info_type'], O=>0x0200|0x0800 },
+	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x2200 },
+	table_info      => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x2200|0x0800 },
+	column_info     => { U =>[5,6,'$catalog, $schema, $table, $column [, \%attr ]'],O=>0x2200|0x0800 },
+	primary_key_info=> { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x2200|0x0800 },
+	primary_key     => { U =>[4,5,'$catalog, $schema, $table [, \%attr ]' ],	O=>0x2200 },
+	foreign_key_info=> { U =>[7,8,'$pk_catalog, $pk_schema, $pk_table, $fk_catalog, $fk_schema, $fk_table [, \%attr ]' ], O=>0x2200|0x0800 },
+	type_info_all	=> { U =>[1,1], O=>0x2200|0x0800 },
+	type_info	=> { U =>[1,2,'$data_type'], O=>0x2200 },
+	get_info	=> { U =>[2,2,'$info_type'], O=>0x2200|0x0800 },
     },
     st => {		# Statement Class Interface
 	@Common_IF,
@@ -1233,6 +1235,35 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	DBI->_install_method("DBI::${subtype}::$method", "$filename at line $line", \%attr);
     }
 
+    sub trace_flags {
+	my ($h, $spec) = @_;
+	my $level = 0;
+	my $flags = 0;
+	my @unknown;
+	for my $word (split /[|&]/, $spec) {
+	    if (DBI::looks_like_number($word) && $word <= 0xF) {
+		$level = $word;
+	    } elsif (my $flag = $h->trace_flag($word)) {
+		$flags |= $flag;
+	    }
+	    else {
+		push @unknown, $word;
+	    }
+	}
+	if (@unknown && $h->FETCH('Warn')) {
+	    warn "Unknown trace flags ignored: ".
+		join(", ", map { DBI::neat($_) } @unknown);
+	}
+	$flags |= $level;
+	return $flags;
+    }
+
+    sub trace_flag {
+	my ($h, $name) = @_;
+	#      0xddDDDDrL (driver, DBI, reserved, Level)
+	return 0x00000100 if $name eq 'SQL';
+	return;
+    }
 }
 
 
@@ -2735,9 +2766,13 @@ DBI trace information can be enabled for a specific handle (and any
 future children of that handle) by setting the trace level using the
 C<trace> method.
 
+The $trace_level is an integer where the lowest 4 bits are used to
+set the general 'trace level' and the higher bits are 'trace flags'
+used to enable tracing of particular 'topics'.
+
 Trace level 1 is best for a simple overview of what's happening.
 Trace level 2 is a good choice for general purpose tracing.  Levels 3
-and above (up to 9) are best reserved for investigating a
+and above (up to 15) are best reserved for investigating a
 specific problem, when you need to see "inside" the driver and DBI.
 Set C<$trace_level> to 0 to disable the trace.
 

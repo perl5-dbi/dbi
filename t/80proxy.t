@@ -144,7 +144,7 @@ Test($dbh->quote_identifier(undef,undef,'bar') eq '"bar"');
 
 print "Trying commit with invalid number of parameters.\n";
 eval { $dbh->commit('dummy') };
-Test($@ =~ m/^DBI commit: invalid number of parameters: handle \+ 1/)
+Test($@ =~ m/^DBI commit: invalid number of arguments:/)
     unless $DBI::PurePerl && Test(1);
 
 print "Trying select with unknown field name.\n";

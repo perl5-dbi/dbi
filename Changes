@@ -6,13 +6,21 @@ DBI::Changes - List of significant changes to the DBI
 
 =head1 CHANGES in DBI 1.42 (svn rev XX),    XXnd February 2004
 
+Document $t->trace_flags etc
+
   Fixed $sth->{NUM_OF_FIELDS} of non-executed statement handle
     to be undef as per the docs (it was 0).
   Fixed t/41prof_dump.t to work with perl5.9.1.
 
   Changed attributes (NAME, TYPE etc) of non-executed statement
     handle to be undef instead of triggering an error.
+  Changed ShowErrorStatement to apply to more $dbh methods.
+  Improved "invalid number of parameters" error message.
   Corrected typos in docs thanks to Steffen Goeldner.
+
+  Added $h->trace_flags("foo,SQL,7") to map a set of
+    trace flags into the corresponding trace flag bits:
+    $h->{TraceLevel} = $h->trace_flags("foo,SQL,7");
 
 =head1 CHANGES in DBI 1.41 (svn rev 130),    22nd February 2004
 

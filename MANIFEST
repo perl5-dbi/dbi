@@ -44,6 +44,7 @@ t/05thrclone.t
 t/06attrs.t
 t/07kids.t
 t/08keeperr.t
+t/09trace.t
 t/10examp.t
 t/15array.t
 t/20meta.t

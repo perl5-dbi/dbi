@@ -135,12 +135,19 @@ Find XS drivers that don't use it and talk to authors.
 Review drivers for handling of multiple result sets
 to define common api for all.
 $sth->more_results, maybe via $sth->become($sth2) later (or transplant/swap)
+Also standard way to 'reset/reconfigure' a statement handle.
 
 #define a large negative number to mean 'error' from st_execute and
 change *.xst to treat either that or -2 as an error. (The -2 is
 a transition for old drivers.)
 
 --- Other changes
+
+Add data structure describing attributes
+Use the data structure to replace similar data in Proxy and PurePerl code
+
+Remove _not_impl. Alias debug to trace in DBI::(dr/db/st) ad remove
+debug() method from internals.
 
 Mechanism to 'unset' the keep_error flag for the current call, which
 could then be used by FETCH when appropriate. Or, better:
