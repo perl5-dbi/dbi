@@ -89,8 +89,7 @@ sub connect ($$;$$$) {
           , dbm_version           => 1  # verbose DBD::DBM version
           , dbm_ext               => 1  # file extension
           , dbm_store_metadata    => 1  # column names, etc.
-          , dbm_rdonly            => 1  # for Berkeley DB
-          , dbm_create            => 1  # for Berkeley DB
+          , dbm_berkeley_flags    => 1  # for BerkeleyDB
         };
 
 	my($var, $val);
@@ -352,18 +351,29 @@ sub open_table ($$$$$) {
 
     # TIEING
     #
+    # allow users to pass in a pre-created tied object
+    #
     if ($dbm_type eq 'BerkeleyDB') {
-       my $DB_CREATE = 1;  # DB_CREATE should import constants
-       my $DB_RDONLY = 16; # DB_RDONLY should import constants
-       my %flags = ( '-Flags' => $DB_RDONLY );
-          %flags = ( '-Flags' => $DB_CREATE ) if $lockMode or $createMode;
-       my $t = 'BerkeleyDB::Hash';
-          $t = 'MLDBM' if $serializer;
-       if ( $self->{command} ne 'DROP') {
-           eval { tie %h, $t, -Filename=>$file, %flags }
+       my $DB_CREATE = 1;  # but import constants if supplied
+       my $DB_RDONLY = 16; #
+       my %flags;
+       if (my $f = $dbh->{dbm_berkeley_flags}) {
+           $DB_CREATE  = $f->{DB_CREATE} if $f->{DB_CREATE};
+           $DB_RDONLY  = $f->{DB_RDONLY} if $f->{DB_RDONLY};
+           delete $f->{DB_CREATE};
+           delete $f->{DB_RDONLY};
+           %flags = %$f;
        }
+       $flags{'-Flags'} = $DB_RDONLY;
+       $flags{'-Flags'} = $DB_CREATE if $lockMode or $createMode;
+        my $t = 'BerkeleyDB::Hash';
+           $t = 'MLDBM' if $serializer;
+        if ( $self->{command} ne 'DROP') {
+            eval { tie %h, $t, -Filename=>$file, %flags }
+        }
+        # warn $BerkeleyDB::db_version;
     }
-    else {
+    elsif (!%h) {
         eval { tie(%h, $tie_type, $file, $open_mode, 0666) }
             unless $self->{command} eq 'DROP';
     }
@@ -822,6 +832,30 @@ MLDBM works on top of other DBM modules so you can also set a DBM type along wit
 SDBM_File, the default file type is quite limited, so if you are going to use MLDBM, you should probably use a different type, see L<AnyDBM_File>.
 
 See below for some L<Gotchas and Warnings> about MLDBM.
+
+=head2 Support for Berkeley DB
+
+The Berkeley DB storage type is supported through two different Perl modules - DB_File (which supports only features in old versions of Berkeley DB) and BerkeleyDB (which supports all versions).  DBD::DBM supports specifying either "DB_File" or "BerkeleyDB" as a I<dbm_type>, with or without MLDBM support.
+
+The "BerkeleyDB" dbm_type is experimental and its interface is likely to chagne.  It currently defaults to BerkeleyDB::Hash and does not currently support ::Btree or ::Recno.
+
+With BerkeleyDB, you can specify initialization flags by setting them in your script like this:
+
+ my $dbh = DBI->connect('dbi:DBM:type=BerkeleyDB;mldbm=S');
+ use BerkeleyDB;
+ my $env = new BerkeleyDB::Env -Home => $dir;  # and/or other Env flags
+ $dbh->{dbm_berkeley_flags} = {
+      'DB_CREATE'  => DB_CREATE  # pass in constants
+    , 'DB_RDONLY'  => DB_RDONLY  # pass in constants
+    , '-Cachesize' => 1000       # set a ::Hash flag
+    , '-Env'       => $env       # pass in an environment
+ };
+
+Do I<not> set the -Flags or -Filename flags, those are determined by the SQL (e.g. -Flags => DB_RDONLY is set automatically when you issue a SELECT statement).
+
+Time has not permitted me to provide support in this release of DBD::DBM for further Berkeley DB features such as transactions, concurrency, locking, etc.  I will be working on these in the future and would value suggestions, patches, etc.
+
+See L<DB_File> and L<BerkeleyDB> for further details.
 
 =head2 Supported SQL syntax
 
