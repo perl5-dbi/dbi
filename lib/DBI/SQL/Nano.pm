@@ -22,7 +22,7 @@ use warnings;
 require DBI; # for looks_like_number()
 use vars qw( $VERSION $versions );
 BEGIN {
-    $VERSION = '0.01';
+    $VERSION = '0.02';
     $versions->{nano_version} = $VERSION;
     eval { require "SQL/Statement.pm" } unless $ENV{DBI_SQL_NANO};
     if ($@ or $ENV{DBI_SQL_NANO}) {
