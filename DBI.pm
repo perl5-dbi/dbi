@@ -222,6 +222,13 @@ BEGIN {
 	SQL_INTERVAL_HOUR_TO_SECOND
 	SQL_INTERVAL_MINUTE_TO_SECOND
    ) ],
+   sql_cursor_types => [ qw(
+	 SQL_CURSOR_FORWARD_ONLY
+	 SQL_CURSOR_KEYSET_DRIVEN
+	 SQL_CURSOR_DYNAMIC
+	 SQL_CURSOR_STATIC
+	 SQL_CURSOR_TYPE_DEFAULT
+   ) ], # for ODBC cursor types
    utils     => [ qw(
 	neat neat_list dump_results looks_like_number
    ) ],

@@ -76,6 +76,15 @@
 #define	SQL_SUCCESS_WITH_INFO		1
 #define	SQL_NO_DATA_FOUND		100
 
+/*
+ * for ODBC SQL Cursor Types
+ */
+#define SQL_CURSOR_FORWARD_ONLY         0UL
+#define SQL_CURSOR_KEYSET_DRIVEN        1UL
+#define SQL_CURSOR_DYNAMIC              2UL
+#define SQL_CURSOR_STATIC               3UL
+#define SQL_CURSOR_TYPE_DEFAULT         SQL_CURSOR_FORWARD_ONLY
+
 #endif	/*	SQL_SUCCESS	*/
 
 /* Handy macro for testing for success and success with info.		*/

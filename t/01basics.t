@@ -20,7 +20,7 @@ sub ok ($$;$) {
 }
 
 
-use DBI qw(:sql_types :utils);
+use DBI qw(:sql_types :utils :sql_cursor_types);
 
 warn "   Using DBI::PurePerl (DBI_PUREPERL=$DBI::PurePerl) on $Config{archname}\n"
     if $DBI::PurePerl;
@@ -79,8 +79,13 @@ ok(0, $switch->{Active});
 $switch->trace_msg("Test \$h->trace_msg text.\n", 1);
 DBI->trace_msg("Test DBI->trace_msg text.\n", 1);
 
+# spot check a few of the sql data types
 ok(0, SQL_VARCHAR == 12);
 ok(0, SQL_ALL_TYPES == 0);
+
+# spot check a few of the sql cursor types
+ok(0, SQL_CURSOR_FORWARD_ONLY == 0);
+ok(0, SQL_CURSOR_DYNAMIC == 2);
 
 my @is_num = looks_like_number(undef, "", "foo", 1, ".", 2, "2");
 ok(0, !defined $is_num[0]);	# undef -> undef
@@ -120,5 +125,5 @@ my @installed_drivers = DBI->installed_versions;
 ok(0, @installed_drivers >= 1);
 ok(0, grep { $_ eq 'Sponge' } @installed_drivers);
 
-BEGIN { $tests = 45 }
+BEGIN { $tests = 47 }
 exit 0;

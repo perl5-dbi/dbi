@@ -91,6 +91,13 @@ use constant SQL_WCHAR => (-8);
 use constant SQL_WLONGVARCHAR => (-10);
 use constant SQL_WVARCHAR => (-9);
 
+# for Cursor types
+use constant SQL_CURSOR_FORWARD_ONLY  => 0;
+use constant SQL_CURSOR_KEYSET_DRIVEN => 1;
+use constant SQL_CURSOR_DYNAMIC       => 2;
+use constant SQL_CURSOR_STATIC        => 3;
+use constant SQL_CURSOR_TYPE_DEFAULT  => SQL_CURSOR_FORWARD_ONLY;
+
 use constant IMA_HAS_USAGE	=> 0x0001; #/* check parameter usage	*/
 use constant IMA_FUNC_REDIRECT	=> 0x0002; #/* is $h->func(..., "method")*/
 use constant IMA_KEEP_ERR	=> 0x0004; #/* don't reset err & errstr	*/

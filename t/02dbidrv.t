@@ -129,7 +129,7 @@ $drh->set_err(2, "test error 2", "IM999");
 ok($DBI::state, "IM999");
 
 eval { $DBI::rows = 1 };
-ok($@ =~ m/Can't modify/);
+ok($@ =~ m/Can't modify/) unless $DBI::PurePerl && main::ok(1);
 
 ok($drh->{FetchHashKeyName}, 'NAME');
 $drh->{FetchHashKeyName} = 'NAME_lc';
