@@ -18,9 +18,6 @@ Remove undocumented DBI->err and DBI->errstr methods.
 Remove old informix fudge in tables() (would only impact people
 using very old DBD::Informix versions as it now has it's own).
 
-Minor change to parameters of HandleError callback
-(add $err and $state ahead of $return).
-
 Increase size of com struct (requires driver rebuild)
 and improve size sanity checks.
 
@@ -50,6 +47,7 @@ Add macro framework for 'topic' bits.
 Use one bit for logging just the SQL statement executed
 (with no extra text) ideally in a way that lets the text
 file be parsed again later. Perhaps append ";\n\n\n" to each.
+Add parameter values and row count as comments afterwards?
 
 Ability to remove a handle from the parents cache:
 	$sth->uncache;
@@ -88,13 +86,6 @@ And enable xsbypass in dispatch if possible.
 
 Add function pointer for setting fetched field values into DBIS.
 Drivers would use this instead of calling sv_setpv (etc) themselves.
-
-Allow bind_col() \%attr to be given an integer sql type just
-like bind_param.
-
-Specify expected behaviour when using SQL_DATE (etc) type
-with bind_col and bind_param, e.g., that the string should be
-returned/given in the standard (ODBC) format for the type.
 
 Add bind_col($n, $foo, { OnFetch => sub { ... } });
 

@@ -4659,9 +4659,9 @@ The DBI defines the following methods for use on DBI statement handles:
 
 =item C<bind_param>
 
-  $rc = $sth->bind_param($p_num, $bind_value)  or die $sth->errstr;
-  $rv = $sth->bind_param($p_num, $bind_value, \%attr)     or ...
-  $rv = $sth->bind_param($p_num, $bind_value, $bind_type) or ...
+  $sth->bind_param($p_num, $bind_value)
+  $sth->bind_param($p_num, $bind_value, \%attr)
+  $sth->bind_param($p_num, $bind_value, $bind_type)
 
 The C<bind_param> method takes a copy of $bind_value and associates it
 (binds it) with a placeholder, identified by $p_num, embedded in
@@ -4709,7 +4709,13 @@ may ignore the \%attr parameter for that placeholder.
 
 Perl only has string and number scalar data types. All database types
 that aren't numbers are bound as strings and must be in a format the
-database will understand.
+database will understand except where the bind_param() TYPE attribute
+specifies a type that implies a particular format. For example, given:
+
+  $sth->bind_param(1, $value, SQL_DATETIME);
+
+the driver should expect $value to be in the ODBC standard SQL_DATETIME
+format, which is 'YYYY-MM-DD HH:MM:SS'. Similarly for SQL_DATE, SQL_TIME etc.
 
 As an alternative to specifying the data type in the C<bind_param> call,
 you can let the driver pass the value as the default type (C<VARCHAR>).
@@ -5247,24 +5253,65 @@ query and then fetch the row count from that.
 
   $rc = $sth->bind_col($column_number, \$var_to_bind);
   $rc = $sth->bind_col($column_number, \$var_to_bind, \%attr );
+  $rc = $sth->bind_col($column_number, \$var_to_bind, $bind_type );
 
-Binds an output column (field) of a C<SELECT> statement to a Perl variable.
-See C<bind_columns> below for an example.  Note that column numbers count
-up from 1.
+Binds a Perl variable and/or some attributes to an output column
+(field) of a C<SELECT> statement.  Column numbers count up from 1.
+You do not need to bind output columns in order to fetch data.
+For maximum portability between drivers, bind_col() should be called
+after execute() and not before.
+See also C<bind_columns> for an example.
 
-Whenever a row is fetched from the database, the corresponding Perl
-variable is automatically updated. There is no need to fetch and assign
-the values manually.  The binding is performed at a very low level
-using Perl aliasing so there is no extra copying taking place.  This
-makes using bound variables very efficient.
+The binding is performed at a low level using Perl aliasing.
+Whenever a row is fetched from the database $var_to_bind appears
+to be automatically updated simply because it refers to the same
+memory location as the corresponding column value.  This makes using
+bound variables very efficient. Multiple variables can be bound
+to a single column, but there's rarely any point. Binding a tied
+variable doesn't work.
 
-For maximum portability between drivers, C<bind_col> should be called after
-C<execute>. This restriction may be removed in a later version of the DBI.
+The L</bind_param> method
+performs a similar, but opposite, function for input variables.
 
-You do not need to bind output columns in order to fetch data, but it
-can be useful for some applications which need either maximum performance
-or greater clarity of code.  The L</bind_param> method
-performs a similar but opposite function for input variables.
+B<Data Types for Column Binding>
+
+The C<\%attr> parameter can be used to hint at the data type
+formatting the column should have. For example, you can use:
+
+  $sth->bind_col(1, undef, { TYPE => SQL_DATETIME });
+
+to specify that you'd like the column (which presumably is some
+kind of datetime type) to be returned in the standard format for
+SQL_DATETIME, which is 'YYYY-MM-DD HH:MM:SS', rather than the
+native formatting the database would normaly use.
+
+There's no $var_to_bind in that example to emphasize the point
+that bind_col() works on the underlying column value and not just
+a particular bound variable.
+
+As a short-cut for the common case, the data type can be passed
+directly, in place of the C<\%attr> hash reference. This example is
+equivalent to the one above:
+
+  $sth->bind_col(1, undef, SQL_DATETIME);
+
+The C<TYPE> value indicates the standard (non-driver-specific) type for
+this parameter. To specify the driver-specific type, the driver may
+support a driver-specific attribute, such as C<{ ora_type =E<gt> 97 }>.
+
+The SQL_DATETIME and other related constants can be imported using
+
+  use DBI qw(:sql_types);
+
+See L</"DBI Constants"> for more information.
+
+The data type for a bind variable cannot be changed after the first
+C<bind_col> call. In fact the whole \%attr parameter is 'sticky'
+in the sense that a driver only needs to consider the \%attr parameter
+for the first call for a given $sth and column.
+
+The TYPE attribute for bind_col() was first specified in DBI 1.41.
+
 
 =item C<bind_columns>
 
@@ -5274,8 +5321,8 @@ Calls L</bind_col> for each column of the C<SELECT> statement.
 The C<bind_columns> method will die if the number of references does not
 match the number of fields.
 
-For maximum portability between drivers, C<bind_columns> should be called
-after C<execute>.
+For maximum portability between drivers, bind_columns() should be called
+after execute() and not before.
 
 For example:
 
