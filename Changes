@@ -6,6 +6,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.44 (svn rev ???),    XXX
 
+  Fixed build warnings on VMS reported by Jakob Snoer.
+
   Changed bind_param_array() so it doesn't require all bind arrays
     to have the same number of elements.
   Changed execute_array() definition, and default implementation,

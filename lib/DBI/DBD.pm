@@ -3639,7 +3639,7 @@ my $done_inst_checks;
 sub _inst_checks {
     return if $done_inst_checks++;
     my $cwd = cwd();
-    if ($cwd =~ /$Config{path_sep}/) {
+    if ($cwd =~ /\Q$Config{path_sep}/) {
 	warn "*** Warning: Path separator characters (`$Config{path_sep}') ",
 	    "in the current directory path ($cwd) may cause problems\a\n\n";
         sleep 2;
@@ -3753,7 +3753,7 @@ sub dbd_postamble {
     my $dbi_driver_xst= '$(DBI_INSTARCH_DIR)/Driver.xst';
     my $xstf_h = '$(DBI_INSTARCH_DIR)/Driver_xst.h';
     if ($^O eq 'VMS') {
-	$dbi_instarch_dir = vmsify($dbi_instarch_dir.'/') unless $is_dbi;
+	$dbi_instarch_dir = vmsify($dbi_instarch_dir.'/');
 	$dbi_driver_xst= '$(DBI_INSTARCH_DIR)Driver.xst';
 	$xstf_h = '$(DBI_INSTARCH_DIR)Driver_xst.h';
     }
