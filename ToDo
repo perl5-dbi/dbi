@@ -1,0 +1,254 @@
+
+*** Assorted to-do items and random thoughts *** IN NO PARTICULAR ORDER ***
+
+Polish up and document _dbtype_names with an external interface and using get_info.
+
+Don't show attrib FETCH from cache if trace level is 1
+Always show fetch/fetchrow_arrayref return even at level 1?
+
+$sth->{ParamTypes} eg { "1" => SQL_VARCHAR, "2" => { TYPE=>SQL_VARCHAR, ora_type=>99 }};
+
+Give handles names: $h->{Id} ?
+Useful for reporting, Multiplex, DBD::AnyData etc etc
+May become useful for weakrefs etc
+
+Add architecture info to DBI and DBI::DBD build messages so
+users error reports are more useful.
+
+$dbh->get_inner_handle / set_inner_handle
+		use to make $dbh->connect return same handle
+Hook to call code ref on each fetch, pass fbav ref
+datarow_array(), datarow_arrayref(), datarow_hashref()
+remove sth from prepare_cached cache.
+$sth/$dbh->last_insert_id
+
+Ability to remove an sth from the prepare_cached cache.
+	$sth->uncache;
+
+DBI->setup_driver alias for _setup_driver, and make idempotent.
+
+Devel::Leak
+
+DBIx::DWIW
+
+The DBI needs some standard way to handle the 'success with info' concept:
+	$h->{HandleEvent}
+
+Maybe have fetchrow_arrayref return not a new reference to the same
+array each time, but the same reference to the same array each time.
+That would save a new/mortal/free for each row. Need to consider
+safety in case application assigns to the ref etc. Could sanity
+check in get_fbav that SvRV still points to the row array.
+But maybe it's not worth it if perl's "tmp stealing" works for refs.
+
+DBI::Profile: add simple way to normalise the sql (convert constants
+to placeholders) so profiling is more effective for drivers/applications
+which don't use placeholders.
+
+DBI::Profile: Add calc of approx XS method call and timing overhead
+by calling perl_call("DBI::dbi_time") at boot time for profile, and
+add to each sample.
+
+Sort out DBIcDBISTATE() and DBIS mess
+
+fetchall_hashref: may be better to call (the optimized) fetchall_arrayref
+then convert to hashes
+
+Sponge behave_like - generalize?
+
+Update DBI::DBD with overview (at least) recommend Driver.xst strongly.
+Find XS drivers that don't use it and talk to authors.
+Ship separate DBD::TemplateP and DBD::TemplateXS drivers as examples.
+
+Check: local($h->{PrintError})=0; resets $DBI::errstr at end of scope?
+
+ShowTracePid attrib	( or just add to trace level change message)
+Add UnimpMethodHook (in XS)
+Test and integrate with DProf?
+FetchHashReuse attrib (=1 or ={}) copy from dbh to sth.
+Record attrib STOREs so can be replayed (or use subclass?)
+
+Merge/document  DBIx::AnyDBD functionality into the DBI
+
+make lasth return outer handle
+
+Add $h->swap_internal_handle($other_h)
+
+Add a C call to return boolean for is a number' for a given SV.
+Needs to do the right thing for a non-numeric string SV that's been
+tested in a numeric context (eg $a='S23'; foo() if $a==-1; $sth->execute($a))
+So if SvNVOK is true but the value is 0 then should also do looks_like_number()
+to be sure.
+
+Rename finish to discard_pending_rows :-) [or just add an alias and docs :-]
+Or maybe to 'close' (the ODBC equiv)
+
+add details of the DBI book to the docs
+test shell /connect user etc
+
+document dbi_fetchall_arrayref_attr attr of selectall_arrayref().
+
+Count execute()s (and do's?) (in ima struct? not thread safe).
+Reset count in commit/rollback.
+In $dbh->DESTROY don't issue warning if count == 0.
+
+#define a large negative number to mean 'error' from st_execute and
+change *.xst to treat eaither that or -2 as an error. (The -2 is
+a transition or old drivers.)
+
+ODBC 3.5 date and intervals types and subtypes (from unixODBC?)
+http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
+
+Proxy: allow config to speficy SQL to allow/deny via regexen
+Docs for connect_cached and test with proxy.
+
+BINDING:
+
+Add to docs & tutorial re wrong bind type on a param may cause
+index to not be used! (Find real examples first)
+
+> And note that if you are using bind_param_inout as 'bind_param_by_ref',
+> then the $maxlen parameter is redundant.  I suspect all drivers could
+> implement bind_param_by_ref; most drivers, and specifically the Informix
+> driver, has no need for bind_param_inout as a mechanism for getting data
+> back from the database as there are no methods in the database which
+> work like that.  With Informix, values are passed to the database for
+> placeholders, and values are returned through a cursor, and that's all.
+Okay. I'll take that as a vote for bind_param_by_ref as an alias for
+bind_param_inout. >>todo.
+
+LOGGING:
+
+Seperate log for sql statements?
+
+Add per-handle debug file pointer (or at least a macro that _looks_ like that).
+Or, better yet, a function pointer so we can do more clever things.
+Maybe also need to add locking to prevent file contents being mangled
+by multiple threads/interpreters (esp mod_perl v2 and ActivePerl).
+
+OTHERS:
+
+Enable warnings in default_user().
+Add prompt for user/pass in default_user()?
+
+Change bind_column to save the info for get_fbav to use when
+first called. Thus making bind before execute work for all drivers.
+
+Add a handle flag to say that the driver has a hash that maps error
+codes into SQLSTATE values. The error event mechanism could check for
+the flag and lookup the SQLSTATE value for the error from the hash.
+
+ODBC attribute defining if transactions are supported
+http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
+
+$dbh-level __WARN__ and __DIE__. Initially just provide DBIXS hooks
+for DBD's to use (and pass h and imp_xxh to). Thus $dbh can redirect
+errors etc from all children in one go.
+
+Informix inspired changes.
+
+Add hook to DBI::DBD to write a myconfig.txt file into the
+source directory containing key driver and config info.
+
+attribute for 'last inserted id'?
+
+test suite
+http://www.mipt.sw.ru/en/products/ots/
+
+$sth->more_results, now and $sth->become($sth2) later
+
+dbish - state AutoCommit status clearly at connect time.
+(And try to set AutoCommit off in eval?)
+
+Add thread CV locks (not method locks)
+to &DBI::connect and &DBI::connect_cached
+in xs dbi_init code.
+
+fetch_scroll handling via get_fbav.
+Also add:
+	getrow_array       (or getdata_?)
+	getrow_arrayref?
+	getrow_hashref?
+
+test that $dbh->do will RaiseError
+RaiseError in %attr - doc it not working - hints.
+
+Consider making all SQL_ known to the DBI. Want to check for
+valid spelling. Also would like C<exists $h->{Attrib}> to
+work. Maybe auto load a module that defines a private hash
+that just serves to list known attributes.
+Or DBI->SQL_FOO and/or DBI::SQL_FOO.
+
+check out http://tegan.deltanet.com/~phlip/DBUIframe.html
+
+Auto proxying for individual drivers: DBI_PROXY_foo=...
+Else more generic dsn-rewrite via env vars
+
+Check DBD::Proxy connect&fetch latency (e.g. CGI use).
+
+Add SCALE to DBD::Sponge
+
+Rework handle creation for
+$h->clone ?, and maybe
+$dbh->connect([$user, $passwd])	# to reconnect, possibly as a different user
+
+Add (ODBC) attribute to indicate if placeholders are supported.
+http://www.vpservices.com/jeff/programs/SQL/docs/odbc-getinfo-msdn.html
+
+Fix shared error codes between (dbh) handles, maybe.
+
+Add problem reporting info to DBI.pm
+
+Add 'break handling' when field values change? Use two fbav's so 'previous
+record' is available. Define break fields and handlers. Call them via
+an alternate fetch_with_break method.
+Jan 2002: Also now see DBIx::FetchLoop (Brendan Fagan)
+
+---
+> > Is there any way to know whether a particular DBD needs a separate
+> > connection for nested operations or not?
+
+Umm, it looks like $dbh->{SQL_ACTIVE_STATEMENTS} would be the one.
+It defines the max number of statements that can be active on a
+the $dbh. 0 means unknown or no specific limit.
+I'll add that to the DBI and DBI spec.
+
+I think drivers that emulate multiple active statements using an
+implicit extra dbh but that can't tie the commit/rollback on the
+'parent' dbh to the child should probably still set
+SQL_ACTIVE_STATEMENTS to just 1. Or maybe 1.1, or 2. I'm open to
+suggestion on that one.
+
+-----------
+> > > I would prefer to set this attributes on statement level [as 
+> > > an attribute to prepare()] instead of setting it via $dbh,
+> > > but this is only a detail. 
+> > 
+> > You can set it any any level. Isn't that clear from the docs?
+> 
+> As I understand the doc, it is possible to do
+> 
+>     $sth = $dbh->prepare("....");
+>     $sth->execute();
+>     $sth->{LongReadLen} = 80;
+>     @foo = $sth->fetchrow();
+>     $sth->{LongReadLen} = 4096;
+>     @bar = $sth->fetchrow(); 
+> 
+> so that the fetch of the second row is done with a different 
+> {LongReadLen} value ? 
+> 
+> This sounds complicated with the current structure of DBD::Solid,
+> as I have only one buffer for the entire row allocated during
+> prepare(), but I must admit that I had no time [yet] to look 
+> into the last DBD::ODBC how you handle this case.
+
+Umm. I see what you mean. It's reasonable to assume that a driver
+will 'freeze' the value of applicable attributes at prepare or execute
+time. The driver should probably document that kind of thing.
+
+I think the DBI's template .xst file will probably grow some code
+to handle attributes to prepare semi-automatically, sometime.
+
+Tim.
+----------- 
