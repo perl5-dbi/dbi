@@ -14,6 +14,7 @@ fix utf8 leakage
 
   Changed bind_param_array() so it doesn't require all bind arrays
     to have the same number of elements.
+  Changed bind_param_array() to error if placeholder number <= 0.
   Changed execute_array() definition, and default implementation,
     to effectively NULL-pad shorter bind arrays.
   Changed execute_array() to return "0E0" for 0 as per the docs.

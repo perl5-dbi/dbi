@@ -1278,6 +1278,8 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return 0x00000100 if $name eq 'SQL';
 	return;
     }
+
+    sub DESTROY { return }	# avoid AUTOLOAD
 }
 
 
@@ -1649,8 +1651,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return $sth->set_err(1, "Value for parameter $p_id must be a scalar or an arrayref, not a ".ref($value_array))
 	    if defined $value_array and ref $value_array and ref $value_array ne 'ARRAY';
 
-	return $sth->set_err(1, "Can't use named placeholders for non-driver supported bind_param_array")
+	return $sth->set_err(1, "Can't use named placeholder '$p_id' for non-driver supported bind_param_array")
 	    unless DBI::looks_like_number($p_id); # because we rely on execute(@ary) here
+
+	return $sth->set_err(1, "Placeholder '$p_id' is out of range")
+	    if $p_id <= 0; # can't easily/reliably test for too big
 
 	# get/create arrayref to hold params
 	my $hash_of_arrays = $sth->{ParamArrays} ||= { };
@@ -5328,7 +5333,7 @@ database connection.  It has nothing to do with transactions. It's mostly an
 internal "housekeeping" method that is rarely needed.
 See also L</disconnect> and the L</Active> attribute.
 
-The C<finish> method should have been called C<cancel_select>.
+The C<finish> method should have been called C<discard_pending_rows>.
 
 
 =item C<rows>
