@@ -49,6 +49,7 @@ sub driver ($;$) {
     $attr->{Version} ||= ${$class . '::VERSION'};
     ($attr->{Name} = $class) =~ s/^DBD\:\:// unless $attr->{Name};
     $drh = DBI::_new_drh($class . "::dr", $attr);
+    $drh->STORE(ShowErrorStatement => 1);
     return $drh;
 }
 

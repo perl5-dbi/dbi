@@ -6,16 +6,20 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.46 (svn rev XXX),    5th November 2004
 
-  Fixed space-parsing bug in DBI::SQL::Nano thanks to Jeff Zucker.
+  Fixed parsing bugs in DBI::SQL::Nano thanks to Jeff Zucker.
   Fixed a couple of bad links in docs thanks to Graham Barr.
   Fixed test.pl Win32 undef warning thanks to H.Merijn Brand & David Repko.
   Fixed minor issues in DBI::DBD::Metadata thanks to Steffen Goeldner.
+  Fixed DBI::PurePerl neat() to use double quotes for utf8.
 
-  Changed use DBI qw(:utils) export tag to include $neat_maxlen.
+  Changed DBD::File to enable ShowErrorStatement by default,
+    which affects DBD::File subclasses such as DBD::CSV and DBD::DBM.
+  Changed use DBI qw(:utils) tag to include $neat_maxlen.
   Updated Roadmap and ToDo.
 
   Added data_string_diff() data_string_desc() and data_diff()
     utility functions to help diagnose Unicode issues.
+    All can be imported via the use DBI qw(:utils) tag.
 
 =head2 Changes in DBI 1.45 (svn rev 480),    6th October 2004
 

@@ -23,6 +23,13 @@ use strict;
 use Carp;
 require Symbol;
 
+require utf8;
+*utf8::is_utf8 = sub { # hack for perl 5.6
+    require bytes;
+    return unless defined $_[0];
+    return !(length($_[0]) == bytes::length($_[0]))
+} unless defined &utf8::is_utf8;
+
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
 $DBI::PurePerl::VERSION = sprintf "%d.%02d", '$Revision: 1.96 $ ' =~ /(\d+)\.(\d+)/;
 $DBI::neat_maxlen ||= 400;
@@ -551,16 +558,18 @@ sub looks_like_number {
     }
     return (@_ >1) ? @new : $new[0];
 }
+
 sub neat {
     my $v = shift;
     return "undef" unless defined $v;
     return $v if (($v & ~ $v) eq "0"); # is SvNIOK
+    my $quote = utf8::is_utf8($v) ? '"' : "'";
     my $maxlen = shift || $DBI::neat_maxlen;
     if ($maxlen && $maxlen < length($v) + 2) {
 	$v = substr($v,0,$maxlen-5);
 	$v .= '...';
     }
-    return "'$v'";
+    return "$quote$v$quote";
 }
 
 package

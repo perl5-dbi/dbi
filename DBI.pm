@@ -1011,13 +1011,6 @@ sub dump_results {	# also aliased as a method in DBD::_::st
 
 sub data_diff {
     my ($a, $b, $logical) = @_;
-    require utf8;
-
-    # hacks to cater for perl 5.6 for data_string_diff() & data_string_desc()
-    *utf8::is_utf8 = sub {
-        return (DBI::neat(shift) =~ /^"/); # XXX ugly hack, sufficient here
-    } unless defined &utf8::is_utf8;
-    *utf8::valid = sub { 1 } unless defined &utf8::valid;
 
     my $diff   = data_string_diff($a, $b);
     return "" if $logical and !$diff;
@@ -1046,6 +1039,11 @@ sub data_string_diff {
 	return "String b is undef, string a has ".length($a)." characters"
 		if !defined $b;
     }
+
+    require utf8;
+    # hack to cater for perl 5.6
+    *utf8::is_utf8 = sub { (DBI::neat(shift)=~/^"/) } unless defined &utf8::is_utf8;
+
     my @a_chars = (utf8::is_utf8($a)) ? unpack("U*", $a) : unpack("C*", $a);
     my @b_chars = (utf8::is_utf8($b)) ? unpack("U*", $b) : unpack("C*", $b);
     my $i = 0;
@@ -1071,10 +1069,16 @@ sub data_string_diff {
     return "";
 }
 
+
 sub data_string_desc {	# describe a data string
     my ($a) = @_;
-    require utf8;
     require bytes;
+    require utf8;
+
+    # hacks to cater for perl 5.6
+    *utf8::is_utf8 = sub { (DBI::neat(shift)=~/^"/) } unless defined &utf8::is_utf8;
+    *utf8::valid   = sub {                        1 } unless defined &utf8::valid;
+
     # Give sufficient info to help diagnose at least these kinds of situations:
     # - valid UTF8 byte sequence but UTF8 flag not set
     #   (might be ascii so also need to check for hibit to make it worthwhile)
