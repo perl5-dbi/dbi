@@ -296,8 +296,7 @@ sub UPDATE ($$$) {
     my($self, $data, $params) = @_;
     my $table = $self->open_tables($data, 0, 1);
     $self->verify_columns($table);
-    my($eval,$all_cols) = $self->open_tables($data, 0, 1);
-    return undef unless $eval;
+    return undef unless $table;
     my($affected) = 0;
     my(@rows, $array, $f_array, $val, $col, $i);
     while ($array = $table->fetch_row($data)) {
@@ -604,6 +603,10 @@ You can set the environment variable in your shell prior to running your script 
     * op may be one of:
          < > >= <= = <> LIKE CLIKE IS
     * CLIKE is a case insensitive LIKE
+
+=head1 ACKNOWLEDGEMENTS
+
+Tim Bunce provided the original idea for this module, helped me out of the tangled trap of namespace, and provided help and advice all along the way.  Although I wrote it from the ground up, it is based on Jochen Weidmann's orignal design of SQL::Statement, so much of the credit for the API goes to him.
 
 =head1 AUTHOR AND COPYRIGHT
 
