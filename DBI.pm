@@ -4390,8 +4390,19 @@ C<$value> without calling C<type_info>.
 
 Quote will probably I<not> be able to deal with all possible input
 (such as binary data or data containing newlines), and is not related in
-any way with escaping or quoting shell meta-characters. The quote()
-method should I<not> be used with L</"Placeholders and Bind Values">.
+any way with escaping or quoting shell meta-characters.
+
+It is valid for the quote() method to return an SQL expression that
+evaluates to the desired string. For example:
+
+  $quoted = $dbh->quote("one\ntwo\0three")
+
+may return something like:
+
+  CONCAT('one', CHAR(12), 'two', CHAR(0), 'three')
+
+The quote() method should I<not> be used with L</"Placeholders and
+Bind Values">.
 
 =item C<quote_identifier>
 
@@ -5739,21 +5750,24 @@ and debugging enabled (bug #24463) which causes a DBI test to fail.
 
 =head2 Signal Handling and Canceling Operations
 
-The first thing to say is that signal handling in Perl is currently
-I<not> safe. There is always a small risk of Perl crashing and/or
-core dumping when, or after, handling a signal.  (The risk was reduced
-with 5.004_04 but is still present.)
+The first thing to say is that signal handling in Perl versions less
+than 5.8 is I<not> safe. There is always a small risk of Perl crashing and/or
+core dumping when, or after, handling a signal.  The risk was reduced
+with 5.004_04 but was still present in all perls up through 5.8.0. 
+Beginning in perl 5.8.0, if your system as the POSIX sigaction() 
+routine, perl implements 'safe' signal handling. However, it does not 
+work the way it did in early perl versions in some database drivers.
 
 The two most common uses of signals in relation to the DBI are for
 canceling operations when the user types Ctrl-C (interrupt), and for
-implementing a timeout using C<alarm()> and C<$SIG{ALRM}>.
+implementing a timeout using C<alarm()> and C<$SIG{ALRM}>. 
 
 To assist in implementing these operations, the DBI provides a C<cancel>
 method for statement handles. The C<cancel> method should abort the current
 operation and is designed to be called from a signal handler.
 
-However, it must be stressed that: a) few drivers implement this at
-the moment (the DBI provides a default method that just returns C<undef>);
+However, it must be stressed that: a) few drivers implement this 
+(the DBI provides a default method that just returns C<undef>);
 and b) even if implemented, there is still a possibility that the statement
 handle, and possibly the parent database handle, will not be usable
 afterwards.
@@ -5763,6 +5777,49 @@ invoked the database engine's own cancel function.  If it returns false,
 then C<cancel> failed. If it returns C<undef>, then the database
 engine does not have cancel implemented.
 
+Unfortunately, for the newer versions of perl (>= 5.8), on systems that
+have the POSIX sigaction() routine, just setting C<$SIG{ALRM}> will
+not always work depending on your Database Driver.  With Oracle for
+instance (DBD::Oracle), if the system which hosts the database is down
+the DBI->connect() call will hang for about 4 minutes before returning
+an error.  Setting C<$SIG{ALRM}>, and using alarm() no longer interupts
+the connect() system call as it did in earlier versions of perl.
+
+The reason for this, can be found in the combination of how the Oracle
+OCI calls the system connect() routine, and the changes to the way the
+sigaction() routine is called in perl's implementation of 'safe' signal
+handling.  The signal handler can die, but the connect() call is reentered
+by the OCI, effectively defeating the purpose of the signal handler.
+The solution on these systems is to use the C<POSIX::sigaction()>
+routine to gain low level access to how the signal handler is installed.
+The code would look something like this (for the DBD-Oracle connect()):
+
+   use POSIX ':signal_h';
+
+   my $mask = POSIX::SigSet->new( SIGALRM ); #signals to mask in the handler
+   my $action = POSIX::SigAction->new( 
+       sub { die "connect failed" ; } #the handler code ref
+      ,$mask ); #not using (perl 5.8.2 and later) 'safe' switch or sa_flags
+   my $oldaction = POSIX::SigAction->new();
+   sigaction( 'ALRM' ,$action ,$oldaction );
+   my $dbh;
+   eval {
+      alarm(2); #2 second time out
+      $dbh = DBI->connect("dbi:Oracle:$dbn" ... );
+      alarm(0);
+   };
+   alarm(0);
+   sigaction( 'ALRM' ,$oldaction ); #restore original signal handler
+   if ( $@ ) ....
+
+Similar techniques can be used for canceling statement execution.
+
+Unfortunately, this solution is somewhat messy, and it does I<not> work with 
+perl versions less than perl 5.8 where C<POSIX::sigaction()> appears to be broken.  
+For a cleaner implementation that works across perl versions, see Lincoln Baxter's
+Sys::SigAction module at: http://search.cpan.org/~lbaxter.  The documentation for 
+Sys::SigAction includes an longer discussion of this problem, and a DBD::Oracle test
+script.
 
 =head2 Subclassing the DBI
 
