@@ -70,12 +70,11 @@ sub fetch {
 # =================================================
 package main;
 
-use Test::More tests => 32;
+use Test::More tests => 36;
 
-# =================================================
-package main;
-
-use DBI;
+BEGIN {
+    use_ok( 'DBI' );
+}
 
 my $tmp;
 
@@ -85,7 +84,7 @@ my $dbh = MyDBI->connect("dbi:Sponge:foo","","", {
 	RaiseError => 1,
 	CompatMode => 1, # just for clone test
 });
-is(ref $dbh, 'MyDBI::db');
+isa_ok($dbh, 'MyDBI::db');
 is($dbh->{CompatMode}, 1);
 undef $dbh;
 
@@ -95,7 +94,7 @@ $dbh = DBI->connect("dbi:Sponge:foo","","", {
 	RootClass => "MyDBI",
 	CompatMode => 1, # just for clone test
 });
-is(ref $dbh, 'MyDBI::db');
+isa_ok( $dbh, 'MyDBI::db');
 is($dbh->{CompatMode}, 1);
 
 #$dbh->trace(5);
@@ -111,7 +110,7 @@ my $sth = $dbh->prepare("foo",
 );
 
 is($calls, 1);
-is(ref $sth, 'MyDBI::st');
+isa_ok($sth, 'MyDBI::st');
 
 my $row = $sth->fetch;
 is($calls, 2);
@@ -130,30 +129,28 @@ is(substr($@,0,50), "DBD::Sponge::st fetch failed: Don't be so negative");
 #$sth->{PrintError} = 1;
 $sth->{RaiseError} = 0;
 $row = eval { $sth->fetch };
-is(ref $row, 'ARRAY');
+isa_ok($row, 'ARRAY');
 is($row->[0], 42);
 is($DBI::err, 2);
-is($DBI::errstr =~ /Don't exagerate/, 1);
+like($DBI::errstr, qr/Don't exagerate/);
 is($@ =~ /Don't be so negative/, $@);
 
 
-print "clone A\n";
 my $dbh2 = $dbh->clone;
+isa_ok( $dbh2, 'MyDBI::db', "Clone A" );
 is($dbh2 != $dbh, 1);
-is(ref $dbh2, 'MyDBI::db');
 is($dbh2->{CompatMode}, 1);
 
-print "clone B\n";
 my $dbh3 = $dbh->clone;
+isa_ok( $dbh3, 'MyDBI::db', 'Clone B' );
 is($dbh3 != $dbh, 1);
 is($dbh3 != $dbh2, 1);
-is(ref $dbh3, 'MyDBI::db');
+isa_ok( $dbh3, 'MyDBI::db');
 is($dbh3->{CompatMode}, 1);
 
-print "installed method\n";
 $tmp = $dbh->sponge_test_installed_method('foo','bar');
-is(ref $tmp, "ARRAY");
-is(join(':',@$tmp), "foo:bar");
+isa_ok( $tmp, "ARRAY", "installed method" );
+is_deeply( $tmp, [qw( foo bar )] );
 $tmp = eval { $dbh->sponge_test_installed_method() };
 is(!$tmp, 1);
 is($dbh->err, 42);
@@ -163,11 +160,13 @@ is($dbh->errstr, "not enough parameters");
 $dbh = eval { DBI->connect("dbi:Sponge:foo","","", {
 	RootClass => 'nonesuch1', PrintError => 0, RaiseError => 0, });
 };
+ok( !defined($dbh), "Failed connect #1" );
 is(substr($@,0,25), "Can't locate nonesuch1.pm");
 
 $dbh = eval { nonesuch2->connect("dbi:Sponge:foo","","", {
 	PrintError => 0, RaiseError => 0, });
 };
+ok( !defined($dbh), "Failed connect #2" );
 is(substr($@,0,36), q{Can't locate object method "connect"});
 
 1;
