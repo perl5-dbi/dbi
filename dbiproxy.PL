@@ -37,7 +37,7 @@ dbiproxy - A proxy server for the DBD::Proxy driver
 
 =head1 SYNOPSIS
 
-    dbiproxy <options> --port <port>
+    dbiproxy <options> --localport=<port>
 
 
 =head1 DESCRIPTION
