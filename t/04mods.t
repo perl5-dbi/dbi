@@ -12,3 +12,4 @@ ok(keys %GetInfoType);
 ok(keys %GetInfoReturnTypes);
 ok(keys %GetInfoReturnValues);
 
+1;

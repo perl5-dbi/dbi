@@ -68,7 +68,7 @@ ok($dbh5 ne $dbh4);
 #$dbh->trace(2);
 $dbh->{AutoCommit} = 1;
 $dbh->{PrintError} = 0;
-ok($dbh->{Taint}      == 1) unless $DBI::PurePerl && ok(0,1);
+ok($dbh->{Taint}      == 1) unless $DBI::PurePerl && ok(1);
 ok($dbh->{AutoCommit} == 1);
 ok($dbh->{PrintError} == 0);
 #$dbh->trace(0); die;
@@ -104,7 +104,7 @@ ok($dbh->quote_identifier('foo',undef,'bar') eq '"bar"@"foo"');
 print "others\n";
 eval { $dbh->commit('dummy') };
 ok($@ =~ m/DBI commit: invalid number of arguments:/, $@)
-	unless $DBI::PurePerl && ok(0,1);
+	unless $DBI::PurePerl && ok(1);
 
 ok($dbh->ping);
 
@@ -195,7 +195,7 @@ $dir =~ m/(.*)/; $dir = $1 || die;
 my($col0, $col1, $col2, $rows);
 my(@row_a, @row_b);
 
-ok($csr_a->{Taint} = 1) unless $DBI::PurePerl && ok(0,1);
+ok($csr_a->{Taint} = 1) unless $DBI::PurePerl && ok(1);
 #$csr_a->trace(5);
 ok($csr_a->bind_columns(undef, \($col0, $col1, $col2)) );
 ok($csr_a->execute( $dir ), $DBI::errstr);
@@ -558,7 +558,7 @@ print "HandleError -> 2 -> return (modified)42\n";
 $HandleErrorReturn = 2;
 $r = eval { $csr_c = $dbh->prepare($error_sql); };
 ok(!$@, $@);
-ok($r==42) unless $dbh->{mx_handle_list} && ok(0,1); # skip for Multiplex
+ok($r==42) unless $dbh->{mx_handle_list} && ok(1); # skip for Multiplex
 
 $dbh->{HandleError} = undef;
 ok(!$dbh->{HandleError});
@@ -659,3 +659,4 @@ ok((%tables == 0));
 $dbh->disconnect;
 ok(!$dbh->{Active});
 
+1;

@@ -177,4 +177,5 @@ is($dbh->err,    99);
 is($dbh->errstr, "errstr99");
 is($dbh->state,  "OV123");
 
+1;
 # end

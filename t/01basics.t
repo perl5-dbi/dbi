@@ -273,3 +273,4 @@ SKIP: {
 	like("@installed_drivers", qr/Sponge/, '... make sure at least one of them is DBI::Spounge');
 }
 
+1;

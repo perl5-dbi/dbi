@@ -119,3 +119,4 @@ ok(exists $Data->{$sql3});
 # cleanup
 # unlink("dbi.prof"); # now done by 'make clean'
 
+1;

@@ -154,3 +154,4 @@ is( $sth->errstr, 'Arrayref for parameter 3 has 2 elements but parameter 2 has 1
 is( $sth->bind_param_array(":foo", [ qw(a b c) ]), undef );
 is( $sth->errstr, "Can't use named placeholders for non-driver supported bind_param_array");
 
+1;

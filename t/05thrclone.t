@@ -52,4 +52,4 @@ foreach (@thr) {
 
 ok(1);
 
-exit 0;
+1;

@@ -154,4 +154,4 @@ ok  ref($sth)->can("execute");
 # Can't locate object method "nonesuch" via package "DBI::db" (perhaps you forgot to load "DBI::db"?)
 eval { ref($dbh)->nonesuch; };
 
-exit 0;
+1;

@@ -75,6 +75,9 @@ and use to optimise fetchrow_hash
 
 --- Changes that may affect driver authors
 
+Mandate the NUM_OF_FIELDS must be set by execute() and
+can't be deferred till $sth->{NUM_OF_FIELDS} or fetch*_*() called.
+
 Add PERL_NO_GET_CONTEXT for multiplicity/threads?
 force it for drivers?
 And enable xsbypass in dispatch if possible.

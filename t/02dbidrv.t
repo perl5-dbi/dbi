@@ -225,3 +225,4 @@ SKIP: {
 	ok(!$drh->can('disconnect_all'), '... ');
 }
 
+1;

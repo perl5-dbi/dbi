@@ -417,3 +417,5 @@ END {
     unlink $f if $f;
     $? = $status;
 };
+
+1;

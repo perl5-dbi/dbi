@@ -62,3 +62,4 @@ sub test_kid {
     pass('... test_kid error handler running');
 }
 
+1;

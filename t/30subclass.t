@@ -170,3 +170,4 @@ $dbh = eval { nonesuch2->connect("dbi:Sponge:foo","","", {
 };
 is(substr($@,0,36), q{Can't locate object method "connect"});
 
+1;

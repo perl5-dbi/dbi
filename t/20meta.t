@@ -28,3 +28,4 @@ is($dbh->type_info(SQL_INTEGER)->{TYPE_NAME}, 'INTEGER');
 is($dbh->type_info(SQL_VARCHAR)->{DATA_TYPE}, SQL_VARCHAR);
 is($dbh->type_info(SQL_VARCHAR)->{TYPE_NAME}, 'VARCHAR');
 
+1;

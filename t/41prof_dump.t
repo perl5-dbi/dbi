@@ -60,3 +60,4 @@ ok($prof =~ /\+\s+1\s+\Q$sql\E/m);
 
 # unlink("dbi.prof"); # now done by 'make clean'
 
+1;

@@ -189,4 +189,4 @@ ok(exists $data->{foo}{"Hi, mom"});
 DBI->trace(0, "STDOUT"); # close current log to flush it
 ok(-s $LOG_FILE);
 
-exit 0;
+1;
