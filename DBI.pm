@@ -2846,7 +2846,7 @@ in the new statement handle do not affect the parent database handle
 and changes to the database handle do not affect existing statement
 handles, only future ones.
 
-Attempting to set or get the value of an unknown attribute is fatal,
+Attempting to set or get the value of an unknown attribute generates a warning,
 except for private driver specific attributes (which all have names
 starting with a lowercase letter).
 
@@ -4599,7 +4599,7 @@ This section describes attributes specific to database handles.
 Changes to these database handle attributes do not affect any other
 existing or future database handles.
 
-Attempting to set or get the value of an unknown attribute is fatal,
+Attempting to set or get the value of an unknown attribute generates a warning,
 except for private driver-specific attributes (which all have names
 starting with a lowercase letter).
 
@@ -5485,7 +5485,7 @@ of these attributes are read-only.
 Changes to these statement handle attributes do not affect any other
 existing or future statement handles.
 
-Attempting to set or get the value of an unknown attribute is I<fatal>,
+Attempting to set or get the value of an unknown attribute generates a warning,
 except for private driver specific attributes (which all have names
 starting with a lowercase letter).
 
