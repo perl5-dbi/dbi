@@ -33,7 +33,7 @@ int      dbd_db_disconnect _((SV *dbh, imp_dbh_t *imp_dbh));
 void     dbd_db_destroy    _((SV *dbh, imp_dbh_t *imp_dbh));
 int      dbd_db_STORE_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv, SV *valuesv));
 SV      *dbd_db_FETCH_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv));
-SV	*dbd_db_last_insert_id _((SV *dbh, SV *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
+SV	*dbd_db_last_insert_id _((SV *dbh, imp_dbh_t *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
 AV      *dbd_db_data_sources _((SV *dbh, imp_dbh_t *imp_dbh, SV *attr));
 
 int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));

@@ -14,6 +14,7 @@ Remove support for "old-style" connect syntax
 (where the driver name is the 4th parameter).
 
 Remove undocumented DBI->err and DBI->errstr methods.
+Or maybe add DBI->state for consistency? Or maybe keep but warn?
 
 Remove old informix fudge in tables() (would only impact people
 using very old DBD::Informix versions as it now has it's own).
@@ -37,8 +38,8 @@ Define "topic bits" for TraceLevel.
 %DBI::TraceTopics & %DBD::Foo::TraceTopics
 "Lint" topic for extra checking, eg warn on $sth DESTROY if still Active
 "Verbose" topic adds verbosity to any other enabled topics
-Change macro to get debug level to only return last 4 bits.
-Add macro framework for 'topic' bits.
+"Connect" topic to log connect/disconnect/reconnect/failed-ping
+Add topic flags to ima struct and log when bits match?
 Use one bit for logging just the SQL statement executed
 (with no extra text) ideally in a way that lets the text
 file be parsed again later. Perhaps append ";\n\n\n" to each.
@@ -192,6 +193,8 @@ to remove FETCH method call overhead in prepare_cached().
 
 --- Other things to consider
 
+Add $h->err_errstr_state method that returns all three in one go.
+
 Study alternate DBI's:
 	ruby
 	python
@@ -216,6 +219,9 @@ fetchall_hashref for multiple keys - pending
 DBIx::DWIW
 
 make lasth return outer handle?
+
+update lasth on return from method so handles used by the implementation
+of the called method don't affect it?
 
 document dbi_fetchall_arrayref_attr attr of selectall_arrayref().
 
@@ -256,6 +262,35 @@ bind_param_inout. >>todo.
 ------
 
 OTHERS:
+
+Add method like
+	sub perform_transaction {
+	    my ($dbh, $attr, $coderef, @args) = @_;
+	    my $wantarray = wantarray;
+	    my $use_transaction = 1;
+	    my $orig_AutoCommit = $dbh->{AutoCommit};
+	    if ($orig_AutoCommit) {
+		unless (eval { $dbh->{AutoCommit} = 0; 1 }) {
+		    die unless $allow_non_transaction;
+		    $use_transaction = 0;
+		}
+	    }
+	    local $dbh->{RaiseError} = 1;
+	    eval {
+		@result = ($wantarray) ? $coderef->(@args) : scalar $coderef->(@args);
+		$dbh->commit if $use_transaction;
+	        $attr->{OnCommit}->() if $attr->{OnCommit}->();
+	    };
+	    if ($@) {
+		local $@; protect original error
+		my $rv = eval { ($use_transaction) ? $dbh->rollback : 0 };
+		$attr->{OnRollback}->($rv) if $attr->{OnRollback};
+	    }
+	    die if $@; # propagate original error
+	    $dbh->{AutoCommit} = 1 if $orig_AutoCommit;
+	    return $result[0] unless $wantarray;
+	    return @result;
+	}
 
 Change bind_column to save the info for get_fbav to use when
 first called. Thus making bind before execute work for all drivers.

@@ -241,7 +241,9 @@ sub AUTOLOAD {
 	q/package ~class~;
           sub ~method~ {
             my $h = shift;
-	    my @result = eval { $h->{'proxy_~type~h'}->~method~(@_) };
+	    my @result = wantarray
+		? eval {        $h->{'proxy_~type~h'}->~method~(@_) }
+		: eval { scalar $h->{'proxy_~type~h'}->~method~(@_) };
             return DBD::Proxy::proxy_set_err($h, $@) if $@;
             wantarray ? @result : $result[0];
           }
@@ -249,7 +251,9 @@ sub AUTOLOAD {
         q/package ~class~;
 	  sub ~method~ {
 	    my $h = shift;
-	    my @result = eval { $h->{'proxy_~type~h'}->func(@_, '~method~') };
+	    my @result = wantarray
+		? eval {        $h->{'proxy_~type~h'}->func(@_, '~method~') }
+		: eval { scalar $h->{'proxy_~type~h'}->func(@_, '~method~') };
 	    return DBD::Proxy::proxy_set_err($h, $@) if $@;
 	    wantarray ? @result : $result[0];
           }
