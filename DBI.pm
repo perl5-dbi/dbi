@@ -5478,9 +5478,11 @@ the returned hash for those fields.
 Because of the extra work C<fetchrow_hashref> and Perl have to perform, it
 is not as efficient as C<fetchrow_arrayref> or C<fetchrow_array>.
 
-Currently, a new hash reference is returned for each row.  I<This will
-change> in the future to return the same hash ref each time, so don't
-rely on the current behaviour.
+By default a reference to a new hash is returned for each row.
+It is likely that a future version of the DBI will support an
+attribute which will enable the same hash to be reused for each
+row. This will give a significant performance boost, but it won't
+be enabled by default because of the risk of breaking old code.
 
 
 =item C<fetchall_arrayref>
