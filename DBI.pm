@@ -6573,6 +6573,10 @@ If it prompts for a username and password use your perl.org account
 if you have one, else just 'guest' and 'guest'. The source code will
 be in a new subdirectory called C<trunk>.
 
+To keep informed about changes to the source you can send an empty email
+to dbi-changes@perl.org after which you'll get an email with the
+change log message and diff of each change checked-in to the source.
+
 After making your changes you can generate a patch file, but before
 you do, make sure your source is still upto date using:
 

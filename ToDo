@@ -155,6 +155,8 @@ New ima flags: CLEAR_ERR (on entry), CHECK_ERR (on exit), CHECK_NEW_ERR
 (check if error count has been incremented by set_err).
 Then FETCH would have just CHECK_NEW_ERR.
 
+Macro to get new statement handle for XS code
+
 Trace to tied file handle.
 
 Hooks for method entry and exit.
