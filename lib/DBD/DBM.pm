@@ -22,6 +22,7 @@ use strict;
 package DBD::DBM;
 #################
 use DBD::File ();
+use Carp;
 use vars qw($VERSION $ATTRIBUTION $methods_already_installed);
 use base qw( DBD::File );
 $VERSION     = '0.01';                     # CHANGE THIS !
@@ -79,7 +80,7 @@ sub connect ($$;$$$) {
         #
         # the attrs here *must* start with dbm_ or foo_ or f_
         #
-        $this->{f_valid_attrs} = {
+        $this->{f_valid_attrs} = my $valid_attrs = {
             dbm_tables   => 1  # per-table information
           , dbm_type     => 1  # the global DBM type e.g. SDBM_File
           , dbm_mldbm    => 1  # the global MLDBM serializer
@@ -107,16 +108,16 @@ sub connect ($$;$$$) {
 		$var = $1;
 		($val = $2) =~ s/\\(.)/$1/g;
 
-                # in the connect string the attr names
-                # can either have dbm_ (or foo_) prepended or not
-                # this will add the prefix if it's missing
-                #
-                $var = 'dbm_' . $var unless $var =~ /^dbm_/
-                                     or     $var eq 'f_dir';
-                if (!$this->{f_valid_attrs}->{$var}) {
-                    die "Invalid attribute in connect: '$var'!\n"
-		}
-		$this->{$var} = $val;
+		# Add dbm_ prefix to attributes that need it
+		# (attributes for DBD::Foo in the Driver DSN portion
+		# of the DSN string are allowed to skip the "foo_" prefix)
+                $var = 'dbm_' . $var if !$valid_attrs->{$var}
+				     &&  $valid_attrs->{"dbm_$var"};
+
+		# place the attribute in $attr (possibly replacing an exiting value)
+		# so DBI->connect will then call our STORE on it for us.
+		# Our STORE method (inherited from DBD::File's) should validate it
+		$attr->{$var} = $val;
 	    }
 	}
 	$this->{f_version} = $DBD::File::VERSION;

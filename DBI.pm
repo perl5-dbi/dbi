@@ -303,6 +303,7 @@ my $dbd_prefix_registry = {
   best_    => { class => 'DBD::BestWins',	},
   csv_     => { class => 'DBD::CSV',		},
   db2_     => { class => 'DBD::DB2',		},
+  dbm_     => { class => 'DBD::DBM',		},
   dbi_     => { class => 'DBI',			},
   df_      => { class => 'DBD::DF',		},
   f_       => { class => 'DBD::File',		},

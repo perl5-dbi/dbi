@@ -29,10 +29,10 @@ ok($dbh);
 #
 
 printf "\n%s %s\n%s %s\n%s %s\n%s %s\n",
-         'DBD::DBM'       , $dbh->{Driver}->{Version}
-       , 'DBD::File'      , $dbh->{Driver}->{file_version}
-       , 'DBI::SQL::Nano' , $dbh->{Driver}->{nano_version}
-       , 'SQL::Statement' , $dbh->{Driver}->{statement_version}
+         'DBD::DBM'       , $dbh->{Driver}->{Version} || 'undef'
+       , 'DBD::File'      , $dbh->{Driver}->{file_version} || 'undef'
+       , 'DBI::SQL::Nano' , $dbh->{Driver}->{nano_version} || 'undef'
+       , 'SQL::Statement' , $dbh->{Driver}->{statement_version} || 'undef'
        ;
 
 for my $sql (split /;\s*\n+/,join '',<DATA>) {

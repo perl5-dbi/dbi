@@ -205,7 +205,6 @@ check_version(char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int drc_s
 static void
 dbi_bootinit(dbistate_t * parent_dbis)
 {
-    char *p = Nullch;
 INIT_PERINTERP;
 
     Newz(dummy, DBIS, 1, dbistate_t);
