@@ -24,6 +24,7 @@ DBI::Changes - List of significant changes to the DBI
   Updated docs to recommend some common DSN string attributes.
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
   Updated docs for primary_key_info and primary_keys.
+  Updated err/errstr/state docs for DBD authors thanks to Steffen Goeldner.
   Corrected and updated LongReadLen docs thanks to Bart Lateur.
 
 =head2 Changes in DBI 1.46 (svn rev 584),    16th November 2004

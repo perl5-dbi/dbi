@@ -569,20 +569,7 @@ or really specific to the DBD::File package.
   package DBD::File;
 
   use strict;
-  use vars qw($err $errstr $state $drh);
-
-  $err = 0;             # holds error code   for DBI::err
-  $errstr = "";         # holds error string for DBI::errstr
-  $sqlstate = "S1000";  # holds SQL state    for DBI::state
-
-These variables are used for storing error states and messages.
-Note that most pure Perl drivers do not support the SQL standard error
-indicator SQLSTATE, and for such drivers, the value "S1000" is
-appropriate.
-If your database does support SQLSTATE, then initialize $sqlstate to an
-empty string.
-However, it is crucial to understand that you must not modify them
-directly; see below.
+  use vars qw($VERSION $drh);
 
   $VERSION = "1.23.00"  # Version number of DBD::File
 
