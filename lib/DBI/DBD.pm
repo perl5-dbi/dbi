@@ -843,8 +843,11 @@ This is still the same: check the arguments and call the super class
 constructor I<DBI::_new_sth>.
 Again, in scalar context, only the outer handle is returned.
 The C<Statement> attribute should be cached as shown.
+
 Note the prefix I<drv_> in the attribute names: it is required that
-your private attributes are lowercased and use such a prefix.
+all your private attributes use a lowercase prefix unique to your driver.
+The DBI contains a registry of known driver prefixes and may one day
+warn about unknown attributes that don't have a registered prefix.
 
 Note that we parse the statement here in order to set the attribute
 I<NUM_OF_PARAMS>.
@@ -915,7 +918,7 @@ A good example might look like this:
       if ($attr =~ m/^drv_/) {
           # Handle only our private attributes here
           # Note that we could trigger arbitrary actions.
-          # Ideally we should catch unknown attributes.
+          # Ideally we should warn about unknown attributes.
           $dbh->{$attr} = $val; # Yes, we are allowed to do this,
           return 1;             # but only for our private attributes
       }
