@@ -1300,7 +1300,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($this) = DBI::_new_dbh($drh, {
 	    'Name' => $dsn,
 	});
-	# $this->STORE(Active => 1); debatable as there's no "server side" here
+	# XXX debatable as there's no "server side" here
+	# (and now many uses would trigger warnings on DESTROY)
+	# $this->STORE(Active => 1);
 	$this;
     }
 

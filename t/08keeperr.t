@@ -34,7 +34,7 @@ use base 'DBI::st';
 
 sub execute {
     my $sth = shift;
-    # we localize and attribute here to check that the correpoding STORE
+    # we localize an attribute here to check that the correpoding STORE
     # at scope exit doesn't clear any recorded error
     local $sth->{CompatMode} = 0;
     my $rv = $sth->SUPER::execute(@_);

@@ -1261,6 +1261,14 @@ dbih_get_fbav(imp_sth_t *imp_sth)
     if ( (av = DBIc_FIELDS_AV(imp_sth)) == Nullav)
 	av = dbih_setup_fbav(imp_sth);
 
+    if (1) { /* XXX turn into option later */
+	int i = DBIc_NUM_FIELDS(imp_sth);
+	/* don't let SvUTF8 flag persist from one row to the next   */
+	/* (only affects drivers that use sv_setpv, but most XS do) */
+	while(i--)                  /* field 1 stored at index 0    */
+	    SvUTF8_off(AvARRAY(av)[i]);
+    }
+
     if (DBIc_is(imp_sth, DBIcf_TaintOut)) {
 	dTHR;
 	TAINT;	/* affects sv_setsv()'s called within same perl statement */
