@@ -70,18 +70,10 @@ sub driver ($;$) {
 	    $c =~ s/^DBD\:\://;
 	    $attr->{Name} = $c;
         }
-        $attr->{file_version} = $DBD::File::VERSION;
-        for (qw( nano_version statement_version)) {
-            $attr->{$_} = $DBI::SQL::Nano::versions->{$_}||'';
-        }
-        $attr->{sql_handler} = ($attr->{statement_version})
-                             ? 'SQL::Statement'
-			     : 'DBI::SQL::Nano';
         $drh = DBI::_new_drh($class . "::dr", $attr);
     }
     $drh;
 }
-
 
 package DBD::File::dr; # ====== DRIVER ======
 
@@ -114,7 +106,19 @@ sub connect ($$;$$$) {
 	    }
 	}
     }
-    $this;
+    return set_versions($this);
+}
+
+sub set_versions {
+    my $this = shift;
+    $this->{f_version} = $DBD::File::VERSION;
+    for (qw( nano_version statement_version)) {
+        $this->{'sql_'.$_} = $DBI::SQL::Nano::versions->{$_}||'';
+    }
+    $this->{sql_handler} = ($this->{sql_statement_version})
+                         ? 'SQL::Statement'
+	                 : 'DBI::SQL::Nano';
+    return $this;
 }
 
 sub data_sources ($;$) {
@@ -172,8 +176,8 @@ sub prepare ($$;@) {
         # cache the parser object if the DBD supports parser caching
         # SQL::Nano and older SQL::Statements don't support this
 
-	if ( $dbh->{Driver}->{sql_handler} eq 'SQL::Statement'
-             and $dbh->{Driver}->{statement_version} > 1)
+	if ( $dbh->{sql_handler} eq 'SQL::Statement'
+             and $dbh->{sql_statement_version} > 1)
            {
             my $parser = $dbh->{csv_sql_parser_object};
             eval { $parser ||= $dbh->func('csv_cache_sql_parser_object') };
@@ -245,10 +249,14 @@ sub STORE ($$$) {
         #
         if ($attrib !~ /^dbi/ and $dbh->{f_valid_attrs}) {
 	    if ( $dbh->{f_valid_attrs}->{$attrib} ) {
+ 	        if ($attrib eq 'f_dir') {
+  	              return $dbh->set_err( 1,"No such directory '$value'!")
+                      unless -d $value;
+	        }
     	        $dbh->{$attrib} = $value;
 	    }
             else {
-	        return $dbh->set_err(1,"Invalid attribute '$attrib'!");
+	        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
 	    }
         }
         else {
@@ -404,11 +412,11 @@ sub f_versions {
     my $dbh = shift;
     printf "%s %s\n%s %s\n%s %s\n",
     , 'DBD::File'      , $DBD::File::VERSION,
-    , 'DBI::SQL::Nano' , $dbh->{Driver}->{nano_version}
+    , 'DBI::SQL::Nano' , $dbh->{sql_nano_version}
     ;
     printf "%s %s\n",
-    , 'SQL::Statement' , $dbh->{Driver}->{statement_version}
-      if $dbh->{Driver}->{sql_handler} eq 'SQL::Statement';
+    , 'SQL::Statement' , $dbh->{sql_statement_version}
+      if $dbh->{sql_handler} eq 'SQL::Statement';
 }
 
 package DBD::File::st; # ====== STATEMENT ======

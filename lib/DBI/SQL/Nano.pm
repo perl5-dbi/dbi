@@ -57,7 +57,7 @@ sub prepare {
             &&do{
                 $self->{command}      = 'CREATE';
                 $self->{table_name}   = $1;
-                $self->{column_names} = parse_comma_list($2) if $2;
+                $self->{column_names} = parse_coldef_list($2) if $2;
                 die "Can't find columns!" unless $self->{column_names};
             };
         /^\s*DROP\s+TABLE\s+(IF\s+EXISTS\s+)?(.*?)\s*$/is
@@ -100,10 +100,22 @@ sub prepare {
                                        and $self->{table_name};
     return $self;
 }
-sub parse_comma_list  {[map{clean_parse_str($_)} split(',',shift)]}
-sub clean_parse_str {
-    $_ = shift; s/\(//;s/\)//;s/^\s+//; s/\s+$//; s/^(\S+)\s*.*/$1/; $_;
+sub parse_coldef_list  {                # check column definitions
+    my @col_defs;
+    for ( split',',shift ) {
+        my $col = clean_parse_str($_);
+        if ( $col =~ /^(\S+?)\s+.+/ ) { # doesn't check what it is
+            $col = $1;                  # just checks if it exists
+	}
+        else {
+ 	    die "No column definition for '$_'!\n";
+	}
+        push @col_defs,$col;
+    }
+    return \@col_defs;
 }
+sub parse_comma_list  {[map{clean_parse_str($_)} split(',',shift)]}
+sub clean_parse_str { $_ = shift; s/\(//;s/\)//;s/^\s+//; s/\s+$//; $_; }
 sub parse_values_list {
     my($self,$str) = @_;
     [map{$self->parse_value(clean_parse_str($_))}split(',',$str)]
@@ -495,7 +507,7 @@ DBI::SQL::Nano - a very tiny SQL engine
 
 =head1 SYNOPSIS
 
- BEGIN { $ENV{DBI_SQL_NANO}=1 }
+ BEGIN { $ENV{DBI_SQL_NANO}=1 } # forces use of Nano rather than SQL::Statement
  use DBI::SQL::Nano;
  use Data::Dumper;
  my $stmt = DBI::SQL::Nano::Statement->new(
