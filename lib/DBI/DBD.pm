@@ -686,7 +686,7 @@ to change the namespace.
 
   sub connect
   {
-      my ($drh, $dbname, $user, $auth, $attr) = @_;
+      my ($drh, $dr_dsn, $user, $auth, $attr) = @_;
 
       # Some database specific verifications, default settings
       # and the like can go here. This should only include
@@ -696,15 +696,39 @@ to change the namespace.
       # environment variables to be set; this could be where you
       # validate that they are set, or default them if they are not set.
 
+      $my $driver_prefix = "drv_"; # the assigned prefix for this driver
+
+      # Process attributes from the DSN; we assume ODBC syntax
+      # here, that is, the DSN looks like var1=val1;...;varN=valN
+      foreach my $var ( split /;/, $dbname ) {
+          my ($attr_name, $attr_value) = split '=', $var, 2;
+	  return $drh->set_err(1, "Can't parse DSN part '$var'")
+              unless defined $attr_value;
+
+          # add driver prefix to attribute name if it doesn't have it already
+          $attr_name = $driver_prefix.$attr_name
+              unless $attr_name =~ /^$driver_prefix/o;
+
+	  # Store attribute into %$attr, replacing any existing value.
+          # The DBI will STORE() these into $dbh after we've connected
+	  $attr->{$attr_name} = $attr_value;
+      }
+
+      # Get the attributes we'll use to connect.
+      # We use delete here because these no need to STORE them
+      my $db = delete $attr->{drv_database} || delete $attr->{drv_db}
+          or return $drh->set_err(1, "No database name given in DSN '$dr_dsn'");
+      my $host = delete $attr->{drv_host} || 'localhost';
+      my $port = delete $attr->{drv_port} || 123456;
+
       # Assume you can attach to your database via drv_connect:
-      my $connection = drv_connect($dbname, $user, $auth);
-      return $drh->set_err(1,'Connection refused') unless $connection;
+      my $connection = drv_connect($db, $host, $port, $user, $auth)
+          or return $drh->set_err(1, "Can't connect to $dbname: ...");
 
       # create a 'blank' dbh (call superclass constructor)
       my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
 
       $dbh->STORE('Active', 1 );
-
       $dbh->{drv_connection} = $connection;
 
       return $outer;
