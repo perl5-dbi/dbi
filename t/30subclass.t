@@ -70,22 +70,7 @@ sub fetch {
 # =================================================
 package main;
 
-print "1..$tests\n";
-my $t;
-
-sub ok ($$$) {
-    my($n, $got, $want) = @_;
-    ++$t;
-    die "sequence error, expected $n but actually $t"
-	if $n and $n != $t;
-    my $line = (caller)[2];
-    return print "ok $t at $line\n"
-	if(	( defined($got) && defined($want) && $got eq $want)
-	||	(!defined($got) && !defined($want)) );
-    warn sprintf "Test $n: wanted %s, got %s\n", DBI::neat($want), DBI::neat($got);
-    print "not ok $t at $line\n";
-}
-
+use Test::More tests => 32;
 
 # =================================================
 package main;
@@ -100,8 +85,8 @@ my $dbh = MyDBI->connect("dbi:Sponge:foo","","", {
 	RaiseError => 1,
 	CompatMode => 1, # just for clone test
 });
-ok(0, ref $dbh, 'MyDBI::db');
-ok(0, $dbh->{CompatMode}, 1);
+is(ref $dbh, 'MyDBI::db');
+is($dbh->{CompatMode}, 1);
 undef $dbh;
 
 $dbh = DBI->connect("dbi:Sponge:foo","","", {
@@ -110,8 +95,8 @@ $dbh = DBI->connect("dbi:Sponge:foo","","", {
 	RootClass => "MyDBI",
 	CompatMode => 1, # just for clone test
 });
-ok(0, ref $dbh, 'MyDBI::db');
-ok(0, $dbh->{CompatMode}, 1);
+is(ref $dbh, 'MyDBI::db');
+is($dbh->{CompatMode}, 1);
 
 #$dbh->trace(5);
 my $sth = $dbh->prepare("foo",
@@ -125,65 +110,63 @@ my $sth = $dbh->prepare("foo",
     }
 );
 
-ok(0, $calls, 1);
-ok(0, ref $sth, 'MyDBI::st');
+is($calls, 1);
+is(ref $sth, 'MyDBI::st');
 
 my $row = $sth->fetch;
-ok(0, $calls, 2);
-ok(0, $row->[1], "aaa");
+is($calls, 2);
+is($row->[1], "aaa");
 
 $row = $sth->fetch;
-ok(0, $calls, 3);
-ok(0, $row->[1], "bb");
+is($calls, 3);
+is($row->[1], "bb");
 
-ok(0, $DBI::err, undef);
+is($DBI::err, undef);
 $row = eval { $sth->fetch };
-ok(0, !defined $row, 1);
-ok(0, substr($@,0,50), "DBD::Sponge::st fetch failed: Don't be so negative");
+is(!defined $row, 1);
+is(substr($@,0,50), "DBD::Sponge::st fetch failed: Don't be so negative");
 
 #$sth->trace(5);
 #$sth->{PrintError} = 1;
 $sth->{RaiseError} = 0;
 $row = eval { $sth->fetch };
-ok(0, ref $row, 'ARRAY');
-ok(0, $row->[0], 42);
-ok(0, $DBI::err, 2);
-ok(0, $DBI::errstr =~ /Don't exagerate/, 1);
-ok(0, $@ =~ /Don't be so negative/, $@);
+is(ref $row, 'ARRAY');
+is($row->[0], 42);
+is($DBI::err, 2);
+is($DBI::errstr =~ /Don't exagerate/, 1);
+is($@ =~ /Don't be so negative/, $@);
 
 
 print "clone A\n";
 my $dbh2 = $dbh->clone;
-ok(0, $dbh2 != $dbh, 1);
-ok(0, ref $dbh2, 'MyDBI::db');
-ok(0, $dbh2->{CompatMode}, 1);
+is($dbh2 != $dbh, 1);
+is(ref $dbh2, 'MyDBI::db');
+is($dbh2->{CompatMode}, 1);
 
 print "clone B\n";
 my $dbh3 = $dbh->clone;
-ok(0, $dbh3 != $dbh, 1);
-ok(0, $dbh3 != $dbh2, 1);
-ok(0, ref $dbh3, 'MyDBI::db');
-ok(0, $dbh3->{CompatMode}, 1);
+is($dbh3 != $dbh, 1);
+is($dbh3 != $dbh2, 1);
+is(ref $dbh3, 'MyDBI::db');
+is($dbh3->{CompatMode}, 1);
 
 print "installed method\n";
 $tmp = $dbh->sponge_test_installed_method('foo','bar');
-ok(0, ref $tmp, "ARRAY");
-ok(0, join(':',@$tmp), "foo:bar");
+is(ref $tmp, "ARRAY");
+is(join(':',@$tmp), "foo:bar");
 $tmp = eval { $dbh->sponge_test_installed_method() };
-ok(0, !$tmp, 1);
-ok(0, $dbh->err, 42);
-ok(0, $dbh->errstr, "not enough parameters");
+is(!$tmp, 1);
+is($dbh->err, 42);
+is($dbh->errstr, "not enough parameters");
 
 
 $dbh = eval { DBI->connect("dbi:Sponge:foo","","", {
 	RootClass => 'nonesuch1', PrintError => 0, RaiseError => 0, });
 };
-ok(0, substr($@,0,25), "Can't locate nonesuch1.pm");
+is(substr($@,0,25), "Can't locate nonesuch1.pm");
 
 $dbh = eval { nonesuch2->connect("dbi:Sponge:foo","","", {
 	PrintError => 0, RaiseError => 0, });
 };
-ok(0, substr($@,0,36), q{Can't locate object method "connect"});
+is(substr($@,0,36), q{Can't locate object method "connect"});
 
-
-BEGIN { $tests = 32 }

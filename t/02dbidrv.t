@@ -1,152 +1,227 @@
-#!perl -w
+#!perl
 
-use DBI;
-use Test;
 use strict;
+use warnings;
+
+use Test::More tests => 48;
+
+## ----------------------------------------------------------------------------
+## 02dbidrv.t - ...
+## ----------------------------------------------------------------------------
+# This test creates a Test Driver (DBD::Test) and then exercises it.
+# NOTE:
+# There are a number of tests as well that are embedded within the actual
+# driver code as well
+## ----------------------------------------------------------------------------
+
+## load DBI
 
 BEGIN {
-	plan tests => 36;
+	use_ok('DBI');
 }
 
-$|=1;
-$^W=1;
-my $drh;
+## ----------------------------------------------------------------------------
+## create a Test Driver (DBD::Test)
 
-{   package DBD::Test;
+## main Test Driver Package
+{   
+	package DBD::Test;
+
     use strict;
+	use warnings;
 
-    $drh = undef;	# holds driver handle once initialised
+    my $drh = undef;
 
-    sub driver{
-	return $drh if $drh;
-	main::ok(1);		# just getting here is enough!
-	my($class, $attr) = @_;
-	$class .= "::dr";
-	($drh) = DBI::_new_drh($class, {
-		'Name' => 'Test',
-		'Version' => '$Revision: 11.11 $',
-	    },
-	    77	# 'implementors data'
-	    );
-	main::ok($drh);
-	$drh;
+    sub driver {
+		return $drh if $drh;
+		
+		Test::More::pass('... DBD::Test->driver called to getnew Driver handle');
+		
+		my($class, $attr) = @_;
+		$class = "${class}::dr";
+		($drh) = DBI::_new_drh($class, {
+							Name    => 'Test',
+							Version => '$Revision: 11.11 $',
+						},
+					77	# 'implementors data'
+					);
+			
+		Test::More::ok($drh, "... new Driver handle ($drh) created successfully");
+		Test::More::isa_ok($drh, 'DBI::dr');
+		
+		return $drh;
     }
 }
 
-{   package DBD::Test::dr;
+## Test Driver
+{   
+	package DBD::Test::dr;
+	
     use strict;
-    $DBD::Test::dr::imp_data_size = 0;
-    $DBD::Test::dr::imp_data_size = 0;	# avoid typo warning
+	use warnings;
+    
+	$DBD::Test::dr::imp_data_size = 0;
+	
+    Test::More::cmp_ok($DBD::Test::dr::imp_data_size, '==', 0, '... check DBD::Test::dr::imp_data_size to avoid typo');
 
     sub DESTROY { undef }
 
-    sub data_sources {	# just used to run tests 'inside' a driver
-	my ($h) = @_;
-	print "DBD::_::dr internals\n";
-	main::ok($h);
-	main::ok(!tied $h);
-	return ("dbi:Test:foo", "dbi:Test:bar");
+    sub data_sources {
+		my ($h) = @_;
+		
+		Test::More::ok($h, '... Driver object passed to data_sources');
+		Test::More::isa_ok($h, 'DBI::dr');
+		Test::More::ok(!tied $h, '... Driver object is not tied');
+		
+		return ("dbi:Test:foo", "dbi:Test:bar");
     }
 }
 
-{   package DBD::Test::db;
-    use strict;
-    $DBD::Test::db::imp_data_size = 0;
-    $DBD::Test::db::imp_data_size = 0;	# avoid typo warning
+## Test db package
+{   
+	package DBD::Test::db;
+    
+	use strict;
+    
+	$DBD::Test::db::imp_data_size = 0;
+	
+    Test::More::cmp_ok($DBD::Test::db::imp_data_size, '==', 0, '... check DBD::Test::db::imp_data_size to avoid typo');
 
-    sub DESTROY { print "DBD::Test::db::DESTROY\n"; }
+    sub DESTROY { 1 }
 
-    sub do {	# just used to run tests 'inside' a driver
-	my $h = shift;
-	print "DBD::_::db internals\n";
+    sub do {
+		my $h = shift;
 
-	main::ok($h);
-	main::ok(!tied $h);
+		Test::More::ok($h, '... Database object passed to do');
+		Test::More::isa_ok($h, 'DBI::db');
+		Test::More::ok(!tied $h, '... Database object is not tied');
 
-	print "Driver for inner handles needs to be the Drivers inner handle\n";
-	my $drh_i = $h->{Driver};
-	main::ok($drh_i);
-	main::ok(ref $drh_i);
-	main::ok(!tied %$drh_i);
+		my $drh_i = $h->{Driver};
+		
+		Test::More::ok($drh_i, '... got Driver object from Database object with Driver attribute');
+		Test::More::isa_ok($drh_i, "DBI::dr");
+		Test::More::ok(!tied %{$drh_i}, '... Driver object is not tied');
 
-	print "Driver for outer handles needs to be the Drivers outer handle\n";
-	my $drh_o = $h->FETCH('Driver');
-	main::ok($drh_o);
-	main::ok(ref $drh_o);
-	main::ok(tied %$drh_o) unless $DBI::PurePerl && main::ok(1);
+		my $drh_o = $h->FETCH('Driver');
+		
+		Test::More::ok($drh_o, '... got Driver object from Database object by FETCH-ing Driver attribute');
+		Test::More::isa_ok($drh_o, "DBI::dr");
+		SKIP: {
+			Test::More::skip "running DBI::PurePerl", 1 if $DBI::PurePerl;
+			Test::More::ok(tied %{$drh_o}, '... Driver object is not tied');
+		}
+		
+		# return this to make our test pass
+		return 1;
     }
 
-    sub data_sources {	# just used to run tests 'inside' a driver
-	my ($dbh, $attr) = @_;
-	my @ds = $dbh->SUPER::data_sources($attr);
-	push @ds, "dbi:Test:baz";
-	return @ds;
+    sub data_sources {	
+		my ($dbh, $attr) = @_;
+		my @ds = $dbh->SUPER::data_sources($attr);
+		
+		Test::More::ok(
+			Test::More::eq_array(
+				\@ds,
+				[ 'dbi:Test:foo', 'dbi:Test:bar' ]
+				), 
+			'... checking fetched datasources from Driver'
+			);
+		
+		push @ds, "dbi:Test:baz";
+		return @ds;
     }
 }
 
-$INC{'DBD/Test.pm'} = 'dummy';	# fool require in install_driver()
+## ----------------------------------------------------------------------------
+## test the Driver (DBD::Test)
+
+$INC{'DBD/Test.pm'} = 'dummy';	# required to fool DBI->install_driver()
 
 # Note that install_driver should *not* normally be called directly.
 # This test does so only because it's a test of install_driver!
-$drh = DBI->install_driver('Test');
-ok($drh);
 
-ok(DBI::_get_imp_data($drh), 77);
+my $drh = DBI->install_driver('Test');
+
+ok($drh, '... got a Test Driver object back from DBI->install_driver');
+isa_ok($drh, 'DBI::dr');
+
+cmp_ok(DBI::_get_imp_data($drh), '==', 77, '... checking the DBI::_get_imp_data function');
 
 my @ds1 = DBI->data_sources("Test");
-ok(scalar @ds1, 2);
+ok(eq_array(
+	[ @ds1 ],
+	[ 'dbi:Test:foo', 'dbi:Test:bar' ]
+	), '... got correct datasources from DBI->data_sources("Test")'
+);
 
-do {				# scope to test DESTROY behaviour
+# create scope to test DESTROY behaviour
+do {				
 
-my $dbh = $drh->connect;
-my @ds2 = $dbh->data_sources();
-ok(scalar @ds2, 3);
+	my $dbh = $drh->connect;
+	
+	ok($dbh, '... got a database handle from calling $drh->connect');
+	isa_ok($dbh, 'DBI::db');
+	
+	my @ds2 = $dbh->data_sources();
+	ok(eq_array(
+		[ @ds2 ],
+		[ 'dbi:Test:foo', 'dbi:Test:bar', 'dbi:Test:baz' ]
+		), '... got correct datasources from $dbh->data_sources()'
+	);
+	
+	ok($dbh->do('dummy'), '... this will trigger more driver internal tests above in DBD::Test::db');
 
-$dbh->do('dummy');		# trigger more driver internal tests above
+	$drh->set_err("41", "foo 41 drh");
+	cmp_ok($drh->err, '==', 41, '... checking Driver handle err set with set_err method');
+	$dbh->set_err("42", "foo 42 dbh");
+	cmp_ok($dbh->err, '==', 42, '... checking Database handle err set with set_err method');
+	cmp_ok($drh->err, '==', 41, '... checking Database handle err set with Driver handle set_err method');
 
-$drh->set_err("41", "foo 41 drh");
-ok($drh->err, 41);
-$dbh->set_err("42", "foo 42 dbh");
-ok($dbh->err, 42);
-ok($drh->err, 41);
+};
 
-};			# DESTROY $dbh, should set $drh->err to 42
-
-ok($drh->err, 42);	# copied up to drh from dbh when dbh was DESTROYd
+# copied up to drh from dbh when dbh was DESTROYd
+cmp_ok($drh->err, '==', 42, '... $dbh->DESTROY should set $drh->err to 42');
 
 $drh->set_err("99", "foo");
-ok($DBI::err, 99);
-ok($DBI::errstr, "foo 42 dbh [err was 42 now 99]\nfoo");
+cmp_ok($DBI::err, '==', 99, '... checking $DBI::err set with Driver handle set_err method');
+is($DBI::errstr, "foo 42 dbh [err was 42 now 99]\nfoo", '... checking $DBI::errstr');
 
 $drh->default_user("",""); # just to reset err etc
 $drh->set_err(1, "errmsg", "00000");
-ok($DBI::state, "");
+is($DBI::state, "", '... checking $DBI::state');
 
 $drh->set_err(1, "test error 1");
-ok($DBI::state, "S1000");
+is($DBI::state, 'S1000', '... checking $DBI::state');
 
 $drh->set_err(2, "test error 2", "IM999");
-ok($DBI::state, "IM999");
+is($DBI::state, 'IM999', '... checking $DBI::state');
 
-eval { $DBI::rows = 1 };
-ok($@ =~ m/Can't modify/) unless $DBI::PurePerl && main::ok(1);
-
-ok($drh->{FetchHashKeyName}, 'NAME');
-$drh->{FetchHashKeyName} = 'NAME_lc';
-ok($drh->{FetchHashKeyName}, 'NAME_lc');
-
-ok(!$drh->disconnect_all, 1);			# not implemented but fails silently
-
-unless ($DBI::PurePerl) {
-my $can = $drh->can('FETCH');
-ok($can ? 1 : 0);					# is implemented by driver
-ok(ref $can, "CODE");				# returned code ref
-my $name = &$can($drh,"Name");
-ok($name);
-ok($name eq "Test");
-print "FETCH'd $name\n";
-ok($drh->can('disconnect_all') ? 1 : 0, 0);	# not implemented
+SKIP: {
+	skip "using DBI::PurePerl", 1 if $DBI::PurePerl;
+	eval { 
+		$DBI::rows = 1 
+	};
+	like($@, qr/Can't modify/, '... trying to assign to $DBI::rows should throw an excpetion');
 }
-else { ok(1) for (1..5) }
 
-exit 0;
+is($drh->{FetchHashKeyName}, 'NAME', '... FetchHashKeyName is NAME');
+$drh->{FetchHashKeyName} = 'NAME_lc';
+is($drh->{FetchHashKeyName}, 'NAME_lc', '... FetchHashKeyName is now changed to NAME_lc');
+
+ok(!$drh->disconnect_all, '... calling $drh->disconnect_all (not implemented but will fail silently)');
+
+SKIP: {
+	skip "using DBI::PurePerl", 5 if $DBI::PurePerl;
+	my $can = $drh->can('FETCH');
+
+	ok($can, '... $drh can FETCH'); 
+	is(ref($can), "CODE", '... and it returned a proper CODE ref'); 
+
+	my $name = $can->($drh, "Name");
+
+	ok($name, '... used FETCH returned from can to fetch the Name attribute');
+	is($name, "Test", '... the Name attribute is equal to Test');
+
+	ok(!$drh->can('disconnect_all'), '... ');
+}
+
