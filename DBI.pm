@@ -3484,14 +3484,15 @@ does not support it must arrange to return C<undef> as the attribute value.
 =item C<LongReadLen> (unsigned integer, inherited)
 
 The C<LongReadLen> attribute may be used to control the maximum
-length of 'long' fields ("blob", "memo", etc.) which the driver will
+length of 'long' type fields (LONG, BLOB, CLOB, MEMO, etc.) which the driver will
 read from the database automatically when it fetches each row of data.
 
 The C<LongReadLen> attribute only relates to fetching and reading
 long values; it is not involved in inserting or updating them.
 
-A value of 0 means not to automatically fetch any long data. (C<fetch>
-should return C<undef> for long fields when C<LongReadLen> is 0.)
+A value of 0 means not to automatically fetch any long data.
+Drivers may return undef or an empty string for long fields when
+C<LongReadLen> is 0.
 
 The default is typically 0 (zero) bytes but may vary between drivers.
 Applications fetching long fields should set this value to slightly
@@ -3511,17 +3512,20 @@ too generous. If you can't be sure what value to use you could
 execute an extra select statement to determine the longest value.
 For example:
 
-  $dbh->{LongReadLen} = $dbh->selectrow_array{qq{
-      SELECT MAX(long_column_name) FROM table WHERE ...
+  $dbh->{LongReadLen} = $dbh->selectrow_array(qq{
+      SELECT MAX(OCTET_LENGTH(long_column_name))
+      FROM table WHERE ...
   });
   $sth = $dbh->prepare(qq{
       SELECT long_column_name, ... FROM table WHERE ...
   });
 
 You may need to take extra care if the table can be modified between
-the first select and the second being executed.
+the first select and the second being executed. You may also need to
+use a different function if OCTET_LENGTH() does not work for long
+types in your database. For example, for Sybase use DATALENGTH().
 
-See L</LongTruncOk> for more information on truncation behaviour.
+See also L</LongTruncOk> for information on truncation of long types.
 
 =item C<LongTruncOk> (boolean, inherited)
 
@@ -4374,6 +4378,7 @@ For example:
 
 The statement handle will return one row per column, ordered by
 TABLE_CAT, TABLE_SCHEM, TABLE_NAME, and KEY_SEQ.
+If there is no primary key then the statement handle will fetch no rows.
 
 Note: The support for the selection criteria, such as $catalog, is
 driver specific.  If the driver doesn't support catalogs and/or
@@ -4410,6 +4415,7 @@ See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 Simple interface to the primary_key_info() method. Returns a list of
 the column names that comprise the primary key of the specified table.
 The list is in primary key column sequence order.
+If there is no primary key then an empty list is returned.
 
 =item C<foreign_key_info>
 

@@ -31,13 +31,21 @@ use vars qw(@ISA $VERSION $drh $valid_attrs);
 
 $VERSION = '0.32';
 
-$drh = undef;		# holds driver handle once initialised
+$drh = undef;		# holds driver handle(s) once initialised
 
 sub driver ($;$) {
     my($class, $attr) = @_;
-    return $drh if $drh;
 
-    DBI->setup_driver('DBD::File');
+    # Drivers typically use a singleton object for the $drh
+    # We use a hash here to have one singleton per subclass.
+    # (Otherwise DBD::CSV and DBD::DBM, for example, would
+    # share the same driver object which would cause problems.)
+    # An alternative would be not not cache the $drh here at all
+    # and require that subclasses do that. Subclasses should do
+    # their own caching, so caching here just provides extra safety.
+    return $drh->{$class} if $drh->{$class};
+
+    DBI->setup_driver('DBD::File'); # only needed once but harmless to repeat
     $attr ||= {};
     no strict qw(refs);
     if (!$attr->{Attribution}) {
@@ -48,9 +56,10 @@ sub driver ($;$) {
     }
     $attr->{Version} ||= ${$class . '::VERSION'};
     ($attr->{Name} = $class) =~ s/^DBD\:\:// unless $attr->{Name};
-    $drh = DBI::_new_drh($class . "::dr", $attr);
-    $drh->STORE(ShowErrorStatement => 1);
-    return $drh;
+
+    $drh->{$class} = DBI::_new_drh($class . "::dr", $attr);
+    $drh->{$class}->STORE(ShowErrorStatement => 1);
+    return $drh->{$class};
 }
 
 sub CLONE {
@@ -211,7 +220,6 @@ sub csv_cache_sql_parser_object {
 }
 sub disconnect ($) {
     shift->STORE('Active',0);
-    undef $DBD::File::drh; # XXX why?
     1;
 }
 sub FETCH ($$) {

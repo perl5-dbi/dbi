@@ -19,9 +19,12 @@ DBI::Changes - List of significant changes to the DBI
   Changed DBI::PurePerl to set autoflush on trace filehandle.
   Changed DBD::Proxy to treat Username as a local attribute
     so recent DBI version can be used with old DBI::ProxyServer.
+  Changed driver handle caching in DBD::File.
 
-  Updated docs to recommend common some DSN string attributes.
+  Updated docs to recommend some common DSN string attributes.
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
+  Updated docs for primary_key_info and primary_keys.
+  Corrected and updated LongReadLen docs thanks to Bart Lateur.
 
 =head2 Changes in DBI 1.46 (svn rev 584),    16th November 2004
 
