@@ -184,7 +184,7 @@ sub FETCH ($$) {
     #
     if ( $attrib ne 'dbm_valid_attrs'          # gotta start somewhere :-)
      and !$dbh->{dbm_valid_attrs}->{$attrib} ) {
-        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+        return $dbh->set_err( 1,"Invalid attribute '$attrib'");
     }
     else {
 
@@ -325,14 +325,8 @@ sub open_table ($$$$$) {
     # could replace this by trying to open the file in non-create mode
     # first and dieing if that succeeds.
     # Currently this test doesn't work where NDBM is actually Berkeley (.db)
-    die "Cannot CREATE '$file$ext', already exists!"
+    die "Cannot CREATE '$file$ext' because it already exists"
         if $createMode and (-e "$file$ext");
-
-    # let tie() fail instead of this explicit test
-    #die "Cannot open '$file$ext', file not found!"
-    #   if !$createMode
-    #  and !($self->{command} eq 'DROP')
-    #  and !(-e "$file$ext");
 
     # LOCKING
     #
@@ -350,9 +344,9 @@ sub open_table ($$$$$) {
     # open and flock the lockfile, creating it if necessary
     #
     if (!$nolock) {
-        $lock_table = $self->DBD::File::Statement::open_table(
+        $lock_table = $self->SUPER::open_table(
             $data, "$table$lockext", $createMode, $lockMode
-        ) or die "Couldn't open lockfile '$table$lockext'!\n";
+        );
     }
 
     # TIEING

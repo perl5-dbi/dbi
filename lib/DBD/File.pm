@@ -234,14 +234,14 @@ sub STORE ($$$) {
         # if ( !$dbh->{f_valid_attrs}->{$attrib}
         # and !$dbh->{sql_valid_attrs}->{$attrib}
         # ) {
-	#    return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+	#    return $dbh->set_err( 1,"Invalid attribute '$attrib'");
         # }
         # else {
   	#    $dbh->{$attrib} = $value;
 	# }
 
         if ($attrib eq 'f_dir') {
-  	    return $dbh->set_err( 1,"No such directory '$value'!")
+  	    return $dbh->set_err( 1,"No such directory '$value'")
                 unless -d $value;
 	}
 	$dbh->{$attrib} = $value;

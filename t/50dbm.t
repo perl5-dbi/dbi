@@ -12,14 +12,6 @@ BEGIN {
     # We don't want to be tripped up by a badly installed module
     # so we remove from @INC any version-specific dirs that don't
     # also have an arch-specific dir. Plus, for 5.8 remove any <=5.7
-    my %inc = map { $_ => 1 } @INC;
-    my @del = grep {
-	   m:/5\.[0-9.]+$: && !$inc{"$_/$Config{archname}"}
-	or m:/5\.[0-7]:    && $] >= 5.8
-    } @INC;
-    my %del = map { $_ => 1 } @del;
-    @INC = grep { !$del{$_} } @INC;
-    print "Removed some old dirs from \@INC for this test: @del\n" if @del;
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
@@ -30,12 +22,24 @@ BEGIN {
         push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
     }
 
-    # test with as many of the 5 major DBM types as are available
-    #
-    for (qw( SDBM_File GDBM_File NDBM_File ODBM_File DB_File BerkeleyDB )){
-        eval { require "$_.pm" };
-        push @dbm_types, $_ unless $@;
+    if ("@ARGV" eq "all") {
+	# test with as many of the 5 major DBM types as are available
+	for (qw( SDBM_File GDBM_File NDBM_File ODBM_File DB_File BerkeleyDB )){
+	    push @dbm_types, $_ if eval { require "$_.pm" };
+	}
     }
+    elsif (@ARGV) {
+	@dbm_types = @ARGV;
+    }
+    else {
+	# we only test SDBM_File by default to avoid tripping up
+	# on any broken DBM's that may be installed in odd places.
+	# It's only DBD::DBM we're trying to test here.
+        @dbm_types = ("SDBM_File");
+    }
+
+    print "Using DBM modules: @dbm_types\n";
+    print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
     my $num_tests = (1+@mldbm_types) * @dbm_types * 11;
     if (!$num_tests) {
