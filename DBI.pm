@@ -4230,7 +4230,7 @@ For numeric types, this is either the total number of digits (if the
 NUM_PREC_RADIX value is 10) or the total number of bits allowed in the
 column (if NUM_PREC_RADIX is 2).
 
-For string types, this is the maximum size of the string in bytes.
+For string types, this is the maximum size of the string in characters.
 
 For date and interval types, this is the maximum number of characters
 needed to display the value.
@@ -5391,14 +5391,19 @@ output of the C<type_info_all> method (see L</type_info_all>).
 
 =item C<PRECISION>  (array-ref, read-only)
 
-Returns a reference to an array of integer values for each
-column.  For non-numeric columns, the value generally refers to either
-the maximum length or the defined length of the column.  For numeric
-columns, the value refers to the maximum number of significant digits
-used by the data type (without considering a sign character or decimal
-point).  Note that for floating point types (REAL, FLOAT, DOUBLE), the
-"display size" can be up to 7 characters greater than the precision.
-(for the sign + decimal point + the letter E + a sign + 2 or 3 digits).
+Returns a reference to an array of integer values for each column.
+
+For numeric columns, the value is the maximum number of digits
+(without considering a sign character or decimal point). Note that
+the "display size" for floating point types (REAL, FLOAT, DOUBLE)
+can be up to 7 characters greater than the precision (for the
+sign + decimal point + the letter E + a sign + 2 or 3 digits).
+
+For any character type column the value is the OCTET_LENGTH,
+in other words the number of bytes, not characters.
+
+(More recent standards refer to this as COLUMN_SIZE but we stick
+with PRECISION for backwards compatibility.)
 
 =item C<SCALE>  (array-ref, read-only)
 

@@ -39,6 +39,8 @@ Extra hooks in Driver.xst for bind_col etc
 
   Major update to signal handling docs thanks to Lincoln Baxter.
   Corrected dbiproxy usage doc thanks to Christian Hammers.
+  Clarified that $sth->{PRECISION} is OCTET_LENGTH for char types.
+  Corrected type_info COLUMN_SIZE to chars not bytes thanks to Dean Arnold.
 
 =head2 Changes in DBI 1.40,    7th January 2004
 
