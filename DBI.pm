@@ -2325,6 +2325,7 @@ handle, or it I<dies> with an error message that includes the string
 will die
 on a driver installation failure and will only return C<undef> on a
 connect failure, in which case C<$DBI::errstr> will hold the error message.
+Use C<eval { ... }> if you need to catch the "C<install_driver>" error.
 
 The C<$data_source> argument (with the "C<dbi:...:>" prefix removed) and the
 C<$username> and C<$password> arguments are then passed to the driver for
@@ -2447,8 +2448,10 @@ print out a formatted list of the hash contents, one per line.
 Due to the potentially high memory cost and unknown risks of loading
 in an unknown number of drivers that just happen to be installed
 on the system, this method is nor recommended for general use.
-It is primarily intended as a quick way to see from the command
-line what's installed. For example:
+Use available_drivers() instead.
+
+The installed_versions() method is primarily intended as a quick
+way to see from the command line what's installed. For example:
 
   perl -MDBI -e 'DBI->installed_versions'
 
