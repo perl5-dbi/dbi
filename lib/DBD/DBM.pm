@@ -23,7 +23,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.02';
+$VERSION     = '0.03';
 $ATTRIBUTION = 'DBD::DBM by Jeff Zucker';
 
 # no need to have driver() unless you need private methods
@@ -438,69 +438,6 @@ sub open_table ($$$$$) {
     $tbl;
 }
 
-# DELETE is only needed for backward compat with old SQL::Statement
-# it can be removed when the next SQL::Statement is released
-#
-# It is an example though of how you can subclass SQL::Statement/Nano
-# in your DBD ... if you needed to, you could over-ride CREATE
-# SELECT, etc.
-#
-# Note also the use of $dbh->{sql_handler} to differentiate
-# between SQL::Statement and DBI::SQL::Nano
-#
-# Your driver may support only one of those two SQL engines, but
-# your users will have more options if you support both
-#
-# Generally, you don't need to do anything to support both, but
-# if you subclass them like this DELETE function does, you may
-# need some minor changes to support both (similar to the first
-# if statement in DELETE, everything else is the same)
-#
-sub DELETE ($$$) {
-    my($self, $data, $params) = @_;
-    my $dbh   = $data->{Database};
-    my($table,$tname,@where_args);
-    if ($dbh->{sql_handler} eq 'SQL::Statement') {
-       my($eval,$all_cols) = $self->open_tables($data, 0, 1);
-       return undef unless $eval;
-       $eval->params($params);
-       $self->verify_columns($eval, $all_cols);
-       $table = $eval->table($self->tables(0)->name());
-       @where_args = ($eval,$self->tables(0)->name());
-    }
-    else {
-        $table = $self->open_tables($data, 0, 1);
-        $self->verify_columns($table);
-        @where_args = ($table);
-    }
-    my($affected) = 0;
-    my(@rows, $array);
-    if ( $table->can('delete_one_row') ) {
-        while (my $array = $table->fetch_row($data)) {
-            if ($self->eval_where(@where_args,$array)) {
-                ++$affected;
-                $array = $self->{fetched_value} if $self->{fetched_from_key};
-                $table->delete_one_row($data,$array);
-                return ($affected, 0) if $self->{fetched_from_key};
-            }
-        }
-        return ($affected, 0);
-    }
-    while ($array = $table->fetch_row($data)) {
-        if ($self->eval_where($table,$array)) {
-            ++$affected;
-        } else {
-            push(@rows, $array);
-        }
-    }
-    $table->seek($data, 0, 0);
-    foreach $array (@rows) {
-        $table->push_row($data, $array);
-    }
-    $table->truncate($data);
-    return ($affected, 0);
-}
-
 ########################
 package DBD::DBM::Table;
 ########################
@@ -540,12 +477,11 @@ sub fetch_row ($$$) {
                                  and $ary[0]
                                  and $ary[0] eq "_metadata \0";
 
-    return undef unless defined $ary[0];
-    if (ref $ary[1] eq 'ARRAY') {
-       @ary = ( $ary[0], @{$ary[1]} );
-    }
-    return (@ary) if wantarray;
-    return \@ary;
+    my($key,$val) = @ary;
+    return undef unless $key;
+    my @row = (ref($val) eq 'ARRAY') ? ($key,@$val) : ($key,$val);
+    return (@row) if wantarray;
+    return \@row;
 
     # fetch without %each
     #
@@ -609,9 +545,14 @@ sub push_names ($$$) {
 # truncate() and seek(), see below
 #
 sub fetch_one_row ($$;$) {
-    my($self,$key_only,$value) = @_;
+    my($self,$key_only,$key) = @_;
     return $self->{col_names}->[0] if $key_only;
-    return [$value, $self->{hash}->{$value}];
+    return undef unless exists $self->{hash}->{$key};
+    my $val = $self->{hash}->{$key};
+    $val = (ref($val)eq'ARRAY') ? $val : [$val];
+    my $row = [$key, @$val];
+    return @$row if wantarray;
+    return $row;
 }
 sub delete_one_row ($$$) {
     my($self,$data,$aryref) = @_;
@@ -621,10 +562,13 @@ sub update_one_row ($$$) {
     my($self,$data,$aryref) = @_;
     my $key = shift @$aryref;
     return undef unless defined $key;
-    if( ref $aryref->[0] eq 'ARRAY'){
-        return  $self->{hash}->{$key}=$aryref;
+    my $row = (ref($aryref)eq'ARRAY') ? $aryref : [$aryref];
+    if ( $self->{mldbm} ) {
+        $self->{hash}->{$key}= $row;
     }
-    $self->{hash}->{$key}=$aryref->[0];
+    else {
+        $self->{hash}->{$key}=$row->[0];
+    }
 }
 
 # you may not need to explicitly DESTROY the ::Table
