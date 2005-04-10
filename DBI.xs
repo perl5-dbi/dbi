@@ -993,6 +993,8 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
     if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
         dbi_imp_data = *svp;
+	if (SvGMAGICAL(dbi_imp_data))  /* call FETCH via magic */
+	    mg_get(dbi_imp_data);
     }
 
     DBI_LOCK;
