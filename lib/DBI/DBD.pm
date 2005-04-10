@@ -2849,7 +2849,8 @@ sub dbd_dbi_arch_dir {
     _inst_checks();
     return '$(INST_ARCHAUTODIR)' if $is_dbi;
     my $dbidir = dbd_dbi_dir();
-    my @try = map  {    vmsify( unixify($_) . "/auto/DBI/"  ) } @INC;
+    my %seen;
+    my @try = grep { not $seen{$_}++ } map { vmsify( unixify($_) . "/auto/DBI/" ) } @INC;
     my @xst = grep { -f vmsify( unixify($_) . "/Driver.xst" ) } @try;
     Carp::croak("Unable to locate Driver.xst in @try") unless @xst;
     Carp::carp( "Multiple copies of Driver.xst found in: @xst") if @xst > 1;

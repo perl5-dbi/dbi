@@ -9,6 +9,9 @@ DBI::Changes - List of significant changes to the DBI
   Fixed croak() in DBD::NullP thanks to Sergey Skvortsov.
   Fixed handling of take_imp_data() and dbi_imp_data attribute.
 
+  Changed warning about multiple copies of Driver.xst found in @INC
+    to ignore duplicated directories thanks to Ed Avis.
+
   Added $h->{Callbacks} attribute to enable code hooks to be invoked
     when certain methods are called. For example:
     $dbh->{Callbacks}->{prepare} = sub { ... };
