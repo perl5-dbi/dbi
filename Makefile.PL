@@ -46,11 +46,12 @@ my $os = $^O;
 my $osvers = $Config{osvers};
 $osvers =~ s/^\s*(\d+\.\d+).*/$1/;  # drop sub-sub-version: 2.5.1 -> 2.5
 my $ext_pl = $^O eq 'VMS' ? '.pl' : '';
+my $is_developer = (-d ".svn" && -f "MANIFEST.SKIP");
 
 $::opt_v = 0;
 $::opt_thread = 1;	# thread if we can, use "-nothread" to disable
 $::opt_g = 0;
-$::opt_g = 1 if -d '.svn' && $ENV{LOGNAME} && $ENV{LOGNAME} eq 'timbo'; # it's me! (probably)
+$::opt_g = 1 if $is_developer && $ENV{LOGNAME} && $ENV{LOGNAME} eq 'timbo'; # it's me! (probably)
 
 GetOptions(qw(v! g! thread!))
 	or die "Invalid arguments\n";
@@ -123,8 +124,10 @@ MSG
 
  
 my %opts = (
-    NAME=> 'DBI',
-    VERSION_FROM=> 'DBI.pm',
+    NAME   => 'DBI',
+    AUTHOR => 'Tim Bunce (dbi-users@perl.org)',
+    VERSION_FROM  => 'DBI.pm',
+    ABSTRACT_FROM => 'DBI.pm',
     PREREQ_PM => { "Test::Simple" => 0.40 },
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl" ],
     DIR => [ ],
@@ -137,16 +140,18 @@ my %opts = (
 	COMPRESS => 'gzip -v9', SUFFIX => 'gz',
     },
 );
+$opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
-if ($] >= 5.6 ) {
-    $opts{ABSTRACT_FROM} = 'DBI.pm';
-    $opts{AUTHOR} = 'Tim Bunce (dbi-users@perl.org)';
-    $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
-}
-
-if ($Config{gccversion}) {	# ask gcc to be mildly pedantic
-    $opts{DEFINE} .= ' -Wall -Wno-comment';
-    $opts{DEFINE} .= ' -Wpointer-arith' if $::opt_g;
+if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
+    warn "WARNING: Your GNU C $gccversion compiler is very old. Please upgrade it and rebuild perl.\n"
+	if $gccversion =~ m/^(1|2\.[1-8])/;
+    $opts{CCFLAGS} .= ' -W -Wall -Wpointer-arith -Wmissing-noreturn -Wbad-function-cast';
+    $opts{CCFLAGS} .= ' -Wno-comment -Wno-sign-compare -Wno-cast-qual';
+    $opts{CCFLAGS} .= ' -Wdisabled-optimization' if $gccversion ge "3.0";
+    if (0 && $is_developer && $::opt_g) {
+        $opts{CCFLAGS} .= ' -DPERL_GCC_PEDANTIC -ansi -pedantic' if $gccversion ge "3.0";
+        $opts{CCFLAGS} .= ' -Wmissing-prototypes'; # noisy due to XS_* funcs
+    }
 }
 
 $opts{DEFINE} .= ' -DDBI_NO_THREADS' unless $::opt_thread;
@@ -167,9 +172,6 @@ if ($os eq 'MSWin32'  &&  $Config{libs} =~ /\bPerlCRT.lib\b/
     # as a temporary workaround it seems ok.
     $opts{LIBS} = "-L$Config{archlib}/CORE";
 }
-
-warn "WARNING: Your GNU C compiler is very old. Please upgrade.\n"
-	if ($Config{gccversion} and $Config{gccversion} =~ m/^(1|2\.[1-5])/);
 
 # Set aside some values for post_initialize() in package MY
 my ( $cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp,

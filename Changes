@@ -10,6 +10,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed handling of take_imp_data() and dbi_imp_data attribute.
   Fixed bugs in DBD::DBM thanks to Jeff Zucker.
 
+  Changed internals to be more strictly coded thanks to Andy Lester.
   Changed warning about multiple copies of Driver.xst found in @INC
     to ignore duplicated directories thanks to Ed Avis.
 

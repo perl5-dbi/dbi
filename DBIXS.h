@@ -387,7 +387,7 @@ struct dbistate_st {
 #define DBISTATE_VERSION  94	/* Must change whenever dbistate_t does	*/
 
     /* this must be the first member in structure			*/
-    void (*check_version) _((char *name,
+    void (*check_version) _((const char *name,
 		int dbis_cv, int dbis_cs, int need_dbixs_cv,
 		int drc_s, int dbc_s, int stc_s, int fdc_s));
 
@@ -404,22 +404,22 @@ struct dbistate_st {
     char      * (*neat_svpv)	_((SV *sv, STRLEN maxlen));
     imp_xxh_t * (*getcom)	_((SV *h));	/* see DBIh_COM macro	*/
     void        (*clearcom)	_((imp_xxh_t *imp_xxh));
-    SV        * (*event)	_((SV *h, char *name, SV*, SV*));
+    SV        * (*event)	_((SV *h, const char *name, SV*, SV*));
     int         (*set_attr_k)	_((SV *h, SV *keysv, int dbikey, SV *valuesv));
     SV        * (*get_attr_k)	_((SV *h, SV *keysv, int dbikey));
     AV        * (*get_fbav)	_((imp_sth_t *imp_sth));
-    SV        * (*make_fdsv)	_((SV *sth, char *imp_class, STRLEN imp_size, char *col_name));
+    SV        * (*make_fdsv)	_((SV *sth, const char *imp_class, STRLEN imp_size, const char *col_name));
     int         (*bind_as_num)	_((int sql_type, int p, int s, int *t, void *v));
-    int         (*hash)		_((char *string, long i));
+    int         (*hash)		_((const char *string, long i));
     SV        * (*preparse)	_((SV *sth, char *statement, IV ps_return, IV ps_accept, void *foo));
 
     SV *neatsvpvlen;		/* only show dbgpvlen chars when debugging pv's	*/
 
     PerlInterpreter * thr_owner;	/* thread that owns this dbistate	*/
 
-    int         (*logmsg)	_((imp_xxh_t *imp_xxh, char *fmt, ...));
+    int         (*logmsg)	_((imp_xxh_t *imp_xxh, const char *fmt, ...));
     int         (*set_err_sv)	_((SV *h, imp_xxh_t *imp_xxh, SV   *err, SV   *errstr, SV   *state, SV   *method));
-    int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, char *err, IV err_i, char *errstr, char *state, char *method));
+    int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, const char *err, IV err_i, const char *errstr, const char *state, const char *method));
     int         (*bind_col)     _((SV *sth, SV *col, SV *ref, SV *attribs));
 
     void *pad2[5];
