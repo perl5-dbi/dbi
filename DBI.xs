@@ -1578,7 +1578,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     }
     else {	/* XXX should really be an event ? */
 	if (isUPPER(*key)) {
-	    char *msg = "Can't set %s->{%s}: unrecognised attribute or invalid value%s";
+	    char *msg = "Can't set %s->{%s}: unrecognised attribute name or invalid value%s";
 	    char *hint = "";
 	    if (strEQ(key, "NUM_FIELDS"))
 		hint = ", perhaps you meant NUM_OF_FIELDS";
@@ -1893,7 +1893,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 		||	(*key=='C' && strEQ(key, "Callbacks"))
 		||	!isUPPER(*key)	/* dbd_*, private_* etc */
 	))
-	    warn("Can't get %s->{%s}: unrecognised attribute",neatsvpv(h,0),key);
+	    warn("Can't get %s->{%s}: unrecognised attribute name",neatsvpv(h,0),key);
     }
     
     if (cacheit) {
