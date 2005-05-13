@@ -1716,6 +1716,8 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                 valuesv = &sv_undef;
             else if (strEQ(key, "ParamValues"))
                 valuesv = &sv_undef;
+            else if (strEQ(key, "ParamTypes"))
+                valuesv = &sv_undef;
             break;
 
           case 'R':

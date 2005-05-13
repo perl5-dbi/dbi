@@ -6059,6 +6059,41 @@ where N is a sequence number starting at 1.
 The C<ParamValues> attribute was added in DBI 1.28.
 
 
+=item C<ParamTypes>  (hash ref, read-only)
+
+Returns a reference to a hash containing the type information
+currently bound to placeholders.  The keys of the hash are the
+'names' of the placeholders: either integers starting at 1, or,
+for drivers that support named placeholders, the actual parameter
+name string. The hash values are hashrefs of type information in
+the same form as that provided to the various bind_param() methods
+(See L</"Data Types for Placeholders"> for the format and values),
+plus anything else that was passed as the third argument to bind_param().
+Returns undef if not supported by the driver.
+
+If the driver supports C<ParamTypes>, but no values have been bound
+yet, then the driver should return a hash with the placeholder name
+keys, but all the values undef; however, some drivers may return
+a ref to an empty hash, or, alternately, may provide type
+information supplied by the database (only a few databases can do that).
+
+It is possible that the values in the hash returned by C<ParamTypes>
+are not I<exactly> the same as those passed to bind_param() or execute().
+The driver may have modified the type information in some way based
+on the bound values, other hints provided by the prepare()'d
+SQL statement, or alternate type mappings required by the driver or target
+database system.
+
+It is also possible that the keys in the hash returned by C<ParamTypes>
+are not exactly the same as those implied by the prepared statement.
+For example, DBD::Oracle translates 'C<?>' placeholders into 'C<:pN>'
+where N is a sequence number starting at 1.
+
+The C<ParamTypes> attribute was added in DBI 1.49. Implementation
+is the responsibility of individual drivers; the DBI layer default
+implementation simply returns undef.
+
+
 =item C<Statement>  (string, read-only)
 
 Returns the statement string passed to the L</prepare> method.
