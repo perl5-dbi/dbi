@@ -210,15 +210,17 @@ sub write_header {
 
     # print out Path
     my @path_words;
-    foreach (@{$self->{Path}}) {
-        if ($_ eq DBI::Profile::DBIprofile_Statement) {
-            push @path_words, "DBIprofile_Statement";
-        } elsif ($_ eq DBI::Profile::DBIprofile_MethodName) {
-            push @path_words, "DBIprofile_MethodName";
-        } elsif ($_ eq DBI::Profile::DBIprofile_MethodClass) {
-            push @path_words, "DBIprofile_MethodClass";
-        } else {
-            push @path_words, $_;
+    if ($self->{Path}) {
+        foreach (@{$self->{Path}}) {
+            if ($_ eq DBI::Profile::DBIprofile_Statement) {
+                push @path_words, "DBIprofile_Statement";
+            } elsif ($_ eq DBI::Profile::DBIprofile_MethodName) {
+                push @path_words, "DBIprofile_MethodName";
+            } elsif ($_ eq DBI::Profile::DBIprofile_MethodClass) {
+                push @path_words, "DBIprofile_MethodClass";
+            } else {
+                push @path_words, $_;
+            }
         }
     }
     print $fh "Path = [ ", join(', ', @path_words), " ]\n";
