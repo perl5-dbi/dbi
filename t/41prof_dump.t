@@ -15,7 +15,7 @@ BEGIN {
 		plan skip_all => 'profiling not supported for DBI::PurePerl';
 	}
 	else {
-		plan tests => 11;
+		plan tests => 12;
 	}
 }
 
@@ -36,6 +36,14 @@ my $sql = "select mode,size,name from ?";
 my $sth = $dbh->prepare($sql);
 isa_ok( $sth, 'DBI::st' );
 $sth->execute(".");
+
+# check that flush_to_disk doesn't change Path if Path is undef (it
+# did before 1.49)
+{ 
+    local $dbh->{Profile}->{Path} = undef;
+    $sth->{Profile}->flush_to_disk();
+    is($dbh->{Profile}->{Path}, undef);
+}
 
 $sth->{Profile}->flush_to_disk();
 while ( my $hash = $sth->fetchrow_hashref ) {}
