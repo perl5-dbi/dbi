@@ -6,6 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.49 (svn rev XXX),    2005
 
+  Fixed assorted attribute handling bugs in DBD::Proxy.
   Fixed croak() in DBD::NullP thanks to Sergey Skvortsov.
   Fixed handling of take_imp_data() and dbi_imp_data attribute.
   Fixed bugs in DBD::DBM thanks to Jeff Zucker.

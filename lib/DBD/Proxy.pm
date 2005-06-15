@@ -21,12 +21,25 @@
 #
 
 use strict;
+use Carp;
 
 require DBI;
 DBI->require_version(1.0201);
 
 use RPC::PlClient 0.2000; # XXX change to 0.2017 once it's released
 
+{	package DBD::Proxy::RPC::PlClient;
+    	@DBD::Proxy::RPC::PlClient::ISA = qw(RPC::PlClient);
+	sub Call {
+	    my $self = shift;
+	    if ($self->{debug}) {
+		my ($rpcmeth, $obj, $method, @args) = @_;
+		local $^W; # silence undefs
+		Carp::carp("Server $rpcmeth $method(@args)");
+	    }
+	    return $self->SUPER::Call(@_);
+	}
+}
 
 
 package DBD::Proxy;
@@ -45,6 +58,8 @@ $drh = undef;		# holds driver handle once initialised
     'PrintError' => 'local',
     'RaiseError' => 'local',
     'HandleError' => 'local',
+    'TraceLevel' => 'cached',
+    'CompatMode' => 'local',
 );
 
 sub driver ($$) {
@@ -57,7 +72,8 @@ sub driver ($$) {
 	    'Name' => 'Proxy',
 	    'Version' => $VERSION,
 	    'Attribution' => 'DBD::Proxy by Jochen Wiedmann',
-	    });
+	});
+	$drh->STORE(CompatMode => 1); # disable DBI dispatcher attribute cache (for FETCH)
     }
     $drh;
 }
@@ -144,7 +160,7 @@ sub connect ($$;$$) {
 	}
     }
     # Create an RPC::PlClient object.
-    my($client, $msg) = eval { RPC::PlClient->new(%client_opts) };
+    my($client, $msg) = eval { DBD::Proxy::RPC::PlClient->new(%client_opts) };
 
     return DBD::Proxy::proxy_set_err($drh, "Cannot log in to DBI::ProxyServer: $@")
 	if $@; # Returns undef
@@ -218,7 +234,8 @@ use vars qw(%ATTR $AUTOLOAD);
 %ATTR = (	# see also %ATTR in DBD::Proxy::st
     %DBD::Proxy::ATTR,
     RowCacheSize => 'inherited',
-    AutoCommit => 'cached',
+    #AutoCommit => 'cached',
+    'FetchHashKeyName' => 'cached',
     Statement => 'local',
     Driver => 'local',
     dbi_connect_closure => 'local',
@@ -300,17 +317,25 @@ sub STORE ($$$) {
     my($dbh, $attr, $val) = @_;
     my $type = $ATTR{$attr} || 'remote';
 
+    if ($attr eq 'TraceLevel') {
+	warn("TraceLevel $val");
+	my $pc = $dbh->{proxy_client} || die;
+	$pc->{logfile} ||= 1; # XXX hack
+	$pc->{debug} = ($val && $val >= 4);
+	$pc->Debug("$pc debug enabled") if $pc->{debug};
+    }
+
     if ($attr =~ /^proxy_/  ||  $type eq 'inherited') {
 	$dbh->{$attr} = $val;
 	return 1;
     }
 
-    if ($type eq 'remote'  ||  $type eq 'cached') {
+    if ($type eq 'remote' ||  $type eq 'cached') {
         local $SIG{__DIE__} = 'DEFAULT';
 	local $@;
 	my $result = eval { $dbh->{'proxy_dbh'}->STORE($attr => $val) };
 	return DBD::Proxy::proxy_set_err($dbh, $@) if $@; # returns undef
-	$dbh->{$attr} = $val if $type eq 'cached';
+	$dbh->SUPER::STORE($attr => $val) if $type eq 'cached';
 	return $result;
     }
     return $dbh->SUPER::STORE($attr => $val);
@@ -318,10 +343,11 @@ sub STORE ($$$) {
 
 sub FETCH ($$) {
     my($dbh, $attr) = @_;
+    # we only get here for cached attribute values if the handle is in CompatMode
+    # otherwise the DBI dispatcher handles the FETCH itself from the attribute cache.
     my $type = $ATTR{$attr} || 'remote';
 
-    if ($attr =~ /^proxy_/  ||  $type eq 'inherited'  ||
-	$type eq 'cached') {
+    if ($attr =~ /^proxy_/  ||  $type eq 'inherited'  || $type eq 'cached') {
 	return $dbh->{$attr};
     }
 
@@ -620,13 +646,13 @@ sub STORE ($$$) {
 	return 0;
     }
 
-    if ($type eq 'remote') {
+    if ($type eq 'remote' || $type eq 'cached') {
 	my $rsth = $sth->{'proxy_sth'}  or  return undef;
         local $SIG{__DIE__} = 'DEFAULT';
 	local $@;
 	my $result = eval { $rsth->STORE($attr => $val) };
 	return DBD::Proxy::proxy_set_err($sth, $@) if ($@);
-	return $result;
+	return $result if $type eq 'remote'; # else fall through to cache locally
     }
     return $sth->SUPER::STORE($attr => $val);
 }

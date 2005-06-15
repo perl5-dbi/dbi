@@ -7015,7 +7015,7 @@ Security, especially the "SQL Injection" attack:
  http://www.ngssoftware.com/papers/more_advanced_sql_injection.pdf
  http://www.esecurityplanet.com/trends/article.php/2243461
  http://www.spidynamics.com/papers/SQLInjectionWhitePaper.pdf
- http://www.webcohort.com/Blindfolded_SQL_Injection.pdf
+ http://www.imperva.com/application_defense_center/white_papers/blind_sql_server_injection.html
  http://online.securityfocus.com/infocus/1644
 
 Commercial and Data Warehouse Links

@@ -71,7 +71,7 @@ unlink $config_file;
     or die "Failed to create config file $config_file: $!";
 
 my($handle, $port);
-my $numTests = 119;
+my $numTests = 124;
 if (@ARGV) {
     $port = $ARGV[0];
 } else {
@@ -103,11 +103,11 @@ if (@ARGV) {
     ($handle, $port) = Net::Daemon::Test->Child($numTests, @child_args);
 }
 
-my @opts = ('peeraddr' => '127.0.0.1', 'peerport' => $port, 'debug' => 1);
-my $dsn = "DBI:Proxy:hostname=127.0.0.1;port=$port;debug=1;dsn=DBI:ExampleP:";
+my $debug = ($ENV{DBI_TRACE}) ? 1 : 0;
+my $dsn = "DBI:Proxy:hostname=127.0.0.1;port=$port;debug=$debug;dsn=DBI:ExampleP:";
 
 print "Making a first connection and closing it immediately.\n";
-Test(eval { DBI->connect($dsn, '', '', { 'PrintError' => 0 }) })
+Test(eval { DBI->connect($dsn, '', '', { 'PrintError' => 1 }) })
     or print "Connect error: " . $DBI::errstr . "\n";
 
 print "Making a second connection.\n";
@@ -133,6 +133,9 @@ Test($@ eq "BANG!!!\n", "\$@ value lost");
 
 print "Doing a ping.\n";
 Test($dbh->ping);
+
+print "Ensure CompatMode enabled.\n";
+Test($dbh->{CompatMode});
 
 print "Trying local quote.\n";
 $dbh->{'proxy_quote'} = 'local';
@@ -224,6 +227,19 @@ print "row_b: @{[ %$row_b ]}\n";
 Test($row_b->{mode} == $row_a[0]);
 Test($row_b->{size} == $row_a[1]);
 Test($row_b->{name} eq $row_a[2]);
+
+print "Trying fetchrow_hashref with FetchHashKeyName.\n";
+do {
+#local $dbh->{TraceLevel} = 9;
+local $dbh->{FetchHashKeyName} = 'NAME_uc';
+Test($dbh->{FetchHashKeyName} eq 'NAME_uc');
+my $csr_c = $dbh->prepare("select mode,size,name from ?");
+Test($csr_c->execute($dir), $DBI::errstr);
+$row_b = $csr_c->fetchrow_hashref;
+Test($row_b);
+print "row_b: @{[ %$row_b ]}\n";
+Test($row_b->{MODE} eq $row_a[0]);
+};
 
 print "Trying finish.\n";
 Test($csr_a->finish);
