@@ -221,6 +221,7 @@ $DBD::Proxy::db::imp_data_size = 0;
 
 sub commit;
 sub rollback;
+sub ping;
 
 use vars qw(%ATTR $AUTOLOAD);
 

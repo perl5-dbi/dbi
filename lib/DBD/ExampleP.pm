@@ -199,6 +199,11 @@
     }
 
 
+    sub ping {
+	return 2;	# used by t/80proxy.t
+    }
+
+
     sub disconnect {
 	shift->STORE(Active => 0);
 	return 1;

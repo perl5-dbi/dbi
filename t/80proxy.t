@@ -71,7 +71,7 @@ unlink $config_file;
     or die "Failed to create config file $config_file: $!";
 
 my($handle, $port);
-my $numTests = 124;
+my $numTests = 125;
 if (@ARGV) {
     $port = $ARGV[0];
 } else {
@@ -132,7 +132,9 @@ eval {
 Test($@ eq "BANG!!!\n", "\$@ value lost");
 
 print "Doing a ping.\n";
-Test($dbh->ping);
+$_ = $dbh->ping;
+Test($_);
+Test($_ eq '2'); # ping was DBD::ExampleP's ping
 
 print "Ensure CompatMode enabled.\n";
 Test($dbh->{CompatMode});
