@@ -2388,6 +2388,12 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		);
 	    /* for now we ignore it since it'll be followed soon by	*/
 	    /* a destroy of the inner hash and that'll do the real work	*/
+
+	    /* However, we must at least modify DBIc_MY_H() as that is	*/
+	    /* pointing (without a refcnt inc) to the scalar that is    */
+	    /* being destroyed, so it'll contain random values later.	*/
+	    DBIc_MY_H(imp_xxh) = SvRV(mg->mg_obj); /* inner (untied) HV */
+
 	    XSRETURN(0);
 	}
         h = mg->mg_obj; /* switch h to inner ref			*/
