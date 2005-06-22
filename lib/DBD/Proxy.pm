@@ -219,7 +219,10 @@ package DBD::Proxy::db; # ====== DATABASE ======
 
 $DBD::Proxy::db::imp_data_size = 0;
 
+# XXX probably many more methods need to be added here.
+# See notes in ToDo about method metadata
 sub commit;
+sub connected;
 sub rollback;
 sub ping;
 

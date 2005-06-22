@@ -650,7 +650,9 @@ sub connect {
 	}
 
 	# if we've been subclassed then let the subclass know that we're connected
-	$dbh->connected($dsn, $user, $pass, $attr) if ref $dbh ne 'DBI::db';
+	# and pass in the original arguments
+	$dbh->connected(@orig_args)
+	    if ref $dbh ne 'DBI::db';
 
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
 
@@ -6568,6 +6570,7 @@ connect, the DBI->connect method automatically calls:
 
 The default method does nothing. The call is made just to simplify
 any post-connection setup that your subclass may want to perform.
+The parameters are the same as passed to DBI->connect.
 If your subclass supplies a connected method, it should be part of the
 MySubDBI::db package.
 
