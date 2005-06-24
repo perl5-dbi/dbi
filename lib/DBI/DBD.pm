@@ -2764,18 +2764,23 @@ sub _inst_checks {
 	&& $Config{cc} eq 'cl'
 	&& !(exists $ENV{'LIB'} && exists $ENV{'INCLUDE'}))
     {
-	print <<EOT;
-*** You're using Microsoft Visual C++ compiler but the LIB and INCLUDE environment
-    variables are not both set. If you have 'unresolved external symbol'
-    errors during linking, run the vcvars32.bat batch file to set up your
-    LIB and INCLUDE environment variables, and try again.
+	die <<EOT;
+*** You're using Microsoft Visual C++ compiler or similar but
+    the LIB and INCLUDE environment variables are not both set.
+
+    You need to run the VCVARS32.BAT batch file that was supplied
+    with the compiler before you can use it.
+
     A copy of vcvars32.bat can typically be found in the following
     directories under your Visual Studio install directory:
         Visual C++ 6.0:     vc98\\bin
         Visual Studio .NET: vc7\\bin
 
+    Find it, run it, then retry this.
+
+    If you think this error is not correct then just set the LIB and
+    INCLUDE environment variables to some value to disable the check.
 EOT
-	sleep 2;
     }
 }
 
