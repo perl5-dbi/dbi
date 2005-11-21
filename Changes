@@ -14,16 +14,32 @@ DBI::Changes - List of significant changes to the DBI
   Fixed ping in DBD::Proxy thanks to George Campbell.
   Fixed dangling ref in $sth after parent $dbh destroyed
     with thanks to il@rol.ru for the bug report #13151
+  Fixed prerequisites to include Storable thanks to Michael Schwern.
 
+XXX TODO: take_imp_data
+XXX TODO: move ChildHandles code into .xs and PurePerl
+
+  Change to require perl 5.6.1 (as advertised in 2003) not 5.6.0.
   Changed internals to be more strictly coded thanks to Andy Lester.
   Changed warning about multiple copies of Driver.xst found in @INC
     to ignore duplicated directories thanks to Ed Avis.
+  Changed Driver.xst to enable drivers to define an dbd_st_prepare_sv
+    function where the statement parameter is an SV. That enables
+    compiled drivers to support SQL strings that are UTF-8.
+  Changed "use DBI" to only set $DBI::connect_via if not already set.
+  Changed docs to clarify pre-method clearing of err values.
 
   Added $sth->{ParamTypes} specification thanks to Dean Arnold.
   Added $h->{Callbacks} attribute to enable code hooks to be invoked
     when certain methods are called. For example:
     $dbh->{Callbacks}->{prepare} = sub { ... };
     With thanks to David Wheeler for the kick start.
+  Added $h->{ChildHandles} (using weakrefs) thanks to Sam Tregar.
+  Added $h->{Type} docs (returns 'dr', 'db', or 'st')
+  Adding trace message in DESTROY if InactiveDestroy enabled.
+
+  Ported DBI::ProfileDumper::Apache to mod_perl2 RC5+
+    thanks to Philip M. Golluci
 
 =head2 Changes in DBI 1.48 (svn rev 928),    14th March 2005
 

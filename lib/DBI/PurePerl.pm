@@ -144,6 +144,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	BegunWork
 	CachedKids
         Callbacks
+	ChildHandles
 	CursorName
 	Database
 	DebugDispatch
@@ -170,6 +171,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	SCALE
 	Statement
 	TYPE
+        Type
 	TraceLevel
 	Username
 	Version
@@ -646,6 +648,13 @@ sub FETCH {
 	return ($h->FETCH('TaintIn') && $h->FETCH('TaintOut')) if $key eq'Taint';
 	return (1==0) if $is_flag_attribute{$key}; # return perl-style sv_no, not undef
 	return $DBI::dbi_debug if $key eq 'TraceLevel';
+        return [] if $key eq 'ChildHandles';
+        if ($key eq 'Type') {
+            return "dr" if $h->isa('DBI::dr');
+            return "db" if $h->isa('DBI::db');
+            return "st" if $h->isa('DBI::st');
+            Carp::carp( sprintf "Can't get determine Type for %s",$h );
+        }
 	if (!$is_valid_attribute{$key} and $key =~ m/^[A-Z]/) {
 	    local $^W; # hide undef warnings
 	    Carp::carp( sprintf "Can't get %s->{%s}: unrecognised attribute (@{[ %$h ]})",$h,$key )

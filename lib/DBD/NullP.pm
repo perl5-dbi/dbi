@@ -46,6 +46,7 @@
 {   package DBD::NullP::db; # ====== DATABASE ======
     $imp_data_size = 0;
     use strict;
+    use Carp qw(croak);
 
     sub prepare {
 	my($dbh, $statement)= @_;

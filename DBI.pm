@@ -21,6 +21,7 @@ DBI - Database independent interface for Perl
   use DBI;
 
   @driver_names = DBI->available_drivers;
+  %drivers      = DBI->installed_drivers;
   @data_sources = DBI->data_sources($driver_name, \%attr);
 
   $dbh = DBI->connect($data_source, $username, $auth, \%attr);
@@ -263,7 +264,7 @@ use strict;
 
 DBI->trace(split /=/, $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
-$DBI::connect_via = "connect";
+$DBI::connect_via ||= "connect";
 
 # check if user wants a persistent database connection ( Apache + mod_perl )
 if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
@@ -271,7 +272,16 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
     DBI->trace_msg("DBI connect via $DBI::connect_via in $INC{'Apache/DBI.pm'}\n");
 }
 
+# check for weaken support, used by ChildHandles
+my $HAS_WEAKEN = eval { 
+    require Scalar::Util;
+    # this will croak() if this Scalar::Util doesn't have a working weaken().
+    Scalar::Util::weaken(my $test = \"foo"); 
+    0;
+};
+
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
+sub installed_drivers { %DBI::installed_drh }
 
 # Setup special DBI dynamic variables. See DBI::var::FETCH for details.
 # These are dynamically associated with the last handle used.
@@ -308,6 +318,7 @@ my $dbd_prefix_registry = {
   ing_     => { class => 'DBD::Ingres',		},
   ix_      => { class => 'DBD::Informix',	},
   jdbc_    => { class => 'DBD::JDBC',		},
+  monetdb_ => { class => 'DBD::monetdb',	},
   msql_    => { class => 'DBD::mSQL',		},
   mysql_   => { class => 'DBD::mysql',		},
   mx_      => { class => 'DBD::Multiplex',	},
@@ -315,6 +326,7 @@ my $dbd_prefix_registry = {
   odbc_    => { class => 'DBD::ODBC',		},
   ora_     => { class => 'DBD::Oracle',		},
   pg_      => { class => 'DBD::Pg',		},
+  plb_     => { class => 'DBD::Plibdata',	},
   proxy_   => { class => 'DBD::Proxy',		},
   rdb_     => { class => 'DBD::RDB',		},
   sapdb_   => { class => 'DBD::SAP_DB',		},
@@ -446,8 +458,15 @@ my $keeperr = { O=>0x0004 };
 );
 
 while ( my ($class, $meths) = each %DBI::DBI_methods ) {
+    my $ima_trace = 0+$ENV{DBI_IMA_TRACE}||0;
     while ( my ($method, $info) = each %$meths ) {
 	my $fullmeth = "DBI::${class}::$method";
+	if ($DBI::dbi_debug >= 15) { # quick hack to list DBI methods
+	    # and optionally filter by IMA flags
+	    my $O = $info->{O}||0;
+	    printf "0x%04x %-20s\n", $O, $fullmeth
+	        unless $ima_trace && !($O & $ima_trace);
+	}
 	DBI->_install_method($fullmeth, 'DBI.pm', $info);
     }
 }
@@ -1162,6 +1181,20 @@ sub _new_handle {
     # Now add magic so DBI method dispatch works
     DBI::_setup_handle($h, $imp_class, $parent, $imp_data);
 
+    # add to the parent's ChildHandles
+    if ($HAS_WEAKEN && $parent) {
+        my $handles = $parent->{ChildHandles} ||= [];
+
+        # purge destroyed handles occasionally
+        if (@$handles % 120 == 0 and @$handles) {
+            @$handles = grep { defined } @$handles;
+            Scalar::Util::weaken($_) for @$handles; # re-weaken after grep
+        }
+
+        push @$handles, $h;
+        Scalar::Util::weaken($handles->[-1]);
+    }
+
     return $h unless wantarray;
     ($h, $i);
 }
@@ -1324,7 +1357,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    unless $method =~ m/^([a-z]+_)\w+$/;
 	my $prefix = $1;
 	my $reg_info = $dbd_prefix_registry->{$prefix};
-	Carp::croak("method name prefix '$prefix' is not registered") unless $reg_info;
+	Carp::carp("method name prefix '$prefix' is not associated with a registered driver") unless $reg_info;
 	my %attr = %{$attr||{}}; # copy so we can edit
 	# XXX reformat $attr as needed for _install_method
 	my ($caller_pkg, $filename, $line) = caller;
@@ -2706,6 +2739,13 @@ through the directories in C<@INC>. By default, a warning is given if
 some drivers are hidden by others of the same name in earlier
 directories. Passing a true value for C<$quiet> will inhibit the warning.
 
+=item C<installed_drivers>
+
+  %drivers = DBI->installed_drivers();
+
+Returns a list of driver name and driver handle pairs for all
+installed drivers. The driver name does not include the 'DBD::'
+prefix.
 
 =item C<installed_versions>
 
@@ -2988,16 +3028,19 @@ Returns the I<native> database engine error code from the last driver
 method called. The code is typically an integer but you should not
 assume that.
 
-The DBI resets $h->err to undef before most DBI method calls, so the
+The DBI resets $h->err to undef before almost all DBI method calls, so the
 value only has a short lifespan. Also, for most drivers, the statement
 handles share the same error variable as the parent database handle,
 so calling a method on one handle may reset the error on the
 related handles.
 
-If you need to test for individual errors I<and> have your program be
-portable to different database engines, then you'll need to determine
-what the corresponding error codes are for all those engines and test for
-all of them.
+(Methods which don't reset err before being called include err() and errstr(),
+obviously, state(), rows(), func(), trace(), trace_msg(), ping(), and the
+tied hash attribute FETCH() and STORE() methods.)
+
+If you need to test for specific error conditions I<and> have your program be
+portable to different database engines, then you'll need to determine what the
+corresponding error codes are for all those engines and test for all of them.
 
 A driver may return C<0> from err() to indicate a warning condition
 after a method call. Similarly, a driver may return an empty string
@@ -3280,6 +3323,35 @@ For a database handle, C<CachedKids> returns a reference to the cache (hash) of
 statement handles created by the L</prepare_cached> method.  For a
 driver handle, returns a reference to the cache (hash) of
 database handles created by the L</connect_cached> method.
+
+=item C<Type> (scalar)
+
+The C<Type> attribute identifies the type of a DBI handle.  Returns
+"dr" for driver handles, "db" for database handles and "st" for
+statement handles.
+
+=item C<ChildHandles> (array ref)
+
+The ChildHandles attribute contains a reference to an array of all the
+handles created by this handle which are still accessible.  The
+contents of the array are weak-refs and will become undef when the
+handle goes out of scope.  C<ChildHandles> is only available if you
+have the L<Scalar::Util|Scalar::Util> module installed and
+C<Scalar::Util::weaken()> is working.
+
+For example, to enumerate all driver handles, database handles and
+statement handles:
+
+    sub show_child_handles {
+        my ($h, $level) = @_;
+        $level ||= 0;
+        printf "%sh %s %s\n", $h->{Type}, "\t" x $level, $h;
+        show_child_handles($_, $level + 1) 
+            for (grep { defined } @{$h->{ChildHandles}});
+    }
+
+    my %drivers = DBI->installed_drivers();
+    show_child_handles($_) for (values %drivers);
 
 =item C<CompatMode> (boolean, inherited)
 
@@ -5158,8 +5230,8 @@ See L</"Placeholders and Bind Values"> for more information.
 B<Data Types for Placeholders>
 
 The C<\%attr> parameter can be used to hint at the data type the
-placeholder should have. Typically, the driver is only interested in
-knowing if the placeholder should be bound as a number or a string.
+placeholder should have. This is rarely needed. Typically, the driver is only
+interested in knowing if the placeholder should be bound as a number or a string.
 
   $sth->bind_param(1, $value, { TYPE => SQL_INTEGER });
 
@@ -5777,11 +5849,10 @@ See also C<bind_columns> for an example.
 
 The binding is performed at a low level using Perl aliasing.
 Whenever a row is fetched from the database $var_to_bind appears
-to be automatically updated simply because it refers to the same
+to be automatically updated simply because it now refers to the same
 memory location as the corresponding column value.  This makes using
-bound variables very efficient. Multiple variables can be bound
-to a single column, but there's rarely any point. Binding a tied
-variable doesn't work, currently.
+bound variables very efficient.
+Binding a tied variable doesn't work, currently.
 
 The L</bind_param> method
 performs a similar, but opposite, function for input variables.
@@ -6574,8 +6645,15 @@ The parameters are the same as passed to DBI->connect.
 If your subclass supplies a connected method, it should be part of the
 MySubDBI::db package.
 
+One more thing to note: you must let the DBI do the handle creation.  If you
+want to override the connect() method in your *::dr class then it must still
+call SUPER::connect to get a $dbh to work with. Similarly, an overridden
+prepare() method in *::db must still call SUPER::prepare to get a $sth.
+If you try to create your own handles using bless() then you'll find the DBI
+will reject them with an "is not a DBI handle (has no magic)" error.
+
 Here's a brief example of a DBI subclass.  A more thorough example
-can be found in t/subclass.t in the DBI distribution.
+can be found in F<t/subclass.t> in the DBI distribution.
 
   package MySubDBI;
 

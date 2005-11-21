@@ -11,22 +11,19 @@ BEGIN {
     unshift @INC, "lib";
 }
 
-if ($] < 5.006001 && $^O ne 'darwin') {
-	# we ignore scaring darwin users because they're stuck on 5.6.0 for now
+if ($] < 5.008000) {
 	warn qq{\a\a\a
 **************************************************************************
-**************************************************************************
-  Version $] of perl will NOT BE SUPPORTED by future DBI releases.
-  You will have to upgrade your perl or stop upgrading DBI.
-  Perl version 5.6.1 will be the lowest version supported.
-  Using perl $] you may notice some test warnings and two failures.
+  Perl versions below 5.6.1 are no longer supported by the DBI.
+  Perl versions 5.6.x may fail during installation with a complaint
+  about the use of =head3 in the pod documentation.
   Press return to continue...
-**************************************************************************
 **************************************************************************
 };
     sleep 3;
     my $pause = <>;
 }
+
 
 use ExtUtils::MakeMaker 5.16, qw(WriteMakefile $Verbose);
 use Getopt::Long;
@@ -128,7 +125,7 @@ my %opts = (
     AUTHOR => 'Tim Bunce (dbi-users@perl.org)',
     VERSION_FROM  => 'DBI.pm',
     ABSTRACT_FROM => 'DBI.pm',
-    PREREQ_PM => { "Test::Simple" => 0.40 },
+    PREREQ_PM => { "Test::Simple" => 0.40, Storable => 1 },
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },

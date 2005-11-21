@@ -335,6 +335,8 @@ DESTROY(dbh)
 	}
         if (DBIc_IADESTROY(imp_dbh)) {		  /* want's ineffective destroy	*/
             DBIc_ACTIVE_off(imp_dbh);
+	    if (DBIc_DBISTATE(imp_dbh)->debug)
+		 PerlIO_printf(DBIc_LOGPIO(imp_dbh), "         DESTROY %s skipped due to InactiveDestroy\n", SvPV_nolen(dbh));
         }
 	if (DBIc_ACTIVE(imp_dbh)) {
 	    /* The application has not explicitly disconnected. That's bad.	*/
@@ -411,13 +413,17 @@ MODULE = DBD::~DRIVER~    PACKAGE = DBD::~DRIVER~::st
 void
 _prepare(sth, statement, attribs=Nullsv)
     SV *	sth
-    char *	statement
+    SV *	statement
     SV *	attribs
     CODE:
     {
     D_imp_sth(sth);
     DBD_ATTRIBS_CHECK("_prepare", sth, attribs);
-    ST(0) = dbd_st_prepare(sth, imp_sth, statement, attribs) ? &sv_yes : &sv_no;
+#ifdef dbd_st_prepare_sv
+    ST(0) = dbd_st_prepare_sv(sth, imp_sth, statement, attribs) ? &sv_yes : &sv_no;
+#else
+    ST(0) = dbd_st_prepare(sth, imp_sth, SVPV_nolen(statement), attribs) ? &sv_yes : &sv_no;
+#endif
     }
 
 
@@ -715,6 +721,8 @@ DESTROY(sth)
     else {
         if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
             DBIc_ACTIVE_off(imp_sth);
+	    if (DBIc_DBISTATE(imp_sth)->debug)
+		 PerlIO_printf(DBIc_LOGPIO(imp_sth), "         DESTROY %s skipped due to InactiveDestroy\n", SvPV_nolen(sth));
         }
 	if (DBIc_ACTIVE(imp_sth)) {
 	    D_imp_dbh_from_sth;

@@ -494,7 +494,7 @@ ok($dbh->{AutoCommit});
 ok(!$dbh->{BegunWork});
 
 ok($dbh->begin_work);
-ok(!$dbh->{AutoCommit}, $dbh->{AutoCommit});
+ok(!$dbh->{AutoCommit});
 ok($dbh->{BegunWork});
 
 $dbh->commit;

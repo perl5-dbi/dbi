@@ -1464,6 +1464,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	DBIc_set(imp_xxh,DBIcf_HandleSetErr, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
+    else if (strEQ(key, "ChildHandles")) {
+        cacheit = 1; /* just save it in the hash */
+    }
     else if (strEQ(key, "Profile")) {
 	static const char dbi_class[] = "DBI::Profile";
 	if (on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) ) {
@@ -1785,6 +1788,15 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             else if (strEQ(key, "CachedKids")) {
                 valuesv = &sv_undef;
             }
+            else if (strEQ(key, "ChildHandles")) {
+                /* get the value from the hash, otherwise return a [] */
+                svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
+                if (svp) { 
+                    valuesv = newSVsv(*svp);
+                } else {
+                    valuesv = newRV_noinc((SV*)newAV());
+                }
+            } 
             else if (strEQ(key, "CompatMode")) {
                 valuesv = boolSV(DBIc_COMPAT(imp_xxh));
             }
@@ -2969,7 +2981,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    /* could add DBIcf_ShowErrorParams (default to on?)		*/
 	    svp = hv_fetch((HV*)DBIc_MY_H(imp_xxh),"ParamValues",11,FALSE);
 	    if (svp && SvMAGICAL(*svp))
-		mg_get(*svp);
+		mg_get(*svp); /* XXX may recurse, may croak. could use eval */
 	    if (svp && SvRV(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV && HvKEYS(SvRV(*svp))>0 ) {
 		HV *bvhv = (HV*)SvRV(*svp);
 		SV *sv;

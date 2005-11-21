@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 124;
+use Test::More tests => 128;
 
 ## ----------------------------------------------------------------------------
 ## 03handle.t - tests handles
@@ -15,6 +15,10 @@ use Test::More tests => 124;
 BEGIN { 
     use_ok( 'DBI' );
 }
+
+# installed drivers should start empty
+my %drivers = DBI->installed_drivers();
+is(scalar keys %drivers, 0);
 
 ## ----------------------------------------------------------------------------
 # get the Driver handle
@@ -29,6 +33,13 @@ SKIP: {
     
     cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids');
 }
+
+# now the driver should be registered
+%drivers = DBI->installed_drivers();
+is(scalar keys %drivers, 1);
+ok(exists $drivers{ExampleP});
+ok($drivers{ExampleP}->isa('DBI::dr'));
+
 
 ## ----------------------------------------------------------------------------
 # do database handle tests inside do BLOCK to capture scope
