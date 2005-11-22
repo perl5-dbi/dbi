@@ -1033,6 +1033,26 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 		dbih_setup_attrib(h,imp,"Profile",parent,0,1);
 	    }
 	    DBIc_LongReadLen(imp) = DBIc_LongReadLen(parent_imp);
+#ifdef sv_rvweaken
+	    if (1) {
+		AV *av;
+		/* add weakref to new (outer) handle into parents ChildHandles array */
+		tmp_svp = hv_fetch((HV*)SvRV(parent), "ChildHandles", 12, 1);
+		if (!SvROK(*tmp_svp))
+		    sv_setsv(*tmp_svp, (SV*)newRV_noinc((SV*)newAV()));
+		av = (AV*)SvRV(*tmp_svp);
+		av_push(av, (SV*)sv_rvweaken(newRV((SV*)SvRV(orv))));
+		if (av_len(av) % 120 == 0) {
+		    /* time to do some housekeeping to remove dead handles */
+		    I32 i = av_len(av); /* 0 = 1 element */
+		    while (i-- >= 0) {
+			SV *sv = av_shift(av);
+			if (SvOK(sv))
+			    av_push(av, sv);
+		    }
+		}
+	    }
+#endif
 	}
 	else {
 	    DBIc_LongReadLen(imp) = DBIc_LongReadLen_init;
@@ -1452,19 +1472,22 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     }
     else if (strEQ(key, "HandleError")) {
 	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVCV)) ) {
-	    croak("Can't set HandleError to '%s'",neatsvpv(valuesv,0));
+	    croak("Can't set %s to '%s'", "HandleError", neatsvpv(valuesv,0));
 	}
 	DBIc_set(imp_xxh,DBIcf_HandleError, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
     else if (strEQ(key, "HandleSetErr")) {
 	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVCV)) ) {
-	    croak("Can't set HandleSetErr to '%s'",neatsvpv(valuesv,0));
+	    croak("Can't set %s to '%s'","HandleSetErr",neatsvpv(valuesv,0));
 	}
 	DBIc_set(imp_xxh,DBIcf_HandleSetErr, on);
 	cacheit = 1; /* child copy setup by dbih_setup_handle() */
     }
     else if (strEQ(key, "ChildHandles")) {
+	if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVAV)) ) {
+	    croak("Can't set %s to '%s'", "ChildHandles", neatsvpv(valuesv,0));
+	}
         cacheit = 1; /* just save it in the hash */
     }
     else if (strEQ(key, "Profile")) {
@@ -1782,21 +1805,27 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             break;
 
           case 'C':
-            if (strEQ(key, "ChopBlanks")) {
+            if (strEQ(key, "ChildHandles")) {
+		svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
+		/* if something has been stored then return it.
+		 * otherwise return a dummy empty array if weakrefs are
+		 * available, else an undef to indicate that they're not */
+		if (svp) {
+		    valuesv = newSVsv(*svp);
+		} else {
+#ifdef sv_rvweaken
+		    valuesv = newRV_noinc((SV*)newAV());
+#else
+		    valuesv = &sv_undef;
+#endif
+		}
+            }
+	    else if (strEQ(key, "ChopBlanks")) {
                 valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_ChopBlanks));
             }
             else if (strEQ(key, "CachedKids")) {
                 valuesv = &sv_undef;
             }
-            else if (strEQ(key, "ChildHandles")) {
-                /* get the value from the hash, otherwise return a [] */
-                svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
-                if (svp) { 
-                    valuesv = newSVsv(*svp);
-                } else {
-                    valuesv = newRV_noinc((SV*)newAV());
-                }
-            } 
             else if (strEQ(key, "CompatMode")) {
                 valuesv = boolSV(DBIc_COMPAT(imp_xxh));
             }
@@ -2404,7 +2433,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    /* However, we must at least modify DBIc_MY_H() as that is	*/
 	    /* pointing (without a refcnt inc) to the scalar that is    */
 	    /* being destroyed, so it'll contain random values later.	*/
-	    DBIc_MY_H(imp_xxh) = SvRV(mg->mg_obj); /* inner (untied) HV */
+	    DBIc_MY_H(imp_xxh) = (void*)SvRV(mg->mg_obj); /* inner (untied) HV */
 
 	    XSRETURN(0);
 	}

@@ -8,29 +8,45 @@ use strict;
 
 use DBI;
 
-use Test;
-BEGIN { plan tests => 22; }
+use Test::More;
+
+my $HAS_WEAKEN = eval {
+    require Scalar::Util;
+    # this will croak() if this Scalar::Util doesn't have a working weaken().
+    Scalar::Util::weaken(my $test = \"foo");
+    1;
+};
+if (!$HAS_WEAKEN) {
+    print "1..0 # Skipped: Scalar::Util::weaken not available\n";
+    exit 0;
+}
+
+plan tests => 15;
+
 {
     # make 10 connections
     my @dbh;
     for (1 .. 10) {
         my $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
-        push(@dbh, $dbh);
+        push @dbh, $dbh;
     }
     
     # get the driver handle
     my %drivers = DBI->installed_drivers();
     my $driver = $drivers{ExampleP};
-    ok($driver);
+    ok $driver;
 
-    # get the kids, should be the 10 connections
+    # get the kids, should be the same list of connections
     my $db_handles = $driver->{ChildHandles};
-    ok(scalar @$db_handles, 10);
+    is ref $db_handles, 'ARRAY';
+    is scalar @$db_handles, scalar @dbh;
 
     # make sure all the handles are there
+    my $found = 0;
     foreach my $h (@dbh) {
-        ok(grep { $h == $_ } @$db_handles);
+        ++$found if grep { $h == $_ } @$db_handles;
     }
+    is $found, scalar @dbh;
 }
 
 # now all the out-of-scope DB handles should be gone
@@ -40,15 +56,15 @@ BEGIN { plan tests => 22; }
 
     my $handles = $driver->{ChildHandles};
     my @db_handles = grep { defined } @$handles;
-    ok(scalar @db_handles, 0);
+    is scalar @db_handles, 0, "All handles should be undef now";
 }
 
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 
 
-# ChildHandles should start with an empty array-ref
 my $empty = $dbh->{ChildHandles};
-ok(scalar @$empty, 0);
+is ref $empty, 'ARRAY', "ChildHandles should be an array-ref if wekref is available";
+is scalar @$empty, 0, "ChildHandles should start with an empty array-ref";
 
 # test child handles for statement handles
 {
@@ -58,7 +74,7 @@ ok(scalar @$empty, 0);
         push(@sth, $sth);
     }
     my $handles = $dbh->{ChildHandles};
-    ok(scalar @$handles, 200);
+    is scalar @$handles, scalar @sth;
 
     # test a recursive walk like the one in the docs
     my @lines;
@@ -71,17 +87,17 @@ ok(scalar @$empty, 0);
           for (grep { defined } @{$h->{ChildHandles}});
     }   
     show_child_handles($_) for (values %{{DBI->installed_drivers()}});
+    print @lines[0..4];
 
-    ok(scalar @lines, 202);
-    ok($lines[0] =~ /^drh/);
-    ok($lines[1] =~ /^dbh/);
-    ok($lines[2] =~ /^sth/);
+    is scalar @lines, 202;
+    like $lines[0], qr/^drh/;
+    like $lines[1], qr/^dbh/;
+    like $lines[2], qr/^sth/;
 }
 
-# they should be gone now
 my $handles = $dbh->{ChildHandles};
 my @live = grep { defined $_ } @$handles;
-ok(scalar @live, 0);
+is scalar @live, 0, "handles should be gone now";
 
 # test that the childhandle array does not grow uncontrollably
 {
@@ -89,7 +105,7 @@ ok(scalar @live, 0);
         my $sth = $dbh->prepare('SELECT name FROM t');
     }
     my $handles = $dbh->{ChildHandles};
-    ok(scalar @$handles < 1000);
+    cmp_ok scalar @$handles, '<', 1000;
     my @live = grep { defined } @$handles;
-    ok(scalar @live, 0);
+    is scalar @live, 0;
 }

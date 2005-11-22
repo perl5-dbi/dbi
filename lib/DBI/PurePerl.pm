@@ -38,6 +38,13 @@ $DBI::tfh = Symbol::gensym();
 open $DBI::tfh, ">&STDERR" or warn "Can't dup STDERR: $!";
 select( (select($DBI::tfh), $| = 1)[0] );  # autoflush
 
+# check for weaken support, used by ChildHandles
+my $HAS_WEAKEN = eval { 
+    require Scalar::Util;
+    # this will croak() if this Scalar::Util doesn't have a working weaken().
+    Scalar::Util::weaken(my $test = \"foo"); 
+    1;
+};
 
 %DBI::last_method_except = map { $_=>1 } qw(DESTROY _set_fbav set_err);
 
@@ -443,6 +450,18 @@ sub _setup_handle {
 	    $h_inner->{Driver} = $parent;
 	}
 	$h_inner->{_parent} = $parent;
+
+	# add to the parent's ChildHandles
+	if ($HAS_WEAKEN) {
+	    my $handles = $parent->{ChildHandles} ||= [];
+	    push @$handles, $h;
+	    Scalar::Util::weaken($handles->[-1]);
+	    # purge destroyed handles occasionally
+	    if (@$handles % 120 == 0) {
+		@$handles = grep { defined } @$handles;
+		Scalar::Util::weaken($_) for @$handles; # re-weaken after grep
+	    }
+	}   
     }
     else {	# setting up a driver handle
         $h_inner->{Warn}		= 1;
@@ -452,6 +471,7 @@ sub _setup_handle {
         $h_inner->{CompatMode}		= (1==0);
 	$h_inner->{FetchHashKeyName}	||= 'NAME';
 	$h_inner->{LongReadLen}		||= 80;
+	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
     }
     $h_inner->{"_call_depth"} = 0;
     $h_inner->{ErrCount} = 0;

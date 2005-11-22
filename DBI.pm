@@ -277,7 +277,7 @@ my $HAS_WEAKEN = eval {
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
     Scalar::Util::weaken(my $test = \"foo"); 
-    0;
+    1;
 };
 
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
@@ -458,7 +458,7 @@ my $keeperr = { O=>0x0004 };
 );
 
 while ( my ($class, $meths) = each %DBI::DBI_methods ) {
-    my $ima_trace = 0+$ENV{DBI_IMA_TRACE}||0;
+    my $ima_trace = 0+($ENV{DBI_IMA_TRACE}||0);
     while ( my ($method, $info) = each %$meths ) {
 	my $fullmeth = "DBI::${class}::$method";
 	if ($DBI::dbi_debug >= 15) { # quick hack to list DBI methods
@@ -1180,20 +1180,6 @@ sub _new_handle {
     # The above tie and bless may migrate down into _setup_handle()...
     # Now add magic so DBI method dispatch works
     DBI::_setup_handle($h, $imp_class, $parent, $imp_data);
-
-    # add to the parent's ChildHandles
-    if ($HAS_WEAKEN && $parent) {
-        my $handles = $parent->{ChildHandles} ||= [];
-
-        # purge destroyed handles occasionally
-        if (@$handles % 120 == 0 and @$handles) {
-            @$handles = grep { defined } @$handles;
-            Scalar::Util::weaken($_) for @$handles; # re-weaken after grep
-        }
-
-        push @$handles, $h;
-        Scalar::Util::weaken($handles->[-1]);
-    }
 
     return $h unless wantarray;
     ($h, $i);
@@ -3335,9 +3321,9 @@ statement handles.
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
 contents of the array are weak-refs and will become undef when the
-handle goes out of scope.  C<ChildHandles> is only available if you
-have the L<Scalar::Util|Scalar::Util> module installed and
-C<Scalar::Util::weaken()> is working.
+handle goes out of scope.  C<ChildHandles> returns undef if your perl version
+does not support weak references (check the L<Scalar::Util|Scalar::Util>
+module).  The referenced array returned should be treated as read-only.
 
 For example, to enumerate all driver handles, database handles and
 statement handles:
