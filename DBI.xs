@@ -2433,7 +2433,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    /* However, we must at least modify DBIc_MY_H() as that is	*/
 	    /* pointing (without a refcnt inc) to the scalar that is    */
 	    /* being destroyed, so it'll contain random values later.	*/
-	    DBIc_MY_H(imp_xxh) = (void*)SvRV(mg->mg_obj); /* inner (untied) HV */
+	    if (imp_xxh)
+		DBIc_MY_H(imp_xxh) = (void*)SvRV(mg->mg_obj); /* inner (untied) HV */
 
 	    XSRETURN(0);
 	}
