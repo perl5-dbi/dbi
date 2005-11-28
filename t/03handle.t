@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 128;
+use Test::More tests => 135;
 
 ## ----------------------------------------------------------------------------
 ## 03handle.t - tests handles
@@ -258,12 +258,24 @@ SKIP: {
 # handle take_imp_data test
 
 SKIP: {
-    skip "take_imp_data test not supported under DBI::PurePerl", 12 if $DBI::PurePerl;
+    skip "take_imp_data test not supported under DBI::PurePerl", 19 if $DBI::PurePerl;
 
     my $dbh = DBI->connect("dbi:$driver:", '', '');
     isa_ok($dbh, "DBI::db");
 
     cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) here');
+
+    $dbh->prepare("select name from ?"); # destroyed at once
+    my $sth2 = $dbh->prepare("select name from ?"); # inactive
+    my $sth3 = $dbh->prepare("select name from ?"); # active:
+    $sth3->execute(".");
+    is $sth3->{Active}, 1;
+    is $dbh->{ActiveKids}, 1;
+
+    my $ChildHandles = $dbh->{ChildHandles};
+    ok $ChildHandles, 'we need weakrefs for take_imp_data to work safely with child handles';
+    is @$ChildHandles, 3, 'should have 3 entries (implementation detail)';
+    is grep({ defined } @$ChildHandles), 2, 'should have 2 defined handles';
 
     my $imp_data = $dbh->take_imp_data;
     ok($imp_data, '... we got some imp_data to test');
@@ -274,6 +286,10 @@ SKIP: {
     cmp_ok(length($imp_data), '>=', 80, '... test that our imp_data is greater than or equal to 80, this is reasonable');
 
     cmp_ok($drh->{Kids}, '==', 0, '... our Driver should have 0 Kid(s) after calling take_imp_data');
+
+    is ref $sth3, 'DBI::zombie', 'sth should be reblessed';
+    eval { $sth3->finish };
+    like $@, qr/Can't locate object method/;
 
     {
         my $warn;

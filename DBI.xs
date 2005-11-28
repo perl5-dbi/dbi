@@ -3878,6 +3878,7 @@ take_imp_data(h)
     D_imp_xxh(h);
     MAGIC *mg;
     SV *imp_xxh_sv;
+    SV **tmp_svp;
     CODE:
     (void)cv; /* unused */
     /*
@@ -3918,16 +3919,46 @@ take_imp_data(h)
      * AutoCommit) match the state of the underlying connection.
      */
 
-    if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
-	clear_cached_kids(h, imp_xxh, "take_imp_data", 0);
-    if (DBIc_KIDS(imp_xxh)) {	/* safety check, may be relaxed later to DBIc_ACTIVE_KIDS */
-	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle while it still has kids", 0, "take_imp_data");
-	XSRETURN(0);
-    }
     if (!DBIc_ACTIVE(imp_xxh)) {/* sanity check, may be relaxed later */
 	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle that's not Active", 0, "take_imp_data");
 	XSRETURN(0);
     }
+
+    /* Ideally there should be no child statement handles existing when
+     * take_imp_data is called because when those statement handles are
+     * destroyed they may need to interact with the 'zombie' parent dbh.
+     * So we do our best to kill neautralize them.
+     */
+    if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
+	clear_cached_kids(h, imp_xxh, "take_imp_data", 0);
+    if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+	AV *av = (AV*)SvRV(*tmp_svp);
+	HV *zombie_stash = gv_stashpv("DBI::zombie", GV_ADDWARN);
+        I32 kidslots;
+	for (kidslots = AvFILL(av); kidslots >= 0; --kidslots) {
+	    SV **hp = av_fetch(av, kidslots, FALSE);
+	    if (hp && SvROK(*hp) && SvMAGICAL(SvRV(*hp))) {
+		sv_unmagic(SvRV(*hp), 'P'); /* untie */
+		sv_bless(*hp, zombie_stash); /* neutralise */
+	    }
+	}       
+    }
+    /* The above measures may not be sufficient if weakrefs aren't available
+     * or something has a reference to the inner-handle of an sth.
+     * We'll require no Active kids, but just warn about others.
+     */
+    if (DBIc_ACTIVE_KIDS(imp_xxh)) {
+	set_err_char(h, imp_xxh, "1", 1, "Can't take_imp_data from handle while it still has Active kids", 0, "take_imp_data");
+	XSRETURN(0);
+    }
+    if (DBIc_KIDS(imp_xxh))
+	warn("take_imp_data from handle while it still has kids");
+
+    /* it may be better here to return a copy and poison the original
+     * rather than detatching and returning the original
+     */
+
+    /* --- perform the surgery */
     dbih_getcom2(h, &mg);	/* get the MAGIC so we can change it	*/
     imp_xxh_sv = mg->mg_obj;	/* take local copy of the imp_data pointer */
     mg->mg_obj = Nullsv;	/* sever the link from handle to imp_xxh */

@@ -422,7 +422,7 @@ _prepare(sth, statement, attribs=Nullsv)
 #ifdef dbd_st_prepare_sv
     ST(0) = dbd_st_prepare_sv(sth, imp_sth, statement, attribs) ? &sv_yes : &sv_no;
 #else
-    ST(0) = dbd_st_prepare(sth, imp_sth, SVPV_nolen(statement), attribs) ? &sv_yes : &sv_no;
+    ST(0) = dbd_st_prepare(sth, imp_sth, SvPV_nolen(statement), attribs) ? &sv_yes : &sv_no;
 #endif
     }
 

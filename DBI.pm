@@ -5020,7 +5020,7 @@ will generate a warning and return undef.
 
 Why would you want to do this? You don't, forget I even mentioned it.
 Unless, that is, you're implementing something advanced like a
-multi-threaded connection pool.
+multi-threaded connection pool. See L<DBI::Pool>.
 
 The returned $imp_data can be passed as a C<dbi_imp_data> attribute
 to a later connect() call, even in a separate thread in the same
@@ -5032,12 +5032,15 @@ Some things to keep in mind...
 B<*> the $imp_data holds the only reference to the underlying
 database API connection data. That connection is still 'live' and
 won't be cleaned up properly unless the $imp_data is used to create
-a new $dbh which can then disconnect() normally.
+a new $dbh which is then allowed to disconnect() normally.
 
 B<*> using the same $imp_data to create more than one other new
 $dbh at a time may well lead to unpleasant problems. Don't do that.
 
-The C<take_imp_data> method was added in DBI 1.36.
+Any child statement handles are effectively destroyed when take_imp_data() is
+called.
+
+The C<take_imp_data> method was added in DBI 1.36 but wasn't useful till 1.49.
 
 =back
 
@@ -6894,12 +6897,12 @@ An old variable that should no longer be used; equivalent to DBI_TRACE.
 =head2 DBI_PROFILE
 
 The DBI_PROFILE environment variable can be used to enable profiling
-of DBI method calls. See <DBI::Profile> for more information.
+of DBI method calls. See L<DBI::Profile> for more information.
 
 =head2 DBI_PUREPERL
 
 The DBI_PUREPERL environment variable can be used to enable the
-use of DBI::PurePerl.  See <DBI::PurePerl> for more information.
+use of DBI::PurePerl.  See L<DBI::PurePerl> for more information.
 
 =head1 WARNING AND ERROR MESSAGES
 
@@ -7322,7 +7325,7 @@ DBI::ProxyServer are part of the DBI distribution.
 
 =item SQL Parser
 
-See also the SQL::Statement module, SQL parser and engine.
+See also the L<SQL::Statement> module, SQL parser and engine.
 
 =back
 

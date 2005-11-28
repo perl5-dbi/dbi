@@ -100,7 +100,7 @@ if ($shortest < 0) {
     warn "Perhaps you have time sync software (like NTP) that adjusted the clock\n";
     warn "backwards by more than $shortest seconds during the test. PLEASE RETRY.\n";
     # Don't treat very small negative amounts as a failure - it's always been due
-    # due to NTP of buggy multiprocessor systems.
+    # due to NTP or buggy multiprocessor systems.
     $shortest = 0 if $shortest > -0.008;
 }
 ok($count > 3);
