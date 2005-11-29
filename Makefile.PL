@@ -141,13 +141,15 @@ $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
 if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
     warn "WARNING: Your GNU C $gccversion compiler is very old. Please upgrade it and rebuild perl.\n"
-	if $gccversion =~ m/^(1|2\.[1-8])/;
-    $opts{CCFLAGS} .= ' -W -Wall -Wpointer-arith -Wmissing-noreturn -Wbad-function-cast';
+	if $gccversion =~ m/^\D*(1|2\.[1-8])/;
+    $gccversion =~ s/[^\d\.]//g; # just a number please
+    $opts{CCFLAGS} .= ' -W -Wall -Wpointer-arith -Wbad-function-cast';
     $opts{CCFLAGS} .= ' -Wno-comment -Wno-sign-compare -Wno-cast-qual';
-    $opts{CCFLAGS} .= ' -Wdisabled-optimization' if $gccversion ge "3.0";
-    if (0 && $is_developer && $::opt_g) {
+    $opts{CCFLAGS} .= ' -Wdisabled-optimization -Wmissing-noreturn -Wno-unused-parameter'
+        if $gccversion ge "3.0";
+    if ($is_developer && $::opt_g) {
         $opts{CCFLAGS} .= ' -DPERL_GCC_PEDANTIC -ansi -pedantic' if $gccversion ge "3.0";
-        $opts{CCFLAGS} .= ' -Wmissing-prototypes'; # noisy due to XS_* funcs
+        $opts{CCFLAGS} .= ' -Wmissing-prototypes';
     }
 }
 
@@ -296,13 +298,13 @@ config :: $(changes_pm) $(roadmap_pm)
 	$(NOECHO) $(NOOP)
 
 $(changes_pm): Changes
-	$(NOECHO) $(MKPATH) $(inst_libdbi)
-	$(NOECHO) $(RM_F) $(changes_pm)
+	$(MKPATH) $(inst_libdbi)
+	$(RM_F) $(changes_pm)
 	$(CP) Changes $(changes_pm)
 
 $(roadmap_pm): Roadmap.pod
-	$(NOECHO) $(MKPATH) $(inst_libdbi)
-	$(NOECHO) $(RM_F) $(roadmap_pm)
+	$(MKPATH) $(inst_libdbi)
+	$(RM_F) $(roadmap_pm)
 	$(CP) Roadmap.pod $(roadmap_pm)
 ';
 

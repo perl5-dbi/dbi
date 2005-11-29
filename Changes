@@ -27,6 +27,10 @@ DBI::Changes - List of significant changes to the DBI
   Changed "use DBI" to only set $DBI::connect_via if not already set.
   Changed docs to clarify pre-method clearing of err values.
 
+  Added ability for DBI::ProfileData to edit profile path on loading.
+    This enables aggregation of different SQL statements into the same
+    profile node - very handy when not using placeholders or when working
+    multiple separate tables for the same thing (ie logtable_2005_11_28)
   Added $sth->{ParamTypes} specification thanks to Dean Arnold.
   Added $h->{Callbacks} attribute to enable code hooks to be invoked
     when certain methods are called. For example:

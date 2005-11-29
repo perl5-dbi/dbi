@@ -59,6 +59,7 @@ t/30subclass.t
 t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
+t/43profenv.t
 t/50dbm.t
 t/60preparse.t
 t/70callbacks.t

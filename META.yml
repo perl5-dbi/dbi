@@ -1,10 +1,11 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         DBI
-version:      1.48
+version:      1.49
 version_from: DBI.pm
 installdirs:  site
 requires:
+    Storable:                      1
     Test::Simple:                  0.4
 
 distribution_type: module

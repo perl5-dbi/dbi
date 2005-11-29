@@ -11,7 +11,7 @@ BEGIN {
 		plan skip_all => 'profiling not supported for DBI::PurePerl';
 	}
 	else {
-		plan tests => 32;
+		plan tests => 33;
 	}
 }
 
@@ -28,6 +28,7 @@ isa_ok( $dbh, 'DBI::db', 'Created connection' );
 
 # do a little work
 foreach (1,2,3) {
+  $dbh->do("set dummy=$_");
   my $sth = $dbh->prepare($sql);
   isa_ok( $sth, 'DBI::st', 'Created handle' );
   for my $loop (1..20) {  
@@ -45,7 +46,10 @@ undef $dbh;
 ok(-s "dbi.prof", "Profile written to disk, non-zero size" );
 
 # load up
-my $prof = DBI::ProfileData->new();
+my $prof = DBI::ProfileData->new( Filter => sub {
+    my ($path_ref, $data_ref) = @_;
+    $path_ref->[0] =~ s/set dummy=\d/set dummy=N/;
+});
 isa_ok( $prof, 'DBI::ProfileData' );
 cmp_ok( $prof->count, '>=', 3, 'At least 3 profile data items' );
 
@@ -83,8 +87,12 @@ ok($clone->count == 1);
 
 # take a look through Data
 my $Data = $prof->Data;
+print "SQL: $_\n" for keys %$Data;
 ok(exists($Data->{$sql}));
 ok(exists($Data->{$sql}{execute}));
+
+# did the Filter convert set dummy=1 (etc) into set dummy=N?
+ok(exists($Data->{"set dummy=N"}));
 
 # test escaping of \n and \r in keys
 $dbh = DBI->connect("dbi:ExampleP:", '', '', 
