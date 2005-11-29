@@ -4,7 +4,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.49 (svn rev 2283),   28th November 2005
+=head2 Changes in DBI 1.49 (svn rev 2287),   29th November 2005
 
   Fixed assorted attribute handling bugs in DBD::Proxy.
   Fixed croak() in DBD::NullP thanks to Sergey Skvortsov.
