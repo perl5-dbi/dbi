@@ -143,13 +143,13 @@ if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
     warn "WARNING: Your GNU C $gccversion compiler is very old. Please upgrade it and rebuild perl.\n"
 	if $gccversion =~ m/^\D*(1|2\.[1-8])/;
     $gccversion =~ s/[^\d\.]//g; # just a number please
-    $opts{CCFLAGS} .= ' -W -Wall -Wpointer-arith -Wbad-function-cast';
-    $opts{CCFLAGS} .= ' -Wno-comment -Wno-sign-compare -Wno-cast-qual';
-    $opts{CCFLAGS} .= ' -Wdisabled-optimization -Wmissing-noreturn -Wno-unused-parameter'
+    $opts{DEFINE} .= ' -W -Wall -Wpointer-arith -Wbad-function-cast';
+    $opts{DEFINE} .= ' -Wno-comment -Wno-sign-compare -Wno-cast-qual';
+    $opts{DEFINE} .= ' -Wdisabled-optimization -Wmissing-noreturn -Wno-unused-parameter'
         if $gccversion ge "3.0";
     if ($is_developer && $::opt_g) {
-        $opts{CCFLAGS} .= ' -DPERL_GCC_PEDANTIC -ansi -pedantic' if $gccversion ge "3.0";
-        $opts{CCFLAGS} .= ' -Wmissing-prototypes';
+        $opts{DEFINE} .= ' -DPERL_GCC_PEDANTIC -ansi -pedantic' if $gccversion ge "3.0";
+        $opts{DEFINE} .= ' -Wmissing-prototypes';
     }
 }
 
