@@ -2315,11 +2315,10 @@ dbi_profile_merge(SV *dest, SV *increment)
     AV *d_av, *i_av;
     SV *tmp;
     double i_nv;
-    if (!SvROK(dest)      || SvTYPE(SvRV(dest))      != SVt_PVAV
-    ||  !SvROK(increment) || SvTYPE(SvRV(increment)) != SVt_PVAV)
-	croak("dbi_profile_merge(%s, %s) requires array refs",
-		neatsvpv(dest,0), neatsvpv(dest,0));
-    i_av = (AV*)SvRV(increment);
+    int i_is_earlier;
+
+    if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
+	croak("dbi_profile_merge(%s, ...) requires array ref", neatsvpv(dest,0));
     d_av = (AV*)SvRV(dest);
 
     if (av_len(d_av) < DBIprof_max_index) {
@@ -2327,10 +2326,28 @@ dbi_profile_merge(SV *dest, SV *increment)
 	av_extend(d_av, DBIprof_max_index);
 	for(idx=0; idx<=DBIprof_max_index; ++idx) {
 	    tmp = *av_fetch(d_av, idx, 1);
-	    if (!SvOK(tmp))
-		sv_setiv(tmp, 0);
+	    if (!SvOK(tmp) && idx != DBIprof_MIN_TIME && idx != DBIprof_FIRST_CALLED)
+		sv_setnv(tmp, 0.0); /* leave 'min' values as undef */
 	}
     }
+
+    if (!SvOK(increment))
+	return;
+
+    if (SvROK(increment) && SvTYPE(SvRV(increment)) == SVt_PVHV) {
+	HV *hv = (HV*)SvRV(increment);
+	char *key;
+	I32 keylen = 0;
+	hv_iterinit(hv);
+	while ( (tmp = hv_iternextsv(hv, &key, &keylen)) != NULL ) {
+	    dbi_profile_merge(dest, tmp);
+	};
+	return;
+    }
+
+    if (!SvROK(increment) || SvTYPE(SvRV(increment)) != SVt_PVAV)
+	croak("dbi_profile_merge: increment not an array or hash ref");
+    i_av = (AV*)SvRV(increment);
 
     tmp = *av_fetch(d_av, DBIprof_COUNT, 1);
     sv_setiv( tmp, SvIV(tmp) + SvIV( *av_fetch(i_av, DBIprof_COUNT, 1)) );
@@ -2340,7 +2357,7 @@ dbi_profile_merge(SV *dest, SV *increment)
 
     i_nv = SvNV(*av_fetch(i_av, DBIprof_MIN_TIME, 1));
     tmp  =      *av_fetch(d_av, DBIprof_MIN_TIME, 1);
-    if (i_nv < SvNV(tmp)) sv_setnv(tmp, i_nv);
+    if (!SvOK(tmp) || i_nv < SvNV(tmp)) sv_setnv(tmp, i_nv);
 
     i_nv = SvNV(*av_fetch(i_av, DBIprof_MAX_TIME, 1));
     tmp  =      *av_fetch(d_av, DBIprof_MAX_TIME, 1);
@@ -2348,11 +2365,16 @@ dbi_profile_merge(SV *dest, SV *increment)
 
     i_nv = SvNV(*av_fetch(i_av, DBIprof_FIRST_CALLED, 1));
     tmp  =      *av_fetch(d_av, DBIprof_FIRST_CALLED, 1);
-    if (i_nv < SvNV(tmp)) {
+    i_is_earlier = (!SvOK(tmp) || i_nv < SvNV(tmp));
+    if (i_is_earlier)
 	sv_setnv(tmp, i_nv);
+
+    i_nv = SvNV(*av_fetch(i_av, DBIprof_FIRST_TIME, 1));
+    tmp  =      *av_fetch(d_av, DBIprof_FIRST_TIME, 1);
+    if (i_is_earlier || !SvOK(tmp)) {
 	/* If the increment has an earlier DBIprof_FIRST_CALLED
-	then we use the DBIprof_FIRST_TIME from the increment */
-	sv_setnv( tmp, SvNV( *av_fetch(i_av, DBIprof_FIRST_TIME, 1)) );
+	then we set the DBIprof_FIRST_TIME from the increment */
+	sv_setnv(tmp, i_nv);
     }
 
     i_nv = SvNV(*av_fetch(i_av, DBIprof_LAST_CALLED, 1));
@@ -3788,15 +3810,20 @@ dbi_profile_merge(dest, ...)
     SV * dest
     CODE:
     {
-        (void)cv;
 	if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
 	    croak("dbi_profile_merge(%s,...) not an array reference", neatsvpv(dest,0));
-	/* items==2 for dest + 1 arg, ST(0) is dest, ST(1) is first arg */
-	while (--items >= 1) {
-	    SV *thingy = ST(items); /* currently has to be an array ref */
-	    dbi_profile_merge(dest, thingy);
+	if (items <= 1) {
+	    (void)cv;
+	    RETVAL = 0;
 	}
-	RETVAL = newSVsv(*av_fetch((AV*)SvRV(dest), DBIprof_TOTAL_TIME, 1));
+	else {
+	    /* items==2 for dest + 1 arg, ST(0) is dest, ST(1) is first arg */
+	    while (--items >= 1) {
+		SV *thingy = ST(items);
+		dbi_profile_merge(dest, thingy);
+	    }
+	    RETVAL = newSVsv(*av_fetch((AV*)SvRV(dest), DBIprof_TOTAL_TIME, 1));
+	}
     }
     OUTPUT:
     RETVAL

@@ -261,30 +261,6 @@ sub _read_body {
     }
 }
 
-# takes an existing node and merges in new data points
-sub _merge_data {	# XXX use dbi_profile_merge instead
-    my ($self, $node, $data) = @_;
-
-    # add counts and total duration
-    $node->[COUNT] += $data->[COUNT];
-    $node->[TOTAL] += $data->[TOTAL];
-    
-    # first duration untouched
-
-    # take new shortest duration if shorter
-    $node->[SHORTEST] = $data->[SHORTEST]
-      if $data->[SHORTEST] < $node->[SHORTEST];
-
-    # take new longest duration if longer
-    $node->[LONGEST] = $data->[LONGEST]
-      if $data->[LONGEST] > $node->[LONGEST];
-
-    # time of first event untouched
-
-    # take time of last event
-    $node->[LAST_AT] = $data->[LAST_AT];
-}
-
 
 
 =item $copy = $prof->clone();

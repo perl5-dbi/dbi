@@ -9,6 +9,12 @@ DBI::Changes - List of significant changes to the DBI
   Fixed Makefile.PL options for gcc bug introduced in 1.49.
   Fixed handle magic order to keep DBD::Oracle happy.
 
+  Changed dbi_profile_merge() to be able to recurse and merge
+    sub-trees of profile data.
+
+  Added documentation for dbi_profile_merge(), including how to
+    measure the time spent inside the DBI for an http request.
+
 =head2 Changes in DBI 1.49 (svn rev 2287),   29th November 2005
 
   Fixed assorted attribute handling bugs in DBD::Proxy.

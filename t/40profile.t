@@ -26,7 +26,7 @@ BEGIN {
 }
 
 use Test;
-BEGIN { plan tests => 60; }
+BEGIN { plan tests => 64; }
 
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -193,6 +193,23 @@ ok(@{$data->{foo}{$sql}{prepare}{bar}} == 7);
 my $t1 = DBI::dbi_time;
 dbi_profile($dbh, "Hi, mom", "fetchhash_bang", $t1, $t1 + 1);
 ok(exists $data->{foo}{"Hi, mom"});
+
+my $total_time = dbi_profile_merge(
+    my $totals=[],
+    [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
+    [ 15, 0.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
+);        
+ok("@$totals", "25 0.93 0.11 0.01 0.23 1023110000 1023110010");
+ok($total_time, 0.93);
+
+$total_time = dbi_profile_merge(
+    $totals=[], {
+	foo => [ 10, 1.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
+        bar => [ 17, 1.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
+    }
+);        
+ok("@$totals", "27 2.93 0.11 0.01 0.23 1023110000 1023110010");
+ok($total_time, 2.93);
 
 # check that output went into the log file
 DBI->trace(0, "STDOUT"); # close current log to flush it
