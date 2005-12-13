@@ -8,6 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Fixed Makefile.PL options for gcc bug introduced in 1.49.
   Fixed handle magic order to keep DBD::Oracle happy.
+  Fixed selectrow_array to return empty list on error.
 
   Changed dbi_profile_merge() to be able to recurse and merge
     sub-trees of profile data.
