@@ -1082,6 +1082,23 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
     DBI_SET_LAST_HANDLE(h);
 
+    if (1) {
+	/* This is a hack to work-around the fast but poor way old versions of
+	 * DBD::Oracle (and possibly other drivers) check for a valid handle
+	 * using (SvMAGIC(SvRV(h)))->mg_type == 'P'). That doesn't work now
+	 * because the weakref magic is inserted ahead of the tie magic.
+	 * So here we swap the tie and weakref magic so the tie comes first.
+	 */
+	MAGIC *tie_mg = mg_find(SvRV(orv),'P');
+	MAGIC *first  = SvMAGIC(SvRV(orv));
+	if (tie_mg && first->mg_moremagic == tie_mg && !tie_mg->mg_moremagic) {
+	    MAGIC *next = tie_mg->mg_moremagic;
+	    SvMAGIC(SvRV(orv)) = tie_mg;
+	    tie_mg->mg_moremagic = first;
+	    first->mg_moremagic = next;
+	}
+    }
+
     DBI_UNLOCK;
 }
 
