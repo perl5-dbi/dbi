@@ -9,6 +9,9 @@ DBI::Changes - List of significant changes to the DBI
   Fixed $dbh->clone method 'signature' thanks to Jeffrey Klein.
   Fixed default ping() method to return false if !$dbh->{Active}.
 
+  Changed DBI::ProfileData to be more forgiving of systems with
+    unstable clocks (where time may go backwards occasionally).
+
 =head2 Changes in DBI 1.50 (svn rev 2307),   13 December 2005
 
   Fixed Makefile.PL options for gcc bug introduced in 1.49.

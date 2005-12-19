@@ -219,16 +219,19 @@ sub _read_body {
         }
 	elsif (/^=/) {
             # it's data - file in the node array with the path in index 0
+	    # (the optional minus is to make it more robust against systems
+	    # with unstable high-res clocks - typically due to poor NTP config
+	    # of kernel SMP behaviour, i.e. min time may be -0.000008))
             @data = /^=\s+(\d+)
-                       \s+(\d+\.?\d*)
-                       \s+(\d+\.?\d*)
-                       \s+(\d+\.?\d*)
-                       \s+(\d+\.?\d*)
+                       \s+(-?\d+\.?\d*)
+                       \s+(-?\d+\.?\d*)
+                       \s+(-?\d+\.?\d*)
+                       \s+(-?\d+\.?\d*)
                        \s+(\d+\.?\d*)
                        \s+(\d+\.?\d*)
                        \s*$/x;
 
-            # no data?
+            # corrupt data?
             croak("Invalid data syntax format in $filename line $.: $_") unless @data;
 
 	    # hook to enable pre-processing of the data - such as mangling SQL
