@@ -10,9 +10,7 @@ $^W = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-# originally 246 tests
-use Test::More tests => 253;
-#use Test::More 'no_plan';
+use Test::More tests => 254;
 
 # "globals"
 my ($r, $dbh);
@@ -717,5 +715,6 @@ ok((%tables == 0));
 
 $dbh->disconnect;
 ok(!$dbh->{Active});
+ok(!$dbh->ping, "ping should return false after disconnect");
 
 1;

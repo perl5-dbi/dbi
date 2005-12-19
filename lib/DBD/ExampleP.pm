@@ -200,7 +200,7 @@
 
 
     sub ping {
-	return 2;	# used by t/80proxy.t
+	(shift->FETCH('Active')) ? 2 : 0;    # the value 2 is checked for by t/80proxy.t
     }
 
 

@@ -391,7 +391,7 @@ my $keeperr = { O=>0x0004 };
     db => {		# Database Session Class Interface
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], },
-	clone   	=> { U =>[1,1,''] },
+	clone   	=> { U =>[1,2,'[\%attr]'] },
 	connected   	=> { O=>0x0100 },
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
@@ -1646,8 +1646,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     }
 
     sub ping {
-	shift->_not_impl('ping');
-	"0 but true";	# special kind of true 0
+	my $dbh = shift;
+	$dbh->_not_impl('ping');
+	# "0 but true" is a special kind of true 0 that is used here so
+	# applications can check if the ping was a real ping or not
+	($dbh->FETCH('Active')) ?  "0 but true" : 0;
     }
 
     sub begin_work {

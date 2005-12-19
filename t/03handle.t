@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 135;
+use Test::More tests => 137;
 
 ## ----------------------------------------------------------------------------
 ## 03handle.t - tests handles
@@ -180,7 +180,9 @@ do {
 	$dbh_nullp->disconnect;
     }
 
+    ok(  $dbh->ping, 'ping should be true before disconnect');
     $dbh->disconnect;
+    ok( !$dbh->ping, 'ping should be false after disconnect');
 
     SKIP: {
         skip "Kids and ActiveKids attributes not supported under DBI::PurePerl", 2 if $DBI::PurePerl;
