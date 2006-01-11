@@ -199,7 +199,8 @@ my $total_time = dbi_profile_merge(
     [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
     [ 15, 0.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
 );        
-ok("@$totals", "25 0.93 0.11 0.01 0.23 1023110000 1023110010");
+$_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
+ok("@$totals", "25.00 0.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
 ok($total_time, 0.93);
 
 $total_time = dbi_profile_merge(
@@ -208,7 +209,8 @@ $total_time = dbi_profile_merge(
         bar => [ 17, 1.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
     }
 );        
-ok("@$totals", "27 2.93 0.11 0.01 0.23 1023110000 1023110010");
+$_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
+ok("@$totals", "27.00 2.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
 ok($total_time, 2.93);
 
 # check that output went into the log file
