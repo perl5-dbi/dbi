@@ -3668,7 +3668,6 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     SV **svp;
     dbi_ima_t *ima = NULL;
     (void)dbi_class;
-    (void)cv; /* avoid 'unused variable' warning */
 
     if (strnNE(meth_name, "DBI::", 5))	/* XXX m/^DBI::\w+::\w+$/	*/
 	croak("install_method %s: invalid class", meth_name);
