@@ -4014,7 +4014,16 @@ index values (which count from 1), rather than perl array index values.
 In which case the array is copied and each value decremented before
 passing to C</fetchall_arrayref>.
 
+You may often want to fetch an array of rows where each row is stored as a
+hash. That can be done simple using:
 
+  my $emps = $dbh->selectall_arrayref("SELECT ename FROM emp ORDER BY ename", { Slice => {} } );
+  foreach my $emp ( @$emps ) {
+      print "Employee: $emp->{ename}\n";
+  }
+
+WhSee L</fetchall_arrayref> method for more details.
+  
 =item C<selectall_hashref>
 
   $hash_ref = $dbh->selectall_hashref($statement, $key_field);
@@ -4027,8 +4036,8 @@ hash containing one entry, at most, for each row, as returned by fetchall_hashre
 
 The C<$key_field> parameter defines which column, or columns, are used as keys
 in the returned hash. It can either be the name of a single field, or a
-reference to an array containing multiple field names. See fetchall_hashref()
-for more details.
+reference to an array containing multiple field names. Using multiple names
+yields a tree of nested hashes. See fetchall_hashref() for more details.
 
 The C<$statement> parameter can be a previously prepared statement handle,
 in which case the C<prepare> is skipped. This is recommended if the
