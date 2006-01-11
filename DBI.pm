@@ -6616,7 +6616,7 @@ To setup the inheritance hierarchy the @ISA variable in C<MySubDBI::db>
 should include C<DBI::db> and the @ISA variable in C<MySubDBI::st>
 should include C<DBI::st>.  The C<MySubDBI> root class itself isn't
 currently used for anything visible and so, apart from setting @ISA
-to include C<DBI>, it should be left empty.
+to include C<DBI>, it can be left empty.
 
 So, having put your overriding methods into the right classes, and
 setup the inheritance hierarchy, how do you get the DBI to use them?
@@ -6629,11 +6629,12 @@ or specifying a C<RootClass> attribute:
 
   $dbh = DBI->connect(..., { RootClass => 'MySubDBI' });
 
-The only difference between the two is that using an explicit
-RootClass attribute will make the DBI automatically attempt to load
-a module by that name if the class doesn't exist.
-
 If both forms are used then the attribute takes precedence.
+
+The only differences between the two are that using an explicit
+RootClass attribute will a) make the DBI automatically attempt to load
+a module by that name if the class doesn't exist, and b) won't call
+your MySubDBI::connect() method, if you have one.
 
 When subclassing is being used then, after a successful new
 connect, the DBI->connect method automatically calls:
