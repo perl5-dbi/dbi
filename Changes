@@ -11,6 +11,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed t/40profile.t to be insensitive to long double precision.
   Fixed for perl 5.8.0's more limited weaken() function.
 
+  Improved performance for thread-enabled perls thanks to Gisle Aas.
   Changed DBI::ProfileData to be more forgiving of systems with
     unstable clocks (where time may go backwards occasionally).
   Clarified the 'Subclassing the DBI' docs.

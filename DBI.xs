@@ -8,6 +8,7 @@
  */
 
 #define IN_DBI_XS 1	/* see DBIXS.h */
+#define PERL_NO_GET_CONTEXT
 
 #include "DBIXS.h"	/* DBI public interface for DBD's written in C	*/
 
@@ -188,6 +189,7 @@ static void
 check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int drc_s, 
 	int dbc_s, int stc_s, int fdc_s)
 {
+    dTHX;
     dPERINTERP;
     static const char msg[] = "you probably need to rebuild the DBD driver (or possibly the DBI)";
     (void)need_dbixs_cv;
@@ -207,7 +209,8 @@ check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int
 static void
 dbi_bootinit(dbistate_t * parent_dbis)
 {
-INIT_PERINTERP;
+    dTHX;	
+    INIT_PERINTERP;
 
     Newz(dummy, DBIS, 1, dbistate_t);
 
@@ -287,6 +290,7 @@ dbih_htype_name(int htype)
 char *
 neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only */
 {
+    dTHX;
     dPERINTERP;
     STRLEN len;
     SV *nsv = Nullsv;
@@ -405,6 +409,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 static int
 set_err_char(SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method)
 {
+    dTHX;
     char err_buf[28];
     SV *err_sv, *errstr_sv, *state_sv, *method_sv;
     if (!err_c) {
@@ -421,6 +426,7 @@ set_err_char(SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char 
 static int
 set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method)
 {
+    dTHX;
     dPERINTERP;
     SV *h_err;
     SV *h_errstr;
@@ -518,6 +524,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 static char *
 mkvname( HV *stash, const char *item, int uplevel)	/* construct a variable name	*/
 {
+    dTHX;
     STRLEN lna;
     SV *sv = sv_newmortal();
     sv_setpv(sv, HvNAME(stash));
@@ -565,6 +572,7 @@ dbi_hash(const char *key, long type)
 static int
 dbih_logmsg(imp_xxh_t *imp_xxh, const char *fmt, ...)
 {
+    dTHX;
     dPERINTERP;
     va_list args;
 #ifdef I_STDARG
@@ -582,6 +590,7 @@ dbih_logmsg(imp_xxh_t *imp_xxh, const char *fmt, ...)
 static int
 set_trace_file(SV *file)
 {
+    dTHX;
     dPERINTERP;
     STRLEN lna;
     const char *filename;
@@ -623,6 +632,7 @@ set_trace_file(SV *file)
 static IV
 parse_trace_flags(SV *h, SV *level_sv, IV old_level)
 {
+    dTHX;
     IV level;
     if (!level_sv || !SvOK(level_sv))
 	level = old_level;		/* undef: no change	*/
@@ -652,6 +662,7 @@ parse_trace_flags(SV *h, SV *level_sv, IV old_level)
 static int
 set_trace(SV *h, SV *level_sv, SV *file)
 {
+    dTHX;
     dPERINTERP;
     D_imp_xxh(h);
     int RETVAL = DBIS->debug; /* Return trace level in effect now */
@@ -679,6 +690,7 @@ set_trace(SV *h, SV *level_sv, SV *file)
 static SV *
 dbih_inner(SV *orv, const char *what)
 {   /* convert outer to inner handle else croak(what) if what is not null */
+    dTHX;
     dPERINTERP;
     MAGIC *mg;
     SV *ohv;		/* outer HV after derefing the RV	*/
@@ -746,6 +758,7 @@ dbih_getcom(SV *hrv) /* used by drivers via DBIS func ptr */
 static imp_xxh_t *
 dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*/
 {
+    dTHX;
     dPERINTERP;
     imp_xxh_t *imp_xxh;
     MAGIC *mg;
@@ -793,6 +806,7 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
 static SV *
 dbih_setup_attrib(SV *h, imp_xxh_t *imp_xxh, char *attrib, SV *parent, int read_only, int optional)
 {
+    dTHX;
     dPERINTERP;
     STRLEN len = strlen(attrib);
     SV **asvp;
@@ -838,6 +852,7 @@ dbih_setup_attrib(SV *h, imp_xxh_t *imp_xxh, char *attrib, SV *parent, int read_
 static SV *
 dbih_make_fdsv(SV *sth, const char *imp_class, STRLEN imp_size, const char *col_name)
 {
+    dTHX;
     dPERINTERP;
     D_imp_sth(sth);
     const STRLEN cn_len = strlen(col_name);
@@ -860,6 +875,7 @@ dbih_make_fdsv(SV *sth, const char *imp_class, STRLEN imp_size, const char *col_
 static SV *
 dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_size, STRLEN extra, SV* imp_templ)
 {
+    dTHX;
     dPERINTERP;
     static const char *errmsg = "Can't make DBI com handle for %s: %s";
     HV *imp_stash;
@@ -967,6 +983,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 static void
 dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 {
+    dTHX;
     dPERINTERP;
     SV *h;
     char *errmsg = "Can't setup DBI handle of %s to %s: %s";
@@ -1113,6 +1130,7 @@ dbih_dumphandle(SV *h, const char *msg, int level)
 static void
 dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 {
+    dTHX;
     dPERINTERP;
     SV *flags = sv_2mortal(newSVpv("",0));
     STRLEN lna;
@@ -1178,9 +1196,10 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 static void
 dbih_clearcom(imp_xxh_t *imp_xxh)
 {
+    
+    dTHX;
     dPERINTERP;
     dTHR;
-    dTHX;
     int dump = FALSE;
     int debug = DBIS_TRACE_LEVEL;
     int auto_dump = (debug >= 6);
@@ -1284,6 +1303,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 static AV *
 dbih_setup_fbav(imp_sth_t *imp_sth)
 {
+    dTHX;
     dPERINTERP;
     int i;
     AV *av;
@@ -1329,6 +1349,7 @@ dbih_get_fbav(imp_sth_t *imp_sth)
     }
 
     if (DBIc_is(imp_sth, DBIcf_TaintOut)) {
+        dTHX;
 	dTHR;
 	TAINT;	/* affects sv_setsv()'s called within same perl statement */
     }
@@ -1342,6 +1363,7 @@ dbih_get_fbav(imp_sth_t *imp_sth)
 static int
 dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
 {
+    dTHX;
     dPERINTERP;
     D_imp_sth(sth);
     AV *av;
@@ -1412,6 +1434,7 @@ quote_type(int sql_type, int p, int s, int *t, void *v)
 static int
 dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 {
+    dTHX;
     dPERINTERP;
     dTHR;
     D_imp_xxh(h);
@@ -1650,6 +1673,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 static SV *
 dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 {
+    dTHX;
     dPERINTERP;
     dTHR;
     D_imp_xxh(h);
@@ -1971,6 +1995,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 static SV *			/* find attrib in handle or its parents	*/
 dbih_find_attr(SV *h, SV *keysv, int copydown, int spare)
 {
+    dTHX;
     D_imp_xxh(h);
     SV *ph;
     STRLEN keylen;
@@ -1997,6 +2022,7 @@ dbih_find_attr(SV *h, SV *keysv, int copydown, int spare)
 static SV *
 dbih_event(SV *hrv, const char *evtype, SV *a1, SV *a2)
 {
+    dTHX;
     /* We arrive here via DBIh_EVENT* macros (see DBIXS.h) called from	*/
     /* DBD driver C code OR $h->event() method (in DBD::_::common)	*/
     /* XXX VERY OLD INTERFACE/CONCEPT MAY GO SOON */
@@ -2038,6 +2064,7 @@ dbi_dopoptosub_at(PERL_CONTEXT *cxstk, I32 startingblock)
 static char *
 dbi_caller(long *line)
 {
+    dTHX;
     register I32 cxix;
     register PERL_CONTEXT *cx;
     register PERL_CONTEXT *ccstack = cxstack;
@@ -2078,6 +2105,7 @@ dbi_caller(long *line)
 static char *
 log_where(int trace_level, SV *buf, int append, char *suffix)
 {
+    dTHX;
     dTHR;
     if (!buf) {
 	buf = sv_2mortal(newSV(80));
@@ -2116,6 +2144,7 @@ log_where(int trace_level, SV *buf, int append, char *suffix)
 static void
 clear_cached_kids(SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_level)
 {
+    dTHX;
     dPERINTERP;
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh)) {
 	if (DBIc_TRACE_LEVEL(imp_xxh) > trace_level)
@@ -2165,6 +2194,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 #define DBIprof_FIRST_CALLED	5
 #define DBIprof_LAST_CALLED	6
 #define DBIprof_max_index	6
+    dTHX;
     double ti = t2 - t1;
     const char *path[DBIprof_MAX_PATH_ELEM+1];
     int idx = -1;
@@ -2312,6 +2342,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 static void
 dbi_profile_merge(SV *dest, SV *increment)
 {
+    dTHX;
     AV *d_av, *i_av;
     SV *tmp;
     double i_nv;
@@ -3205,6 +3236,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 	we add support for odbc escape sequences.
 */
 
+    dTHX;
     int idx = 1;
 
     char in_quote = '\0';
