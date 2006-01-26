@@ -262,6 +262,7 @@ sub AUTOLOAD {
 	q/package ~class~;
           sub ~method~ {
             my $h = shift;
+	    local $@;
 	    my @result = wantarray
 		? eval {        $h->{'proxy_~type~h'}->~method~(@_) }
 		: eval { scalar $h->{'proxy_~type~h'}->~method~(@_) };
@@ -272,6 +273,7 @@ sub AUTOLOAD {
         q/package ~class~;
 	  sub ~method~ {
 	    my $h = shift;
+	    local $@;
 	    my @result = wantarray
 		? eval {        $h->{'proxy_~type~h'}->func(@_, '~method~') }
 		: eval { scalar $h->{'proxy_~type~h'}->func(@_, '~method~') };
@@ -304,6 +306,7 @@ sub disconnect ($) {
     # Drop database connection at remote end
     my $rdbh = $dbh->{'proxy_dbh'};
     local $SIG{__DIE__} = 'DEFAULT';
+    local $@;
     eval { $rdbh->disconnect() };
     DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     
