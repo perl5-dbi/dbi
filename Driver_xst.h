@@ -9,6 +9,7 @@
 static SV *
 dbixst_bounce_method(char *methname, int params)
 {
+    dTHX;
     /* XXX this 'magic' undoes the dMARK embedded in the dXSARGS of our caller	*/
     /* so that the dXSARGS below can set things up as they were for our caller	*/
     void *xxx = PL_markstack_ptr++;
@@ -46,6 +47,7 @@ dbdxst_bind_params(SV *sth, imp_sth_t *imp_sth, I32 items, I32 ax)
     /* Handle binding supplied values to placeholders.		*/
     /* items = one greater than the number of params		*/
     /* ax = ax from calling sub, maybe adjusted to match items	*/
+    dTHX;
     int i;
     SV *idx;
     if (items-1 != DBIc_NUM_PARAMS(imp_sth)
@@ -75,6 +77,7 @@ dbdxst_bind_params(SV *sth, imp_sth_t *imp_sth, I32 items, I32 ax)
 static SV *
 dbdxst_fetchall_arrayref(SV *sth, SV *slice, SV *batch_row_count)
 {
+    dTHX;
     D_imp_sth(sth);
     SV *rows_rvav;
     if (SvOK(slice)) {  /* should never get here */
