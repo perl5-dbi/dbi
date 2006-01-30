@@ -2164,6 +2164,9 @@ clear_cached_kids(SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_le
 static double
 dbi_time() {
 # ifdef HAS_GETTIMEOFDAY
+#   ifdef PERL_IMPLICIT_SYS
+    dTHX;
+#   endif
     struct timeval when;
     gettimeofday(&when, (struct timezone *) 0);
     return when.tv_sec + (when.tv_usec / 1000000.0);
