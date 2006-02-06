@@ -1392,7 +1392,8 @@ Driver.h is very simple and the operational contents should look like this:
   #ifndef DRIVER_H_INCLUDED
   #define DRIVER_H_INCLUDED
 
-  #define NEED_DBIXS_VERSION 93    /* 93 for DBI versions 1.00 to 1.32 */
+  #define NEED_DBIXS_VERSION 93    /* 93 for DBI versions 1.00 to 1.51+ */
+  #define PERL_NO_GET_CONTEXT      /* if used require DBI 1.51+ */
 
   #include <DBIXS.h>      /* installed by the DBI module  */
 
@@ -1432,6 +1433,30 @@ than 1.41. This makes users happy and your life easier.
 Always read the notes in dbivport.h to check for any limitations
 in the emulation that you should be aware of.
 
+With DBI v1.51 or better I recommend that the driver defines
+PERL_NO_GET_CONTEXT before F<DBIXS.h> is included. This can significantly
+improve efficiency when running under a thread enabled perl. (Remember that
+the standard perl in most Linux distributions is built with threads enabled.
+So is ActiveState perl for Windows, and perl built for Apache mod_perl2.)
+If you do this there are some things to keep in mind:
+
+B<*> If PERL_NO_GET_CONTEXT is defined, then every function that calls the Perl
+API will need to start out with a C<dTHX;> declaration.
+
+B<*> You'll know which functions need this, because the C compiler will
+complain that the undeclared identifier C<myperl> is used if I<and only if>
+the perl you are using to develop and test your driver has threads enabled.
+
+B<*> So if you don't remember to test with a thread-enabled perl before making
+a release it's likely that you'll get failure reports from users who are.
+
+B<*> For driver private functions it is possible to gain even more
+efficiency by replacing C<dTHX;> with C<pTHX_> prepended to the
+parameter list and then C<aTHX_> prepended to the argument list where
+the function is called.
+
+See L<perlguts/How multiple interpreters and concurrency are supported> for
+additional information about PERL_NO_GET_CONTEXT.
 
 =head2 Implementation header dbdimp.h
 
