@@ -192,8 +192,6 @@ Assuming that your driver is called DBD::Driver, these files are:
 
 =back
 
-Needless to say, all these files are either text files or pure Perl.
-
 The first four files are mandatory.
 Makefile.PL is used to control how the driver is built and installed.
 The README file tells people who download the file about how to build
@@ -312,7 +310,6 @@ In what follows I assume the name C<Driver> for your new package and the
 prefix 'drv_'.
 The minimal set of files we have to implement are I<Makefile.PL>,
 I<README>, I<MANIFEST> and I<Driver.pm>.
-Files in the 'nice to have' category include '
 
 =head2 Pure Perl version of Makefile.PL
 
@@ -703,7 +700,7 @@ to change the namespace.
       # environment variables to be set; this could be where you
       # validate that they are set, or default them if they are not set.
 
-      $my $driver_prefix = "drv_"; # the assigned prefix for this driver
+      my $driver_prefix = "drv_"; # the assigned prefix for this driver
 
       # Process attributes from the DSN; we assume ODBC syntax
       # here, that is, the DSN looks like var1=val1;...;varN=valN
@@ -1524,14 +1521,8 @@ visible functions "dbd_drv_xxxx".
 You should also avoid non-constant global variables as much as possible
 to improve the support for threading.
 
-Since Perl 5.6 requires support for function prototypes (ANSI or ISO or
+Since Perl requires support for function prototypes (ANSI or ISO or
 Standard C), you should write your code using function prototypes too.
-Although technically DBI still supports Perl 5.005_03, which did not
-mandate prototype support from the C compiler, the only platform where
-prototypes are a problem is on HP-UX with the bundled C compiler (which
-is strictly K&R).
-The solution for that is to get a copy of the GNU Compiler Collection
-(GCC, aka the GNU C Compiler) for HP-UX.
 
 It is possible to use either the unmapped names such as C<dbd_init> or
 the mapped names such as C<dbd_ix_dr_init> in the C<dbdimp.c> file.
