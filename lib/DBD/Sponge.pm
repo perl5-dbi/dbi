@@ -7,7 +7,7 @@
     @EXPORT = qw(); # Do NOT @EXPORT anything.
     $VERSION = sprintf("%d.%02d", q$Revision: 11.10 $ =~ /(\d+)\.(\d+)/o);
 
-#   $Id: Sponge.pm,v 11.10 2004/01/07 17:38:51 timbo Exp $
+#   $Id$
 #
 #   Copyright (c) 1994-2003 Tim Bunce Ireland
 #

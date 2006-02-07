@@ -1,4 +1,4 @@
-# $Id: DBI.pm,v 11.43 2004/02/01 11:16:16 timbo Exp $
+# $Id$
 # vim: ts=8:sw=4
 #
 # Copyright (c) 1994-2004  Tim Bunce  Ireland

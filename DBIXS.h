@@ -1,4 +1,4 @@
-/* $Id: DBIXS.h,v 11.18 2004/02/01 11:16:16 timbo Exp $
+/* $Id$
  *
  * Copyright (c) 1994-2002  Tim Bunce  Ireland
  *

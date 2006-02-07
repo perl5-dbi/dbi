@@ -3,11 +3,11 @@ package DBI::DBD;
 
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
-$VERSION = sprintf("%d.%02d", q$Revision: 11.21 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("%d.%02d", q$Revision: 11.22 $ =~ /(\d+)\.(\d+)/o);
 
-# $Id: DBD.pm,v 11.21 2004/02/01 11:16:16 timbo Exp $
+# $Id$
 #
-# Copyright (c) 1997-2003 Jonathan Leffler, Jochen Wiedmann, Steffen
+# Copyright (c) 1997-2006 Jonathan Leffler, Jochen Wiedmann, Steffen
 # Goeldner and Tim Bunce
 #
 # You may distribute under the terms of either the GNU General Public
@@ -22,9 +22,6 @@ DBI::DBD - Perl DBI Database Driver Writer's Guide
   perldoc DBI::DBD
 
 =head2 Version and volatility
-
-  $Revision: 11.21 $
-  $Date: 2004/02/01 11:16:16 $
 
 This document is I<still> a minimal draft which is in need of further work.
 
@@ -1444,7 +1441,7 @@ B<*> If PERL_NO_GET_CONTEXT is defined, then every function that calls the Perl
 API will need to start out with a C<dTHX;> declaration.
 
 B<*> You'll know which functions need this, because the C compiler will
-complain that the undeclared identifier C<myperl> is used if I<and only if>
+complain that the undeclared identifier C<my_perl> is used if I<and only if>
 the perl you are using to develop and test your driver has threads enabled.
 
 B<*> So if you don't remember to test with a thread-enabled perl before making

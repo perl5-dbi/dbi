@@ -1,4 +1,4 @@
-# $Id: GetInfoReturn.pm,v 1.4 2003/02/26 17:56:01 timbo Exp $
+# $Id$
 #
 # Copyright (c) 2002  Tim Bunce  Ireland
 #

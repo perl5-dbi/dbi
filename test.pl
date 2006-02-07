@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 
-# $Id: test.pl,v 11.7 2004/02/01 11:16:16 timbo Exp $
+# $Id$
 #
 # Copyright (c) 1994-1998 Tim Bunce
 #

@@ -8,7 +8,7 @@
     @EXPORT = qw(); # Do NOT @EXPORT anything.
     $VERSION = sprintf("%d.%02d", q$Revision: 11.12 $ =~ /(\d+)\.(\d+)/o);
 
-#   $Id: ExampleP.pm,v 11.12 2004/01/07 17:38:51 timbo Exp $
+#   $Id$
 #
 #   Copyright (c) 1994,1997,1998 Tim Bunce
 #
