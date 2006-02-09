@@ -1819,8 +1819,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $attr;
 	$attr = shift if !defined $_[0] or ref($_[0]) eq 'HASH';
 
-	die "bind_columns called with ".@_." refs when $fields needed."
+	return $sth->set_err(1, "bind_columns called with ".@_." refs when $fields needed")
 	    if @_ != $fields;
+
 	my $idx = 0;
 	$sth->bind_col(++$idx, shift, $attr) or return
 	    while (@_);
