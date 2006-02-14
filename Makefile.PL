@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-#  Copyright (c) 1994-2002  Tim Bunce  England
+#  Copyright (c) 1994-2006  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
@@ -17,9 +17,6 @@ use Config;
 use File::Find;
 use File::Spec;
 use strict;
-
-use Test::Harness;	# tests use it so check it's loadable early
-use Test::More 0.4;	# tests use it so check it's loadable early
 
 use DBI::DBD;
 

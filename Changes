@@ -24,6 +24,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Added 'fetch array of hash refs' example to selectall_arrayref
     docs thanks to Tom Schindl.
+  Added reference to $DBI::neat_maxlen in TRACING section of docs.
 
 =head2 Changes in DBI 1.50 (svn rev 2307),   13 December 2005
 

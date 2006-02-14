@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.50"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.51"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -116,7 +116,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.50.
+This is the DBI specification that corresponds to the DBI version 1.51.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -6597,7 +6597,7 @@ afterwards.
 
 DBI can be subclassed and extended just like any other object
 oriented module.  Before we talk about how to do that, it's important
-to be clear about how the DBI classes and how they work together.
+to be clear about the various DBI classes and how they work together.
 
 By default C<$dbh = DBI-E<gt>connect(...)> returns a $dbh blessed
 into the C<DBI::db> class.  And the C<$dbh-E<gt>prepare> method
@@ -6817,6 +6817,12 @@ trace output is sent to C<STDERR> and the previous trace file is closed.
 Currently $trace_filename can't be a filehandle. But meanwhile you
 can use the special strings C<"STDERR"> and C<"STDOUT"> to select
 those filehandles.
+
+=head2 Trace Content
+
+Many of the values embeded in trace output are formatted using the neat()
+utility function. This means they may be quoted, sanitized, and possibly
+truncated if longer than C<$DBI::neat_maxlen>. See L</neat> for more details.
 
 =head2 Tracing Tips
 
