@@ -1819,12 +1819,13 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $attr;
 	$attr = shift if !defined $_[0] or ref($_[0]) eq 'HASH';
 
-	return $sth->set_err(1, "bind_columns called with ".@_." refs when $fields needed")
-	    if @_ != $fields;
-
 	my $idx = 0;
 	$sth->bind_col(++$idx, shift, $attr) or return
-	    while (@_);
+	    while (@_ and $idx < $fields);
+
+	return $sth->set_err(1, "bind_columns called with ".($idx+@_)." values but $fields are needed")
+	    if @_ or $idx != $fields;
+
 	return 1;
     }
 
@@ -5904,8 +5905,10 @@ The TYPE attribute for bind_col() was first specified in DBI 1.41.
   $rc = $sth->bind_columns(@list_of_refs_to_vars_to_bind);
 
 Calls L</bind_col> for each column of the C<SELECT> statement.
-The C<bind_columns> method will die if the number of references does not
-match the number of fields.
+
+The list of references should have the same number of elements as the number of
+columns in the C<SELECT> statement. If it doesn't then C<bind_columns> will
+bind the elements given, upto the number of columns, and then return an error.
 
 For maximum portability between drivers, bind_columns() should be called
 after execute() and not before.

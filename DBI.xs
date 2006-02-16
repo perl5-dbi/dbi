@@ -2041,6 +2041,7 @@ dbih_event(SV *hrv, const char *evtype, SV *a1, SV *a2)
 STATIC I32
 dbi_dopoptosub_at(PERL_CONTEXT *cxstk, I32 startingblock)
 {
+    dTHX;
     I32 i;
     register PERL_CONTEXT *cx;
     for (i = startingblock; i >= 0; i--) {

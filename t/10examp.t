@@ -4,13 +4,14 @@ use lib qw(blib/arch blib/lib);	# needed since -T ignores PERL5LIB
 use DBI qw(:sql_types);
 use Config;
 use Cwd;
+use strict;
 
 $^W = 1;
 
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 254;
+use Test::More tests => 258;
 
 # "globals"
 my ($r, $dbh);
@@ -238,7 +239,7 @@ $dir =~ m/(.*)/; $dir = $1 || die;
 
 # ---
 
-my($col0, $col1, $col2, $rows);
+my($col0, $col1, $col2, $col3, $rows);
 my(@row_a, @row_b);
 
 ok($csr_a->{Taint} = 1) unless $DBI::PurePerl && ok(1);
@@ -254,6 +255,11 @@ ok($row_a[0] eq $col0) or print "$row_a[0] ne $col0\n";
 ok($row_a[1] eq $col1) or print "$row_a[1] ne $col1\n";
 ok($row_a[2] eq $col2) or print "$row_a[2] ne $col2\n";
 #$csr_a->trace(0);
+
+ok( ! $csr_a->bind_columns(undef, \($col0, $col1)) );
+like $csr_a->errstr, '/bind_columns called with 2 values but 3 are needed/', 'errstr should contain error message';
+ok( ! $csr_a->bind_columns(undef, \($col0, $col1, $col2, $col3)) );
+like $csr_a->errstr, '/bind_columns called with 4 values but 3 are needed/', 'errstr should contain error message';
 
 
 SKIP: {
