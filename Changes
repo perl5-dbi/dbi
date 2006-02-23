@@ -13,6 +13,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed DBD::Proxy to not alter $@ in disconnect or AUTOLOADd methods.
   Fixed bind_columns() to use return set_err(...) instead of die()
     to report incorrect number of parameters, thanks to Ben Thul.
+  Fixed for perl 5.9.x for non-threaded builds thanks to Nicholas Clark.
+    Users of Perl >= 5.9.x will require DBI >= 1.51.
 
   Improved performance for thread-enabled perls thanks to Gisle Aas.
   Drivers can now use PERL_NO_GET_CONTEXT thanks to Gisle Aas.

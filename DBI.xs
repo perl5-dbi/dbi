@@ -23,6 +23,9 @@ static int xsbypass = 0;	/* disable XSUB->XSUB shortcut		*/
 #else
 static int xsbypass = 1;	/* enable XSUB->XSUB shortcut		*/
 #endif
+#ifndef CvISXSUB
+#define CvISXSUB(sv) CvXSUB(sv)
+#endif
 
 #define DBI_MAGIC '~'
 
@@ -2836,7 +2839,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	 */
 
 	/* SHORT-CUT ALERT! */
-	if (xsbypass && isGV(imp_msv) && CvXSUB(GvCV(imp_msv))) {
+	if (xsbypass && isGV(imp_msv) && CvISXSUB(GvCV(imp_msv))
+	    && CvXSUB(GvCV(imp_msv))) {
 
 	    /* If we are calling an XSUB we jump directly to its C code and
 	     * bypass perl_call_sv(), pp_entersub() etc. This is fast.
