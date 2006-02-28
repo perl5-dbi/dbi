@@ -4210,10 +4210,8 @@ fetchrow_hashref(sth, keyattrib=Nullch)
 	ka_av = (AV*)SvRV(ka_rv);
 	hv    = newHV();
 	for (i=0; i < num_fields; ++i) {	/* honor the original order as sent by the database */
-	    STRLEN len;
 	    SV  **field_name_svp = av_fetch(ka_av, i, 1);
-	    const char *field_name = SvPV(*field_name_svp, len);
-	    hv_store(hv, field_name, len, newSVsv((SV*)(AvARRAY(rowav)[i])), 0);
+	    hv_store_ent(hv, *field_name_svp, newSVsv((SV*)(AvARRAY(rowav)[i])), 0);
 	}
 	RETVAL = newRV((SV*)hv);
 	SvREFCNT_dec(hv);  	/* since newRV incremented it	*/
