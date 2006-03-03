@@ -78,6 +78,7 @@ DBI::Changes - List of significant changes to the DBI
     I've recoded it in C so there's no significant performance impact.
   Added $h->{Type} docs (returns 'dr', 'db', or 'st')
   Adding trace message in DESTROY if InactiveDestroy enabled.
+  Added %drhs = DBI->installed_drivers();
 
   Ported DBI::ProfileDumper::Apache to mod_perl2 RC5+
     thanks to Philip M. Golluci

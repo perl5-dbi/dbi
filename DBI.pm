@@ -2736,7 +2736,7 @@ directories. Passing a true value for C<$quiet> will inhibit the warning.
 
 Returns a list of driver name and driver handle pairs for all
 installed drivers. The driver name does not include the 'DBD::'
-prefix.
+prefix. Added in DBI 1.49.
 
 =item C<installed_versions>
 
