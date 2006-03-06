@@ -3989,7 +3989,8 @@ will return undef.
 
 This utility method combines L</prepare>, L</execute> and
 L</fetchall_arrayref> into a single call. It returns a reference to an
-array containing a reference to an array for each row of data fetched.
+array containing a reference to an array (or hash, see below) for each row of
+data fetched.
 
 The C<$statement> parameter can be a previously prepared statement handle,
 in which case the C<prepare> is skipped. This is recommended if the
@@ -4024,7 +4025,7 @@ hash. That can be done simple using:
       print "Employee: $emp->{ename}\n";
   }
 
-WhSee L</fetchall_arrayref> method for more details.
+See L</fetchall_arrayref> method for more details.
   
 =item C<selectall_hashref>
 
@@ -4036,20 +4037,23 @@ This utility method combines L</prepare>, L</execute> and
 L</fetchall_hashref> into a single call. It returns a reference to a
 hash containing one entry, at most, for each row, as returned by fetchall_hashref().
 
+The C<$statement> parameter can be a previously prepared statement handle,
+in which case the C<prepare> is skipped.  This is recommended if the
+statement is going to be executed many times.
+
 The C<$key_field> parameter defines which column, or columns, are used as keys
 in the returned hash. It can either be the name of a single field, or a
 reference to an array containing multiple field names. Using multiple names
-yields a tree of nested hashes. See fetchall_hashref() for more details.
+yields a tree of nested hashes.
 
-The C<$statement> parameter can be a previously prepared statement handle,
-in which case the C<prepare> is skipped. This is recommended if the
-statement is going to be executed many times.
+If a row has the same key as an earlier row then it replaces the earlier row.
 
 If any method except C<fetchrow_hashref> fails, and L</RaiseError> is not set,
 C<selectall_hashref> will return C<undef>.  If C<fetchrow_hashref> fails and
 L</RaiseError> is not set, then it will return with whatever data it
 has fetched thus far. $DBI::err should be checked to catch that.
 
+See fetchall_hashref() for more details.
 
 =item C<selectcol_arrayref>
 
@@ -4157,7 +4161,8 @@ Here are some examples of C<prepare_cached>:
 
   sub insert_hash {
     my ($table, $field_values) = @_;
-    my @fields = sort keys %$field_values; # sort required
+    # sort to keep field order, and thus sql, stable for prepare_cached
+    my @fields = sort keys %$field_values;
     my @values = @{$field_values}{@fields};
     my $sql = sprintf "insert into %s (%s) values (%s)",
 	$table, join(",", @fields), join(",", ("?")x@fields);
@@ -4167,7 +4172,8 @@ Here are some examples of C<prepare_cached>:
 
   sub search_hash {
     my ($table, $field_values) = @_;
-    my @fields = sort keys %$field_values; # sort required
+    # sort to keep field order, and thus sql, stable for prepare_cached
+    my @fields = sort keys %$field_values;
     my @values = @{$field_values}{@fields};
     my $qualifier = "";
     $qualifier = "where ".join(" and ", map { "$_=?" } @fields) if @fields;
@@ -5734,7 +5740,7 @@ would then shift the balance back towards fetchall_arrayref().
 The C<fetchall_hashref> method can be used to fetch all the data to be
 returned from a prepared and executed statement handle. It returns a reference
 to a hash containing a key for each distinct value of the $key_field column
-that was fetched For each key the corresponding value is a reference to a hash
+that was fetched. For each key the corresponding value is a reference to a hash
 containing all the selected columns and their values, as returned by fetchrow_hashref().
 
 If there are no rows to return, C<fetchall_hashref> returns a reference
