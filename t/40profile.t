@@ -44,7 +44,6 @@ $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 $dbh->{Profile} = "4";
 is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ DBIprofile_MethodName ],
-	'Data' => { FETCH => [ 1, 0, 0, 0, 0, 0, 0 ] }
 } => 'DBI::Profile';
 
 # using a package name
@@ -52,16 +51,19 @@ $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 $dbh->{Profile} = "DBI::Profile";
 is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ DBIprofile_Statement ],
-	'Data' => { '' => [ 1, 0, 0, 0, 0, 0, 0 ] }
 } => 'DBI::Profile';
 
 # using a combined path and name
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
-$dbh->{Profile} = "2/DBI::Profile";
+$dbh->{Profile} = "20/DBI::Profile";
+$dbh->do("set foo=1"); my $line = __LINE__;
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_Statement ],
-	'Data' => { '' => [ 1, 0, 0, 0, 0, 0, 0 ] }
+	'Path' => [ DBIprofile_MethodName, DBIprofile_Caller ],
+	'Data' => { 'do' => {
+		"40profile.t line $line" => [ 1, 0, 0, 0, 0, 0, 0 ]
+	} }
 } => 'DBI::Profile';
+#die Dumper $dbh->{Profile};
 
 
 # can turn it on at connect
@@ -70,7 +72,7 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ DBIprofile_Statement, DBIprofile_MethodName ],
 	'Data' => {
 		'' => {
-			'FETCH' => [ 3, 0, 0, 0, 0, 0, 0 ],
+			'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			'STORE' => [ 2, 0, 0, 0, 0, 0, 0 ]
 		}
 	}
@@ -83,7 +85,7 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ DBIprofile_Statement, DBIprofile_MethodName ],
 	'Data' => {
 		'' => {
-			'FETCH' => [ 5, 0, 0, 0, 0, 0, 0 ], # +2!
+			'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ], # +0
 			'STORE' => [ 2, 0, 0, 0, 0, 0, 0 ]
 		},
 		"Hi, mom" => {
@@ -151,7 +153,7 @@ $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count
 is_deeply $tmp, bless {
 	'Path' => [ DBIprofile_Statement ],
 	'Data' => {
-		''   => [ 7, 0, 0, 0, 0, 0, 0 ],
+		''   => [ 3, 0, 0, 0, 0, 0, 0 ],
 		$sql => [ -1, 0, 0, 0, 0, 0, 0 ],
 		'set foo=1' => [ 1, 0, 0, 0, 0, 0, 0 ],
 	}
@@ -185,17 +187,10 @@ $tmp->{Data}{usrnam}{'select name from .'}{foo}{fetchrow_hashref}[0] = -1;
 is_deeply $tmp, bless {
     'Path' => [ '{Username}', DBIprofile_Statement, 'foo', DBIprofile_MethodName ],
     'Data' => {
-	'' => {
-	    '' => {
-		    'foo' => {
-			    'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ],
-		    },
-	    },
-	},
 	'usrnam' => {
 	    '' => {
 		    'foo' => {
-			    'FETCH' => [ 2, 0, 0, 0, 0, 0, 0 ],
+			    'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			    'STORE' => [ 2, 0, 0, 0, 0, 0, 0 ],
 		    },
 	    },

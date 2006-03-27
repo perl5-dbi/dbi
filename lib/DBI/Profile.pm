@@ -175,6 +175,9 @@ values are interpreted is to show the code:
     push @Path, DBIprofile_Statement        if $path & 0x02;
     push @Path, DBIprofile_MethodName       if $path & 0x04;
     push @Path, DBIprofile_MethodClass      if $path & 0x08;
+    push @Path, DBIprofile_Caller           if $path & 0x10;
+
+(The order here is subject to change and shouldn't be relied upon.)
 
 So using the value "C<1>" causes all profile data to be merged into
 a single leaf of the tree. That's useful when you just want a total.
@@ -258,6 +261,12 @@ DBD::_::db::selectrow_arrayref but another 99 to
 DBD::mysql::db::selectrow_arrayref. Currently the first
 call Pern't record the true location. That may change.
 
+B<DBIprofile_Caller>
+
+Use a string showing the filename and line number of the code calling the
+method, and the filename and line number of the code that called that.
+The content and format of the string may change.
+
 =item Code Reference
 
 Not yet implemented.
@@ -304,7 +313,7 @@ you can do:
 
 The default results format looks like this:
 
-  DBI::Profile: 0.001015s (5 calls) programname @ YYYY-MM-DD HH:MM:SS
+  DBI::Profile: 0.001015s 42.7% (5 calls) programname @ YYYY-MM-DD HH:MM:SS
   '' =>
       0.000024s / 2 = 0.000012s avg (first 0.000015s, min 0.000009s, max 0.000015s)
   'SELECT mode,size,name FROM table' =>
@@ -317,7 +326,8 @@ run, then a formated version of the profile data tree.
 If the results are being formated when the perl process is exiting
 (which is usually the case when the DBI_PROFILE environment variable
 is used) then the percentage of time the process spent inside the
-DBI is also shown.
+DBI is also shown. If the process is not exiting then the percentage is
+calculated using the time between the first and last call to the DBI.
 
 In the example above the paths in the tree are only one level deep and
 use the Statement text as the value (that's the default behaviour).
@@ -499,6 +509,9 @@ DBI->connect is counted if the DBI_PROFILE environment variable is set.
 
 Time spent fetching tied variables, $DBI::errstr, is counted.
 
+Time spent in FETCH for $h->{Profile} is not counted, so getting the profile
+data doesn't alter it.
+
 DBI::PurePerl does not support profiling (though it could in theory).
 
 A few platforms don't support the gettimeofday() high resolution
@@ -535,6 +548,7 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
     DBIprofile_Statement
     DBIprofile_MethodName
     DBIprofile_MethodClass
+    DBIprofile_Caller
     dbi_profile
     dbi_profile_merge
     dbi_time
@@ -546,6 +560,7 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
 use constant DBIprofile_Statement	=> -2100000001;
 use constant DBIprofile_MethodName	=> -2100000002;
 use constant DBIprofile_MethodClass	=> -2100000003;
+use constant DBIprofile_Caller  	=> -2100000004;
 
 $ON_DESTROY_DUMP = sub { DBI->trace_msg(shift, 0) };
 
@@ -586,6 +601,7 @@ sub _auto_new {
 	push @Path, DBIprofile_Statement	if $path & 0x02;
 	push @Path, DBIprofile_MethodName	if $path & 0x04;
 	push @Path, DBIprofile_MethodClass	if $path & 0x08;
+	push @Path, DBIprofile_Caller	  	if $path & 0x10;
 	@Path = reverse @Path if $reverse;
     } else {
         # default Path
@@ -618,13 +634,12 @@ sub format {
 
     if (@$leaves) {
 	dbi_profile_merge(my $totals=[], @$leaves);
-	my ($count, $dbi_time) = @$totals;
+	my ($count, $time_in_dbi, undef, undef, undef, $t1, $t2) = @$totals;
 	(my $progname = $0) =~ s:.*/::;
 	if ($count) {
-	    $prologue .= sprintf "%fs ", $dbi_time;
-	    my $perl_time = dbi_time() - $^T;
-	    $prologue .= sprintf "%.2f%% ", $dbi_time/$perl_time*100
-		if $DBI::PERL_ENDING && $perl_time;
+	    $prologue .= sprintf "%fs ", $time_in_dbi;
+	    my $perl_time = ($DBI::PERL_ENDING) ? time_in_dbi() - $^T : $t2-$t1;
+	    $prologue .= sprintf "%.2f%% ", $time_in_dbi/$perl_time*100 if $perl_time;
 	    my @lt = localtime(time);
 	    my $ts = sprintf "%d-%02d-%02d %02d:%02d:%02d",
 		1900+$lt[5], $lt[4]+1, @lt[3,2,1,0];

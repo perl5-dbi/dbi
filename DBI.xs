@@ -2108,8 +2108,9 @@ dbi_caller(long *line)
     return NULL;
 }
 
+
 static char *
-log_where(int trace_level, SV *buf, int append, char *suffix)
+log_where(SV *buf, int append, char *prefix, char *suffix, int show_caller, int show_path)
 {
     dTHX;
     dTHR;
@@ -2125,14 +2126,14 @@ log_where(int trace_level, SV *buf, int append, char *suffix)
 	long  near_line = CopLINE(curcop);
 	char *near_file = SvPV(GvSV(CopFILEGV(curcop)), len);
 	char *file = near_file;
-	if (trace_level <= 4) {
+	if (!show_path) {
 	    char *sep;
 	    if ( (sep=strrchr(file,'/')) || (sep=strrchr(file,'\\')))
 		file = sep+1;
 	}
-	sv_catpvf(buf, " at %s line %ld", file, near_line);
+	sv_catpvf(buf, "%s%s line %ld", (prefix) ? prefix : "", file, near_line);
 
-	if (trace_level >= 3) {
+	if (show_caller) {
 	    long far_line;
 	    char *far_file = dbi_caller(&far_line);
 	    if (far_file && !(far_line==near_line && strEQ(far_file,near_file)) )
@@ -2223,8 +2224,8 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     if (!DBIc_has(imp_xxh, DBIcf_Profile))
 	return;
 
-    /* XXX need to switch to inner handle */
-    h_hv = (SvROK(h)) ? (HV*)SvRV(h) : (HV*)h;
+    h_hv = (HV*)SvRV(dbih_inner(h, "dbi_profile"));
+    /*h_hv = (SvROK(h)) ? (HV*)SvRV(h) : (HV*)h; */
 
     profile = *hv_fetch(h_hv, "Profile", 7, 1);
     if (profile && SvMAGICAL(profile))
@@ -2291,6 +2292,9 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 			p = SvPV_nolen(method);
 		    }
 		    break;
+		case -2100000004:	/* DBIprofile_Caller */
+		    p = log_where(0, 0, "", "", 1, 0);
+		    break;
 		default:
 		    p = SvPV_nolen(pathsv);
 		    break;
@@ -2339,19 +2343,19 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     }
     path[idx++] = Nullch;
 
+    /* this walk-down-the-tree code should be merged into the loop above */
     tmp = profile;
     for (idx=0; path[idx]; ++idx) {
+	SV *orig_tmp = tmp;
 	if (SvROK(tmp))
 	    tmp = SvRV(tmp);
-	else if (SvTYPE(tmp) != SVt_PVHV) {
+	if (SvTYPE(tmp) != SVt_PVHV) {
 	    HV *hv = newHV();
 	    if (SvOK(tmp))
-		warn("Profile data element %s replaced with new hash ref", neatsvpv(tmp,0));
+		warn("Profile data element %s replaced with new hash ref", neatsvpv(orig_tmp,0));
 	    sv_setsv(tmp, newRV_noinc((SV*)hv));
 	    tmp = (SV*)hv;
 	}
-	if (SvTYPE(tmp) != SVt_PVHV)
-	    break;
 	tmp = *hv_fetch((HV*)tmp, path[idx], strlen(path[idx]), 1);
 	/* warn("%d hv_fetch %s = %s", idx, path[idx], neatsvpv(tmp,0)); */
     }
@@ -2365,22 +2369,23 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	av_store(av, DBIprof_MAX_TIME,		newSVnv(ti));
 	av_store(av, DBIprof_FIRST_CALLED,	newSVnv(t1));
 	av_store(av, DBIprof_LAST_CALLED,	newSVnv(t1));
-        return;
     }
-    if (SvROK(tmp))
-	tmp = SvRV(tmp);
-    if (SvTYPE(tmp) != SVt_PVAV)
-	croak("Invalid Profile data leaf element at depth %d: %s (type %d)",
-		idx, neatsvpv(tmp,0), SvTYPE(tmp));
-    av = (AV*)tmp;
-    sv_inc( *av_fetch(av, DBIprof_COUNT, 1));
-    tmp = *av_fetch(av, DBIprof_TOTAL_TIME, 1);
-    sv_setnv(tmp, SvNV(tmp) + ti);
-    tmp = *av_fetch(av, DBIprof_MIN_TIME, 1);
-    if (ti < SvNV(tmp)) sv_setnv(tmp, ti);
-    tmp = *av_fetch(av, DBIprof_MAX_TIME, 1);
-    if (ti > SvNV(tmp)) sv_setnv(tmp, ti);
-    sv_setnv( *av_fetch(av, DBIprof_LAST_CALLED, 1), t1);
+    else {
+	if (SvROK(tmp))
+	    tmp = SvRV(tmp);
+	if (SvTYPE(tmp) != SVt_PVAV)
+	    croak("Invalid Profile data leaf element at depth %d: %s (type %d)",
+		    idx, neatsvpv(tmp,0), SvTYPE(tmp));
+	av = (AV*)tmp;
+	sv_inc( *av_fetch(av, DBIprof_COUNT, 1));
+	tmp = *av_fetch(av, DBIprof_TOTAL_TIME, 1);
+	sv_setnv(tmp, SvNV(tmp) + ti);
+	tmp = *av_fetch(av, DBIprof_MIN_TIME, 1);
+	if (ti < SvNV(tmp)) sv_setnv(tmp, ti);
+	tmp = *av_fetch(av, DBIprof_MAX_TIME, 1);
+	if (ti > SvNV(tmp)) sv_setnv(tmp, ti);
+	sv_setnv( *av_fetch(av, DBIprof_LAST_CALLED, 1), t1);
+    }
     return;
 }
 
@@ -2500,7 +2505,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    (dirty?'!':' '), meth_name, neatsvpv(h,0),
 	    (long)SvREFCNT(h), (SvROK(h) ? (long)SvREFCNT(SvRV(h)) : (long)-1),
 	    (long)items, (int)gimme, (long)ima_flags, (long)PerlProc_getpid());
-	PerlIO_puts(logfp, log_where(trace_level, 0, 0, "\n"));
+	PerlIO_puts(logfp, log_where(0, 0, " at ","\n", (trace_level >= 3), (trace_level >= 4)));
 	PerlIO_flush(logfp);
     }
 
@@ -2802,6 +2807,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    ) {
 		qsv = Nullsv;
 	    }
+	    /* disable profiling of FETCH of Profile data */
+	    if (*key == 'P' && strEQ(key, "Profile"))
+		profile_t1 = 0.0;
 	}
     }
 
@@ -3011,7 +3019,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	else if (!imp_msv)
 	    PerlIO_printf(logfp," (not implemented)");
 	/* XXX add flag to show pid here? */
-	PerlIO_puts(logfp, log_where(trace_level, 0, 0, "\n")); /* add file and line number information */
+	/* add file and line number information */
+	PerlIO_puts(logfp, log_where(0, 0, " at ", "\n", (trace_level >= 3), (trace_level >= 4)));
     skip_meth_return_trace:
 	PerlIO_flush(logfp);
     }
