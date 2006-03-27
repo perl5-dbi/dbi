@@ -26,7 +26,7 @@ BEGIN {
 }
 
 use Test;
-BEGIN { plan tests => 64; }
+BEGIN { plan tests => 66 }
 
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
@@ -162,12 +162,11 @@ print "Profile Data keys: @{[ keys %{$data->{$do_sql}} ]}\n";
 
 
 # try a custom path
-$dbh = DBI->connect("dbi:ExampleP:", '', '', 
-                    { RaiseError=>1, 
-                      Profile=> { Path => [ 'foo',
-                                            DBIprofile_Statement, 
-                                            DBIprofile_MethodName, 
-                                            'bar' ]}});
+$dbh = DBI->connect("dbi:ExampleP:dbname", 'usrname', '', {
+    RaiseError=>1, Profile=> { Path => [
+	'{Username}', '{AutoCommit}', 'foo', '{bar}', DBIprofile_Statement, DBIprofile_MethodName,
+    ] }
+});
 ok(ref $dbh->{Profile}, "DBI::Profile");
 ok(ref $dbh->{Profile}{Data}, 'HASH');
 ok(ref $dbh->{Profile}{Path}, 'ARRAY');
@@ -178,22 +177,30 @@ $sth = $dbh->prepare($sql);
 $sth->execute();
 while ( my $hash = $sth->fetchrow_hashref ) {}
 
+print Dumper($dbh->{Profile});
+
 # check that the resulting tree fits the expected layout
 $data = $dbh->{Profile}{Data};
 ok($data);
-ok(exists $data->{foo});
-ok(exists $data->{foo}{$sql});
-ok(exists $data->{foo}{$sql}{prepare});
-ok(exists $data->{foo}{$sql}{execute});
-ok(exists $data->{foo}{$sql}{fetchrow_hashref});
-ok(exists $data->{foo}{$sql}{prepare}{bar});
-ok(ref $data->{foo}{$sql}{prepare}{bar}, 'ARRAY');
-ok(@{$data->{foo}{$sql}{prepare}{bar}} == 7);
+ok(exists $data->{usrname});
+ok(exists $data->{usrname}{1});
+ok(exists $data->{usrname}{1}{foo});
+ok(exists $data->{usrname}{1}{foo}{""});
+
+$data = $data->{usrname}{1}{foo}{""}; # $data now points deeper into the tree
+ok(exists $data->{$sql});
+ok(exists $data->{$sql}{prepare});
+ok(exists $data->{$sql}{execute});
+ok(exists $data->{$sql}{fetchrow_hashref});
+ok(ref $data->{$sql}{prepare}, 'ARRAY');
+ok(@{$data->{$sql}{prepare}} == 7);
 
 my $t1 = DBI::dbi_time;
 dbi_profile($dbh, "Hi, mom", "fetchhash_bang", $t1, $t1 + 1);
-ok(exists $data->{foo}{"Hi, mom"});
+ok(exists $data->{"Hi, mom"});
 
+
+print "dbi_profile_merge\n";
 my $total_time = dbi_profile_merge(
     my $totals=[],
     [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
@@ -213,8 +220,7 @@ $_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
 ok("@$totals", "27.00 2.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
 ok($total_time, 2.93);
 
-# check that output went into the log file
 DBI->trace(0, "STDOUT"); # close current log to flush it
-ok(-s $LOG_FILE);
+ok(-s $LOG_FILE); # check that output went into the log file
 
-1;
+exit 0;

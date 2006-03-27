@@ -1971,13 +1971,15 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 	svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
 	if (svp)
 	    valuesv = newSVsv(*svp);	/* take copy to mortalize */
-	else if (!(	(*key=='H' && strEQ(key, "HandleError"))
+	else /* warn unless it's known attribute name */
+	if ( !( 	(*key=='H' && strEQ(key, "HandleError"))
 		||	(*key=='H' && strEQ(key, "HandleSetErr"))
 		||	(*key=='S' && strEQ(key, "Statement"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
 		||	(*key=='C' && strEQ(key, "CursorName"))
 		||	(*key=='C' && strEQ(key, "Callbacks"))
+		||	(*key=='U' && strEQ(key, "Username"))
 		||	!isUPPER(*key)	/* dbd_*, private_* etc */
 	))
 	    warn("Can't get %s->{%s}: unrecognised attribute name",neatsvpv(h,0),key);
@@ -2192,7 +2194,7 @@ dbi_time() {
 static void
 dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double t1, double t2)
 {
-#define DBIprof_MAX_PATH_ELEM	9	/* STATEMENT->$Statement->$method */
+#define DBIprof_MAX_PATH_ELEM	100
 #define DBIprof_COUNT		0
 #define DBIprof_TOTAL_TIME	1
 #define DBIprof_FIRST_TIME	2
@@ -2205,7 +2207,8 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     double ti = t2 - t1;
     const char *path[DBIprof_MAX_PATH_ELEM+1];
     int idx = -1;
-    STRLEN lna;
+    HV *dbh_outer_hv = NULL;
+    HV *dbh_inner_hv = NULL;
     SV *profile;
     SV *tmp;
     AV *av;
@@ -2214,9 +2217,6 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     const int call_depth = DBIc_CALL_DEPTH(imp_xxh);
     const int parent_call_depth = DBIc_PARENT_COM(imp_xxh) ? DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) : 0;
     /* Only count calls originating from the application code	*/
-    /* *MAY* be made configurable later				*/
-    /* XXX BEWARE that if nested call profile data is merged	*/
-    /* with the non-nested data then we'll get invalid results	*/
     if (call_depth > 1 || parent_call_depth > 0)
 	return;
 
@@ -2238,65 +2238,103 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 
     if (!statement) {
 	SV **psv = hv_fetch(h_hv, "Statement", 9, 0);
-	statement = (psv && SvOK(*psv)) ? SvPV(*psv, lna) : "";
+	statement = (psv && SvOK(*psv)) ? SvPV_nolen(*psv) : "";
     }
     if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
-	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "dbi_profile %s %f %d %d q{%s}\n",
+	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "dbi_profile %s %f q{%s}\n",
 		neatsvpv((SvTYPE(method)==SVt_PVCV) ? (SV*)CvGV(method) : method, 0),
-		ti, call_depth, parent_call_depth, statement);
+		ti, statement);
 
     idx = 0;
     path[idx++] = "Data";
+
     tmp = *hv_fetch((HV*)SvRV(profile), "Path", 4, 1);
-    if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVCV) {
-	/* call sub, use returned list of values as path */
-	/* if no values returned then don't save data	*/
-	path[idx++] = Nullch;
-    }
-    else if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVAV) {
+    if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVAV) {
 	int len;
 	av = (AV*)SvRV(tmp);
 	len = av_len(av); /* -1=empty, 0=one element */
+
 	for ( ;(idx-1) <= len && idx < DBIprof_MAX_PATH_ELEM; ++idx) {
 	    SV *pathsv = AvARRAY(av)[idx-1];
-	    const char *p;
-	    switch(SvIOK(pathsv) ? SvIV(pathsv) : 0) {
-	    case -2100000001:
-		p = statement;
-		break;
-	    case -2100000002:
-		p = (SvTYPE(method)==SVt_PVCV)
-			? GvNAME(CvGV(method))
-			: (isGV(method) ? GvNAME(method) : SvPV(method,lna));
-		break;
-	    case -2100000003:
-		if (SvTYPE(method) == SVt_PVCV) {
-		    p = SvPV((SV*)CvGV(method), lna);
+	    const char *p = "?";
+
+	    if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVCV) {
+		/* call sub, use returned list of values as path */
+		/* if no values returned then don't save data	*/
+		warn("code ref in Path");
+		p = Nullch;
+	    }
+	    else if (looks_like_number(pathsv)) {
+		/* numbers are special-cases */
+		switch(SvIV(pathsv)) {	/* see lib/DBI/Profile.pm for magic numbers */
+		case -2100000001:	/* DBIprofile_Statement */
+		    p = statement;
+		    break;
+		case -2100000002:	/* DBIprofile_MethodName */
+		    p = (SvTYPE(method)==SVt_PVCV)
+			    ? GvNAME(CvGV(method))
+			    : (isGV(method) ? GvNAME(method) : SvPV_nolen(method));
+		    break;
+		case -2100000003:	/* DBIprofile_MethodClass */
+		    if (SvTYPE(method) == SVt_PVCV) {
+			p = SvPV_nolen((SV*)CvGV(method));
+		    }
+		    else if (isGV(method)) {
+			/* just using SvPV_nolen(method) sometimes causes an error:	*/
+			/* "Can't coerce GLOB to string" so we use gv_efullname()	*/
+			SV *tmpsv = sv_2mortal(newSVpv("",0));
+			gv_efullname(tmpsv, (GV*)method);
+			p = SvPV_nolen(tmpsv);
+			if (*p == '*') ++p; /* skip past leading '*' glob sigil */
+		    }
+		    else {
+			p = SvPV_nolen(method);
+		    }
+		    break;
+		default:
+		    p = SvPV_nolen(pathsv);
+		    break;
 		}
-		else if (isGV(method)) {
-		    /* just using SvPV(method,lna) sometimes causes an error:	*/
-		    /* "Can't coerce GLOB to string" so we use gv_efullname()	*/
-		    SV *tmpsv = sv_2mortal(newSVpv("",0));
-		    gv_efullname(tmpsv, (GV*)method);
-		    p = SvPV(tmpsv,lna);
+	    }
+	    else if (SvOK(pathsv)) {
+		STRLEN len;
+		p = SvPV(pathsv,len);
+		if (p[0] == '{' && p[len-1] == '}') { /* treat as name of dbh attribute to use */
+		    SV **attr_svp;
+		    if (!dbh_inner_hv) {	/* cache dbh handles the first time we need them */
+			imp_dbh_t *imp_dbh = (DBIc_TYPE(imp_xxh) <= DBIt_DB) ? (imp_dbh_t*)imp_xxh : (imp_dbh_t*)DBIc_PARENT_COM(imp_xxh);
+			dbh_outer_hv = DBIc_MY_H(imp_dbh);
+			if (SvTYPE(dbh_outer_hv) != SVt_PVHV)
+			    return;	/* global destruction - bail */
+			dbh_inner_hv = (HV*)SvRV(dbih_inner((SV*)dbh_outer_hv, "profile"));
+			if (SvTYPE(dbh_inner_hv) != SVt_PVHV)
+			    return;	/* global destruction - bail */
+		    }
+		    /* fetch from inner first, then outer if key doesn't exist */
+		    /* (yes, this is an evil premature optimization) */
+		    p += 1; len -= 2; /* ignore the braces */
+		    if ((attr_svp = hv_fetch(dbh_inner_hv, p, len, 0)) == NULL) {
+			/* try outer (tied) hash - for things like AutoCommit	*/
+			/* (will always return something even for unknowns)	*/
+			if ((attr_svp = hv_fetch(dbh_outer_hv, p, len, 0))) {
+			    if (SvGMAGICAL(*attr_svp))
+				mg_get(*attr_svp); /* FETCH */
+			}
+		    }
+		    if (!attr_svp)
+			p -= 1; /* unignore the braces */
+		    else if (!SvOK(*attr_svp))
+			p = "";
+		    else if (!SvTRUE(*attr_svp) && SvPOK(*attr_svp) && SvNIOK(*attr_svp))
+			p = "0"; /* catch &sv_no style special case */
+		    else
+			p = SvPV_nolen(*attr_svp);
 		}
-		else {
-		    p = SvPV(method,lna);
-		}
-		break;
-	    default:
-		p = SvPV(pathsv,lna);
-		break;
 	    }
 	    path[idx] = p;
 	}
     }
-    else if (SvOK(tmp)) {
-	DBIc_set(imp_xxh, DBIcf_Profile, 0); /* disable */
-	warn("Profile Path attribute isn't valid (%s)", neatsvpv(tmp,0));
-	return;
-    }
-    else {
+    else { /* any bad Path value is treated as a Path of just Statement */
 	path[idx++] = statement;
     }
     path[idx++] = Nullch;

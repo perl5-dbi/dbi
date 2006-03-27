@@ -61,6 +61,7 @@
         my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
         $dbh->STORE('Active', 1);
         $dbh->{examplep_get_info} = {};
+        $dbh->{Name} = $dbname;
         return $outer;
     }
 

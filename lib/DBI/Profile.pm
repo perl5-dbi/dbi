@@ -21,7 +21,7 @@ Other values are possible - see L<"ENABLING A PROFILE"> below.
 
 =head1 DESCRIPTION
 
-DBI::Profile is new and experimental and subject to change.
+DBI::Profile is fairly new and subject to change.
 
 The DBI::Profile module provides a simple interface to collect and
 report performance and benchmarking data from the DBI.
@@ -219,49 +219,29 @@ A reference to a hash containing the collected profile data.
 
 =head2 Path
 
-The Path value is used to control where the profile for a method
-call will be merged into the collected profile data.  Whenever
-profile data is to be stored the current value for Path is used.
+The Path value is a reference to an array. Each element controls the
+value to use at the corresponding level of the profile Data tree.
 
-The value can be one of:
-
-=over 4
-
-=item Array Reference
-
-Each element of the array defines an element of the path to use to
-store the profile data into the C<Data> hash.
-
-=item Undefined value (the default)
-
-Treated the same as C<[ $DBI::Profile::DBIprofile_Statement ]>.
-
-=item Subroutine Reference B<NOT YET IMPLEMENTED>
-
-The subroutine is passed the DBI method name and the handle it was
-called on.  It should return a list of values to uses as the path.
-If it returns an empty list then the method call is not profiled.
-
-=back
-
-The following 'magic cookie' values can be included in the Path and will be
+The elements of Path array can be one of the following types:
 
 =over 4
 
-=item DBIprofile_Statement
+=item Special Constant
 
-Replaced with the current value of the Statement attribute for the
-handle the method was called with. If that value is undefined then
-an empty string is used.
+B<DBIprofile_Statement>
 
-=item DBIprofile_MethodName
+Use the current Statement text. Typically that's the value of the Statement
+attribute for the handle the method was called with. Some methods, like
+commit() and rollback(), are unrelated to a particular statement. For those
+methods DBIprofile_Statement records an empty string.
 
-Replaced with the name of the DBI method that the profile sample
-relates to.
+B<DBIprofile_MethodName>
 
-=item DBIprofile_MethodClass
+Use the name of the DBI method that the profile sample relates to.
 
-Replaced with the fully qualified name of the DBI method, including
+B<DBIprofile_MethodClass>
+
+Use the fully qualified name of the DBI method, including
 the package, that the profile sample relates to. This shows you
 where the method was implemented. For example:
 
@@ -275,22 +255,44 @@ inherited the selectrow_arrayref method provided by the DBI.
 
 But you'll note that there is only one call to
 DBD::_::db::selectrow_arrayref but another 99 to
-DBD::mysql::db::selectrow_arrayref. That's because after the first
-call Perl has cached the method to speed up method calls.
-You may also see some names begin with an asterix ('C<*>').
-Both of these effects are subject to change in later releases.
+DBD::mysql::db::selectrow_arrayref. Currently the first
+call Pern't record the true location. That may change.
 
+=item Code Reference
+
+Not yet implemented.
+
+The subroutine is passed the DBI method name and the handle it was called on.
+It should return a list of values to used at this point in the Path.  If it
+returns an empty list then the method call is not profiled.
+
+=item Attribute Specifier
+
+A string enclosed in braces, such as 'C<{Username}>', specifies that the current
+value of the corresponding database handle attribute should be used at that
+point in the Path.
+
+=item Other Values
+
+Any other values are stringified and used literally.
+
+(References, and values that begin with punctuation characters are reserved.)
 
 =back
 
-Other magic cookie values may be added in the future.
+Only the first 100 elements in Path are used.
+
+If the value of Path is anything other than an array reference,
+it is treated as if it was:
+
+	[ DBI::Profile::DBIprofile_Statement ]
 
 
 =head1 REPORTING
 
 =head2 Report Format
 
-The current profile data can be formatted and output using
+The current accumulated profile data can be formatted and output using
 
     print $h->{Profile}->format;
 
