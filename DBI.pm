@@ -86,10 +86,14 @@ If you have questions about DBI, or DBD driver modules, you can get
 help from the I<dbi-users@perl.org> mailing list.  You can get help
 on subscribing and using the list by emailing I<dbi-users-help@perl.org>.
 
-(To help you make the best use of the dbi-users mailing list,
+To help you make the best use of the dbi-users mailing list,
 and any other lists or forums you may use, I I<strongly>
 recommend that you read "How To Ask Questions The Smart Way"
-by Eric Raymond: L<http://www.catb.org/~esr/faqs/smart-questions.html>)
+by Eric Raymond: L<http://www.catb.org/~esr/faqs/smart-questions.html>.
+
+If you think you've found a bug then please also read
+"How to Report Bugs Effectively" by Simon Tatham:
+L<http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
 
 The DBI home page at L<http://dbi.perl.org/> is always worth a visit
 and includes an FAQ and links to other resources.
@@ -2519,10 +2523,18 @@ an empty list.
 
 $scheme is the first part of the DSN and is currently always 'dbi'.
 $driver is the driver name, possibly defaulted to $ENV{DBI_DRIVER},
-and may be undefined.  $attr_string is the optional attribute string,
-which may be undefined.  If $attr_string is true then $attr_hash
-is a reference to a hash containing the parsed attribute names and
-values. $driver_dsn is the last part of the DBI DSN string.
+and may be undefined.  $attr_string is the contents of the optional attribute
+string, which may be undefined.  If $attr_string is not empty then $attr_hash
+is a reference to a hash containing the parsed attribute names and values.
+$driver_dsn is the last part of the DBI DSN string. For example:
+
+  ($scheme, $driver, $attr_string, $attr_hash, $driver_dsn)
+      = DBI->parse_dsn("DBI:MyDriver(RaiseError=>1):db=test;port=42");
+  $scheme      = 'dbi';
+  $driver      = 'MyDriver';
+  $attr_string = 'RaiseError=>1';
+  $attr_hash   = { 'RaiseError' => '1' };
+  $driver_dsn  = 'db=test;port=42';
 
 The parse_dsn() method was added in DBI 1.43.
 
@@ -3357,24 +3369,25 @@ slower but is useful for special-purpose drivers like DBD::Multiplex.
 
 =item C<InactiveDestroy> (boolean)
 
-The C<InactiveDestroy> attribute can be used to disable the I<database
-engine> related effect of DESTROYing a handle (which would normally
-close a prepared statement or disconnect from the database etc).
 The default value, false, means a handle will be fully destroyed
-when it passes out of scope.
+as normal when the last reference to it is removed, just as you'd expect.
+
+If set true then the handle will be treated by the DESTROY as if it was no
+longer Active, and so the I<database engine> related effects of DESTROYing a
+handle will be skipped.
+
+Think of the name as meaning 'treat the handle as not-Active in the DESTROY
+method'.
 
 For a database handle, this attribute does not disable an I<explicit>
 call to the disconnect method, only the implicit call from DESTROY
 that happens if the handle is still marked as C<Active>.
 
-Think of the name as meaning 'treat the handle as not-Active in the
-DESTROY method'.
-
 This attribute is specifically designed for use in Unix applications
 that "fork" child processes. Either the parent or the child process,
-but not both, should set C<InactiveDestroy> on all their shared handles.
-Note that some databases, including Oracle, don't support passing a
-database connection across a fork.
+but not both, should set C<InactiveDestroy> true on all their shared handles.
+(Note that some databases, including Oracle, don't support passing a
+database connection across a fork.)
 
 To help tracing applications using fork the process id is shown in
 the trace log whenever a DBI or handle trace() method is called.
@@ -3895,7 +3908,7 @@ B<*> For some drivers the value may only available immediately after
 the insert statement has executed (e.g., mysql, Informix).
 
 B<*> For some drivers the $catalog, $schema, $table, and $field parameters
-are required (e.g., Pg), for others they are ignored (e.g., mysql).
+are required, for others they are ignored (e.g., mysql).
 
 B<*> Drivers may return an indeterminate value if no insert has
 been performed yet.
@@ -5454,7 +5467,7 @@ C<bind_param>, C<bind_param_inout>, C<bind_param_array>, or
 C<bind_param_inout_array> has already been used to specify the type.
 See L</bind_param_array> for details.
 
-The mandatory C<ArrayTupleStatus> attribute is used to specify a
+The C<ArrayTupleStatus> attribute can be used to specify a
 reference to an array which will receive the execute status of each
 executed parameter tuple.
 
