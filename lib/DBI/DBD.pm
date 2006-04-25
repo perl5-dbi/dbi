@@ -2725,6 +2725,7 @@ use Exporter ();
 use Config qw(%Config);
 use Carp;
 use Cwd;
+use File::Spec;
 use strict;
 use vars qw(
     @ISA @EXPORT
@@ -2873,21 +2874,15 @@ sub dbd_dbi_arch_dir {
     Carp::croak("Unable to locate Driver.xst in @try") unless @xst;
     Carp::carp( "Multiple copies of Driver.xst found in: @xst") if @xst > 1;
     print "Using DBI $DBI::VERSION (for perl $] on $Config{archname}) installed in $xst[0]\n";
-    return $xst[0];
+    return File::Spec->canonpath($xst[0]);
 }
 
 sub dbd_postamble {
     my $self = shift;
     _inst_checks();
     my $dbi_instarch_dir = ($is_dbi) ? "." : dbd_dbi_arch_dir();
-    my $dbi_driver_xst= '$(DBI_INSTARCH_DIR)/Driver.xst';
-    my $xstf_h = '$(DBI_INSTARCH_DIR)/Driver_xst.h';
-    if ($^O eq 'VMS') {
-	$dbi_instarch_dir = vmsify($dbi_instarch_dir.'/');
-	$dbi_instarch_dir =~ s:/$::; # for buggy old vmsify's?
-	$dbi_driver_xst= '$(DBI_INSTARCH_DIR)Driver.xst';
-	$xstf_h = '$(DBI_INSTARCH_DIR)Driver_xst.h';
-    }
+    my $dbi_driver_xst= File::Spec->catfile($dbi_instarch_dir, 'Driver.xst');
+    my $xstf_h = File::Spec->catfile($dbi_instarch_dir, 'Driver_xst.h');
 
     # we must be careful of quotes, expecially for Win32 here.
     return '

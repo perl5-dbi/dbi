@@ -17,6 +17,7 @@ DBI::Changes - List of significant changes to the DBI
     Users of Perl >= 5.9.x will require DBI >= 1.51.
   Fixed fetching of rows as hash refs to preserve utf8 on field names
     from $sth->{NAME} thanks to Alexey Gaidukov.
+  Fixed build on Win32 (dbd_postamble) thanks to David Golden.
 
   Improved performance for thread-enabled perls thanks to Gisle Aas.
   Drivers can now use PERL_NO_GET_CONTEXT thanks to Gisle Aas.
