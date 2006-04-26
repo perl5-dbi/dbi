@@ -524,10 +524,12 @@ sub connect_cached {
     # For library code using connect_cached() with mod_perl
     # we redirect those calls to Apache::DBI::connect() as well
     my ($class, $dsn, $user, $pass, $attr) = @_;
-    # XXX modifies callers data!
-    ($attr ||= {})->{dbi_connect_method} =
-	($DBI::connect_via eq "Apache::DBI::connect")
+    my $dbi_connect_method = ($DBI::connect_via eq "Apache::DBI::connect")
 	    ? 'Apache::DBI::connect' : 'connect_cached';
+    $attr = {
+        $attr ? %$attr : (), # clone, don't modify callers data
+        dbi_connect_method => $dbi_connect_method,
+    };
     return $class->connect($dsn, $user, $pass, $attr);
 }
 
