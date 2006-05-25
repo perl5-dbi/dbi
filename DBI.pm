@@ -5402,6 +5402,9 @@ calling C<execute>.  The C<execute> method does I<not> return the number of
 rows that will be returned by the query (because most databases can't
 tell in advance), it simply returns a true value.
 
+You can tell if the statement was a C<SELECT> statement by checking if
+C<$sth-E<gt>{NUM_OF_FIELDS}> is greater than zero after calling C<execute>.
+
 If any arguments are given, then C<execute> will effectively call
 L</bind_param> for each value before executing the statement.  Values
 bound in this way are usually treated as C<SQL_VARCHAR> types unless
