@@ -2695,8 +2695,9 @@ corresponding cached C<$dbh> will be returned if it is still valid.
 The cached database handle is replaced with a new connection if it
 has been disconnected or if the C<ping> method fails.
 
-Note that the behaviour of this method differs in several respects from the
+That the behaviour of this method differs in several respects from the
 behaviour of persistent connections implemented by Apache::DBI.
+However, if Apache::DBI is loaded then C<connect_cached> will use it.
 
 Caching connections can be useful in some applications, but it can
 also cause problems, such as too many connections, and so should
@@ -3963,7 +3964,7 @@ Also, in a scalar context, an C<undef> is returned if there are no
 more rows or if an error occurred. That C<undef> can't be distinguished
 from an C<undef> returned because the first field value was NULL.
 For these reasons you should exercise some caution if you use
-C<selectrow_array> in a scalar context.
+C<selectrow_array> in a scalar context, or just don't do that.
 
 
 =item C<selectrow_arrayref>
@@ -4035,7 +4036,10 @@ passing to C</fetchall_arrayref>.
 You may often want to fetch an array of rows where each row is stored as a
 hash. That can be done simple using:
 
-  my $emps = $dbh->selectall_arrayref("SELECT ename FROM emp ORDER BY ename", { Slice => {} } );
+  my $emps = $dbh->selectall_arrayref(
+      "SELECT ename FROM emp ORDER BY ename",
+      { Slice => {} }
+  );
   foreach my $emp ( @$emps ) {
       print "Employee: $emp->{ename}\n";
   }
@@ -6018,7 +6022,7 @@ may have on some attributes.
 
 Number of fields (columns) in the data the prepared statement may return.
 Statements that don't return rows of data, like C<DELETE> and C<CREATE>
-set C<NUM_OF_FIELDS> to 0.
+set C<NUM_OF_FIELDS> to 0 (though it may be undef in some drivers).
 
 
 =item C<NUM_OF_PARAMS>  (integer, read-only)
@@ -7036,7 +7040,7 @@ be part of the Data Access SDK.
 And for SQL/CLI standard information on SQLColumns you'd read page 124 of
 the (very large) SQL/CLI Working Draft available from:
 
-  http://www.jtc1sc32.org/sc32/jtc1sc32.nsf/Attachments/7E3B41486BD99C3488256B410064C877/$FILE/32N0744T.PDF
+  http://jtc1sc32.org/doc/N0701-0750/32N0744T.pdf
 
 =head2 Standards Reference Information
 
