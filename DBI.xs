@@ -1380,20 +1380,26 @@ dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
 		? "" : " (perhaps you need to call execute first)");
     }
 
-    if (!SvROK(ref) || SvTYPE(SvRV(ref)) >= SVt_PVBM)	/* XXX LV */
-	croak("Can't %s->bind_col(%s, %s,...), need a reference to a scalar",
-		neatsvpv(sth,0), neatsvpv(col,0), neatsvpv(ref,0));
-
     if ( (av = DBIc_FIELDS_AV(imp_sth)) == Nullav)
 	av = dbih_setup_fbav(imp_sth);
 
     if (DBIS_TRACE_LEVEL >= 3)
-	PerlIO_printf(DBILOGFP,"    dbih_sth_bind_col %s => %s\n",
-		neatsvpv(col,0), neatsvpv(ref,0));
+	PerlIO_printf(DBILOGFP,"    dbih_sth_bind_col %s => %s %s\n",
+		neatsvpv(col,0), neatsvpv(ref,0), neatsvpv(attribs,0));
 
     if (idx < 1 || idx > fields)
 	croak("bind_col: column %d is not a valid column (1..%d)",
 			idx, fields);
+
+    if (!SvOK(ref) && SvREADONLY(ref)) {   /* binding to literal undef */
+        /* presumably the call is just setting the TYPE or other atribs */
+        /* but this default method ignores attribs, so we just return   */
+        return 1;
+    }
+
+    if (!SvROK(ref) || SvTYPE(SvRV(ref)) >= SVt_PVBM)	/* XXX LV */
+	croak("Can't %s->bind_col(%s, %s,...), need a reference to a scalar",
+		neatsvpv(sth,0), neatsvpv(col,0), neatsvpv(ref,0));
 
     /* use supplied scalar as storage for this column */
     SvREADONLY_off(av);

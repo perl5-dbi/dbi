@@ -851,11 +851,14 @@ sub _set_fbav {
 }
 sub bind_col {
     my ($h, $col, $value_ref,$from_bind_columns) = @_;
-    $col-- unless $from_bind_columns; # XXX fix later
+    my $fbav = $h->{'_fbav'} ||= dbih_setup_fbav($h); # from _get_fbav()
+    my $num_of_fields = @$fbav;
+    DBI::croak("bind_col: column $col is not a valid column (1..$num_of_fields)")
+        if $col < 1 or $col > $num_of_fields;
+    return 1 if not defined $value_ref; # ie caller is just trying to set TYPE
     DBI::croak("bind_col($col,$value_ref) needs a reference to a scalar")
 	unless ref $value_ref eq 'SCALAR';
-    my $fbav = $h->_get_fbav;
-    $h->{'_bound_cols'}->[$col] = $value_ref;
+    $h->{'_bound_cols'}->[$col-1] = $value_ref;
     return 1;
 }
 sub finish {

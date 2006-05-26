@@ -7,11 +7,12 @@ use Cwd;
 use strict;
 
 $^W = 1;
+$| = 1;
 
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 258;
+use Test::More tests => 263;
 
 # "globals"
 my ($r, $dbh);
@@ -261,6 +262,11 @@ like $csr_a->errstr, '/bind_columns called with 2 values but 3 are needed/', 'er
 ok( ! $csr_a->bind_columns(undef, \($col0, $col1, $col2, $col3)) );
 like $csr_a->errstr, '/bind_columns called with 4 values but 3 are needed/', 'errstr should contain error message';
 
+ok( $csr_a->bind_col(2, undef, { foo => 42 }) );
+ok ! eval { $csr_a->bind_col(0, undef) };
+like $@, '/bind_col: column 0 is not a valid column \(1..3\)/', 'errstr should contain error message';
+ok ! eval { $csr_a->bind_col(4, undef) };
+like $@, '/bind_col: column 4 is not a valid column \(1..3\)/', 'errstr should contain error message';
 
 SKIP: {
 
