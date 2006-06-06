@@ -1970,7 +1970,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
         }
     }
 
-    /* finally check the actual hash just in case	*/
+    /* finally check the actual hash */
     if (valuesv == Nullsv) {
 	valuesv = &sv_undef;
 	cacheit = 0;
@@ -1981,6 +1981,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 	if ( !( 	(*key=='H' && strEQ(key, "HandleError"))
 		||	(*key=='H' && strEQ(key, "HandleSetErr"))
 		||	(*key=='S' && strEQ(key, "Statement"))
+		||	(*key=='P' && strEQ(key, "ParamArrays"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
 		||	(*key=='C' && strEQ(key, "CursorName"))

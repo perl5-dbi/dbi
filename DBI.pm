@@ -5478,7 +5478,8 @@ See L</bind_param_array> for details.
 
 The C<ArrayTupleStatus> attribute can be used to specify a
 reference to an array which will receive the execute status of each
-executed parameter tuple.
+executed parameter tuple. Note the C<ArrayTupleStatus> attribute was
+mandatory until DBI 1.38.
 
 For tuples which are successfully executed, the element at the same
 ordinal position in the status array is the resulting rowcount.
@@ -6164,6 +6165,39 @@ where N is a sequence number starting at 1.
 
 The C<ParamValues> attribute was added in DBI 1.28.
 
+=item C<ParamArrays>  (hash ref, read-only)
+
+Returns a reference to a hash containing the values currently bound to
+placeholders with L</execute_array> or L</bind_param_array>.  The
+keys of the hash are the 'names' of the placeholders, typically
+integers starting at 1.  Returns undef if not supported by the driver
+or no arrays of parameters are bound.
+
+Each key value is an array reference containing a list of the bound
+parameters for that column.
+
+For example:
+
+  $sth = $dbh->prepare("INSERT INTO staff (id, name) values (?,?)");
+  $sth->execute_array({},[1,2], ['fred','dave']);
+  if ($sth->{ParamArrays}) {
+      foreach $param (keys %{$sth->{ParamArrays}}) {
+	  printf "Parameters for %s : %s\n", $param,
+	  join(",", @{$sth->{ParamArrays}->{$param}});
+      }
+  }
+
+It is possible that the values in the hash returned by C<ParamArrays>
+are not I<exactly> the same as those passed to L</bind_param_array> or
+L</execute_array>.  The driver may have slightly modified values in some
+way based on the TYPE the value was bound with. For example a floating
+point value bound as an SQL_INTEGER type may be returned as an
+integer.
+
+It is also possible that the keys in the hash returned by
+C<ParamArrays> are not exactly the same as those implied by the
+prepared statement.  For example, DBD::Oracle translates 'C<?>'
+placeholders into 'C<:pN>' where N is a sequence number starting at 1.
 
 =item C<ParamTypes>  (hash ref, read-only)
 

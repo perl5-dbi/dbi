@@ -4,7 +4,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.51 (svn rev 6349),   26 May 2006
+=head2 Changes in DBI 1.51 (svn rev 6475),   6th June 2006
 
   Fixed $dbh->clone method 'signature' thanks to Jeffrey Klein.
   Fixed default ping() method to return false if !$dbh->{Active}.
@@ -33,6 +33,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Added 'fetch array of hash refs' example to selectall_arrayref
     docs thanks to Tom Schindl.
+  Added docs for $sth->{ParamArrays} thanks to Martin J. Evans.
   Added reference to $DBI::neat_maxlen in TRACING section of docs.
   Added ability for DBI::Profile Path to include attributes
     and a summary of where the code was called from.
