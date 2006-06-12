@@ -1069,6 +1069,8 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 			SV *sv = av_shift(av);
 			if (SvOK(sv))
 			    av_push(av, sv);
+			else 
+			   sv_free(sv);		/* keep it leak-free by Doru Petrescu pdoru.dbi@from.ro */
 		    }
 		}
 	    }
