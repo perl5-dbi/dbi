@@ -389,7 +389,7 @@ sub quote ($$;$) {
 	 $type == DBI::SQL_FLOAT()     ||
 	 $type == DBI::SQL_REAL()      ||
 	 $type == DBI::SQL_DOUBLE()    ||
-	 $type == DBI::TINYINT())) {
+	 $type == DBI::SQL_TINYINT())) {
 	return $str;
     }
     if (!defined($str)) { return "NULL" }
