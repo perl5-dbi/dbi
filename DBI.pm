@@ -4044,6 +4044,10 @@ hash. That can be done simple using:
       print "Employee: $emp->{ename}\n";
   }
 
+Or, to fetch into an array instead of an array ref:
+
+  @result = @{ $dbh->selectall_arrayref($sql, { Slice => {} }) };
+
 See L</fetchall_arrayref> method for more details.
   
 =item C<selectall_hashref>

@@ -28,6 +28,8 @@ use Config;
 use Getopt::Long;
 use strict;
 
+our $has_devel_leak = eval { require Devel::Leak };
+
 $::opt_d = 0;
 $::opt_l = '';
 $::opt_h = 0;
@@ -74,12 +76,14 @@ if ($::opt_m) {
     my $level = 4;
     my $cnt = 10000;
     print "Using $driver, same dbh...\n";
-    #for (my $i=0; $i<$cnt; ++$i) { mem_test($dbh, undef, $level) }
+    #for (my $i=0; $i<$cnt; ++$i) { mem_test($dbh, undef, $level, undef, undef, undef) }
     print "Using NullP, reconnecting each time...\n";
-    #for (my $i=0; $i<$cnt; ++$i) { mem_test(undef, ['dbi:NullP:'], $level) }
+    #for (my $i=0; $i<$cnt; ++$i) { mem_test(undef, ['dbi:NullP:'], $level, undef, undef, undef) }
     print "Using ExampleP, reconnecting each time...\n";
-    mem_test(undef, ['dbi:ExampleP:'], $level) while 1;
-    #mem_test(undef, ['dbi:mysql:VC'], $level, "select * from campaigns where length(?)>0") while 1;
+    my $r_develleak = 0;
+    mem_test(undef, ['dbi:ExampleP:'], $level, undef, undef, \$r_develleak)
+        while 1;
+    #mem_test(undef, ['dbi:mysql:VC'], $level, "select * from campaigns where length(?)>0", 0, undef) while 1;
 }
 elsif ($::opt_t) {
 	thread_test();
@@ -129,17 +133,31 @@ exit 0;
 
 
 sub mem_test {	# harness to help find basic leaks
-    my ($orig_dbh, $connect, $level, $select, $params) = @_;
+    my ($orig_dbh, $connect, $level, $select, $params, $r_develleak) = @_;
     $select ||= "select mode,ino,name from ?";
     $params ||= [ '.' ];
-    my $dbh = $orig_dbh || DBI->connect(@$connect);
+
+    # this can be used to force a 'leak' to check memory use reporting
+    #$main::leak .= " " x 1000;
     system("echo $count; $ps$$") if (($count++ % 500) == 0);
+
+    my $dbh = $orig_dbh || DBI->connect(@$connect);
     my $cursor_a;
+
+    my $dl_count = ($$r_develleak++) ? Devel::Leak::NoteSV(my $dl_handle) : 0;
+
     $cursor_a = $dbh->prepare($select)		if $level >= 2;
     $cursor_a->execute(@$params)		if $level >= 3;
+    $cursor_a->fetchrow_hashref()        	if $level >= 4;
     my $rows = $cursor_a->fetchall_arrayref({})	if $level >= 4;
     $cursor_a->finish if $cursor_a && $cursor_a->{Active};
+    undef $cursor_a;
+
+    die Devel::Leak::CheckSV($dl_handle) if $dl_handle;
+
     $dbh->disconnect unless $orig_dbh;
+    undef $dbh;
+
 }
 
 
