@@ -27,8 +27,12 @@ $Data::Dumper::Terse = 1;
 
 # log file to store profile results 
 my $LOG_FILE = "profile.log";
-DBI->trace(0, $LOG_FILE);
-END { 1 while unlink $LOG_FILE; }
+my $orig_dbi_debug = $DBI::dbi_debug;
+DBI->trace($DBI::dbi_debug, $LOG_FILE);
+END {
+    return if $orig_dbi_debug;
+    1 while unlink $LOG_FILE;
+}
 
 
 print "Test enabling the profile\n";

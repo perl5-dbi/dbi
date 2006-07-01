@@ -13,11 +13,12 @@ use Test::More;
 my $HAS_WEAKEN = eval {
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken(my $test = \"foo");
+    Scalar::Util::weaken( \my $test ); # same test as in DBI.pm
     1;
 };
 if (!$HAS_WEAKEN) {
-    print "1..0 # Skipped: Scalar::Util::weaken not available\n";
+    chomp $@;
+    print "1..0 # Skipped: Scalar::Util::weaken not available ($@)\n";
     exit 0;
 }
 

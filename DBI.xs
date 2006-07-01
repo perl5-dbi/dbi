@@ -2216,7 +2216,8 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     dTHX;
     double ti = t2 - t1;
     const char *path[DBIprof_MAX_PATH_ELEM+1];
-    int idx = -1;
+    int src_idx;
+    int dst_idx;
     HV *dbh_outer_hv = NULL;
     HV *dbh_inner_hv = NULL;
     SV *profile;
@@ -2254,9 +2255,9 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "dbi_profile %s %f q{%s}\n",
 		neatsvpv((SvTYPE(method)==SVt_PVCV) ? (SV*)CvGV(method) : method, 0),
 		ti, statement);
-
-    idx = 0;
-    path[idx++] = "Data";
+    src_idx = 0;
+    dst_idx = 0;
+    path[dst_idx++] = "Data";
 
     tmp = *hv_fetch((HV*)SvRV(profile), "Path", 4, 1);
     if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVAV) {
@@ -2264,9 +2265,10 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	av = (AV*)SvRV(tmp);
 	len = av_len(av); /* -1=empty, 0=one element */
 
-	for ( ;(idx-1) <= len && idx < DBIprof_MAX_PATH_ELEM; ++idx) {
-	    SV *pathsv = AvARRAY(av)[idx-1];
+	while ( src_idx <= len && dst_idx < DBIprof_MAX_PATH_ELEM) {
+	    SV *pathsv = AvARRAY(av)[src_idx++];
 	    const char *p = "?";
+            /* warn("s=%d, d=%d, p=%s", src_idx, dst_idx, neatsvpv(pathsv,0)); */
 
 	    if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVCV) {
 		/* call sub, use returned list of values as path */
@@ -2344,17 +2346,17 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 			p = SvPV_nolen(*attr_svp);
 		}
 	    }
-	    path[idx] = p;
+	    path[dst_idx++] = p;
 	}
     }
     else { /* any bad Path value is treated as a Path of just Statement */
-	path[idx++] = statement;
+	path[dst_idx++] = statement;
     }
-    path[idx++] = Nullch;
+    path[dst_idx++] = Nullch;
 
     /* this walk-down-the-tree code should be merged into the loop above */
     tmp = profile;
-    for (idx=0; path[idx]; ++idx) {
+    for (dst_idx=0; path[dst_idx]; ++dst_idx) {
 	SV *orig_tmp = tmp;
 	if (SvROK(tmp))
 	    tmp = SvRV(tmp);
@@ -2365,8 +2367,8 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	    sv_setsv(tmp, newRV_noinc((SV*)hv));
 	    tmp = (SV*)hv;
 	}
-	tmp = *hv_fetch((HV*)tmp, path[idx], strlen(path[idx]), 1);
-	/* warn("%d hv_fetch %s = %s", idx, path[idx], neatsvpv(tmp,0)); */
+	tmp = *hv_fetch((HV*)tmp, path[dst_idx], strlen(path[dst_idx]), 1);
+	/* warn("%d hv_fetch %s = %s", dst_idx, path[dst_idx], neatsvpv(tmp,0)); */
     }
     if (!SvOK(tmp)) {
 	av = newAV();
@@ -2384,7 +2386,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	    tmp = SvRV(tmp);
 	if (SvTYPE(tmp) != SVt_PVAV)
 	    croak("Invalid Profile data leaf element at depth %d: %s (type %d)",
-		    idx, neatsvpv(tmp,0), SvTYPE(tmp));
+		    dst_idx, neatsvpv(tmp,0), SvTYPE(tmp));
 	av = (AV*)tmp;
 	sv_inc( *av_fetch(av, DBIprof_COUNT, 1));
 	tmp = *av_fetch(av, DBIprof_TOTAL_TIME, 1);

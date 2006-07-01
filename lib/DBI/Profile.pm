@@ -645,8 +645,7 @@ sub format {
 		1900+$lt[5], $lt[4]+1, @lt[3,2,1,0];
 	    $prologue .= sprintf "(%d calls) $progname \@ $ts\n", $count;
 	}
-
-	if (@$leaves == 1 && $self->{Data}->{DBI}) {
+	if (@$leaves == 1 && ref($self->{Data}) eq 'HASH' && $self->{Data}->{DBI}) {
 	    $detail = "";	# hide it
 	}
     }

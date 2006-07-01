@@ -280,7 +280,7 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
 my $HAS_WEAKEN = eval { 
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken( \my $test ); 
+    Scalar::Util::weaken( \my $test ); # same test as in t/72childhandles.t
     1;
 };
 
@@ -3342,9 +3342,11 @@ statement handles.
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
 contents of the array are weak-refs and will become undef when the
-handle goes out of scope.  C<ChildHandles> returns undef if your perl version
-does not support weak references (check the L<Scalar::Util|Scalar::Util>
-module).  The referenced array returned should be treated as read-only.
+handle goes out of scope.
+
+C<ChildHandles> returns undef if your perl version does not support weak
+references (check the L<Scalar::Util|Scalar::Util> module).  The referenced
+array returned should be treated as read-only.
 
 For example, to enumerate all driver handles, database handles and
 statement handles:
