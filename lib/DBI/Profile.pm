@@ -557,10 +557,10 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
     format_profile_thingy
 );
 
-use constant DBIprofile_Statement	=> -2100000001;
-use constant DBIprofile_MethodName	=> -2100000002;
-use constant DBIprofile_MethodClass	=> -2100000003;
-use constant DBIprofile_Caller  	=> -2100000004;
+use constant DBIprofile_Statement	=> '!Statement';
+use constant DBIprofile_MethodName	=> '!MethodName';
+use constant DBIprofile_MethodClass	=> '!MethodClass';
+use constant DBIprofile_Caller  	=> '!Caller';
 
 $ON_DESTROY_DUMP = sub { DBI->trace_msg(shift, 0) };
 

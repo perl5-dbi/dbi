@@ -1583,7 +1583,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 		PUTBACK;
 		returns = perl_call_method("_auto_new", G_SCALAR);
 		if (returns != 1)
-		    croak("_auto_new");
+		    croak("%s _auto_new", dbi_class);
 		SPAGAIN;
 		valuesv = POPs;
 		PUTBACK;
@@ -2314,47 +2314,45 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 		warn("code ref in Path");
                 dest_node = _profile_next_node(dest_node, "CODE");
 	    }
-	    else if (looks_like_number(pathsv)) {
-                const char *p = "?";
-		/* numbers are special-cases */
-		switch(SvIV(pathsv)) {	/* see lib/DBI/Profile.pm for magic numbers */
-		case -2100000001:	/* DBIprofile_Statement */
-		    p = statement;
-		    break;
-		case -2100000002:	/* DBIprofile_MethodName */
-		    p = (SvTYPE(method)==SVt_PVCV)
-			    ? GvNAME(CvGV(method))
-			    : (isGV(method) ? GvNAME(method) : SvPV_nolen(method));
-		    break;
-		case -2100000003:	/* DBIprofile_MethodClass */
-		    if (SvTYPE(method) == SVt_PVCV) {
-			p = SvPV_nolen((SV*)CvGV(method));
-		    }
-		    else if (isGV(method)) {
-			/* just using SvPV_nolen(method) sometimes causes an error:	*/
-			/* "Can't coerce GLOB to string" so we use gv_efullname()	*/
-			SV *tmpsv = sv_2mortal(newSVpv("",0));
-			gv_efullname(tmpsv, (GV*)method);
-			p = SvPV_nolen(tmpsv);
-			if (*p == '*') ++p; /* skip past leading '*' glob sigil */
-		    }
-		    else {
-			p = SvPV_nolen(method);
-		    }
-		    break;
-		case -2100000004:	/* DBIprofile_Caller */
-		    p = log_where(0, 0, "", "", 1, 0);
-		    break;
-		default:
-		    p = SvPV_nolen(pathsv);
-		    break;
-		}
-                dest_node = _profile_next_node(dest_node, p);
-	    }
 	    else if (SvOK(pathsv)) {
 		STRLEN len;
                 const char *p = SvPV(pathsv,len);
-		if (p[0] == '{' && p[len-1] == '}') { /* treat as name of dbh attribute to use */
+		if (p[0] == '!') { /* special cases */
+                    if (p[1] == 'S' && strEQ(p, "!Statement")) {
+                        dest_node = _profile_next_node(dest_node, statement);
+                    }
+                    else if (p[1] == 'M' && strEQ(p, "!MethodName")) {
+                        p = (SvTYPE(method)==SVt_PVCV)
+			    ? GvNAME(CvGV(method))
+			    : (isGV(method) ? GvNAME(method) : SvPV_nolen(method));
+                        dest_node = _profile_next_node(dest_node, p);
+                    }
+                    else if (p[1] == 'M' && strEQ(p, "!MethodClass")) {
+                        if (SvTYPE(method) == SVt_PVCV) {
+                            p = SvPV_nolen((SV*)CvGV(method));
+                        }
+                        else if (isGV(method)) {
+                            /* just using SvPV_nolen(method) sometimes causes an error:	*/
+                            /* "Can't coerce GLOB to string" so we use gv_efullname()	*/
+                            SV *tmpsv = sv_2mortal(newSVpv("",0));
+                            gv_efullname(tmpsv, (GV*)method);
+                            p = SvPV_nolen(tmpsv);
+                            if (*p == '*') ++p; /* skip past leading '*' glob sigil */
+                        }
+                        else {
+                            p = SvPV_nolen(method);
+                        }
+                        dest_node = _profile_next_node(dest_node, p);
+                    }
+                    else if (p[1] == 'C' && strEQ(p, "!Caller")) {
+                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 1, 0));
+                    }
+                    else {
+                        warn("Unknown ! element in DBI::Profile Path: %s", p);
+                        dest_node = _profile_next_node(dest_node, p);
+                    }
+                }
+                else if (p[0] == '{' && p[len-1] == '}') { /* treat as name of dbh attribute to use */
 		    SV **attr_svp;
 		    if (!dbh_inner_hv) {	/* cache dbh handles the first time we need them */
 			imp_dbh_t *imp_dbh = (DBIc_TYPE(imp_xxh) <= DBIt_DB) ? (imp_dbh_t*)imp_xxh : (imp_dbh_t*)DBIc_PARENT_COM(imp_xxh);
@@ -2384,10 +2382,13 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 			p = "0"; /* catch &sv_no style special case */
 		    else
 			p = SvPV_nolen(*attr_svp);
+                    dest_node = _profile_next_node(dest_node, p);
 		}
-                dest_node = _profile_next_node(dest_node, p);
+                else {
+                    dest_node = _profile_next_node(dest_node, p);
+                }
 	    }
-            /* else ignore */
+            /* else undef, so ignore */
 	}
     }
     else { /* a bad Path value is treated as a Path of just Statement */

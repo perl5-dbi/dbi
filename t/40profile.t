@@ -20,7 +20,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 36;
+use Test::More tests => 37;
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
@@ -60,6 +60,10 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 # using a combined path and name
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 $dbh->{Profile} = "20/DBI::Profile";
+is_deeply sanitize_tree($dbh->{Profile}), bless {
+	'Path' => [ DBIprofile_MethodName, DBIprofile_Caller ],
+} => 'DBI::Profile';
+
 $dbh->do("set foo=1"); my $line = __LINE__;
 is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ DBIprofile_MethodName, DBIprofile_Caller ],
@@ -240,8 +244,7 @@ sub sanitize_tree {
     my $data = shift;
     return $data unless ref $data;
     $data = dclone($data);
-    my $tree = (exists $data->{Path} && exists $data->{Data}) ? $data->{Data} : $data;
-    _sanitize_node($_) for values %$tree;
+    _sanitize_node($data->{Data}) if $data->{Data};
     return $data;
 }
 
