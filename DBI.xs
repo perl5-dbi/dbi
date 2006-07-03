@@ -171,7 +171,7 @@ typedef struct {
 	dPERINTERP_SV; dPERINTERP_PTR(PERINTERP_t *, PERINTERP)
 #   define INIT_PERINTERP \
 	dPERINTERP;                                          \
-	Newz(0,PERINTERP,1,PERINTERP_t);                     \
+	PERINTERP = malloc_using_sv(sizeof(PERINTERP_t));    \
 	sv_setiv(perinterp_sv, PTR2IV(PERINTERP))
 
 #   undef DBIS
@@ -185,6 +185,27 @@ typedef struct {
 #endif
 
 #define g_dbi_last_h            (PERINTERP->dbi_last_h)
+
+/* --- */
+
+static void *
+malloc_using_sv(STRLEN len)
+{
+    dTHX;
+    SV *sv = newSV(len);
+    void *p = SvPVX(sv);
+    memzero(p, len);
+    return p;
+}
+
+static char *
+savepv_using_sv(char *str)
+{
+    char *buf = malloc_using_sv(strlen(str));
+    strcpy(buf, str);
+    return buf;
+}
+
 
 /* --- */
 
@@ -215,7 +236,7 @@ dbi_bootinit(dbistate_t * parent_dbis)
     dTHX;	
     INIT_PERINTERP;
 
-    Newz(dummy, DBIS, 1, dbistate_t);
+    DBIS = (struct dbistate_st*)malloc_using_sv(sizeof(struct dbistate_st));
 
     /* store version and size so we can spot DBI/DBD version mismatch	*/
     DBIS->check_version = check_version;
@@ -3803,7 +3824,7 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 	    ima->minargs = (U8)SvIV(*av_fetch(av, 0, 1));
 	    ima->maxargs = (U8)SvIV(*av_fetch(av, 1, 1));
 	    svp = av_fetch(av, 2, 0);
-	    ima->usage_msg  = savepv( (svp) ? SvPV(*svp,lna) : "");
+            ima->usage_msg = (svp) ? savepv_using_sv(SvPV(*svp, lna)) : "";
 	    ima->flags |= IMA_HAS_USAGE;
 	    if (trace_msg && DBIS_TRACE_LEVEL >= 11)
 		sv_catpvf(trace_msg, ",\n    usage: min %d, max %d, '%s'",
