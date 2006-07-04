@@ -7,9 +7,11 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.52 (svn rev XXX),   XXX
 
 XXX update DBD::File (as sub-module?) to match latest.
+XXX update docs for Profile !Foo magic vars
 
   Fixed memory leak (16 bytes per sth) thanks to Doru Theodor Petrescu.
   Fixed small memory leak (per interpreter/thread) thanks to Ephraim Dan.
+  Fixed execute_for_fetch/execute_array to RaiseError thanks to Martin J. Evans.
   Added $dbh->statistics_info thanks to Brandon Black.
 
 =head2 Changes in DBI 1.51 (svn rev 6475),   6th June 2006
