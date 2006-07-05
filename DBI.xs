@@ -118,6 +118,7 @@ typedef struct dbi_ima_st {
 #define IMA_NOT_FOUND_OKAY   	0x0800	/* no error if not found	*/
 #define IMA_EXECUTE	   	0x1000	/* do/execute: DBIcf_Executed	*/
 #define IMA_SHOW_ERR_STMT   	0x2000	/* dbh meth relates to Statement*/
+#define IMA_HIDE_ERR_PARAMVALUES 0x4000	/* ParamValues are not relevant */
 
 #define DBIc_STATE_adjust(imp_xxh, state)				 \
     (SvOK(state)	/* SQLSTATE is implemented by driver   */	 \
@@ -3167,15 +3168,17 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
 	    &&  statement_svp && SvOK(*statement_svp)
 	) {
-	    SV **svp;
+	    SV **svp = 0;
 	    sv_catpv(msg, " [for Statement \"");
 	    sv_catsv(msg, *statement_svp);
 
 	    /* fetch from tied outer handle to trigger FETCH magic  */
 	    /* could add DBIcf_ShowErrorParams (default to on?)		*/
-	    svp = hv_fetch((HV*)DBIc_MY_H(imp_xxh),"ParamValues",11,FALSE);
-	    if (svp && SvMAGICAL(*svp))
-		mg_get(*svp); /* XXX may recurse, may croak. could use eval */
+            if (!(ima_flags & IMA_HIDE_ERR_PARAMVALUES)) {
+                svp = hv_fetch((HV*)DBIc_MY_H(imp_xxh),"ParamValues",11,FALSE);
+                if (svp && SvMAGICAL(*svp))
+                    mg_get(*svp); /* XXX may recurse, may croak. could use eval */
+            }
 	    if (svp && SvRV(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV && HvKEYS(SvRV(*svp))>0 ) {
 		HV *bvhv = (HV*)SvRV(*svp);
 		SV *sv;

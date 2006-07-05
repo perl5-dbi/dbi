@@ -15,11 +15,11 @@ BEGIN {
 }
 
 # create a database handle
-my $dbh = DBI->connect("dbi:Sponge:dummy", '', '', 
-					{ 
-						RaiseError=>1, 
-						AutoCommit=>1 
-					});
+my $dbh = DBI->connect("dbi:Sponge:dummy", '', '', { 
+    RaiseError => 1, 
+    ShowErrorStatement => 1,
+    AutoCommit => 1 
+});
 
 # check that our db handle is good
 isa_ok($dbh, "DBI::db");
@@ -45,7 +45,9 @@ cmp_ok(scalar @{$rows}, '==', 0, '... we should have 0 rows');
 
 # -----------------------------------------------
 
-ok(! eval { $sth->execute_array(
+ok(! eval {
+        local $sth->{PrintError} = 0;
+        $sth->execute_array(
 		{ 
 			ArrayTupleStatus => $tuple_status 
 		},

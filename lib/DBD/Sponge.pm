@@ -161,6 +161,10 @@
 
     sub execute {
 	my $sth = shift;
+
+        # hack to support ParamValues (when not using bind_param)
+        $sth->{ParamValues} = (@_) ? { map { $_ => $_[$_-1] } 1..@_ } : undef;
+
 	if (my $hook = $sth->{execute_hook}) {
 	    &$hook($sth, @_) or return;
 	}

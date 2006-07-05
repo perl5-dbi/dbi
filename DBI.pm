@@ -437,8 +437,8 @@ my $keeperr = { O=>0x0004 };
 
 	bind_param_array  => { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout_array => { U =>[4,5,'$parameter, \\@var, $maxlen, [, \%attr]'] },
-	execute_array     => { U =>[2,0,'\\%attribs [, @args]'],         O=>0x1040 },
-	execute_for_fetch => { U =>[2,3,'$fetch_sub [, $tuple_status]'], O=>0x1040 },
+	execute_array     => { U =>[2,0,'\\%attribs [, @args]'],         O=>0x1040|0x4000 },
+	execute_for_fetch => { U =>[2,3,'$fetch_sub [, $tuple_status]'], O=>0x1040|0x4000 },
 
 	fetch    	  => undef, # alias for fetchrow_arrayref
 	fetchrow_arrayref => undef,
