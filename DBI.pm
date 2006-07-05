@@ -1932,7 +1932,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    }
 	}
         my $tuples = @$tuple_status;
-        return $sth->set_err(1, "executing $tuple_status generated $err_count errors")
+        return $sth->set_err(1, "executing $tuples generated $err_count errors")
             if $err_count;
 	return scalar(@$tuple_status) || "0E0";
     }
