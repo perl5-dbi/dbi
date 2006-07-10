@@ -2235,7 +2235,8 @@ _profile_next_node(SV *node, const char *name)
     if (SvTYPE(node) != SVt_PVHV) {
         HV *hv = newHV();
         if (SvOK(node))
-            warn("Profile data element %s replaced with new hash ref", neatsvpv(orig_node,0));
+            warn("Profile data element %s replaced with new hash ref (for %s)",
+                neatsvpv(orig_node,0), name);
         sv_setsv(node, newRV_noinc((SV*)hv));
         node = (SV*)hv;
     }
@@ -2245,7 +2246,7 @@ _profile_next_node(SV *node, const char *name)
 
 
 static void
-dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double t1, double t2)
+dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, double t2)
 {
 #define DBIprof_MAX_PATH_ELEM	100
 #define DBIprof_COUNT		0
@@ -2261,6 +2262,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
     int src_idx = 0;
     HV *dbh_outer_hv = NULL;
     HV *dbh_inner_hv = NULL;
+    char *statement_pv;
     SV *profile;
     SV *tmp;
     SV *dest_node;
@@ -2289,14 +2291,18 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	return;
     }
 
-    if (!statement) {
+    /* statement_sv: undef = use $h->{Statement}, "" (&sv_no) = use empty string */
+
+    if (!SvOK(statement_sv)) {
 	SV **psv = hv_fetch(h_hv, "Statement", 9, 0);
-	statement = (psv && SvOK(*psv)) ? SvPV_nolen(*psv) : "";
+	statement_sv = (psv && SvOK(*psv)) ? *psv : &sv_no;
     }
+    statement_pv = SvPV_nolen(statement_sv);
+
     if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
 	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "dbi_profile %s %f q{%s}\n",
 		neatsvpv((SvTYPE(method)==SVt_PVCV) ? (SV*)CvGV(method) : method, 0),
-		ti, statement);
+		ti, neatsvpv(statement_sv,0));
 
     dest_node = _profile_next_node(profile, "Data");
 
@@ -2309,18 +2315,49 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	while ( src_idx <= len ) {
 	    SV *pathsv = AvARRAY(av)[src_idx++];
 
-	    if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVCV) {
+	    if (SvROK(pathsv) && SvTYPE(SvRV(pathsv))==SVt_PVCV) {
 		/* call sub, use returned list of values as path */
-		/* if no values returned then don't save data	*/
-		warn("code ref in Path");
-                dest_node = _profile_next_node(dest_node, "CODE");
+                /* returning a ref to undef vetos this profile data */
+                dSP;
+                I32 ax;
+                SV *code_sv = SvRV(pathsv);
+                I32 items;
+                I32 item_idx;
+                char *method_pv = (SvTYPE(method)==SVt_PVCV)
+                    ? GvNAME(CvGV(method))
+                    : (isGV(method) ? GvNAME(method) : SvPV_nolen(method));
+                EXTEND(SP, 4);
+                PUSHMARK(SP);
+                PUSHs(h);   /* push inner handle, then others params */
+		PUSHs( sv_2mortal(newSVpv(method_pv,0)));
+                PUTBACK;
+                SAVE_DEFSV; /* local($_) = $statement */
+                DEFSV = statement_sv;
+                items = call_sv(code_sv, G_ARRAY);
+                SPAGAIN;
+                SP -= items ;
+                ax = (SP - PL_stack_base) + 1 ;
+                for (item_idx=0; item_idx < items; ++item_idx) {
+                    SV *item_sv = ST(item_idx);
+                    if (SvROK(item_sv)) {
+                        if (!SvOK(SvRV(item_sv)))
+                            items = -2; /* flag that we're rejecting this profile data */
+                        else /* other refs reserved */
+                            warn("Ignored ref returned by code ref in Profile Path");
+                        break;
+                    }
+                    dest_node = _profile_next_node(dest_node, SvPV_nolen(item_sv));
+                }
+                PUTBACK;
+                if (items == -2) /* this profile data was vetoed */
+                    return;
 	    }
 	    else if (SvOK(pathsv)) {
 		STRLEN len;
                 const char *p = SvPV(pathsv,len);
 		if (p[0] == '!') { /* special cases */
                     if (p[1] == 'S' && strEQ(p, "!Statement")) {
-                        dest_node = _profile_next_node(dest_node, statement);
+                        dest_node = _profile_next_node(dest_node, statement_pv);
                     }
                     else if (p[1] == 'M' && strEQ(p, "!MethodName")) {
                         p = (SvTYPE(method)==SVt_PVCV)
@@ -2393,7 +2430,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, const char *statement, SV *method, double
 	}
     }
     else { /* a bad Path value is treated as a Path of just Statement */
-        dest_node = _profile_next_node(dest_node, statement);
+        dest_node = _profile_next_node(dest_node, statement_pv);
     }
 
 
@@ -3246,8 +3283,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	if (profile_t1) { /* see also dbi_profile() call a few lines below */
-	    char *Statement = (ima_flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
-	    dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
+	    SV *statement_sv = (ima_flags & IMA_UNRELATED_TO_STMT) ? &sv_no : &sv_undef;
+	    dbi_profile(h, imp_xxh, statement_sv, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
 	}
 	if (is_warning) {
@@ -3262,8 +3299,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
     else if (profile_t1) { /* see also dbi_profile() call a few lines above */
-	char *Statement = (ima_flags & IMA_UNRELATED_TO_STMT) ? "" : Nullch;
-	dbi_profile(h, imp_xxh, Statement, imp_msv ? imp_msv : (SV*)cv,
+        SV *statement_sv = (ima_flags & IMA_UNRELATED_TO_STMT) ? &sv_no : &sv_undef;
+	dbi_profile(h, imp_xxh, statement_sv, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
     }
 
@@ -3923,9 +3960,8 @@ dbi_profile(h, statement, method, t1, t2)
     D_imp_xxh(h);
     STRLEN lna = 0;
     (void)cv;
-    dbi_profile(h, imp_xxh,
-	SvOK(statement) ? SvPV(statement,lna) : Nullch,
-	SvROK(method)   ? SvRV(method)        : method,
+    dbi_profile(h, imp_xxh, statement,
+	SvROK(method) ? SvRV(method) : method,
 	t1, t2
     );
     RETVAL = &sv_undef;
@@ -4028,7 +4064,7 @@ FETCH(sv)
     if (trace)
 	PerlIO_printf(DBILOGFP,"    <- $DBI::%s= %s\n", meth, neatsvpv(ST(0),0));
     if (profile_t1)
-	dbi_profile(DBI_LAST_HANDLE, imp_xxh, Nullch, (SV*)cv, profile_t1, dbi_time());
+	dbi_profile(DBI_LAST_HANDLE, imp_xxh, &sv_undef, (SV*)cv, profile_t1, dbi_time());
 
 
 MODULE = DBI   PACKAGE = DBD::_::db

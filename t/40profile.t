@@ -20,7 +20,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 37;
+use Test::More tests => 43;
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
@@ -177,6 +177,7 @@ ok($output =~ /^DBI::Profile:/);
 ok($output =~ /\((\d+) calls\)/);
 ok($1 >= $count);
 
+# -----------------------------------------------------------------------------------
 
 # try statement and method name path
 $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', {
@@ -186,12 +187,11 @@ $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', {
 $sql = "select name from .";
 $sth = $dbh->prepare($sql);
 $sth->execute();
-while ( my $hash = $sth->fetchrow_hashref ) {}
+$sth->fetchrow_hashref;
 undef $sth; # DESTROY
 
 $tmp = sanitize_tree($dbh->{Profile});
 # make test insentitive to number of local files
-$tmp->{Data}{usrnam}{'select name from .'}{foo}{fetchrow_hashref}[0] = -1;
 is_deeply $tmp, bless {
     'Path' => [ '{Username}', DBIprofile_Statement, 'foo', DBIprofile_MethodName ],
     'Data' => {
@@ -205,14 +205,77 @@ is_deeply $tmp, bless {
 	    'select name from .' => {
 		    'foo' => {
 			'execute' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'fetchrow_hashref' => [ -1, 0, 0, 0, 0, 0, 0 ],
+			'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ]
+			'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                        # XXX finish shouldn't be profiled as it's not called explicitly
+                        # but currently the finish triggered by DESTROY does get profiled
+			'finish' => [ 1, 0, 0, 0, 0, 0, 0 ],
 		    },
 	    },
 	},
     },
 } => 'DBI::Profile';
+
+
+# -----------------------------------------------------------------------------------
+
+print "testing code ref in Path\n";
+
+sub run_test1 {
+    my ($profile) = @_;
+    $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', {
+        RaiseError => 1,
+        Profile => $profile,
+    });
+    $sql = "select name from .";
+    $sth = $dbh->prepare($sql);
+    $sth->execute();
+    $sth->fetchrow_hashref;
+    undef $sth; # DESTROY
+    return sanitize_profile_data_nodes($dbh->{Profile}{Data});
+}
+
+$tmp = run_test1( { Path => [ 'foo', sub { 'bar' }, 'baz' ] });
+is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 8, 0,0,0,0,0,0 ] } } };
+
+$tmp = run_test1( { Path => [ 'foo', sub { 'ping','pong' } ] });
+is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 8, 0,0,0,0,0,0 ] } } };
+
+$tmp = run_test1( { Path => [ 'foo', sub { \undef } ] });
+is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
+
+# check what code ref sees in $_
+$tmp = run_test1( { Path => [ sub { $_ } ] });
+is_deeply $tmp, {
+  '' => [ 3, 0, 0, 0, 0, 0, 0 ],
+  'select name from .' => [ 5, 0, 0, 0, 0, 0, 0 ]
+}, '$_ should contain statement';
+
+# check what code ref sees in @_
+$tmp = run_test1( { Path => [ sub { my ($h,$method) = @_; return (ref $h, $method) } ] });
+is_deeply $tmp, {
+  'DBI::db' => {
+    'FETCH'   => [ 1, 0, 0, 0, 0, 0, 0 ],
+    'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
+    'STORE'   => [ 2, 0, 0, 0, 0, 0, 0 ],
+  },
+  'DBI::st' => {
+    'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
+    'execute' => [ 1, 0, 0, 0, 0, 0, 0 ],
+    'finish'  => [ 1, 0, 0, 0, 0, 0, 0 ],
+    'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
+  },
+}, 'should have @_ as keys';
+
+# check we can filter by method
+$tmp = run_test1( { Path => [ sub { return \undef unless $_[1] =~ /^fetch/; return $_[1] } ] });
+#warn Dumper($tmp);
+is_deeply $tmp, {
+    'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
+}, 'should be able to filter by method';
+
+# -----------------------------------------------------------------------------------
 
 print "dbi_profile_merge\n";
 my $total_time = dbi_profile_merge(
@@ -244,18 +307,20 @@ sub sanitize_tree {
     my $data = shift;
     return $data unless ref $data;
     $data = dclone($data);
-    _sanitize_node($data->{Data}) if $data->{Data};
+    sanitize_profile_data_nodes($data->{Data}) if $data->{Data};
     return $data;
 }
 
-sub _sanitize_node {
+sub sanitize_profile_data_nodes {
     my $node = shift;
     if (ref $node eq 'HASH') {
-        _sanitize_node($_) for values %$node;
+        sanitize_profile_data_nodes($_) for values %$node;
     }
     elsif (ref $node eq 'ARRAY') {
-	# sanitize the profile data node so tests
-	$_ = 0 for @{$node}[1..@$node-1]; # not 0
+        if (@$node == 7 and DBI::looks_like_number($node->[0])) {
+            # sanitize the profile data node to simplify tests
+            $_ = 0 for @{$node}[1..@$node-1]; # not 0
+        }
     }
-    return;
+    return $node;
 }

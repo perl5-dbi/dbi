@@ -638,7 +638,7 @@ sub format {
 	(my $progname = $0) =~ s:.*/::;
 	if ($count) {
 	    $prologue .= sprintf "%fs ", $time_in_dbi;
-	    my $perl_time = ($DBI::PERL_ENDING) ? time_in_dbi() - $^T : $t2-$t1;
+	    my $perl_time = ($DBI::PERL_ENDING) ? time() - $^T : $t2-$t1;
 	    $prologue .= sprintf "%.2f%% ", $time_in_dbi/$perl_time*100 if $perl_time;
 	    my @lt = localtime(time);
 	    my $ts = sprintf "%d-%02d-%02d %02d:%02d:%02d",
@@ -694,6 +694,7 @@ sub format_profile_branch {
 
 sub format_profile_thingy {
     my ($self, $thingy, $depth, $pad, $path, $leaves) = @_;
+    return "undef" if not defined $thingy;
     return $self->format_profile_leaf(  $thingy, $depth, $pad, $path, $leaves)
 	if UNIVERSAL::isa($thingy,'ARRAY');
     return $self->format_profile_branch($thingy, $depth, $pad, $path, $leaves)
