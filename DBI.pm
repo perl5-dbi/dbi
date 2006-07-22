@@ -2753,9 +2753,14 @@ directories. Passing a true value for C<$quiet> will inhibit the warning.
 
   %drivers = DBI->installed_drivers();
 
-Returns a list of driver name and driver handle pairs for all
-installed drivers. The driver name does not include the 'DBD::'
-prefix. Added in DBI 1.49.
+Returns a list of driver name and driver handle pairs for all drivers
+'installed' (loaded) into the current process.  The driver name does not
+include the 'DBD::' prefix.
+
+To get a list of all drivers available in your perl instalation you can use
+L</available_drivers>.
+
+Added in DBI 1.49.
 
 =item C<installed_versions>
 

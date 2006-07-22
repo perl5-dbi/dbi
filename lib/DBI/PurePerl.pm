@@ -122,10 +122,12 @@ use constant IMA_NO_TAINT_OUT   => 0x0020; #/* don't taint results	*/
 use constant IMA_COPY_STMT   	=> 0x0040; #/* copy sth Statement to dbh */
 use constant IMA_END_WORK	=> 0x0080; #/* set on commit & rollback	*/
 use constant IMA_STUB		=> 0x0100; #/* donothing eg $dbh->connected */
-#define IMA_CLEAR_STMT             0x0200  /* clear Statement before call  */
-#define IMA_PROF_EMPTY_STMT        0x0400  /* profile as empty Statement   */
+use constant IMA_CLEAR_STMT     => 0x0200; #/* clear Statement before call  */
+use constant IMA_PROF_EMPTY_STMT=> 0x0400; #/* profile as empty Statement   */
 use constant IMA_NOT_FOUND_OKAY	=> 0x0800; #/* not error if not found */
 use constant IMA_EXECUTE	=> 0x1000; #/* do/execute: DBIcf_Executed   */
+use constant IMA_SHOW_ERR_STMT  => 0x2000; #/* dbh meth relates to Statement*/
+use constant IMA_HIDE_ERR_PARAMVALUES => 0x4000; #/* ParamValues are not relevant */
 
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active

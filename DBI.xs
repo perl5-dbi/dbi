@@ -2599,7 +2599,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     */
     if (SvROK(h) && SvRMAGICAL(SvRV(h)) && (mg=mg_find(SvRV(h),'P'))!=NULL) {
 
-        if (SvPVX(mg->mg_obj)==NULL) {  /* maybe global destruction */
+        if (mg->mg_obj==NULL || !SvOK(mg->mg_obj) || SvPVX(mg->mg_obj)==NULL) {  /* maybe global destruction */
             if (trace_level >= 3)
                 PerlIO_printf(DBILOGFP,
 		    "%c   <> %s for %s ignored (inner handle gone)\n",
@@ -3958,7 +3958,6 @@ dbi_profile(h, statement, method, t1, t2)
     double t2
     CODE:
     D_imp_xxh(h);
-    STRLEN lna = 0;
     (void)cv;
     dbi_profile(h, imp_xxh, statement,
 	SvROK(method) ? SvRV(method) : method,
