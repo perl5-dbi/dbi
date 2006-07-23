@@ -25,7 +25,7 @@ BEGIN {
 }
 
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', 
-                       { RaiseError=>1, Profile=>"DBI::ProfileDumper" });
+                       { RaiseError=>1, Profile=>"2/DBI::ProfileDumper" });
 isa_ok( $dbh, 'DBI::db' );
 isa_ok( $dbh->{Profile}, "DBI::ProfileDumper" );
 isa_ok( $dbh->{Profile}{Data}, 'HASH' );

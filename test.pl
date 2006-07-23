@@ -37,7 +37,7 @@ $::opt_m = 0;		# basic memory leak test: "perl test.pl -m NullP"
 $::opt_t = 0;		# thread test
 $::opt_n = 0;		# counter for other options
 
-GetOptions(qw(d=i h=i l=s m t=i n=i))
+GetOptions(qw(d=i h=i l=s m=i t=i n=i))
     or die "Usage: $0 [-d n] [-h n] [-m] [-t n] [-n n] [drivername]\n";
 
 my $count = 0;
@@ -73,23 +73,22 @@ if (0) {
 
 if ($::opt_m) {
     #$dbh->trace(9);
-    my $level = 4;
+    my $level = $::opt_m;
     my $cnt = 10000;
     print "Using $driver, same dbh...\n";
-    #for (my $i=0; $i<$cnt; ++$i) { mem_test($dbh, undef, $level, undef, undef, undef) }
+    for (my $i=0; $i<$cnt; ++$i) { mem_test($dbh, undef, $level, undef, undef, undef) }
     print "Using NullP, reconnecting each time...\n";
-    #for (my $i=0; $i<$cnt; ++$i) { mem_test(undef, ['dbi:NullP:'], $level, undef, undef, undef) }
+    for (my $i=0; $i<$cnt; ++$i) { mem_test(undef, ['dbi:NullP:'], $level, undef, undef, undef) }
     print "Using ExampleP, reconnecting each time...\n";
     my $r_develleak = 0;
-    mem_test(undef, ['dbi:ExampleP:'], $level, undef, undef, \$r_develleak)
-        while 1;
+    mem_test(undef, ['dbi:NullP:'], $level, undef, undef, \$r_develleak) while 1;
     #mem_test(undef, ['dbi:mysql:VC'], $level, "select * from campaigns where length(?)>0", 0, undef) while 1;
 }
 elsif ($::opt_t) {
 	thread_test();
 }
 else {
-
+    
     # new experimental connect_test_perf method
     DBI->connect_test_perf("dbi:$driver:", '', '', {
 	dbi_loops=>5, dbi_par=>20, dbi_verb=>1
@@ -142,9 +141,14 @@ sub mem_test {	# harness to help find basic leaks
     system("echo $count; $ps$$") if (($count++ % 500) == 0);
 
     my $dbh = $orig_dbh || DBI->connect(@$connect);
+    $dbh->{RaiseError} = 1;
     my $cursor_a;
 
-    my $dl_count = ($$r_develleak++) ? Devel::Leak::NoteSV(my $dl_handle) : 0;
+    my ($dl_count, $dl_handle);
+    if ($$r_develleak++) {
+        $dbh->trace(2);
+        $dl_count = Devel::Leak::NoteSV($dl_handle);
+    }
 
     $cursor_a = $dbh->prepare($select)		if $level >= 2;
     $cursor_a->execute(@$params)		if $level >= 3;
@@ -153,7 +157,10 @@ sub mem_test {	# harness to help find basic leaks
     $cursor_a->finish if $cursor_a && $cursor_a->{Active};
     undef $cursor_a;
 
-    die Devel::Leak::CheckSV($dl_handle) if $dl_handle;
+    @{$dbh->{ChildHandles}} = ();
+
+    die Devel::Leak::CheckSV($dl_handle)-$dl_count
+        if $dl_handle;
 
     $dbh->disconnect unless $orig_dbh;
     undef $dbh;

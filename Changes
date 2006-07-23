@@ -10,8 +10,12 @@ XXX update DBD::File (as sub-module?) to match latest.
 XXX update docs for Profile !Foo magic vars and code refs.
 
   Fixed memory leak (16 bytes per sth) thanks to Doru Theodor Petrescu.
-  Fixed small memory leak (per interpreter/thread) thanks to Ephraim Dan.
+  Fixed memory leak (per handle) thanks to Nicholas Clark.
+    A small leak remains, probably since DBI 1.49.
   Fixed execute_for_fetch/execute_array to RaiseError thanks to Martin J. Evans.
+
+  Changed parsing of non-numeric DBI_PROFILE env var values.
+  Changed DBI::Profile docs extensively.
 
   Added ability for DBI::Profile Path to contain code refs - cool!
   Added $dbh->statistics_info specification thanks to Brandon Black.

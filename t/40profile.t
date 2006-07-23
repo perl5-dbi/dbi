@@ -52,9 +52,9 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 
 # using a package name
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
-$dbh->{Profile} = "DBI::Profile";
+$dbh->{Profile} = "/DBI::Profile";
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_Statement ],
+	'Path' => [ ],
 } => 'DBI::Profile';
 
 # using a combined path and name

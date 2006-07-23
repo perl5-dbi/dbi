@@ -119,11 +119,11 @@ use constant IMA_KEEP_ERR	=> 0x0004; #/* don't reset err & errstr	*/
 use constant IMA_KEEP_ERR_SUB	=> 0x0008; #/*  '' if in nested call */
 use constant IMA_NO_TAINT_IN   	=> 0x0010; #/* don't check for tainted args*/
 use constant IMA_NO_TAINT_OUT   => 0x0020; #/* don't taint results	*/
-use constant IMA_COPY_STMT   	=> 0x0040; #/* copy sth Statement to dbh */
+use constant IMA_COPY_UP_STMT   => 0x0040; #/* copy sth Statement to dbh */
 use constant IMA_END_WORK	=> 0x0080; #/* set on commit & rollback	*/
 use constant IMA_STUB		=> 0x0100; #/* donothing eg $dbh->connected */
 use constant IMA_CLEAR_STMT     => 0x0200; #/* clear Statement before call  */
-use constant IMA_PROF_EMPTY_STMT=> 0x0400; #/* profile as empty Statement   */
+use constant IMA_UNRELATED_TO_STMT=> 0x0400; #/* profile as empty Statement   */
 use constant IMA_NOT_FOUND_OKAY	=> 0x0800; #/* not error if not found */
 use constant IMA_EXECUTE	=> 0x1000; #/* do/execute: DBIcf_Executed   */
 use constant IMA_SHOW_ERR_STMT  => 0x2000; #/* dbh meth relates to Statement*/
@@ -237,12 +237,12 @@ sub  _install_method {
 
     push @pre_call_frag, q{
 	my $parent_dbh = $h->{Database};
-    } if (IMA_COPY_STMT|IMA_EXECUTE) & $bitmask;
+    } if (IMA_COPY_UP_STMT|IMA_EXECUTE) & $bitmask;
 
     push @pre_call_frag, q{
 	warn "No Database set for $h on $method_name!" unless $parent_dbh; # eg proxy problems
 	$parent_dbh->{Statement} = $h->{Statement} if $parent_dbh;
-    } if IMA_COPY_STMT & $bitmask;
+    } if IMA_COPY_UP_STMT & $bitmask;
 
     push @pre_call_frag, q{
 	$h->{Executed} = 1;

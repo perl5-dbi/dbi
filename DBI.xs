@@ -1068,6 +1068,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	DBIc_ATTR(imp, Errstr)   = COPY_PARENT("Errstr",1,0);	/* scalar ref	*/
 	DBIc_ATTR(imp, TraceLevel)=COPY_PARENT("TraceLevel",0,0);/* scalar (int)*/
 	DBIc_ATTR(imp, FetchHashKeyName) = COPY_PARENT("FetchHashKeyName",0,0);	/* scalar ref */
+
 	if (parent) {
 	    dbih_setup_attrib(h,imp,"HandleSetErr",parent,0,1);
 	    dbih_setup_attrib(h,imp,"HandleError",parent,0,1);
@@ -1080,10 +1081,13 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 		AV *av;
 		/* add weakref to new (outer) handle into parents ChildHandles array */
 		tmp_svp = hv_fetch((HV*)SvRV(parent), "ChildHandles", 12, 1);
-		if (!SvROK(*tmp_svp))
-		    sv_setsv(*tmp_svp, (SV*)newRV_noinc((SV*)newAV()));
+		if (!SvROK(*tmp_svp)) {
+		    SV *ChildHandles_rvav = newRV((SV*)newAV());
+		    sv_setsv(*tmp_svp, ChildHandles_rvav);
+		    sv_free(ChildHandles_rvav);
+                }
 		av = (AV*)SvRV(*tmp_svp);
-		av_push(av, (SV*)sv_rvweaken(newRV((SV*)SvRV(orv))));
+                av_push(av, (SV*)sv_rvweaken(newRV((SV*)SvRV(orv))));
 		if (av_len(av) % 120 == 0) {
 		    /* time to do some housekeeping to remove dead handles */
 		    I32 i = av_len(av); /* 0 = 1 element */
@@ -1564,7 +1568,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         cacheit = 1; /* just save it in the hash */
     }
     else if (strEQ(key, "Profile")) {
-	static const char dbi_class[] = "DBI::Profile";
+	static const char profile_class[] = "DBI::Profile";
 	if (on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) ) {
 	    /* not a hash ref so use DBI::Profile to work out what to do */
 	    dTHR;
@@ -1574,17 +1578,17 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	    perl_require_pv("DBI/Profile.pm");
 	    if (SvTRUE(ERRSV)) {
 		STRLEN lna;
-		warn("Can't load %s: %s", dbi_class, SvPV(ERRSV,lna));
+		warn("Can't load %s: %s", profile_class, SvPV(ERRSV,lna));
 		valuesv = &sv_undef;
 	    }
 	    else {
 		PUSHMARK(SP);
-		XPUSHs(sv_2mortal(newSVpv(dbi_class,0)));
+		XPUSHs(sv_2mortal(newSVpv(profile_class,0)));
 		XPUSHs(valuesv);
 		PUTBACK;
 		returns = perl_call_method("_auto_new", G_SCALAR);
 		if (returns != 1)
-		    croak("%s _auto_new", dbi_class);
+		    croak("%s _auto_new", profile_class);
 		SPAGAIN;
 		valuesv = POPs;
 		PUTBACK;
@@ -1594,8 +1598,8 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	if (on && !sv_isobject(valuesv)) {
 	    /* not blessed already - so default to DBI::Profile */
 	    HV *stash;
-	    perl_require_pv(dbi_class);
-	    stash = gv_stashpv(dbi_class, GV_ADDWARN);
+	    perl_require_pv(profile_class);
+	    stash = gv_stashpv(profile_class, GV_ADDWARN);
 	    sv_bless(valuesv, stash);
 	}
 	DBIc_set(imp_xxh,DBIcf_Profile, on);
@@ -2562,6 +2566,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     I32 trace_level = (trace_flags & DBIc_TRACE_LEVEL_MASK);
     int is_DESTROY;
     int is_FETCH;
+    int is_unrelated_to_Statement = 0;
     int keep_error = FALSE;
     UV  ErrCount = UV_MAX;
     int i, outitems;
@@ -2801,6 +2806,10 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    }
 	}
     }
+
+    is_unrelated_to_Statement = ( (DBIc_TYPE(imp_xxh) == DBIt_ST) ? 0
+                                : (DBIc_TYPE(imp_xxh) == DBIt_DR) ? 1
+                                : (ima_flags & IMA_UNRELATED_TO_STMT) );
 
     if (tainting && items > 1		      /* method call has args	*/
 	&& DBIc_is(imp_xxh, DBIcf_TaintIn)    /* taint checks requested	*/
@@ -3200,8 +3209,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		neatsvpv(DBIc_ERR(imp_xxh),0), neatsvpv(DBIc_STATE(imp_xxh),0) );
 
 	if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
+	    && !is_unrelated_to_Statement
 	    && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima_flags & IMA_SHOW_ERR_STMT)
-	    && !(ima_flags & IMA_UNRELATED_TO_STMT) /* error unrelated to Statement */
 	    && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
 	    &&  statement_svp && SvOK(*statement_svp)
 	) {
@@ -3283,7 +3292,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	if (profile_t1) { /* see also dbi_profile() call a few lines below */
-	    SV *statement_sv = (ima_flags & IMA_UNRELATED_TO_STMT) ? &sv_no : &sv_undef;
+	    SV *statement_sv = (is_unrelated_to_Statement) ? &sv_no : &sv_undef;
 	    dbi_profile(h, imp_xxh, statement_sv, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
 	}
@@ -3299,7 +3308,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
     else if (profile_t1) { /* see also dbi_profile() call a few lines above */
-        SV *statement_sv = (ima_flags & IMA_UNRELATED_TO_STMT) ? &sv_no : &sv_undef;
+        SV *statement_sv = (is_unrelated_to_Statement) ? &sv_no : &sv_undef;
 	dbi_profile(h, imp_xxh, statement_sv, imp_msv ? imp_msv : (SV*)cv,
 		profile_t1, dbi_time());
     }

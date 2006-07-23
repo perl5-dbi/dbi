@@ -12,16 +12,16 @@ environment variable to 2 and then run your code as usual:
   DBI_PROFILE=2 prog.pl
 
 This will profile your program and then output a textual summary
-grouped by query.  You can also enable profiling by setting the
-Profile attribute of any DBI handle:
+grouped by query when the program exits.  You can also enable profiling by
+setting the Profile attribute of any DBI handle:
 
   $dbh->{Profile} = 2;
 
-Other values are possible - see L<"ENABLING A PROFILE"> below.
+Then the summary will be printed when the handle is destroyed.
+
+Many other values apart from are possible - see L<"ENABLING A PROFILE"> below.
 
 =head1 DESCRIPTION
-
-DBI::Profile is fairly new and subject to change.
 
 The DBI::Profile module provides a simple interface to collect and
 report performance and benchmarking data from the DBI.
@@ -52,14 +52,13 @@ calling the appropriate method and just before returning, it takes
 another high-resolution timestamp and calls a function to record
 the information.  That function is passed the two timestamps
 plus the DBI handle and the name of the method that was called.
-That information about a single DBI method call is called the
-I<profile sample> data.
+That data about a single DBI method call is called a I<profile sample>.
 
 =item Data Filtering
 
-If the method call was invoked by the DBI or by a driver then the
-call is currently ignored for profiling because the time spent will
-be accounted for by the original 'outermost' call.
+If the method call was invoked by the DBI or by a driver then the call is
+ignored for profiling because the time spent will be accounted for by the
+original 'outermost' call for your code.
 
 For example, the calls that the selectrow_arrayref() method makes
 to prepare() and execute() etc. are not counted individually
@@ -68,14 +67,14 @@ to the selectrow_arrayref() method when it returns. If this was not
 done then it would be very easy to double count time spent inside
 the DBI.
 
-In future releases it may be possible to alter this behaviour.
-
 =item Data Storage Tree
 
-The profile data is stored as 'leaves on a tree'. The 'path' through
-the branches of the tree to the particular leaf that will store the
-profile sample data for a profiled call is determined dynamically.
-This is a powerful feature.
+The profile data is accumulated as 'leaves on a tree'. The 'path' through the
+branches of the tree to a particular leaf is determined dynamically for each sample.
+This is a key feature of DBI profiliing.
+
+For each profiled method call the DBI walks along the Path and uses each value
+in the Path to step into and grow the Data tree.
 
 For example, if the Path is
 
@@ -85,54 +84,43 @@ then the new profile sample data will be I<merged> into the tree at
 
   $h->{Profile}->{Data}->{foo}->{bar}->{baz}
 
-It wouldn't be very useful to merge all the call data into one leaf
-node (except to get an overall 'time spent inside the DBI' total).
-It's more common to want the Path to include the current statement
-text and/or the name of the method called to show what the time
-spent inside the DBI was for.
+But it's not very useful to merge all the call data into one leaf node (except
+to get an overall 'time spent inside the DBI' total).  It's more common to want
+the Path to include dynamic values such as the current statement text and/or
+the name of the method called to show what the time spent inside the DBI was for.
 
-The Path can contain some 'magic cookie' values that are automatically
-replaced by corresponding dynamic values when they're used.
-For example DBIprofile_Statement (exported by DBI::profile) is
-automatically replaced by value of the C<Statement> attribute of
-the handle. For example, is the Path was:
+The Path can contain some 'magic cookie' values that are automatically replaced
+by corresponding dynamic values when they're used. These magic cookies always
+start with a punctuation character.
 
-  [ 'foo', DBIprofile_Statement, 'bar' ]
+For example a value of 'C<!MethodName>' in the Path causes the corresponding
+entry in the Data to be the name of the method that was called.
+For example, if the Path was:
 
-and the value of $h->{Statement} was:
+  [ 'foo', '!MethodName', 'selectall_arrayref' ]
 
-  SELECT * FROM tablename
+and the selectall_arrayref() method was called, then the profile sample data
+for that call will be merged into the tree at:
 
-then the profile data will be merged into the tree at:
-
-  $h->{Profile}->{Data}->{foo}->{SELECT * FROM tablename}->{bar}
-
-The default Path is just C<[ DBIprofile_Statement ]> and so by
-default the profile data is aggregated per distinct Statement string.
-
-For statement handles this is always simply the string that was
-given to prepare() when the handle was created.  For database handles
-this is the statement that was last prepared or executed on that
-database handle. That can lead to a little 'fuzzyness' because, for
-example, calls to the quote() method to build a new statement will
-typically be associated with the previous statement. In practice
-this isn't a significant issue and the dynamic Path mechanism can
-be used to setup your own rules.
+  $h->{Profile}->{Data}->{foo}->{selectall_arrayref}->{bar}
 
 =item Profile Data
 
 Profile data is stored at the 'leaves' of the tree as references
 to an array of numeric values. For example:
 
-    [
-      106,                    # count
-      0.0312958955764771,     # total duration
-      0.000490069389343262,   # first duration
-      0.000176072120666504,   # shortest duration
-      0.00140702724456787,    # longest duration
-      1023115819.83019,       # time of first event
-      1023115819.86576,       # time of last event
-    ]
+  [
+    106,                  # 0: count of samples at this node
+    0.0312958955764771,   # 1: total duration
+    0.000490069389343262, # 2: first duration
+    0.000176072120666504, # 3: shortest duration
+    0.00140702724456787,  # 4: longest duration
+    1023115819.83019,     # 5: time of first sample
+    1023115819.86576,     # 6: time of last sample
+  ]
+
+After the first sample, later samples always update elements 0, 1, and 6, and
+may update 3 or 4 depending on the duration of the sampled call.
 
 =back
 
@@ -145,55 +133,61 @@ attribute. For example:
 
 The Profile attribute holds a blessed reference to a hash object
 that contains the profile data and attributes relating to it.
+
 The class the Profile object is blessed into is expected to
 provide at least a DESTROY method which will dump the profile data
 to the DBI trace file handle (STDERR by default).
 
-All these examples have the same effect as the first:
+All these examples have the same effect as each other:
 
+  $h->{Profile} = 0;
+  $h->{Profile} = "/DBI::Profile";
+  $h->{Profile} = DBI::Profile->new();
   $h->{Profile} = {};
-  $h->{Profile} = "DBI::Profile";
-  $h->{Profile} = "2/DBI::Profile";
-  $h->{Profile} = 2;
+  $h->{Profile} = { Path => [] };
+
+Similarly, these examples have the same effect as each other:
+
+  $h->{Profile} = 6;
+  $h->{Profile} = "6/DBI::Profile";
+  $h->{Profile} = "!Statement:!MethodName/DBI::Profile";
+  $h->{Profile} = { Path => [ '!Statement', '!MethodName' ] };
 
 If a non-blessed hash reference is given then the DBI::Profile
 module is automatically C<require>'d and the reference is blessed
 into that class.
 
-If a string is given then it is split on 'C</>' characters and the
-first value is used to select the Path to be used (see below).
+If a string is given then it is processed like this:
+
+    ($path, $module, $args) = split /\//, $string, 3
+
+    @path = split /:/, $path
+    @args = split /:/, $args
+
+    eval "require $module" if $module
+    $module ||= "DBI::Profile"
+
+    $module->new( Path => \@Path, @args )
+
+So the first value is used to select the Path to be used (see below).
 The second value, if present, is used as the name of a module which
 will be loaded and it's C<new> method called. If not present it
 defaults to DBI::Profile. Any other values are passed as arguments
-to the C<new> method. For example: "C<2/DBIx::OtherProfile/Foo/42>".
+to the C<new> method. For example: "C<2/DBIx::OtherProfile/Foo:42>".
 
-Various common sequences for Path can be selected by simply assigning
-an integer value to Profile. The simplest way to explain how the
-values are interpreted is to show the code:
+Numbers can be used as a shorthand way to enable common Path values.
+The simplest way to explain how the values are interpreted is to show the code:
 
-    push @Path, "DBI"                       if $path & 0x01;
-    push @Path, DBIprofile_Statement        if $path & 0x02;
-    push @Path, DBIprofile_MethodName       if $path & 0x04;
-    push @Path, DBIprofile_MethodClass      if $path & 0x08;
-    push @Path, DBIprofile_Caller           if $path & 0x10;
+    push @Path, "DBI"           if $path_elem & 0x01;
+    push @Path, "!Statement"    if $path_elem & 0x02;
+    push @Path, "!MethodName"   if $path_elem & 0x04;
+    push @Path, "!MethodClass"  if $path_elem & 0x08;
+    push @Path, "!Caller"       if $path_elem & 0x10;
 
-(The order here is subject to change and shouldn't be relied upon.)
-
-So using the value "C<1>" causes all profile data to be merged into
-a single leaf of the tree. That's useful when you just want a total.
-
-Using "C<2>" causes profile sample data to be merged grouped by
-the corresponding Statement text. This is the most frequently used.
-
-Using "C<4>" causes profile sample data to be merged grouped by
-the method name ('FETCH', 'prepare' etc.). Using "C<8>" is similar
-but gives the fully qualified 'glob name' of the method called. For
-example: '*DBD::Driver::db::prepare', '*DBD::_::st::fetchrow_hashref'.
-
-The values can be added together to create deeper paths. The most
-useful being 6 (statement then method name) or 10 (statement then
-method name with class).  Using a negative number will reverse the
-path. Thus -6 will group by method name then statement.
+So "2" is the same as "!Statement" and "6" (2+4) is the same as
+"!Statement:!Method".  Those are the two most commonly used values.  Using a
+negative number will reverse the path. Thus "-6" will group by method name then
+statement.
 
 The spliting and parsing of string values assigned to the Profile
 attribute may seem a little odd, but there's a good reason for it.
@@ -201,7 +195,8 @@ Remember that attributes can be embedded in the Data Source Name
 string which can be passed in to a script as a parameter. For
 example:
 
-    dbi:DriverName(RaiseError=>1,Profile=>2):dbname
+    dbi:DriverName(Profile=>2):dbname
+    dbi:DriverName(Profile=>{Username}:!Statement/MyProfiler/Foo:42):dbname
 
 And also, if the C<DBI_PROFILE> environment variable is set then
 The DBI arranges for every driver handle to share the same profile
@@ -231,18 +226,27 @@ The elements of Path array can be one of the following types:
 
 =item Special Constant
 
-B<DBIprofile_Statement>
+B<!Statement>
 
 Use the current Statement text. Typically that's the value of the Statement
 attribute for the handle the method was called with. Some methods, like
 commit() and rollback(), are unrelated to a particular statement. For those
-methods DBIprofile_Statement records an empty string.
+methods !Statement records an empty string.
 
-B<DBIprofile_MethodName>
+For statement handles this is always simply the string that was
+given to prepare() when the handle was created.  For database handles
+this is the statement that was last prepared or executed on that
+database handle. That can lead to a little 'fuzzyness' because, for
+example, calls to the quote() method to build a new statement will
+typically be associated with the previous statement. In practice
+this isn't a significant issue and the dynamic Path mechanism can
+be used to setup your own rules.
+
+B<!MethodName>
 
 Use the name of the DBI method that the profile sample relates to.
 
-B<DBIprofile_MethodClass>
+B<!MethodClass>
 
 Use the fully qualified name of the DBI method, including
 the package, that the profile sample relates to. This shows you
@@ -261,7 +265,7 @@ DBD::_::db::selectrow_arrayref but another 99 to
 DBD::mysql::db::selectrow_arrayref. Currently the first
 call Pern't record the true location. That may change.
 
-B<DBIprofile_Caller>
+B<!Caller>
 
 Use a string showing the filename and line number of the code calling the
 method, and the filename and line number of the code that called that.
@@ -294,7 +298,7 @@ Only the first 100 elements in Path are used.
 If the value of Path is anything other than an array reference,
 it is treated as if it was:
 
-	[ DBI::Profile::DBIprofile_Statement ]
+	[ DBI::Profile::!Statement ]
 
 
 =head1 REPORTING
@@ -467,9 +471,9 @@ into the profile data tree. For example:
 
 The $h parameter is the handle the extra profile sample should be
 associated with. The $statement parameter is the string to use where
-the Path specifies DBIprofile_Statement. If $statement is undef
+the Path specifies !Statement. If $statement is undef
 then $h->{Statement} will be used. Similarly $method is the string
-to use if the Path specifies DBIprofile_MethodName. There is no
+to use if the Path specifies !MethodName. There is no
 default value for $method.
 
 The $h->{Profile}{Path} attribute is processed by dbi_profile() in
@@ -491,7 +495,7 @@ they work with future versions of the DBI.
 
 Applications which generate many different statement strings
 (typically because they don't use placeholders) and profile with
-DBIprofile_Statement in the Path (the default) will consume memory
+!Statement in the Path (the default) will consume memory
 in the Profile Data structure for each statement.
 
 If a method throws an exception itself (not via RaiseError) then
@@ -577,47 +581,42 @@ sub _auto_new {
 
     # This sub is called by DBI internals when a non-hash-ref is
     # assigned to the Profile attribute. For example
-    #	dbi:mysql(RaiseError=>1,Profile=>4/DBIx::MyProfile):dbname
+    #	dbi:mysql(RaiseError=>1,Profile=>!Statement:!MethodName/DBIx::MyProfile/arg1:arg2):dbname
     # This sub works out what to do and returns a suitable hash ref.
     
-    my ($path, $module, @args);
+    $arg =~ s/^DBI::/2\/DBI::/
+        and carp "Automatically changed old-style DBI::Profile specification to $arg";
 
-    # parse args
-    if ($arg =~ m!/!) {
-        # it's a path/module/arg/arg/arg list
-        ($path, $module, @args) = split /\s*\/\s*/, $arg, -1;
-    } elsif ($arg =~ /^\d+$/) {
-        # it's a numeric path selector
-        $path = $arg;
-    } else {
-        # it's a module name
-        $module = $arg;
-    }
-
+    # it's a path/module/arg/arg/arg list
+    my ($path, $package, $args) = split /\//, $arg, 3;
+    my @args = (defined $args) ? split(/:/, $args, -1) : ();
     my @Path;
-    if ($path) {
-	my $reverse = ($path < 0) ? ($path=-$path, 1) : 0;
-	push @Path, "DBI"			if $path & 0x01;
-	push @Path, DBIprofile_Statement	if $path & 0x02;
-	push @Path, DBIprofile_MethodName	if $path & 0x04;
-	push @Path, DBIprofile_MethodClass	if $path & 0x08;
-	push @Path, DBIprofile_Caller	  	if $path & 0x10;
-	@Path = reverse @Path if $reverse;
-    } else {
-        # default Path
-        push @Path, DBIprofile_Statement;
+
+    for my $element (split /:/, $path) {
+        if (DBI::looks_like_number($element)) {
+            my $reverse = ($element < 0) ? ($element=-$element, 1) : 0;
+            my @p;
+            push @p, "DBI"			if $element & 0x01;
+            push @p, DBIprofile_Statement	if $element & 0x02;
+            push @p, DBIprofile_MethodName	if $element & 0x04;
+            push @p, DBIprofile_MethodClass	if $element & 0x08;
+            push @p, DBIprofile_Caller   	if $element & 0x10;
+            push @Path, ($reverse ? reverse @p : @p);
+        }
+        elsif ($element =~ /^&(\w.*)/) {
+            # XXX need to work out what package to map names into
+            warn "$element style elements not yet supported in Path";
+            push @Path, $element;
+        }
+        else {
+            push @Path, $element;
+        }
     }
 
-    if ($module) {
-	if (eval "require $module") {
-	  $class = $module;
-	}
-	else {
-	    carp "Can't use $module for DBI profile: $@";
-	}
-    }
+    eval "require $package" if $package; # sliently ignores errors
+    $package ||= $class;
 
-    return $class->new(Path => \@Path, @args);
+    return $package->new(Path => \@Path, @args);
 }
 
 
