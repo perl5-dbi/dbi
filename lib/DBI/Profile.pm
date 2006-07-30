@@ -182,7 +182,7 @@ The simplest way to explain how the values are interpreted is to show the code:
     push @Path, "!Statement"    if $path_elem & 0x02;
     push @Path, "!MethodName"   if $path_elem & 0x04;
     push @Path, "!MethodClass"  if $path_elem & 0x08;
-    push @Path, "!Caller"       if $path_elem & 0x10;
+    push @Path, "!Caller2"      if $path_elem & 0x10;
 
 So "2" is the same as "!Statement" and "6" (2+4) is the same as
 "!Statement:!Method".  Those are the two most commonly used values.  Using a
@@ -267,9 +267,21 @@ call Pern't record the true location. That may change.
 
 B<!Caller>
 
+Use a string showing the filename and line number of the code calling the method.
+
+B<!Caller2>
+
 Use a string showing the filename and line number of the code calling the
-method, and the filename and line number of the code that called that.
-The content and format of the string may change.
+method, as for !Caller, but also include filename and line number of the code
+that called that. Calls from DBI:: and DBD:: packages are skipped.
+
+B<!File>
+
+Same as !Caller above except that only the filename is included, not the line number.
+
+B<!File2>
+
+Same as !Caller2 above except that only the filenames are included, not the line number.
 
 =item Code Reference
 
@@ -496,7 +508,8 @@ they work with future versions of the DBI.
 Applications which generate many different statement strings
 (typically because they don't use placeholders) and profile with
 !Statement in the Path (the default) will consume memory
-in the Profile Data structure for each statement.
+in the Profile Data structure for each statement. Use a code ref
+in the Path to return an edited (simplified) form of the statement.
 
 If a method throws an exception itself (not via RaiseError) then
 it won't be counted in the profile.
@@ -552,7 +565,6 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
     DBIprofile_Statement
     DBIprofile_MethodName
     DBIprofile_MethodClass
-    DBIprofile_Caller
     dbi_profile
     dbi_profile_merge
     dbi_time
@@ -564,7 +576,6 @@ $VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
 use constant DBIprofile_Statement	=> '!Statement';
 use constant DBIprofile_MethodName	=> '!MethodName';
 use constant DBIprofile_MethodClass	=> '!MethodClass';
-use constant DBIprofile_Caller  	=> '!Caller';
 
 $ON_DESTROY_DUMP = sub { DBI->trace_msg(shift, 0) };
 
@@ -596,17 +607,25 @@ sub _auto_new {
         if (DBI::looks_like_number($element)) {
             my $reverse = ($element < 0) ? ($element=-$element, 1) : 0;
             my @p;
+            # a single "DBI" is special-cased in format()
             push @p, "DBI"			if $element & 0x01;
             push @p, DBIprofile_Statement	if $element & 0x02;
             push @p, DBIprofile_MethodName	if $element & 0x04;
             push @p, DBIprofile_MethodClass	if $element & 0x08;
-            push @p, DBIprofile_Caller   	if $element & 0x10;
+            push @p, '!Caller2'            	if $element & 0x10;
             push @Path, ($reverse ? reverse @p : @p);
         }
-        elsif ($element =~ /^&(\w.*)/) {
-            # XXX need to work out what package to map names into
-            warn "$element style elements not yet supported in Path";
-            push @Path, $element;
+        elsif ($element =~ m/^&(\w.*)/) {
+            my $name = "DBI::ProfileSubs::$1"; # capture $1 early
+            require DBI::ProfileSubs;
+            my $code = do { no strict; *{$name}{CODE} };
+            if (defined $code) {
+                push @Path, $code;
+            }
+            else {
+                warn "$name: subroutine not found\n";
+                push @Path, $element;
+            }
         }
         else {
             push @Path, $element;
@@ -645,7 +664,7 @@ sub format {
 	    $prologue .= sprintf "(%d calls) $progname \@ $ts\n", $count;
 	}
 	if (@$leaves == 1 && ref($self->{Data}) eq 'HASH' && $self->{Data}->{DBI}) {
-	    $detail = "";	# hide it
+	    $detail = "";	# hide the "DBI" from DBI_PROFILE=1
 	}
     }
     return ($prologue, $detail) if wantarray;

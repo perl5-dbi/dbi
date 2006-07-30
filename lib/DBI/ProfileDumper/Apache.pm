@@ -8,7 +8,7 @@ DBI::ProfileDumper::Apache - capture DBI profiling data from Apache/mod_perl
 
 Add this line to your F<httpd.conf>:
 
-  PerlSetEnv DBI_PROFILE DBI::ProfileDumper::Apache
+  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache
 
 Under mod_perl2 RC5+ you'll need to also add:
 
@@ -53,7 +53,7 @@ can then use dbiprof to analyze the profile files.
 The easiest way to use this module is just to set the DBI_PROFILE
 environment variable in your F<httpd.conf>:
 
-  PerlSetEnv DBI_PROFILE DBI::ProfileDumper::Apache
+  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache
 
 If you want to use one of DBI::Profile's other Path settings, you can
 use a string like:
@@ -63,7 +63,7 @@ use a string like:
 It's also possible to use this module by setting the Profile attribute
 of any DBI handle:
 
-  $dbh->{Profile} = "DBI::ProfileDumper::Apache";
+  $dbh->{Profile} = "2/DBI::ProfileDumper::Apache";
 
 See L<DBI::ProfileDumper> for more possibilities.
 

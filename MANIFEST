@@ -36,6 +36,7 @@ lib/DBI/Profile.pm		Manage DBI usage profile data
 lib/DBI/ProfileData.pm
 lib/DBI/ProfileDumper.pm
 lib/DBI/ProfileDumper/Apache.pm
+lib/DBI/ProfileSubs.pm
 lib/DBI/ProxyServer.pm		The proxy drivers server
 lib/DBI/PurePerl.pm		A DBI.xs emulation in Perl
 lib/DBI/SQL/Nano.pm		A 'smaller than micro' SQL parser

@@ -130,6 +130,10 @@ example that you can tailor to suit your own needs:
       s!(([NS],){100,})!sprintf("$2,{repeated %d times}",length($1)/2)!eg;
   }
 
+It's often better to perform this kinds of normalization in the DBI while the
+data is being collected, to avoid too much memory being used by storing profile
+data for many different SQL statement. See L<DBI::Profile>.
+
 =cut
 
 sub new {
@@ -294,9 +298,9 @@ value pairs included in the header section of the DBI::ProfileDumper
 data format.  For example:
 
   $header = {
-              Path    => '[ DBIprofile_Statement, DBIprofile_MethodName ]',
-              Program => 't/42profile_data.t',
-            };
+    Path    => [ '!Statement', '!MethodName' ],
+    Program => 't/42profile_data.t',
+  };
 
 Note that modifying this hash will modify the header data stored
 inside the profile object.

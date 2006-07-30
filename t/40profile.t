@@ -20,7 +20,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 43;
+use Test::More tests => 46;
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
@@ -47,7 +47,7 @@ ok(!$dbh->{Profile} && !$ENV{DBI_PROFILE});
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 $dbh->{Profile} = "4";
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_MethodName ],
+	'Path' => [ '!MethodName' ],
 } => 'DBI::Profile';
 
 # using a package name
@@ -61,12 +61,12 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
 $dbh->{Profile} = "20/DBI::Profile";
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_MethodName, DBIprofile_Caller ],
+	'Path' => [ '!MethodName', '!Caller2' ],
 } => 'DBI::Profile';
 
 $dbh->do("set foo=1"); my $line = __LINE__;
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_MethodName, DBIprofile_Caller ],
+	'Path' => [ '!MethodName', '!Caller2' ],
 	'Data' => { 'do' => {
 		"40profile.t line $line" => [ 1, 0, 0, 0, 0, 0, 0 ]
 	} }
@@ -77,7 +77,7 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 # can turn it on at connect
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1, Profile=>6 });
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_Statement, DBIprofile_MethodName ],
+	'Path' => [ '!Statement', '!MethodName' ],
 	'Data' => {
 		'' => {
 			'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ],
@@ -90,7 +90,7 @@ print "dbi_profile\n";
 my $t1 = DBI::dbi_time;
 dbi_profile($dbh, "Hi, mom", "my_method_name", $t1, $t1 + 1);
 is_deeply sanitize_tree($dbh->{Profile}), bless {
-	'Path' => [ DBIprofile_Statement, DBIprofile_MethodName ],
+	'Path' => [ '!Statement', '!MethodName' ],
 	'Data' => {
 		'' => {
 			'FETCH' => [ 1, 0, 0, 0, 0, 0, 0 ], # +0
@@ -159,7 +159,7 @@ ok($time1 <= $time2);
 my $tmp = sanitize_tree($dbh->{Profile});
 $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count
 is_deeply $tmp, bless {
-	'Path' => [ DBIprofile_Statement ],
+	'Path' => [ '!Statement' ],
 	'Data' => {
 		''   => [ 3, 0, 0, 0, 0, 0, 0 ],
 		$sql => [ -1, 0, 0, 0, 0, 0, 0 ],
@@ -182,7 +182,7 @@ ok($1 >= $count);
 # try statement and method name path
 $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', {
     RaiseError => 1,
-    Profile => { Path => [ '{Username}', DBIprofile_Statement, 'foo', DBIprofile_MethodName ] }
+    Profile => { Path => [ '{Username}', '!Statement', 'foo', '!MethodName' ] }
 });
 $sql = "select name from .";
 $sth = $dbh->prepare($sql);
@@ -193,7 +193,7 @@ undef $sth; # DESTROY
 $tmp = sanitize_tree($dbh->{Profile});
 # make test insentitive to number of local files
 is_deeply $tmp, bless {
-    'Path' => [ '{Username}', DBIprofile_Statement, 'foo', DBIprofile_MethodName ],
+    'Path' => [ '{Username}', '!Statement', 'foo', '!MethodName' ],
     'Data' => {
 	'usrnam' => {
 	    '' => {
@@ -216,6 +216,43 @@ is_deeply $tmp, bless {
 	},
     },
 } => 'DBI::Profile';
+
+
+$dbh->{Profile}->{Path} = [ '!File', '!File2', '!Caller', '!Caller2' ];
+$dbh->{Profile}->{Data} = undef;
+
+my ($file, $line1, $line2) = (__FILE__, undef, undef);
+$file =~ s:.*/::;
+sub a_sub {
+    $sth = $dbh->prepare("select name from ."); $line2 = __LINE__;
+}
+a_sub(); $line1 = __LINE__;
+
+$tmp = sanitize_profile_data_nodes($dbh->{Profile}{Data});
+#warn Dumper($tmp);
+is_deeply $tmp, {
+  "$file" => {
+    "$file" => {
+      "$file line $line2" => {
+        "$file line $line2 via $file line $line1" => [ 1, 0, 0, 0, 0, 0, 0 ]
+      }
+    }
+  }
+};
+
+
+$dbh->{Profile} = '&norm_std_n3'; # assign as string to get magic
+is_deeply $dbh->{Profile}{Path}, [
+    \&DBI::ProfileSubs::norm_std_n3
+];
+$dbh->{Profile}->{Data} = undef;
+$sql = qq{insert into foo20060726 (a,b) values (42,"foo")};
+dbi_profile($dbh, $sql, 'mymethod', 100000000, 100000002);
+$tmp = $dbh->{Profile}{Data};
+#warn Dumper($tmp);
+is_deeply $tmp, {
+    'insert into foo<N> (a,b) values (<N>,"<S>")' => [ 1, '2', '2', '2', '2', '100000000', '100000000' ]
+};
 
 
 # -----------------------------------------------------------------------------------

@@ -1082,7 +1082,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 		/* add weakref to new (outer) handle into parents ChildHandles array */
 		tmp_svp = hv_fetch((HV*)SvRV(parent), "ChildHandles", 12, 1);
 		if (!SvROK(*tmp_svp)) {
-		    SV *ChildHandles_rvav = newRV((SV*)newAV());
+		    SV *ChildHandles_rvav = newRV_noinc((SV*)newAV());
 		    sv_setsv(*tmp_svp, ChildHandles_rvav);
 		    sv_free(ChildHandles_rvav);
                 }
@@ -2102,8 +2102,8 @@ dbi_dopoptosub_at(PERL_CONTEXT *cxstk, I32 startingblock)
 }
 
 
-static char *
-dbi_caller(long *line)
+static COP *
+dbi_caller_cop()
 {
     dTHX;
     register I32 cxix;
@@ -2112,7 +2112,6 @@ dbi_caller(long *line)
     PERL_SI *top_si = PL_curstackinfo;
     char *stashname;
 
-    *line = -1;
     for ( cxix = dbi_dopoptosub_at(ccstack, cxstack_ix) ;; cxix = dbi_dopoptosub_at(ccstack, cxix - 1)) {
 	/* we may be in a higher stacklevel, so dig down deeper */
 	while (cxix < 0 && top_si->si_type != PERLSI_MAIN) {
@@ -2129,50 +2128,56 @@ dbi_caller(long *line)
 	stashname = CopSTASHPV(cx->blk_oldcop);
 	if (!stashname)
 	    continue;
-	if (!(stashname[0] == 'D'
-	    && stashname[1] == 'B'
-	    && strchr("DI", stashname[2])
-	    && (!stashname[3] || (stashname[3] == ':' && stashname[4] == ':')))) 
+	if (!(stashname[0] == 'D' && stashname[1] == 'B'
+                && strchr("DI", stashname[2])
+                    && (!stashname[3] || (stashname[3] == ':' && stashname[4] == ':')))) 
 	{
-	    STRLEN len;
-	    *line = (I32)CopLINE(cx->blk_oldcop);
-	    return SvPV(GvSV(CopFILEGV(cx->blk_oldcop)), len);
+            return cx->blk_oldcop;
 	}
 	cxix = dbi_dopoptosub_at(ccstack, cxix - 1);
     }
     return NULL;
 }
 
+static void
+dbi_caller_string(SV *buf, COP *cop, char *prefix, char *suffix, int show_line, int show_caller, int show_path)
+{
+    dTHX;
+    STRLEN len;
+    long  line = CopLINE(cop);
+    char *file = SvPV(GvSV(CopFILEGV(cop)), len);
+    if (!show_path) {
+        char *sep;
+        if ( (sep=strrchr(file,'/')) || (sep=strrchr(file,'\\')))
+            file = sep+1;
+    }
+    if (show_line) {
+        sv_catpvf(buf, "%s%s line %ld", (prefix) ? prefix : "", file, line);
+    }
+    else {
+        sv_catpvf(buf, "%s%s",          (prefix) ? prefix : "", file);
+    }
+}
 
 static char *
-log_where(SV *buf, int append, char *prefix, char *suffix, int show_caller, int show_path)
+log_where(SV *buf, int append, char *prefix, char *suffix, int show_line, int show_caller, int show_path)
 {
     dTHX;
     dTHR;
-    if (!buf) {
-	buf = sv_2mortal(newSV(80));
-	sv_setpv(buf,"");
-    }
-    else
-    if (!append)
+    if (!buf)
+	buf = sv_2mortal(newSVpv("",0));
+    else if (!append)
 	sv_setpv(buf,"");
     if (CopLINE(curcop)) {
-	STRLEN len;
-	long  near_line = CopLINE(curcop);
-	char *near_file = SvPV(GvSV(CopFILEGV(curcop)), len);
-	char *file = near_file;
-	if (!show_path) {
-	    char *sep;
-	    if ( (sep=strrchr(file,'/')) || (sep=strrchr(file,'\\')))
-		file = sep+1;
-	}
-	sv_catpvf(buf, "%s%s line %ld", (prefix) ? prefix : "", file, near_line);
-
-	if (show_caller) {
-	    long far_line;
-	    char *far_file = dbi_caller(&far_line);
-	    if (far_file && !(far_line==near_line && strEQ(far_file,near_file)) )
-		sv_catpvf(buf, " via %s line %ld", far_file, far_line);
+        COP *cop;
+        char *buf_start = SvEND(buf);
+        dbi_caller_string(buf, curcop, prefix, suffix, show_line, show_caller, show_path);
+	if (show_caller && (cop = dbi_caller_cop())) {
+            SV *via = sv_2mortal(newSVpv("",0));
+            dbi_caller_string(via, cop, prefix, suffix, show_line, show_caller, show_path);
+            if (strNE(SvPV_nolen(via), buf_start)) {
+                sv_catpvf(buf, " via %s", SvPV_nolen(via));
+            }
 	}
     }
     if (dirty)
@@ -2386,8 +2391,17 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
                         }
                         dest_node = _profile_next_node(dest_node, p);
                     }
+                    else if (p[1] == 'F' && strEQ(p, "!File")) {
+                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 0, 0, 0));
+                    }
+                    else if (p[1] == 'F' && strEQ(p, "!File2")) {
+                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 0, 1, 0));
+                    }
                     else if (p[1] == 'C' && strEQ(p, "!Caller")) {
-                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 1, 0));
+                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 1, 0, 0));
+                    }
+                    else if (p[1] == 'C' && strEQ(p, "!Caller2")) {
+                        dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 1, 1, 0));
                     }
                     else {
                         warn("Unknown ! element in DBI::Profile Path: %s", p);
@@ -2587,7 +2601,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    (dirty?'!':' '), meth_name, neatsvpv(h,0),
 	    (long)SvREFCNT(h), (SvROK(h) ? (long)SvREFCNT(SvRV(h)) : (long)-1),
 	    (long)items, (int)gimme, (long)ima_flags, (long)PerlProc_getpid());
-	PerlIO_puts(logfp, log_where(0, 0, " at ","\n", (trace_level >= 3), (trace_level >= 4)));
+	PerlIO_puts(logfp, log_where(0, 0, " at ","\n", 1, (trace_level >= 3), (trace_level >= 4)));
 	PerlIO_flush(logfp);
     }
 
@@ -3106,7 +3120,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    PerlIO_printf(logfp," (not implemented)");
 	/* XXX add flag to show pid here? */
 	/* add file and line number information */
-	PerlIO_puts(logfp, log_where(0, 0, " at ", "\n", (trace_level >= 3), (trace_level >= 4)));
+	PerlIO_puts(logfp, log_where(0, 0, " at ", "\n", 1, (trace_level >= 3), (trace_level >= 4)));
     skip_meth_return_trace:
 	PerlIO_flush(logfp);
     }

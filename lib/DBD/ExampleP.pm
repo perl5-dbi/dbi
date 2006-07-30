@@ -317,9 +317,10 @@
 	}
 	else {
 	    $sth->{dbd_dir} = $dir;
-	    $sth->{dbd_datahandle} = Symbol::gensym(); # "DBD::ExampleP::".++$DBD::ExampleP::gensym;
-	    opendir($sth->{dbd_datahandle}, $dir)
-		or return $sth->set_err(2, "opendir($dir): $!");
+	    my $sym = Symbol::gensym(); # "DBD::ExampleP::".++$DBD::ExampleP::gensym;
+	    opendir($sym, $dir)
+                or return $sth->set_err(2, "opendir($dir): $!");
+	    $sth->{dbd_datahandle} = $sym;
 	}
 	$sth->STORE(Active => 1);
 	return 1;

@@ -29,7 +29,7 @@ package DBD::File;
 
 use vars qw(@ISA $VERSION $drh $valid_attrs);
 
-$VERSION = '0.33';
+$VERSION = '0.35';
 
 $drh = undef;		# holds driver handle(s) once initialised
 

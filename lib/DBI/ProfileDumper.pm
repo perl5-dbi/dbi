@@ -11,7 +11,7 @@ To profile an existing program using DBI::ProfileDumper, set the
 DBI_PROFILE environment variable and run your program as usual.  For
 example, using bash:
 
-  DBI_PROFILE=DBI::ProfileDumper program.pl
+  DBI_PROFILE=2/DBI::ProfileDumper program.pl
 
 Then analyze the generated file (F<dbi.prof>) with L<dbiprof|dbiprof>:
 
@@ -22,15 +22,15 @@ You can also activate DBI::ProfileDumper from within your code:
   use DBI;
 
   # profile with default path (2) and output file (dbi.prof)
-  $dbh->{Profile} = "DBI::ProfileDumper";
+  $dbh->{Profile} = "2/DBI::ProfileDumper";
 
   # same thing, spelled out
-  $dbh->{Profile} = "2/DBI::ProfileDumper/File/dbi.prof";
+  $dbh->{Profile} = "2/DBI::ProfileDumper/File:dbi.prof";
 
   # another way to say it
-  use DBI::Profile qw(DBIprofile_Statement);
+  use DBI::Profile;
   $dbh->{Profile} = DBI::ProfileDumper->new(
-                        Path => [ DBIprofile_Statement ]
+                        Path => [ '!Statement' ]
                         File => 'dbi.prof' );
 
   # using a custom path
@@ -53,15 +53,15 @@ L<DBI::ProfileDumper::Apache|DBI::ProfileDumper::Apache>.
 
 One way to use this module is just to enable it in your C<$dbh>:
 
-  $dbh->{Profile} = "DBI::ProfileDumper";
+  $dbh->{Profile} = "1/DBI::ProfileDumper";
 
 This will write out profile data by statement into a file called
 F<dbi.prof>.  If you want to modify either of these properties, you
 can construct the DBI::ProfileDumper object yourself:
 
-  use DBI::Profile qw(DBIprofile_Statement);
+  use DBI::Profile;
   $dbh->{Profile} = DBI::ProfileDumper->new(
-                        Path => [ DBIprofile_Statement ]
+                        Path => [ '!Statement' ]
                         File => 'dbi.prof' );
 
 The C<Path> option takes the same values as in
@@ -72,7 +72,7 @@ overwritten.
 You can also activate this module by setting the DBI_PROFILE
 environment variable:
 
-  $ENV{DBI_PROFILE} = "DBI::ProfileDumper";
+  $ENV{DBI_PROFILE} = "!Statement/DBI::ProfileDumper";
 
 This will cause all DBI handles to share the same profiling object.
 
@@ -105,7 +105,7 @@ a block of variable declarations describes the profile.  After two
 newlines, the profile data forms the body of the file.  For example:
 
   DBI::ProfileDumper 1.0
-  Path = [ DBIprofile_Statement, DBIprofile_MethodName ]
+  Path = [ '!Statement', '!MethodName' ]
   Program = t/42profile_data.t
 
   + 1 SELECT name FROM users WHERE id = ?
@@ -212,15 +212,7 @@ sub write_header {
     my @path_words;
     if ($self->{Path}) {
         foreach (@{$self->{Path}}) {
-            if ($_ eq DBI::Profile::DBIprofile_Statement) {
-                push @path_words, "DBIprofile_Statement";
-            } elsif ($_ eq DBI::Profile::DBIprofile_MethodName) {
-                push @path_words, "DBIprofile_MethodName";
-            } elsif ($_ eq DBI::Profile::DBIprofile_MethodClass) {
-                push @path_words, "DBIprofile_MethodClass";
-            } else {
-                push @path_words, $_;
-            }
+            push @path_words, $_;
         }
     }
     print $fh "Path = [ ", join(', ', @path_words), " ]\n";

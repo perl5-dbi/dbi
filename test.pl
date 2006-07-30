@@ -28,7 +28,10 @@ use Config;
 use Getopt::Long;
 use strict;
 
-our $has_devel_leak = eval { require Devel::Leak };
+our $has_devel_leak = eval {
+    local $^W = 0; # silence "Use of uninitialized value $DynaLoader::args[0] in subroutine entry";
+    require Devel::Leak;
+};
 
 $::opt_d = 0;
 $::opt_l = '';

@@ -4,21 +4,25 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.52 (svn rev XXX),   XXX
+XXX update docs for Profile &subname magic Path elements
 
-XXX update DBD::File (as sub-module?) to match latest.
-XXX update docs for Profile !Foo magic vars and code refs.
+=head2 Changes in DBI 1.52 (svn rev 6734),   30h July 2006
 
+  Fixed memory leak (per handle) thanks to Nicholas Clark and Ephraim Dan.
   Fixed memory leak (16 bytes per sth) thanks to Doru Theodor Petrescu.
-  Fixed memory leak (per handle) thanks to Nicholas Clark.
-    A small leak remains, probably since DBI 1.49.
   Fixed execute_for_fetch/execute_array to RaiseError thanks to Martin J. Evans.
+  Fixed for perl 5.9.4. Users of Perl >= 5.9.4 will require DBI >= 1.52.
 
-  Changed parsing of non-numeric DBI_PROFILE env var values.
-  Changed DBI::Profile docs extensively.
+  Updated DBD::File to 0.35 to match the latest release on CPAN.
 
-  Added ability for DBI::Profile Path to contain code refs - cool!
   Added $dbh->statistics_info specification thanks to Brandon Black.
+
+  Many changes and additions to profiling:
+    Profile Path can now uses sane strings instead of obscure numbers,
+    can refer to attributes, assorted magical values, and even code refs!
+    Parsing of non-numeric DBI_PROFILE env var values has changed.
+    Changed DBI::Profile docs extensively - many new features.
+    See DBI::Profile docs for more information.
 
 =head2 Changes in DBI 1.51 (svn rev 6475),   6th June 2006
 
