@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.51"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.52"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -120,7 +120,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.51.
+This is the DBI specification that corresponds to the DBI version 1.52.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -343,6 +343,7 @@ my $dbd_prefix_registry = {
   tmplss_  => { class => 'DBD::TemplateSS',	},
   tuber_   => { class => 'DBD::Tuber',		},
   uni_     => { class => 'DBD::Unify',		},
+  wmi_     => { class => 'DBD::WMI',		},
   xbase_   => { class => 'DBD::XBase',		},
   xl_      => { class => 'DBD::Excel',		},
   yaswi_   => { class => 'DBD::Yaswi',		},
