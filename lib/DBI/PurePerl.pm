@@ -42,7 +42,7 @@ select( (select($DBI::tfh), $| = 1)[0] );  # autoflush
 my $HAS_WEAKEN = eval { 
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken(my $test = \"foo"); 
+    Scalar::Util::weaken( my $test = [] ); 
     1;
 };
 
