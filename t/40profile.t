@@ -232,7 +232,7 @@ $tmp = sanitize_profile_data_nodes($dbh->{Profile}{Data});
 #warn Dumper($tmp);
 is_deeply $tmp, {
   "$file" => {
-    "$file" => {
+    "$file via $file" => {
       "$file line $line2" => {
         "$file line $line2 via $file line $line1" => [ 1, 0, 0, 0, 0, 0, 0 ]
       }

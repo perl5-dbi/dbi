@@ -2170,14 +2170,11 @@ log_where(SV *buf, int append, char *prefix, char *suffix, int show_line, int sh
 	sv_setpv(buf,"");
     if (CopLINE(curcop)) {
         COP *cop;
-        char *buf_start = SvEND(buf);
         dbi_caller_string(buf, curcop, prefix, suffix, show_line, show_caller, show_path);
 	if (show_caller && (cop = dbi_caller_cop())) {
             SV *via = sv_2mortal(newSVpv("",0));
             dbi_caller_string(via, cop, prefix, suffix, show_line, show_caller, show_path);
-            if (strNE(SvPV_nolen(via), buf_start)) {
-                sv_catpvf(buf, " via %s", SvPV_nolen(via));
-            }
+            sv_catpvf(buf, " via %s", SvPV_nolen(via));
 	}
     }
     if (dirty)

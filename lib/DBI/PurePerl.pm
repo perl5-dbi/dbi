@@ -592,8 +592,11 @@ sub looks_like_number {
 sub neat {
     my $v = shift;
     return "undef" unless defined $v;
-    return $v if (($v & ~ $v) eq "0"); # is SvNIOK
-    my $quote = utf8::is_utf8($v) ? '"' : "'";
+    my $quote = q{"};
+    if (not utf8::is_utf8($v)) {
+        return $v if (($v & ~ $v) eq "0"); # is SvNIOK
+        $quote = q{'};
+    }
     my $maxlen = shift || $DBI::neat_maxlen;
     if ($maxlen && $maxlen < length($v) + 2) {
 	$v = substr($v,0,$maxlen-5);

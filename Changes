@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 XXX update docs for Profile &subname magic Path elements
 
-=head2 Changes in DBI 1.52 (svn rev 6734),   30h July 2006
+=head2 Changes in DBI 1.52 (svn rev 6840),   30th July 2006
 
   Fixed memory leak (per handle) thanks to Nicholas Clark and Ephraim Dan.
   Fixed memory leak (16 bytes per sth) thanks to Doru Theodor Petrescu.
