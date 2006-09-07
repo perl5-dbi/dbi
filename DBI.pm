@@ -1912,7 +1912,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		return \@tuple;
 	    };
 	}
-
+	# pass thru the callers scalar or list context
 	return $sth->execute_for_fetch($fetch_tuple_sub, $tuple_sts);
     }
 
@@ -1921,10 +1921,12 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# start with empty status array
 	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
 
+	my $rc_total = 0;
 	my ($err_count, %errstr_cache);
 	while ( my $tuple = &$fetch_tuple_sub() ) {
 	    if ( my $rc = $sth->execute(@$tuple) ) {
 		push @$tuple_status, $rc;
+		$rc_total += $rc;
 	    }
 	    else {
 		$err_count++;
@@ -1935,7 +1937,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
         my $tuples = @$tuple_status;
         return $sth->set_err(1, "executing $tuples generated $err_count errors")
             if $err_count;
-	return scalar(@$tuple_status) || "0E0";
+	$tuples ||= "0E0";
+	return $tuples unless wantarray;
+	return ($tuples, $rc_total);
     }
 
 
@@ -5539,12 +5543,27 @@ Execute the prepared statement once for each parameter tuple
 (group of values) provided either in the @bind_values, or by prior
 calls to L</bind_param_array>, or via a reference passed in \%attr.
 
-The execute_array() method returns the number of tuples executed,
-or C<undef> if an error occured. Like execute(), a successful
-execute_array() always returns true regardless of the number of
-tuples executed, even if it's zero.  See the C<ArrayTupleStatus>
-attribute below for how to determine the execution status for each
-tuple.
+When called in scalar context the execute_array() method returns the
+number of tuples executed, or C<undef> if an error occured.  Like
+execute(), a successful execute_array() always returns true regardless
+of the number of tuples executed, even if it's zero. If there were any
+errors the ArrayTupleStatus array can be used to discover which tuples
+failed and with what errors.
+
+When called in array context the execute_array() method returns two
+scalars; the first the same as calling execute_array() in scalar
+context and the second is the number of rows affected (i.e. the sum of
+all the values returned by the individual executes (assuming your DBD
+does not handle execute_array() itself) or the values that would be
+returned in the ArrayTupleStatus). Note some drivers implement
+execute_for_fetch() themselves and a) may not yet support array
+context in which case the second scalar will be undef and b) may not
+be able to provide the number of rows affected when performing this
+batch operation even though they can from a single execute() in which
+case each affected rows value will be -1. Note if you are doing an
+update operation the returned rows affected may not be what you expect
+if for instance one or more of the tuples affected the same row
+multiple times.
 
 Bind values for the tuples to be executed may be supplied row-wise
 by an C<ArrayTupleFetch> attribute, or else column-wise in the
@@ -5669,11 +5688,25 @@ The execute_for_fetch() method calls $fetch_tuple_sub, without any
 parameters, until it returns a false value. Each tuple returned is
 used to provide bind values for an $sth->execute(@$tuple) call.
 
-If there were any errors then C<undef> is returned and the @tuple_status
-array can be used to discover which tuples failed and with what errors.
-If there were no errors then execute_for_fetch() returns the number
-of tuples executed. Like execute() and execute_array() a zero is
-returned as "0E0" so execute_for_fetch() is only false on error.
+In scalar context execute_for_fetch returns C<undef> if there were any
+errors and the number of tuples executed otherwise. Like execute() and
+execute_array() a zero is returned as "0E0" so execute_for_fetch() is
+only false on error.  If there were any errors the @tuple_status array
+can be used to discover which tuples failed and with what errors.
+
+In array context execute_for_fetch returns two scalars; the first is
+the same as calling execute_for_fetch() in scalar context and the
+second is the number of rows affected (i.e. the sum of all the values
+returned by the individual executes (assuming your DBD does not handle
+execute_for_fetch itself) or the values that could be returned in
+@tuple_status). Note some drivers implement execute_for_fetch()
+themselves and a) may not yet support array context in which case the
+second scalar will be undef and b) may not be able to provide the
+number of rows affected when performing this batch operation even
+though they can from a single execute, in which case each affected
+rows value will be -1. Note if you are doing an update operation the
+returned rows affected may not be what you expect if for instance one
+or more of the tuples affected the same row multiple times.
 
 If \@tuple_status is passed then the execute_for_fetch method uses
 it to return status information. The tuple_status array holds one
@@ -6868,11 +6901,12 @@ can be found in F<t/subclass.t> in the DBI distribution.
 
 When calling a SUPER::method that returns a handle, be careful to
 check the return value before trying to do other things with it in
-your overridden method. This is especially important if you want
-to set a hash attribute on the handle, as Perl's autovivification
-will bite you by (in)conveniently creating an unblessed hashref,
-which your method will then return with usually baffling results
-later on.  It's best to check right after the call and return undef
+your overridden method. This is especially important if you want to
+set a hash attribute on the handle, as Perl's autovivification will
+bite you by (in)conveniently creating an unblessed hashref, which your
+method will then return with usually baffling results later on like
+the error "dbih_getcom handle HASH(0xa4451a8) is not a DBI handle (has
+no magic".  It's best to check right after the call and return undef
 immediately on error, just like DBI would and just like the example
 above.
 

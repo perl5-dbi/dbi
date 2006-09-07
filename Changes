@@ -10,6 +10,9 @@ XXX update docs for Profile &subname magic Path elements
 
   Fixed checks for weaken to work with early 5.8.x versions
 
+  Added array context support to execute_array and execute_for_fetch
+    methods which returns executed tuples and rows affected.
+
 =head2 Changes in DBI 1.52 (svn rev 6840),   30th July 2006
 
   Fixed memory leak (per handle) thanks to Nicholas Clark and Ephraim Dan.

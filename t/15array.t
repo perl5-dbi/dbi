@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 52;
+use Test::More tests => 55;
 
 ## ----------------------------------------------------------------------------
 ## 15array.t
@@ -48,12 +48,12 @@ cmp_ok(scalar @{$rows}, '==', 0, '... we should have 0 rows');
 ok(! eval {
         local $sth->{PrintError} = 0;
         $sth->execute_array(
-		{ 
-			ArrayTupleStatus => $tuple_status 
+		{
+			ArrayTupleStatus => $tuple_status
 		},
 		[ 1, 2, 3 ],	          # array of integers
-		42,		                  # scalar 42 treated as array of 42's
-		undef,		              # scalar undef treated as array of undef's
+		42,                       # scalar 42 treated as array of 42's
+		undef,                    # scalar undef treated as array of undef's
 		[ qw(A B C) ],	          # array of strings
     ) },
     '... execute_array should return false'
@@ -97,6 +97,14 @@ ok(eq_array(
 		[1, 1, 1]
 		),
 	'... our tuple_status is as expected');
+
+# -----------------------------------------------
+# --- call execute_array in array context to get executed AND affected
+@$rows = ();
+my ($executed, $affected) = $sth->execute_array({ ArrayTupleStatus => $tuple_status });
+ok($executed, '... execute_array should return true');
+cmp_ok($executed, '==', 3, '... we should have executed 3 rows');
+cmp_ok($affected, '==', 3, '... we should have affected 3 rows');
 
 # -----------------------------------------------
 # --- with no values for bind params, should execute zero times
