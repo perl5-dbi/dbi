@@ -1921,17 +1921,19 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# start with empty status array
 	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
 
-	my $rc_total = 0;
+        my $rc_total = 0;
 	my ($err_count, %errstr_cache);
 	while ( my $tuple = &$fetch_tuple_sub() ) {
 	    if ( my $rc = $sth->execute(@$tuple) ) {
 		push @$tuple_status, $rc;
-		$rc_total += $rc;
+                $rc_total += $rc;
 	    }
 	    else {
 		$err_count++;
 		my $err = $sth->err;
 		push @$tuple_status, [ $err, $errstr_cache{$err} ||= $sth->errstr, $sth->state ];
+                # XXX drivers implementing execute_for_fetch could opt to "last;" here
+                # if the know the error code means no further executes will work.
 	    }
 	}
         my $tuples = @$tuple_status;
@@ -5536,8 +5538,11 @@ execution.
 
 =item C<execute_array>
 
-  $rv = $sth->execute_array(\%attr) or die $sth->errstr;
-  $rv = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
+  $tuples = $sth->execute_array(\%attr) or die $sth->errstr;
+  $tuples = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
+
+  ($tuples, $rows) = $sth->execute_array(\%attr) or die $sth->errstr;
+  ($tuples, $rows) = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
 
 Execute the prepared statement once for each parameter tuple
 (group of values) provided either in the @bind_values, or by prior
@@ -5550,20 +5555,14 @@ of the number of tuples executed, even if it's zero. If there were any
 errors the ArrayTupleStatus array can be used to discover which tuples
 failed and with what errors.
 
-When called in array context the execute_array() method returns two
-scalars; the first the same as calling execute_array() in scalar
-context and the second is the number of rows affected (i.e. the sum of
-all the values returned by the individual executes (assuming your DBD
-does not handle execute_array() itself) or the values that would be
-returned in the ArrayTupleStatus). Note some drivers implement
-execute_for_fetch() themselves and a) may not yet support array
-context in which case the second scalar will be undef and b) may not
-be able to provide the number of rows affected when performing this
-batch operation even though they can from a single execute() in which
-case each affected rows value will be -1. Note if you are doing an
-update operation the returned rows affected may not be what you expect
-if for instance one or more of the tuples affected the same row
-multiple times.
+When called in list context the execute_array() method returns two scalars;
+$tuples is the same as calling execute_array() in scalar context and $rows is
+the sum of the number of rows affected for each tuple, if available.
+If you are doing an update operation the returned rows affected may not be what
+you expect if, for instance, one or more of the tuples affected the same row
+multiple times.  Some drivers may not yet support list context, in which case
+$rows will be undef, or may not be able to provide the number of rows affected
+when performing this batch operation, in which case $rows will be -1.
 
 Bind values for the tuples to be executed may be supplied row-wise
 by an C<ArrayTupleFetch> attribute, or else column-wise in the
@@ -5675,8 +5674,11 @@ was added in 1.36.
 
 =item C<execute_for_fetch>
 
-  $rc = $sth->execute_for_fetch($fetch_tuple_sub);
-  $rc = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+  $tuples = $sth->execute_for_fetch($fetch_tuple_sub);
+  $tuples = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
+
+  ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub);
+  ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
 
 The execute_for_fetch() method is used to perform bulk operations
 and is most often used via the execute_array() method, not directly.
@@ -5688,25 +5690,20 @@ The execute_for_fetch() method calls $fetch_tuple_sub, without any
 parameters, until it returns a false value. Each tuple returned is
 used to provide bind values for an $sth->execute(@$tuple) call.
 
-In scalar context execute_for_fetch returns C<undef> if there were any
+In scalar context execute_for_fetch() returns C<undef> if there were any
 errors and the number of tuples executed otherwise. Like execute() and
 execute_array() a zero is returned as "0E0" so execute_for_fetch() is
 only false on error.  If there were any errors the @tuple_status array
 can be used to discover which tuples failed and with what errors.
 
-In array context execute_for_fetch returns two scalars; the first is
-the same as calling execute_for_fetch() in scalar context and the
-second is the number of rows affected (i.e. the sum of all the values
-returned by the individual executes (assuming your DBD does not handle
-execute_for_fetch itself) or the values that could be returned in
-@tuple_status). Note some drivers implement execute_for_fetch()
-themselves and a) may not yet support array context in which case the
-second scalar will be undef and b) may not be able to provide the
-number of rows affected when performing this batch operation even
-though they can from a single execute, in which case each affected
-rows value will be -1. Note if you are doing an update operation the
-returned rows affected may not be what you expect if for instance one
-or more of the tuples affected the same row multiple times.
+When called in list context execute_for_fetch() returns two scalars;
+$tuples is the same as calling execute_for_fetch() in scalar context and $rows is
+the sum of the number of rows affected for each tuple, if available.
+If you are doing an update operation the returned rows affected may not be what
+you expect if, for instance, one or more of the tuples affected the same row
+multiple times.  Some drivers may not yet support list context, in which case
+$rows will be undef, or may not be able to provide the number of rows affected
+when performing this batch operation, in which case $rows will be -1.
 
 If \@tuple_status is passed then the execute_for_fetch method uses
 it to return status information. The tuple_status array holds one
@@ -7432,8 +7429,8 @@ if you have one, else just 'guest' and 'guest'. The source code will
 be in a new subdirectory called C<trunk>.
 
 To keep informed about changes to the source you can send an empty email
-to dbi-changes@perl.org after which you'll get an email with the
-change log message and diff of each change checked-in to the source.
+to svn-commit-modules-dbi-subscribe@perl.org after which you'll get an email
+with the change log message and diff of each change checked-in to the source.
 
 After making your changes you can generate a patch file, but before
 you do, make sure your source is still upto date using:
