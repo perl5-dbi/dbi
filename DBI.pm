@@ -1926,7 +1926,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	while ( my $tuple = &$fetch_tuple_sub() ) {
 	    if ( my $rc = $sth->execute(@$tuple) ) {
 		push @$tuple_status, $rc;
-                $rc_total += $rc;
+		$rc_total = ($rc >= 0 && $rc_total >= 0) ? $rc_total + $rc : -1;
 	    }
 	    else {
 		$err_count++;
