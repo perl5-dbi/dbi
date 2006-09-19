@@ -2140,7 +2140,7 @@ dbi_caller_cop()
 }
 
 static void
-dbi_caller_string(SV *buf, COP *cop, char *prefix, char *suffix, int show_line, int show_caller, int show_path)
+dbi_caller_string(SV *buf, COP *cop, char *prefix, int show_line, int show_path)
 {
     dTHX;
     STRLEN len;
@@ -2170,10 +2170,10 @@ log_where(SV *buf, int append, char *prefix, char *suffix, int show_line, int sh
 	sv_setpv(buf,"");
     if (CopLINE(curcop)) {
         COP *cop;
-        dbi_caller_string(buf, curcop, prefix, suffix, show_line, show_caller, show_path);
+        dbi_caller_string(buf, curcop, prefix, show_line, show_path);
 	if (show_caller && (cop = dbi_caller_cop())) {
             SV *via = sv_2mortal(newSVpv("",0));
-            dbi_caller_string(via, cop, prefix, suffix, show_line, show_caller, show_path);
+            dbi_caller_string(via, cop, prefix, show_line, show_path);
             sv_catpvf(buf, " via %s", SvPV_nolen(via));
 	}
     }
@@ -3255,6 +3255,13 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		sv_catpv(msg, "\"]");
 	    }
 	}
+
+        if (0) {
+            COP *cop = dbi_caller_cop();
+            if (cop && (CopLINE(cop) != CopLINE(curcop) || CopFILEGV(cop) != CopFILEGV(curcop))) {
+                dbi_caller_string(msg, cop, " called via ", 1, 0);
+            }
+        }
 
 	if (    SvTRUE(err_sv)
 	    &&  DBIc_has(imp_xxh, DBIcf_HandleError)
