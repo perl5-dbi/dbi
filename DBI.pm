@@ -5714,6 +5714,10 @@ the element holds the return value from execute(), which is typically
 a row count. If the execute() did fail then the element holds a
 reference to an array containing ($sth->err, $sth->errstr, $sth->state).
 
+If the driver detects an error that it knows means no further tuples can be
+executed then it may return, with an error status, even though $fetch_tuple_sub
+may still have more tuples to be executed.
+
 Although each tuple returned by $fetch_tuple_sub is effectively used
 to call $sth->execute(@$tuple_array_ref) the exact timing may vary.
 Drivers are free to accumulate sets of tuples to pass to the
@@ -7306,6 +7310,7 @@ Other database related links:
 
  http://www.jcc.com/sql_stnd.html
  http://cuiwww.unige.ch/OSG/info/FreeDB/FreeDB.home.html
+ http://www.connectionstrings.com/
 
 Security, especially the "SQL Injection" attack:
 
