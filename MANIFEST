@@ -10,7 +10,8 @@ Makefile.PL			The Makefile generator
 Perl.xs				Test harness (currently) for Driver.xst
 README
 Roadmap.pod			Planned changes and enhancements for the DBI
-ToDo				Occasional random notes about what's missing
+TODO_2005.txt			Old (but still mostly relevant) occasional random notes about what's missing
+TASKS.pod                       Want to help? These things need doing...
 dbd_xsh.h			Prototypes for standard Driver.xst interface
 dbi_sql.h			Definitions based on SQL CLI / ODBC (#inc'd by DBIXS.h)
 dbipport.h			Perl portability macros (from Devel::PPort)
