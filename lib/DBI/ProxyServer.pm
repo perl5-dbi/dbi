@@ -68,7 +68,9 @@ my %DEFAULT_SERVER_OPTIONS;
     $o->{'localport'}  = undef;         # Must set port number on the
 					# command line.
     $o->{'logfile'}    = undef;         # Use syslog or EventLog.
-    $o->{'methods'}    = {
+
+    # XXX don't restrict methods that can be called (trust users once connected)
+    $o->{'XXX_methods'}    = {
 	'DBI::ProxyServer' => {
 	    'Version' => 1,
 	    'NewHandle' => 1,

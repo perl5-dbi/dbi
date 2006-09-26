@@ -71,10 +71,12 @@ unlink $config_file;
     or die "Failed to create config file $config_file: $!";
 
 my($handle, $port);
-my $numTests = 125;
+my $numTests = 135;
+
 if (@ARGV) {
     $port = $ARGV[0];
-} else {
+}
+else {
 
     # set DBI_TRACE to 0 to just get dbiproxy.log DBI trace for server
     # set DBI_TRACE > 0 to also get DBD::Proxy trace
@@ -87,11 +89,13 @@ if (@ARGV) {
     # If desperate uncomment this and add '-d' after $^X below:
     # local $ENV{PERLDB_OPTS} = "AutoTrace NonStop=1 LineInfo=dbiproxy.dbg";
 
+    # pass our @INC to children (e.g., so -Mblib passes through)
+    $ENV{PERL5LIB} = join(':', @INC);
+
     my $dbi_trace_level = DBI->trace(0);
     my @child_args = (
 	#'truss', '-o', 'dbiproxy.truss',
-	$^X, '-Iblib/lib', '-Iblib/arch', 
-	'dbiproxy', '--test', # --test must be first command line arg
+	$^X, 'dbiproxy', '--test', # --test must be first command line arg
 	($dbi_trace_level ? ('--dbitrace=dbiproxy.log') : ()),
 	'--configfile', $config_file,
 	(($dbi_trace_level) ? ('--logfile=1') : ()),
@@ -130,6 +134,25 @@ eval {
     die "BANG!!!\n";
 };
 Test($@ eq "BANG!!!\n", "\$@ value lost");
+
+
+print "begin_work...\n";
+Test($dbh->{AutoCommit});
+Test(!$dbh->{BegunWork});
+
+Test($dbh->begin_work);
+Test(!$dbh->{AutoCommit});
+Test($dbh->{BegunWork});
+
+$dbh->commit;
+Test(!$dbh->{BegunWork});
+Test($dbh->{AutoCommit});
+
+Test($dbh->begin_work({}));
+$dbh->rollback;
+Test($dbh->{AutoCommit});
+Test(!$dbh->{BegunWork});
+
 
 print "Doing a ping.\n";
 $_ = $dbh->ping;
