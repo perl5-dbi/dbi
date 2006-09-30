@@ -6,9 +6,13 @@ DBI::ProfileSubs - Subroutines for dynamic profile Path
 
 =head1 SYNOPSIS
 
-  DBI_PROFILE='& prog.pl
+  DBI_PROFILE='&norm_std_n3' prog.pl
 
 This is new and still experimental.
+
+=head1 TO DO
+
+Define come kind of naming convention for the subs.
 
 =cut
 
@@ -18,6 +22,8 @@ use warnings;
 
 # would be good to refactor these regex into separate subs or find some other
 # way to compose them in various combinations into multiple subs
+# The final subs always been to be vert fast.
+# 
 
 sub norm_std_n3 {
     # my ($h, $method_name) = @_;

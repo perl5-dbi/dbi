@@ -4,11 +4,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-XXX update docs for Profile &subname magic Path elements
-
 =head2 Changes in DBI 1.53 (svn rev XXX),   XXX 2006
 
   Fixed checks for weaken to work with early 5.8.x versions
+  Fixed DBD::Proxy handling of some methods, including commit and rollback.
 
   Added array context support to execute_array and execute_for_fetch
     methods which returns executed tuples and rows affected.

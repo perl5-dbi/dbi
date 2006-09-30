@@ -285,11 +285,27 @@ Same as !Caller2 above except that only the filenames are included, not the line
 
 =item Code Reference
 
-Not yet implemented.
+The subroutine is passed the handle it was called on and the DBI method name.
+The current Statement is in $_. The statement string should not be modified,
+so most subs start with C<local $_ = $_;>.
 
-The subroutine is passed the DBI method name and the handle it was called on.
-It should return a list of values to used at this point in the Path.  If it
-returns an empty list then the method call is not profiled.
+The list of values it returns is used at that point in the Profile Path.
+
+The sub can 'veto' (reject) a profile sample by including a reference to undef
+in the returned list. That can be useful when you want to only profile
+statements that match a certain pattern, or only profile certain methods.
+
+=item Subroutine Specifier
+
+A Path element that begins with 'C<&>' is treated as the name of a subroutine
+in the DBI::ProfileSubs namespace and replaced with the corresponding code reference.
+
+Currently this only works when the Path is specified by the C<DBI_PROFILE>
+environment variable.
+
+Also, currently, the only subroutine in the DBI::ProfileSubs namespace is
+C<'&norm_std_n3'>. That's a very handy subroutine when profiling code that
+doesn't use placeholders. See L<DBI::ProfileSubs> for more information.
 
 =item Attribute Specifier
 
