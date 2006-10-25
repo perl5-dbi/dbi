@@ -133,28 +133,31 @@ is(ref $data, 'ARRAY');
 ok(@$data == 7);
 ok((grep { defined($_)                } @$data) == 7);
 ok((grep { DBI::looks_like_number($_) } @$data) == 7);
-ok((grep { $_ >= 0                    } @$data) == 7) or warn "profile data: [@$data]\n";
 my ($count, $total, $first, $shortest, $longest, $time1, $time2) = @$data;
-if ($shortest < 0) {
-    my $sys = "$Config{archname} $Config{osvers}"; # sparc-linux 2.4.20-2.3sparcsmp
-    warn "Time went backwards at some point during the test on this $sys system!\n";
-    warn "Perhaps you have time sync software (like NTP) that adjusted the clock\n";
-    warn "backwards by more than $shortest seconds during the test. PLEASE RETRY.\n";
-    # Don't treat very small negative amounts as a failure - it's always been due
-    # due to NTP or buggy multiprocessor systems.
-    $shortest = 0 if $shortest > -0.008;
-}
 ok($count > 3);
 ok($total > $first);
 ok($total > $longest) or warn "total $total > longest $longest: failed\n";
 ok($longest > 0) or warn "longest $longest > 0: failed\n"; # XXX theoretically not reliable
 ok($longest > $shortest);
-ok($time1 > 0);
-ok($time2 > 0);
+ok($time1 >= $^T);
+ok($time2 >= $^T);
+ok($time1 <= $time2);
 my $next = time + 1;
 ok($next > $time1) or warn "next $next > first $time1: failed\n";
 ok($next > $time2) or warn "next $next > last $time2: failed\n";
-ok($time1 <= $time2);
+if ($shortest < 0) {
+    my $sys = "$Config{archname} $Config{osvers}"; # ie sparc-linux 2.4.20-2.3sparcsmp
+    warn <<EOT;
+Time went backwards at some point during the test on this $sys system!
+Perhaps you have time sync software (like NTP) that adjusted the clock
+by more than $shortest seconds during the test.
+Also some multiprocessor systems, and some virtualization systems can exhibit
+this kind of clock behaviour. Please retry.
+EOT
+    # don't treat small negative values as failure
+    $shortest = 0 if $shortest > -0.008;
+}
+
 
 my $tmp = sanitize_tree($dbh->{Profile});
 $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count

@@ -3257,12 +3257,37 @@ I<inner> hash that actually holds the contents.  The swap_inner_handle()
 method swaps the inner hashes between two handles. The $h1 and $h2
 handles still point to the same tied hashes, but what those hashes
 are tied to has been swapped.  In effect $h1 I<becomes> $h2 and
-vice-versa. This is powerful stuff. Use with care.
+vice-versa. This is powerful stuff, expect problems. Use with care.
 
 As a small safety measure, the two handles, $h1 and $h2, have to
 share the same parent unless $allow_reparent is true.
 
 The swap_inner_handle() method was added in DBI 1.44.
+
+Here's a quick kind of 'diagram' as a worked example to help think about what's
+happening:
+
+    Original state:
+            dbh1o -> dbh1i
+            sthAo -> sthAi(dbh1i)
+            dbh2o -> dbh2i
+
+    swap_inner_handle dbh1o with dbh2o:
+            dbh2o -> dbh1i
+            sthAo -> sthAi(dbh1i)
+            dbh1o -> dbh2i
+
+    create new sth from dbh1o:
+            dbh2o -> dbh1i
+            sthAo -> sthAi(dbh1i)
+            dbh1o -> dbh2i
+            sthBo -> sthBi(dbh2i)
+
+    swap_inner_handle sthAo with sthBo:
+            dbh2o -> dbh1i
+            sthBo -> sthAi(dbh1i)
+            dbh1o -> dbh2i
+            sthAo -> sthBi(dbh2i)
 
 =back
 
