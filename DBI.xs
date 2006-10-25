@@ -2032,28 +2032,6 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 }
 
 
-static SV *			/* find attrib in handle or its parents	*/
-dbih_find_attr(SV *h, SV *keysv, int copydown, int spare)
-{
-    dTHX;
-    D_imp_xxh(h);
-    SV *ph;
-    STRLEN keylen;
-    char  *key = SvPV(keysv, keylen);
-    SV *valuesv;
-    SV **svp = hv_fetch((HV*)SvRV(h), key, keylen, FALSE);
-    if (svp)
-	valuesv = *svp;
-    else
-    if (!SvOK(ph=(SV*)DBIc_PARENT_H(imp_xxh)))
-	valuesv = Nullsv;
-    else /* recurse up */
-	valuesv = dbih_find_attr(ph, keysv, copydown, spare);
-    if (valuesv && copydown)
-	hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
-    return valuesv;	/* return actual sv, not a mortalised copy	*/
-}
-
 
 /* --------------------------------------------------------------------	*/
 /* Functions implementing Error and Event Handling.                   	*/
@@ -2615,7 +2593,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     */
     if (SvROK(h) && SvRMAGICAL(SvRV(h)) && (mg=mg_find(SvRV(h),'P'))!=NULL) {
 
-        if (mg->mg_obj==NULL || !SvOK(mg->mg_obj) || SvPVX(mg->mg_obj)==NULL) {  /* maybe global destruction */
+        if (mg->mg_obj==NULL || !SvOK(mg->mg_obj) || SvRV(mg->mg_obj)==NULL) {  /* maybe global destruction */
             if (trace_level >= 3)
                 PerlIO_printf(DBILOGFP,
 		    "%c   <> %s for %s ignored (inner handle gone)\n",
@@ -4612,6 +4590,7 @@ swap_inner_handle(rh1, rh2, allow_reparent=0)
     SV *h1  = (rh1 == h1i) ? (SV*)DBIc_MY_H(imp_xxh1) : SvRV(rh1);
     SV *h2  = (rh2 == h2i) ? (SV*)DBIc_MY_H(imp_xxh2) : SvRV(rh2);
     (void)cv;
+
     if (DBIc_TYPE(imp_xxh1) != DBIc_TYPE(imp_xxh2)) {
 	char buf[99];
 	sprintf(buf, "Can't swap_inner_handle between %sh and %sh",
@@ -4625,16 +4604,22 @@ swap_inner_handle(rh1, rh2, allow_reparent=0)
 	    Nullch, Nullch);
 	XSRETURN_NO;
     }
+
     SvREFCNT_inc(h1i);
     SvREFCNT_inc(h2i);
+
     sv_unmagic(h1, 'P');		/* untie(%$h1)  	*/
     sv_unmagic(h2, 'P');		/* untie(%$h2)  	*/
+
     sv_magic(h1, h2i, 'P', Nullch, 0);	/* tie %$h1, $h2i	*/
     DBIc_MY_H(imp_xxh2) = (HV*)h1;
+
     sv_magic(h2, h1i, 'P', Nullch, 0);	/* tie %$h2, $h1i	*/
     DBIc_MY_H(imp_xxh1) = (HV*)h2;
+
     SvREFCNT_dec(h1i);
     SvREFCNT_dec(h2i);
+
     ST(0) = &sv_yes;
     }
 
