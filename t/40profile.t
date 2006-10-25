@@ -228,8 +228,8 @@ is_deeply $tmp, bless {
 $dbh->{Profile}->{Path} = [ '!File', '!File2', '!Caller', '!Caller2' ];
 $dbh->{Profile}->{Data} = undef;
 
-my ($file, $line1, $line2) = (__FILE__, undef, undef);
-$file =~ s:.*/::;
+my $file = (File::Spec->splitpath(__FILE__))[2]; # '40profile.t'
+my ($line1, $line2);
 sub a_sub {
     $sth = $dbh->prepare("select name from ."); $line2 = __LINE__;
 }
