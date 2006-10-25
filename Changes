@@ -4,7 +4,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.53 (svn rev 7975),   25th October 2006
+=head2 Changes in DBI 1.53 (svn rev 7976),   25th October 2006
 
   Fixed checks for weaken to work with early 5.8.x versions
   Fixed DBD::Proxy handling of some methods, including commit and rollback.
@@ -18,6 +18,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Added array context support to execute_array and execute_for_fetch
     methods which returns executed tuples and rows affected.
+  Added Tie::Cache::LRU example to docs thanks to Brandon Black.
 
 =head2 Changes in DBI 1.52 (svn rev 6840),   30th July 2006
 

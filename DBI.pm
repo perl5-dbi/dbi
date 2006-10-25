@@ -4283,6 +4283,12 @@ like:
 which will ensure that prepare_cached only returns statements cached
 by that line of code in that source file. 
 
+If you'd like the cache to managed intelligently, you can tie the                                                                                                          
+hashref returned by C<CachedKids> to an appropriate caching module,                                                                                                        
+such as L<Tie::Cache::LRU>:                                                                                                                                                
+                                                                                                                                                                           
+  my $cache = $dbh->{CachedKids};                                                                                                                                          
+  tie %$cache, 'Tie::Cache::LRU', 500;                                                                                                                                      
 
 =item C<commit>
 
