@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.52"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.53"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -120,7 +120,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.52.
+This is the DBI specification that corresponds to the DBI version 1.53.
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -156,7 +156,8 @@ use DynaLoader ();
 use Exporter ();
 
 BEGIN {
-@ISA = qw(Exporter DynaLoader);
+@ISA = qw(DynaLoader);
+*import= \&Exporter::import; # avoid need to have Exporter in @ISA
 
 # Make some utility functions available if asked for
 @EXPORT    = ();		    # we export nothing by default

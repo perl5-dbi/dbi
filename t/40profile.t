@@ -20,7 +20,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 46;
+use Test::More tests => 45;
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
@@ -87,7 +87,11 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 } => 'DBI::Profile';
 
 print "dbi_profile\n";
-my $t1 = DBI::dbi_time;
+# Try to avoid rounding problem on double precision systems
+#   $got->[5]      = '1150962858.01596498'
+#   $expected->[5] = '1150962858.015965'
+# (looks like is_deeply stringifies) by treating as a string:
+my $t1 = DBI::dbi_time() . "";
 dbi_profile($dbh, "Hi, mom", "my_method_name", $t1, $t1 + 1);
 is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ '!Statement', '!MethodName' ],
@@ -106,7 +110,7 @@ my $mine = $dbh->{Profile}{Data}{"Hi, mom"}{my_method_name};
 print "@$mine\n";
 is_deeply $mine, [ 1, 1, 1, 1, 1, $t1, $t1 ];
 
-my $t2 = DBI::dbi_time;
+my $t2 = DBI::dbi_time() . "";
 dbi_profile($dbh, "Hi, mom", "my_method_name", $t2, $t2 + 2);
 print "@$mine\n";
 is_deeply $mine, [ 2, 3, 1, 1, 2, $t1, $t2 ];
