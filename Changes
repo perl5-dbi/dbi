@@ -16,8 +16,6 @@ DBI::Changes - List of significant changes to the DBI
   Fixed to be more robust against drivers not handling multiple result
     sets properly thanks to Gisle Aas.
 
-  Changed to no longer inherit from Exporter thanks to jvanasco.
-
   Added array context support to execute_array and execute_for_fetch
     methods which returns executed tuples and rows affected.
   Added Tie::Cache::LRU example to docs thanks to Brandon Black.

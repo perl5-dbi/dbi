@@ -156,8 +156,7 @@ use DynaLoader ();
 use Exporter ();
 
 BEGIN {
-@ISA = qw(DynaLoader);
-*import= \&Exporter::import; # avoid need to have Exporter in @ISA
+@ISA = qw(Exporter DynaLoader);
 
 # Make some utility functions available if asked for
 @EXPORT    = ();		    # we export nothing by default
