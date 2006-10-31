@@ -1375,13 +1375,16 @@ dbih_get_fbav(imp_sth_t *imp_sth)
 	dTHX;
 	int i = av_len(av) + 1;
         if (i != DBIc_NUM_FIELDS(imp_sth)) {
+            SV *sth = dbih_inner((SV*)DBIc_MY_H(imp_sth), "_get_fbav");
             /* warn via PrintWarn */
-            set_err_char(DBIc_MY_H(imp_sth), imp_sth, "0", 0, "Number of row fields inconsistent with NUM_FIELDS, NUM_FIELDS updated", "", "_get_fbav");
+            set_err_char(SvRV(DBIc_MY_H(imp_sth)), (imp_xxh_t*)imp_sth,
+                    "0", 0, "Number of row fields inconsistent with NUM_OF_FIELDS, NUM_OF_FIELDS updated", "", "_get_fbav");
             DBIc_NUM_FIELDS(imp_sth) = i;
+            hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
         }
 	/* don't let SvUTF8 flag persist from one row to the next   */
 	/* (only affects drivers that use sv_setpv, but most XS do) */
-        /* XXX turn into option later */
+        /* XXX turn into option later (force on/force off/ignore) */
 	while(i--)                  /* field 1 stored at index 0    */
 	    SvUTF8_off(AvARRAY(av)[i]);
     }
@@ -1813,7 +1816,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 		IV num_fields = DBIc_NUM_FIELDS(imp_sth);
                 valuesv = (num_fields < 0) ? &sv_undef : newSViv(num_fields);
                 if (num_fields > 0)
-                    cacheit = TRUE;	/* can't change once set */
+                    cacheit = TRUE;	/* can't change once set (XXX except for multiple result sets) */
             }
             else if (keylen==13 && strEQ(key, "NUM_OF_PARAMS")) {
                 D_imp_sth(h);
@@ -4227,7 +4230,7 @@ _set_fbav(sth, src_rv)
 	croak("_set_fbav(%s): not an array ref", neatsvpv(src_rv,0));
     src_av = (AV*)SvRV(src_rv);
     if (AvFILL(src_av)+1 != num_fields)
-	croak("_set_fbav(%s): array has %d fields, should have %d",
+	croak("_set_fbav(%s): array has %d elements, the statement handle expects %d",
 		neatsvpv(src_rv,0), AvFILL(src_av)+1, num_fields);
     for(i=0; i < num_fields; ++i) {	/* copy over the row	*/
         /* If we're given the values, then taint them if required */

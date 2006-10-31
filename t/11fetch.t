@@ -12,7 +12,7 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Quotekeys = 0;
 
-plan tests => 16;
+plan tests => 23;
 
 my $dbh = DBI->connect("dbi:Sponge:foo","","", {
         PrintError => 0,
@@ -88,7 +88,7 @@ while (my $keyfield = shift @fetchall_hashref_results) {
     my $expected = shift @fetchall_hashref_results;
     my $k = (ref $keyfield) ? "[@$keyfield]" : $keyfield;
     print "# fetchall_hashref($k)\n";
-    ok($sth = go);
+    ok($sth = go());
     my $result = $sth->fetchall_hashref($keyfield);
     ok($result);
     is_deeply($result, $expected);
@@ -96,6 +96,26 @@ while (my $keyfield = shift @fetchall_hashref_results) {
 }
 
 warn Dumper \%dump if %dump;
+
+# test auto repair of NUM_OF_FIELDS if size of row buffer is changed
+# (ie by code incompletely handling multiple result sets)
+$sth = go();
+my $row = $sth->fetchrow_arrayref;
+is scalar @$row, 3;
+is $sth->{NUM_OF_FIELDS}, 3;
+if (0) { # manual test as it requires the row buffer to not be readonly
+    push @$row, 'newcol';  # force additional column into row buffer
+    is scalar @$row, 4;
+    # should produce a warning and update NUM_FIELDS
+    ok $row = $sth->fetchrow_arrayref;
+    is scalar @$row, 4;
+    is $sth->{NUM_OF_FIELDS}, 4;
+}
+else {
+    ok(1) for (1..4)
+}
+$sth->finish;
+
 
 if (0) {
     my @perf = map { [ int($_/100), $_, $_ ] } 0..10000;
