@@ -11,6 +11,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed t/40profile.t to be more insensitive to long double precision.
   Fixed t/40profile.t to be insensitive to small negative shifts in time
     thanks to Jamie McCarthy.
+  Fixed t/40profile.t to skip tests for perl < 5.8.0.
   Fixed to work with current 'bleadperl' (~5.9.5) thanks to Steve Peters.
     Users of Perl >= 5.9.5 will require DBI >= 1.53.
   Fixed to be more robust against drivers not handling multiple result

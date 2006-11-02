@@ -13,14 +13,15 @@ use Data::Dumper;
 use File::Spec;
 use Storable qw(dclone);
 
-BEGIN {
-    if ($DBI::PurePerl) {
-	print "1..0 # Skipped: profiling not supported for DBI::PurePerl\n";
-	exit 0;
-    }
-}
+use Test::More;
 
-use Test::More tests => 45;
+BEGIN {
+    plan skip_all => "profiling not supported for DBI::PurePerl"
+        if $DBI::PurePerl;
+    plan skip_all => "test results assume perl >= 5.8"
+        if $] < 5.008;
+    plan tests => 45;
+}
 
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
