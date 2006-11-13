@@ -344,6 +344,7 @@ my $dbd_prefix_registry = {
   tuber_   => { class => 'DBD::Tuber',		},
   uni_     => { class => 'DBD::Unify',		},
   wmi_     => { class => 'DBD::WMI',		},
+  x_       => { }, # for private use
   xbase_   => { class => 'DBD::XBase',		},
   xl_      => { class => 'DBD::Excel',		},
   yaswi_   => { class => 'DBD::Yaswi',		},

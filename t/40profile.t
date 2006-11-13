@@ -18,8 +18,9 @@ use Test::More;
 BEGIN {
     plan skip_all => "profiling not supported for DBI::PurePerl"
         if $DBI::PurePerl;
-    plan skip_all => "test results assume perl >= 5.8"
-        if $] < 5.008;
+    # tie methods (STORE/FETCH etc) get called different number of times
+    plan skip_all => "test results assume perl >= 5.8.2"
+        if $] <= 5.008001;
     plan tests => 45;
 }
 
