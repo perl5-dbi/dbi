@@ -322,9 +322,9 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
     SV *infosv = Nullsv;
     char *v, *quote;
 
-    /* We take care not to alter the supplied sv in any way at all.	*/
-    /* (but if it is SvGMAGICAL we have to call mg_get and that can	*/
-    /* have side effects, especially as it may e called twice overall.) */
+    /* We take care not to alter the supplied sv in any way at all.	 */
+    /* (but if it is SvGMAGICAL we have to call mg_get and that can	 */
+    /* have side effects, especially as it may be called twice overall.) */
 
     if (!sv)
 	return "Null!";				/* should never happen	*/
@@ -348,7 +348,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 
     if (!SvOK(sv)) {
 	if (SvTYPE(sv) >= SVt_PVAV)
-	    return sv_reftype(sv,0);	/* raw AV/HV etc, not via a ref	*/
+	    return (char *)sv_reftype(sv,0);	/* raw AV/HV etc, not via a ref	*/
 	if (!infosv)
 	    return "undef";
 	sv_insert(infosv, 0,0, "undef",5);
@@ -589,7 +589,7 @@ dbi_hash(const char *key, long type)
 	}
 	return hash;
     }
-    croak("DBI::hash(%d): invalid type", type);
+    croak("DBI::hash(%ld): invalid type", type);
     return 0; /* NOT REACHED */
 }
 
@@ -1265,26 +1265,26 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	    imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh; /* works for DRH also */
 	    if (DBIc_CACHED_KIDS(imp_dbh)) {
 		warn("DBI handle 0x%x cleared whilst still holding %d cached kids",
-			DBIc_MY_H(imp_xxh), HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
+			(unsigned)DBIc_MY_H(imp_xxh), (int)HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
 		SvREFCNT_dec(DBIc_CACHED_KIDS(imp_dbh)); /* may recurse */
 		DBIc_CACHED_KIDS(imp_dbh) = Nullhv;
 	    }
 	}
 
 	if (DBIc_ACTIVE(imp_xxh)) {	/* bad news		*/
-	    warn("DBI handle 0x%x cleared whilst still active", DBIc_MY_H(imp_xxh));
+	    warn("DBI handle 0x%x cleared whilst still active", (unsigned)DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	/* check that the implementor has done its own housekeeping	*/
 	if (DBIc_IMPSET(imp_xxh)) {
-	    warn("DBI handle 0x%x has uncleared implementors data", DBIc_MY_H(imp_xxh));
+	    warn("DBI handle 0x%x has uncleared implementors data", (unsigned)DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	if (DBIc_KIDS(imp_xxh)) {
 	    warn("DBI handle 0x%x has %d uncleared child handles",
-		    DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
+		    (unsigned)DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
 	    dump = TRUE;
 	}
     }
@@ -2703,7 +2703,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	DEFSV = sv_2mortal(newSVpv(meth_name,0));
 	count = call_sv(code, G_ARRAY);
 	if (count != 0)
-	    die("Callback for %s returned %d values but must not return any (temporary restriction in current version)", meth_name, count);
+	    die("Callback for %s returned %d values but must not return any (temporary restriction in current version)", meth_name, (int)count);
 	SPAGAIN;
 	FREETMPS;
 	LEAVE;
@@ -2728,7 +2728,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    XSRETURN(0); /* don't DESTROY handle, if it is not our's !*/
 	}
 	croak("%s %s failed: handle %d is owned by thread %x not current thread %x (%s)",
-	    HvNAME(DBIc_IMP_STASH(imp_xxh)), meth_name, DBIc_TYPE(imp_xxh), h_perl, my_perl,
+	    HvNAME(DBIc_IMP_STASH(imp_xxh)), meth_name, DBIc_TYPE(imp_xxh), (unsigned)h_perl, (unsigned)my_perl,
 	    "handles can't be shared between threads and your driver may need a CLONE method added");
     }
 }
@@ -3870,9 +3870,9 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
 	DBD_ATTRIB_GET_IV(attribs, "H",1, svp, ima->hidearg);
 
 	if (trace_msg) {
-	    if (ima->flags)	  sv_catpvf(trace_msg, ", flags 0x%04x", ima->flags);
-	    if (ima->trace_level) sv_catpvf(trace_msg, ", T %d", ima->trace_level);
-	    if (ima->hidearg)	  sv_catpvf(trace_msg, ", H %d", ima->hidearg);
+	    if (ima->flags)	  sv_catpvf(trace_msg, ", flags 0x%04x", (unsigned)ima->flags);
+	    if (ima->trace_level) sv_catpvf(trace_msg, ", T %d", (unsigned)ima->trace_level);
+	    if (ima->hidearg)	  sv_catpvf(trace_msg, ", H %d", (unsigned)ima->hidearg);
 	}
 	if ( (svp=DBD_ATTRIB_GET_SVP(attribs, "U",1)) != NULL) {
 	    STRLEN lna;
@@ -4231,7 +4231,7 @@ _set_fbav(sth, src_rv)
     src_av = (AV*)SvRV(src_rv);
     if (AvFILL(src_av)+1 != num_fields)
 	croak("_set_fbav(%s): array has %d elements, the statement handle expects %d",
-		neatsvpv(src_rv,0), AvFILL(src_av)+1, num_fields);
+		neatsvpv(src_rv,0), (int)AvFILL(src_av)+1, num_fields);
     for(i=0; i < num_fields; ++i) {	/* copy over the row	*/
         /* If we're given the values, then taint them if required */
         if (DBIc_is(imp_sth, DBIcf_TaintOut))
@@ -4388,7 +4388,7 @@ fetch(sth)
 	AV *av = dbih_get_fbav(imp_sth);
 	if (num_fields != AvFILL(av)+1)
 	    croak("fetchrow returned %d fields, expected %d",
-		    num_fields, AvFILL(av)+1);
+		    num_fields, (int)AvFILL(av)+1);
 	SPAGAIN;
 	while(--num_fields >= 0)
 	    sv_setsv(AvARRAY(av)[num_fields], POPs);

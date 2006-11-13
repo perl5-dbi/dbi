@@ -299,7 +299,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 	imp_xxh_t *ph_com = DBIc_PARENT_COM(imp);			\
 	if (!DBIc_ACTIVE(imp) && ph_com && !dirty			\
 		&& ++DBIc_ACTIVE_KIDS(ph_com) > DBIc_KIDS(ph_com))	\
-	    croak("panic: DBI active kids (%d) > kids (%d)",		\
+	    croak("panic: DBI active kids (%ld) > kids (%ld)",		\
 		DBIc_ACTIVE_KIDS(ph_com), DBIc_KIDS(ph_com));		\
 	DBIc_FLAGS(imp) |=  DBIcf_ACTIVE;				\
     } while(0)
@@ -309,7 +309,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 	if (DBIc_ACTIVE(imp) && ph_com && !dirty			\
 		&& (--DBIc_ACTIVE_KIDS(ph_com) > DBIc_KIDS(ph_com)	\
 		   || DBIc_ACTIVE_KIDS(ph_com) < 0) )			\
-	    croak("panic: DBI active kids (%d) < 0 or > kids (%d)",	\
+	    croak("panic: DBI active kids (%ld) < 0 or > kids (%ld)",	\
 		DBIc_ACTIVE_KIDS(ph_com), DBIc_KIDS(ph_com));		\
 	DBIc_FLAGS(imp) &= ~DBIcf_ACTIVE;				\
     } while(0)
