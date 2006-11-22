@@ -6,6 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.XX (svn rev XX),   XX
 
+  Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
+  Fixed compile warnings in bleadperl on freebsd-6.1-release
+    and solaris 10g thanks to Philip M. Gollucci.
   Changed t/40profile.t to skip tests for perl < 5.8.0.
   Updated DBI::DBD docs for driver authors thanks to Ammon Riley.
 

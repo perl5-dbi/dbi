@@ -1715,7 +1715,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    my $temp = $dbh->type_info_all;
 	    return unless $temp && @$temp;
 	    # we cache here because type_info_all may be expensive to call
-	    $tia      = $dbh->{dbi_type_info_row_cache} = $temp;
+	    # (and we take a copy so the following shift can't corrupt
+	    # the data that may be returned by future calls to type_info_all)
+	    $tia      = $dbh->{dbi_type_info_row_cache} = [ @$temp ];
 	    $idx_hash = $dbh->{dbi_type_info_idx_cache} = shift @$tia;
 	}
 
