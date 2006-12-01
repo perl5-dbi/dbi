@@ -12,6 +12,8 @@ DBI::Changes - List of significant changes to the DBI
   Changed t/40profile.t to skip tests for perl < 5.8.0.
   Updated DBI::DBD docs for driver authors thanks to Ammon Riley.
 
+  Added SQL_BIGINT type code (resolved to the ODBC/JDBC value (-5))
+
 =head2 Changes in DBI 1.53 (svn rev 7995),   31st October 2006
 
   Fixed checks for weaken to work with early 5.8.x versions

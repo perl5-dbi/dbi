@@ -167,6 +167,7 @@ BEGIN {
 	SQL_WLONGVARCHAR
 	SQL_WVARCHAR
 	SQL_WCHAR
+	SQL_BIGINT
 	SQL_BIT
 	SQL_TINYINT
 	SQL_LONGVARBINARY
@@ -277,7 +278,7 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
 }
 
 # check for weaken support, used by ChildHandles
-my $HAS_WEAKEN = eval { 
+my $HAS_WEAKEN = eval {
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
     Scalar::Util::weaken( \my $test ); # same test as in t/72childhandles.t
@@ -1051,7 +1052,7 @@ sub data_diff {
     $diff .= "\n" if $diff;
     return "a: $a_desc\nb: $b_desc\n$diff";
 }
-    
+
 
 sub data_string_diff {
     # Compares 'logical' characters, not bytes, so a latin1 string and an
@@ -1111,7 +1112,7 @@ sub data_string_desc {	# describe a data string
     #   (might be ascii so also need to check for hibit to make it worthwhile)
     # - UTF8 flag set but invalid UTF8 byte sequence
     # could do better here, but this'll do for now
-    my $utf8 = sprintf "UTF8 %s%s", 
+    my $utf8 = sprintf "UTF8 %s%s",
 	utf8::is_utf8($a) ? "on" : "off",
 	utf8::valid($a||'') ? "" : " but INVALID encoding";
     return "$utf8, undef" unless defined $a;
@@ -1804,12 +1805,12 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# use bind_param_array() so long as they don't pass any attribs.
 
 	$$hash_of_arrays{$p_id} = $value_array;
-	return $sth->bind_param($p_id, undef, $attr) 
+	return $sth->bind_param($p_id, undef, $attr)
 		if $attr;
 	1;
     }
 
-    sub bind_param_inout_array { 
+    sub bind_param_inout_array {
 	my $sth = shift;
 	# XXX not supported so we just call bind_param_array instead
 	# and then return an error
@@ -2353,7 +2354,7 @@ C<age> with a NULL value:
     UPDATE people SET age = ? WHERE fullname = ?
   });
   $sth->execute(undef, "Joe Bloggs");
-  
+
 However, care must be taken when trying to use NULL values in a
 C<WHERE> clause.  Consider:
 
@@ -2416,7 +2417,7 @@ placeholder in a statement.
   4)  age = ? OR (age IS NULL AND ? IS NULL)
   5)  age = ? OR (age IS NULL AND SP_ISNULL(?) = 1)
   6)  age = ? OR (age IS NULL AND ? = 1)
-	
+
 Statements formed with the above C<WHERE> clauses require execute
 statements as follows.  The arguments are required, whether their
 values are C<defined> or C<undef>.
@@ -2453,7 +2454,7 @@ work on various database engines:
   Informix IDS 9   N  N  N  Y  N  Y  Y
   MS SQL           N  N  Y  N  Y  ?  Y
   Sybase           Y  N  N  N  N  N  Y
-  AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y  
+  AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y
 
 * Works only because Example 0 works.
 
@@ -3398,7 +3399,7 @@ statement handles:
         my ($h, $level) = @_;
         $level ||= 0;
         printf "%sh %s %s\n", $h->{Type}, "\t" x $level, $h;
-        show_child_handles($_, $level + 1) 
+        show_child_handles($_, $level + 1)
             for (grep { defined } @{$h->{ChildHandles}});
     }
 
@@ -4095,7 +4096,7 @@ Or, to fetch into an array instead of an array ref:
   @result = @{ $dbh->selectall_arrayref($sql, { Slice => {} }) };
 
 See L</fetchall_arrayref> method for more details.
-  
+
 =item C<selectall_hashref>
 
   $hash_ref = $dbh->selectall_hashref($statement, $key_field);
@@ -4283,14 +4284,14 @@ like:
   $sth = $dbh->prepare_cached("...", { dbi_dummy => __FILE__.__LINE__ });
 
 which will ensure that prepare_cached only returns statements cached
-by that line of code in that source file. 
+by that line of code in that source file.
 
-If you'd like the cache to managed intelligently, you can tie the                                                                                                          
-hashref returned by C<CachedKids> to an appropriate caching module,                                                                                                        
-such as L<Tie::Cache::LRU>:                                                                                                                                                
-                                                                                                                                                                           
-  my $cache = $dbh->{CachedKids};                                                                                                                                          
-  tie %$cache, 'Tie::Cache::LRU', 500;                                                                                                                                      
+If you'd like the cache to managed intelligently, you can tie the
+hashref returned by C<CachedKids> to an appropriate caching module,
+such as L<Tie::Cache::LRU>:
+
+  my $cache = $dbh->{CachedKids};
+  tie %$cache, 'Tie::Cache::LRU', 500;
 
 =item C<commit>
 
@@ -5518,7 +5519,7 @@ The default implementation provided by DBI (for drivers that have
 not implemented array binding) is to iteratively call L</execute> for
 each parameter tuple provided in the bound arrays.  Drivers may
 provide more optimized implementations using whatever bulk operation
-support the database API provides. The default driver behaviour should 
+support the database API provides. The default driver behaviour should
 match the default DBI behaviour, but always consult your driver
 documentation as there may be driver specific issues to consider.
 
@@ -6746,7 +6747,7 @@ Unfortunately they make signals unsafe again.
 
 The two most common uses of signals in relation to the DBI are for
 canceling operations when the user types Ctrl-C (interrupt), and for
-implementing a timeout using C<alarm()> and C<$SIG{ALRM}>. 
+implementing a timeout using C<alarm()> and C<$SIG{ALRM}>.
 
 =over 4
 
@@ -6801,7 +6802,7 @@ The code would look something like this (for the DBD-Oracle connect()):
    use POSIX ':signal_h';
 
    my $mask = POSIX::SigSet->new( SIGALRM ); # signals to mask in the handler
-   my $action = POSIX::SigAction->new( 
+   my $action = POSIX::SigAction->new(
        sub { die "connect timeout" },        # the handler code ref
        $mask,
        # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
@@ -6820,8 +6821,8 @@ The code would look something like this (for the DBD-Oracle connect()):
 
 Similar techniques can be used for canceling statement execution.
 
-Unfortunately, this solution is somewhat messy, and it does I<not> work with 
-perl versions less than perl 5.8 where C<POSIX::sigaction()> appears to be broken.  
+Unfortunately, this solution is somewhat messy, and it does I<not> work with
+perl versions less than perl 5.8 where C<POSIX::sigaction()> appears to be broken.
 
 For a cleaner implementation that works across perl versions, see Lincoln Baxter's
 Sys::SigAction module at L<http://search.cpan.org/~lbaxter/Sys-SigAction/>.

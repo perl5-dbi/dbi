@@ -39,10 +39,10 @@ open $DBI::tfh, ">&STDERR" or warn "Can't dup STDERR: $!";
 select( (select($DBI::tfh), $| = 1)[0] );  # autoflush
 
 # check for weaken support, used by ChildHandles
-my $HAS_WEAKEN = eval { 
+my $HAS_WEAKEN = eval {
     require Scalar::Util;
     # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken( my $test = [] ); 
+    Scalar::Util::weaken( my $test = [] );
     1;
 };
 
@@ -51,6 +51,7 @@ my $HAS_WEAKEN = eval {
 use constant SQL_ALL_TYPES => 0;
 use constant SQL_ARRAY => 50;
 use constant SQL_ARRAY_LOCATOR => 51;
+use constant SQL_BIGINT => (-5);
 use constant SQL_BINARY => (-2);
 use constant SQL_BIT => (-7);
 use constant SQL_BLOB => 30;
@@ -463,7 +464,7 @@ sub _setup_handle {
 		@$handles = grep { defined } @$handles;
 		Scalar::Util::weaken($_) for @$handles; # re-weaken after grep
 	    }
-	}   
+	}
     }
     else {	# setting up a driver handle
         $h_inner->{Warn}		= 1;

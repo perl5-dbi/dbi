@@ -2,15 +2,15 @@
 
 use strict;
 
-use Test::More tests => 131;
+use Test::More tests => 132;
 use File::Spec;
 
 $|=1;
 
 ## ----------------------------------------------------------------------------
-## 01basic.t - test of some basic DBI functions 
+## 01basic.t - test of some basic DBI functions
 ## ----------------------------------------------------------------------------
-# Mostly this script takes care of testing the items exported by the 3 
+# Mostly this script takes care of testing the items exported by the 3
 # tags below (in this order):
 #		- :sql_types
 #		- :squl_cursor_types
@@ -38,7 +38,7 @@ $|=1;
 ## load DBI and export some symbols
 BEGIN {
 	use_ok('DBI', qw(
-					:sql_types 
+					:sql_types
 					:sql_cursor_types
 					:utils
 					));
@@ -53,6 +53,7 @@ cmp_ok(SQL_WVARCHAR                      , '==', -9,  '... testing sql_type');
 cmp_ok(SQL_WCHAR                         , '==', -8,  '... testing sql_type');
 cmp_ok(SQL_BIT                           , '==', -7,  '... testing sql_type');
 cmp_ok(SQL_TINYINT                       , '==', -6,  '... testing sql_type');
+cmp_ok(SQL_BIGINT                        , '==', -5,  '... testing sql_type');
 cmp_ok(SQL_LONGVARBINARY                 , '==', -4,  '... testing sql_type');
 cmp_ok(SQL_VARBINARY                     , '==', -3,  '... testing sql_type');
 cmp_ok(SQL_BINARY                        , '==', -2,  '... testing sql_type');
@@ -172,7 +173,7 @@ isa_ok($switch, 'DBI::dr');
 # NOTE:
 # check too see if this covers all the attributes or not
 
-# TO DO: 
+# TO DO:
 # these three can be improved
 $switch->debug(0);
 pass('... test debug');
@@ -216,7 +217,7 @@ ok($switch->{Active}, '... Active flag is true');
 	cmp_ok($warn, 'eq', "", '... we should get no warnings here');
 }
 
-# is this here for a reason? Are we testing anything? 
+# is this here for a reason? Are we testing anything?
 
 $switch->trace_msg("Test \$h->trace_msg text.\n", 1);
 DBI->trace_msg("Test DBI->trace_msg text.\n", 1);
@@ -226,11 +227,11 @@ DBI->trace_msg("Test DBI->trace_msg text.\n", 1);
 my @drivers = DBI->available_drivers();
 cmp_ok(scalar(@drivers), '>', 0, '... we at least have one driver installed');
 
-# NOTE: 
+# NOTE:
 # we lowercase the interpolated @drivers array
 # so that our reg-exp will match on VMS & Win32
 
-like(lc("@drivers"), qr/examplep/, '... we should at least have ExampleP installed');	
+like(lc("@drivers"), qr/examplep/, '... we should at least have ExampleP installed');
 
 # call available_drivers in scalar context
 
@@ -290,7 +291,7 @@ is(data_diff(pack("C",0xEA), pack("U",0xEA), 1), ""); # no logical difference
 
 SKIP: {
 	skip 'developer tests', 4 unless -d ".svn";
-	
+
 	print "Test DBI->installed_versions (for @drivers)\n";
 	print "(If one of those drivers, or the configuration for it, is bad\n";
 	print "then these tests can kill or freeze the process here. That's not the DBI's fault.)\n";
@@ -299,10 +300,10 @@ SKIP: {
 		   ." (almost certainly NOT a DBI problem)";
 	};
 	alarm(20);
-	
+
 	## ----------------------------------------------------------------------------
 	## test installed_versions
-	
+
 	# scalar context
 	my $installed_versions = DBI->installed_versions;
 

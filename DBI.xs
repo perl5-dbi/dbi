@@ -182,7 +182,7 @@ typedef struct {
     static PERINTERP_t Interp;
 #   define dPERINTERP typedef int _interp_DBI_dummy
 #   define PERINTERP (&Interp)
-#   define INIT_PERINTERP 
+#   define INIT_PERINTERP
 #endif
 
 #define g_dbi_last_h            (PERINTERP->dbi_last_h)
@@ -211,7 +211,7 @@ savepv_using_sv(char *str)
 /* --- */
 
 static void
-check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int drc_s, 
+check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int drc_s,
 	int dbc_s, int stc_s, int fdc_s)
 {
     dTHX;
@@ -234,7 +234,7 @@ check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int
 static void
 dbi_bootinit(dbistate_t * parent_dbis)
 {
-    dTHX;	
+    dTHX;
     INIT_PERINTERP;
 
     DBIS = (struct dbistate_st*)malloc_using_sv(sizeof(struct dbistate_st));
@@ -1034,7 +1034,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
     strcpy(imp_mem_name, imp_class);
     strcat(imp_mem_name, "_mem");
-    if ( (imp_mem_stash = gv_stashpv(imp_mem_name, FALSE)) == NULL) 
+    if ( (imp_mem_stash = gv_stashpv(imp_mem_name, FALSE)) == NULL)
         croak(errmsg, neatsvpv(orv,0), imp_mem_name, "unknown _mem package");
 
     if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
@@ -1095,7 +1095,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 			SV *sv = av_shift(av);
 			if (SvOK(sv))
 			    av_push(av, sv);
-			else 
+			else
 			   sv_free(sv);		/* keep it leak-free by Doru Petrescu pdoru.dbi@from.ro */
 		    }
 		}
@@ -1227,7 +1227,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 static void
 dbih_clearcom(imp_xxh_t *imp_xxh)
 {
-    
+
     dTHX;
     dPERINTERP;
     dTHR;
@@ -1244,7 +1244,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 #ifdef DBI_USE_THREADS
     if (DBIc_THR_USER(imp_xxh) != my_perl) { /* don't clear handle that belongs to another thread */
 	if (debug >= 3) {
-	    PerlIO_printf(DBILOGFP,"    skipped dbih_clearcom: DBI handle (type=%d, %s) is owned by thread %p not current thread %p\n", 
+	    PerlIO_printf(DBILOGFP,"    skipped dbih_clearcom: DBI handle (type=%d, %s) is owned by thread %p not current thread %p\n",
 		  DBIc_TYPE(imp_xxh), HvNAME(DBIc_IMP_STASH(imp_xxh)), DBIc_THR_USER(imp_xxh), my_perl) ;
 	    PerlIO_flush(DBILOGFP);
 	}
@@ -1849,7 +1849,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                 valuesv = &sv_undef;
             break;
         }
-        
+
     }
     else
     if (htype == DBIt_DB) {
@@ -1885,7 +1885,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                 valuesv = newSViv(DBIc_ACTIVE_KIDS(imp_xxh));
             }
             break;
-            
+
           case 'B':
             if (keylen==9 && strEQ(key, "BegunWork")) {
                 valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_BegunWork));
@@ -2029,7 +2029,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 	))
 	    warn("Can't get %s->{%s}: unrecognised attribute name",neatsvpv(h,0),key);
     }
-    
+
     if (cacheit) {
 	hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
     }
@@ -2118,7 +2118,7 @@ dbi_caller_cop()
 	    continue;
 	if (!(stashname[0] == 'D' && stashname[1] == 'B'
                 && strchr("DI", stashname[2])
-                    && (!stashname[3] || (stashname[3] == ':' && stashname[4] == ':')))) 
+                    && (!stashname[3] || (stashname[3] == ':' && stashname[4] == ':'))))
 	{
             return cx->blk_oldcop;
 	}
@@ -3003,7 +3003,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	SPAGAIN;
 
 	if (trace_level) { /* XXX restore local vars so ST(n) works below	*/
-	    sp -= outitems; ax = (sp - stack_base) + 1; 
+	    sp -= outitems; ax = (sp - stack_base) + 1;
 	}
 
 #ifdef DBI_save_hv_fetch_ent
@@ -3334,7 +3334,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 #define DBIpp_cm_br 0x000008   /* {}      */
 #define DBIpp_cm_dw 0x000010   /* '-- ' dash dash whitespace */
 #define DBIpp_cm_XX 0x00001F   /* any of the above */
-     
+
 #define DBIpp_ph_qm 0x000100   /* ?       */
 #define DBIpp_ph_cn 0x000200   /* :1      */
 #define DBIpp_ph_cs 0x000400   /* :name   */
@@ -3408,14 +3408,14 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
     src  = statement;
     dest = SvPVX(new_stmt_sv);
 
-    while( *src ) 
+    while( *src )
     {
 	if (*src == '%' && PS_return(DBIpp_ph_sp))
 	    *dest++ = '%';
 
 	if (in_comment)
 	{
-	     if (	(in_comment == '-' && (*src == '\n' || *(src+1) == '\0')) 
+	     if (	(in_comment == '-' && (*src == '\n' || *(src+1) == '\0'))
 		||	(in_comment == '#' && (*src == '\n' || *(src+1) == '\0'))
 		||	(in_comment == DBIpp_L_BRACE && *src == DBIpp_R_BRACE) /* XXX nesting? */
 		||	(in_comment == '/' && *src == '*' && *(src+1) == '/')
@@ -3436,7 +3436,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 		in_comment = '\0';
 		rt_comment = '\0';
 	     }
-             else 
+             else
 	     if (rt_comment)
                 *dest++ = *src++;
 	     else
@@ -3489,7 +3489,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 	    else if (PS_return(DBIpp_cm_dd) || PS_return(DBIpp_cm_dw)) {
                 *dest++ = rt_comment = '-';
                 *dest++ = '-';
-                if (PS_return(DBIpp_cm_dw)) *dest++ = ' '; 
+                if (PS_return(DBIpp_cm_dw)) *dest++ = ' ';
             }
 	    else if (PS_return(DBIpp_cm_hs)) {
                 *dest++ = rt_comment = '#';
@@ -3509,7 +3509,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 	    else if (PS_return(DBIpp_cm_dd) || PS_return(DBIpp_cm_dw)) {
                 *dest++ = rt_comment = '-';
                 *dest++ = '-';
-                if (PS_return(DBIpp_cm_dw)) *dest++ = ' '; 
+                if (PS_return(DBIpp_cm_dw)) *dest++ = ' ';
             }
 	    else if (PS_return(DBIpp_cm_cs)) {
                 *dest++ = rt_comment = '/';
@@ -3530,7 +3530,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 	    else if (PS_return(DBIpp_cm_dd) || PS_return(DBIpp_cm_dw)) {
                 *dest++ = rt_comment = '-';
                 *dest++ = '-';
-                if (PS_return(DBIpp_cm_dw)) *dest++ = ' '; 
+                if (PS_return(DBIpp_cm_dw)) *dest++ = ' ';
             }
 	    else if (PS_return(DBIpp_cm_cs)) {
                 *dest++ = rt_comment = '/';
@@ -3553,7 +3553,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 
 	/* only here for : or ? outside of a comment or literal	*/
 
-	start = dest;			/* save name inc colon	*/ 
+	start = dest;			/* save name inc colon	*/
 	*dest++ = *src++;		/* copy and move past first char */
 
 	if (*start == '?')		/* X/Open Standard */
@@ -3570,8 +3570,8 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 		   *start  = '%';
 		   *dest++ = 's';
             }
-	} 
-        else if (isDIGIT(*src)) {   /* :1 */ 
+	}
+        else if (isDIGIT(*src)) {   /* :1 */
 	    const int pln = atoi(src);
 	    style = ":1";
 
@@ -3595,8 +3595,8 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 		   while(isDIGIT(*src)) src++;
                    idx++;
             }
-	} 
-        else if (isALNUM(*src))         /* :name */ 
+	}
+        else if (isALNUM(*src))         /* :name */
         {
 	    style = ":name";
 
@@ -3676,6 +3676,7 @@ constant()
 	SQL_ALL_TYPES                    = SQL_ALL_TYPES
 	SQL_ARRAY                        = SQL_ARRAY
 	SQL_ARRAY_LOCATOR                = SQL_ARRAY_LOCATOR
+    SQL_BIGINT                       = SQL_BIGINT
 	SQL_BINARY                       = SQL_BINARY
 	SQL_BIT                          = SQL_BIT
 	SQL_BLOB                         = SQL_BLOB
@@ -3832,7 +3833,7 @@ looks_like_number(...)
 	else
 	    PUSHs(&sv_no);
     }
-	
+
 
 void
 _install_method(dbi_class, meth_name, file, attribs=Nullsv)
@@ -4163,7 +4164,7 @@ take_imp_data(h)
 		sv_unmagic(SvRV(*hp), 'P'); /* untie */
 		sv_bless(*hp, zombie_stash); /* neutralise */
 	    }
-	}       
+	}
     }
     /* The above measures may not be sufficient if weakrefs aren't available
      * or something has a reference to the inner-handle of an sth.
@@ -4440,7 +4441,7 @@ STORE(h, keysv, valuesv)
     if (!dbih_set_attr_k(h, keysv, 0, valuesv))
 	    ST(0) = &sv_no;
     (void)cv;
- 
+
 
 void
 FETCH(h, keysv)

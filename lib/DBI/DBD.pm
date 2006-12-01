@@ -497,7 +497,7 @@ description.
 
 =over 4
 
-=item * 
+=item *
 
 Listing B<Bundle::DBI> as the main pre-requisite simplifies life.
 
@@ -887,7 +887,7 @@ usually be simplified to something like this:
 
 =head4 The statement handle constructor
 
-There's nothing much new in the statement handle constructor, which 
+There's nothing much new in the statement handle constructor, which
 is the C<prepare()> method:
 
   sub prepare
@@ -1054,7 +1054,7 @@ This package follows the same pattern the others do:
 =head4 The execute() and bind_param() methods
 
 This is perhaps the most difficult method because we have to consider
-parameter bindings here. In addition to that, there are a number of 
+parameter bindings here. In addition to that, there are a number of
 statement attributes which must be set for inherited B<DBI> methods to
 function correctly (see L</Statement attributes> below).
 
@@ -1156,16 +1156,16 @@ on the number of calls to C<_set_fbav()>.
 
 The main difference between I<dbh> and I<sth> attributes is, that you
 should implement a lot of attributes here that are required by
-the B<DBI>, such as I<NAME>, I<NULLABLE>, I<TYPE>, etc. See 
+the B<DBI>, such as I<NAME>, I<NULLABLE>, I<TYPE>, etc. See
 L<DBI/Statement Handle Attributes> for a complete list.
 
-Pay attention to attributes which are marked as read only, such as 
+Pay attention to attributes which are marked as read only, such as
 I<NUM_OF_FIELDS>. These attributes can only be set the first time
-a statement is executed. If a statement is prepared, then executed 
+a statement is executed. If a statement is prepared, then executed
 multiple times, warnings may be generated.
 
 You can protect against these warnings, and prevent the recalculation
-of attributes which might be expensive to calculate (such as the 
+of attributes which might be expensive to calculate (such as the
 I<NAME> and I<NAME_*> attributes):
 
     my $storedNumFields = $sth->FETCH('NUM_OF_FIELDS');
@@ -2424,7 +2424,7 @@ to devise a parallel method, C<write_typeinfo_pm()>, which does the
 analogous job for the B<DBI> C<type_info_all()> metadata method. The
 C<write_typeinfo_pm()> method was added to B<DBI> v1.33.
 
-You examine the documentation for C<write_typeinfo_pm() using:
+You examine the documentation for C<write_typeinfo_pm()> using:
 
     perldoc DBI::DBD::Metadata
 
