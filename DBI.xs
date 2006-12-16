@@ -1435,7 +1435,9 @@ dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
         return 1;
     }
 
-    if (!SvROK(ref) || SvTYPE(SvRV(ref)) >= SVt_PVBM)	/* XXX LV */
+    /* Write this as > SVt_PVMG because in 5.8.x the next type */
+    /* is SVt_PVBM, whereas in 5.9.x it's SVt_PVGV.            */
+    if (!SvROK(ref) || SvTYPE(SvRV(ref)) > SVt_PVMG) /* XXX LV */
 	croak("Can't %s->bind_col(%s, %s,...), need a reference to a scalar",
 		neatsvpv(sth,0), neatsvpv(col,0), neatsvpv(ref,0));
 
@@ -2367,7 +2369,11 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
                             /* just using SvPV_nolen(method) sometimes causes an error:	*/
                             /* "Can't coerce GLOB to string" so we use gv_efullname()	*/
                             SV *tmpsv = sv_2mortal(newSVpv("",0));
+#if (PERL_VERSION < 6)
                             gv_efullname(tmpsv, (GV*)method);
+#else
+                            gv_efullname4(tmpsv, (GV*)method, "", TRUE);
+#endif
                             p = SvPV_nolen(tmpsv);
                             if (*p == '*') ++p; /* skip past leading '*' glob sigil */
                         }
