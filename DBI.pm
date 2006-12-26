@@ -2796,7 +2796,7 @@ print out a formatted list of the hash contents, one per line.
 
 Due to the potentially high memory cost and unknown risks of loading
 in an unknown number of drivers that just happen to be installed
-on the system, this method is nor recommended for general use.
+on the system, this method is not recommended for general use.
 Use available_drivers() instead.
 
 The installed_versions() method is primarily intended as a quick
