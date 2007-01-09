@@ -611,6 +611,22 @@ dbih_logmsg(imp_xxh_t *imp_xxh, const char *fmt, ...)
     return 1;
 }
 
+static void
+close_trace_file()
+{
+    dTHX;
+    dPERINTERP;
+    if (DBILOGFP == PerlIO_stderr() || DBILOGFP == PerlIO_stdout())
+        return;
+
+    if (DBIS->logfp_ref == NULL)
+	PerlIO_close(DBILOGFP);
+    else {
+    /* DAA dec refcount and discard */
+	SvREFCNT_dec(DBIS->logfp_ref);
+	DBIS->logfp_ref = NULL;
+    }
+}
 
 static int
 set_trace_file(SV *file)
@@ -619,40 +635,50 @@ set_trace_file(SV *file)
     dPERINTERP;
     STRLEN lna;
     const char *filename;
-    PerlIO *fp;
+    PerlIO *fp = Nullfp;
+    IO *io;
+
     if (!file)		/* no arg == no change */
 	return 0;
-    /* XXX need to support file being a filehandle object */
-    filename = (SvOK(file)) ? SvPV(file, lna) : Nullch;
-    /* undef arg == reset back to stderr */
-    if (!filename || strEQ(filename,"STDERR")) {
-	if (DBILOGFP != PerlIO_stderr() && DBILOGFP != PerlIO_stdout())
-	    PerlIO_close(DBILOGFP);
-	DBILOGFP = PerlIO_stderr();
-	return 1;
-    }
-    if (strEQ(filename,"STDOUT")) {
-	if (DBILOGFP != PerlIO_stderr() && DBILOGFP != PerlIO_stdout())
-	    PerlIO_close(DBILOGFP);
-	DBILOGFP = PerlIO_stdout();
-	return 1;
-    }
-    fp = PerlIO_open(filename, "a+");
-    if (fp == Nullfp) {
-	warn("Can't open trace file %s: %s", filename, Strerror(errno));
-	return 0;
+
+    /* DAA check for a filehandle */
+    if (SvROK(file)) {
+	io = sv_2io(file);
+	if (!io || !(fp = IoOFP(io))) {
+	    warn("DBI trace filehandle is not valid");
+	    return 0;
+	}
+	close_trace_file();
+	SvREFCNT_inc(io);
+	DBIS->logfp_ref = io;
     }
     else {
-	if (DBILOGFP != PerlIO_stderr())
-	    PerlIO_close(DBILOGFP);
-	DBILOGFP = fp;
-	/* if this line causes your compiler or linker to choke	*/
-	/* then just comment it out, it's not essential.	*/
-	PerlIO_setlinebuf(fp);	/* force line buffered output */
-	return 1;
+	filename = (SvOK(file)) ? SvPV(file, lna) : Nullch;
+	/* undef arg == reset back to stderr */
+	if (!filename || strEQ(filename,"STDERR")) {
+	    close_trace_file();
+	    DBILOGFP = PerlIO_stderr();
+	    return 1;
+	}
+	if (strEQ(filename,"STDOUT")) {
+	    close_trace_file();
+	    DBILOGFP = PerlIO_stdout();
+	    return 1;
+	}
+	fp = PerlIO_open(filename, "a+");
+	if (fp == Nullfp) {
+	    warn("Can't open trace file %s: %s", filename, Strerror(errno));
+	    return 0;
+	}
+	close_trace_file();
     }
+    DBILOGFP = fp;
+    PerlIO_printf(DBILOGFP,"    Trace file set\n");
+    /* if this line causes your compiler or linker to choke	*/
+    /* then just comment it out, it's not essential.	*/
+    PerlIO_setlinebuf(fp);	/* force line buffered output */
+    return 1;
 }
-
 
 static IV
 parse_trace_flags(SV *h, SV *level_sv, IV old_level)

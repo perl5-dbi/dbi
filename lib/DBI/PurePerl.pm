@@ -503,16 +503,41 @@ sub trace {
 sub _set_trace_file {
     my ($file) = @_;
     return unless defined $file;
+    #
+    #   DAA add support for filehandle inputs
+    #
+    if (ref $file eq 'GLOB') {
+    # DAA required to avoid closing a prior fh trace()
+	$DBI::tfh = undef
+	    unless $DBI::tfh_needs_close;
+	$DBI::tfh = $file;
+    select((select($DBI::tfh), $| = 1)[0]);
+    $DBI::tfh_needs_close = 0;
+    return 1;
+    }
     if (!$file || $file eq 'STDERR') {
+    # DAA required to avoid closing a prior fh trace()
+	$DBI::tfh = undef
+	    unless $DBI::tfh_needs_close;
 	open $DBI::tfh, ">&STDERR" or warn "Can't dup STDERR: $!";
+    $DBI::tfh_needs_close = 1;
 	return 1;
     }
     if ($file eq 'STDOUT') {
+    # DAA required to avoid closing a prior fh trace()
+	$DBI::tfh = undef
+	    unless $DBI::tfh_needs_close;
 	open $DBI::tfh, ">&STDOUT" or warn "Can't dup STDOUT: $!";
+    $DBI::tfh_needs_close = 1;
 	return 1;
     }
+    # DAA required to avoid closing a prior fh trace()
+    # DAA required to avoid closing a prior fh trace()
+	$DBI::tfh = undef
+	    unless $DBI::tfh_needs_close;
     open $DBI::tfh, ">>$file" or carp "Can't open $file: $!";
     select((select($DBI::tfh), $| = 1)[0]);
+    $DBI::tfh_needs_close = 1;
     return 1;
 }
 sub _get_imp_data {  shift->{"imp_data"}; }

@@ -399,6 +399,7 @@ struct dbistate_st {
 
     I32 debug;
     PerlIO *logfp;
+    IO *logfp_ref;	/* DAA keep ptr to filehandle for refcounting */
 
     /* pointers to DBI functions which the DBD's will want to use	*/
     char      * (*neat_svpv)	_((SV *sv, STRLEN maxlen));
@@ -487,7 +488,7 @@ struct dbistate_st {
 	(DBD_ATTRIB_OK(attribs)					\
 	    ? hv_fetch((HV*)SvRV(attribs), key,klen, 0)		\
 	    : (SV **)Nullsv)
-	
+
 #define DBD_ATTRIB_GET_IV(attribs, key,klen, svp, var)			\
 	if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)	\
 	    var = SvIV(*svp)

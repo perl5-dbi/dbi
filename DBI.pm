@@ -2833,6 +2833,7 @@ There is also a data_sources() method defined for database handles.
 
   DBI->trace($trace_setting)
   DBI->trace($trace_setting, $trace_filename)
+  DBI->trace($trace_setting, $trace_filehandle)
   $trace_setting = DBI->trace;
 
 The C<DBI-E<gt>trace> method sets the I<global default> trace
@@ -7052,18 +7053,145 @@ bar ("C<|>") or comma ("C<,>") characters. For example:
 
 Initially trace output is written to C<STDERR>.  Both the
 C<$h-E<gt>trace> and C<DBI-E<gt>trace> methods take an optional
-$trace_filename parameter. If specified, and can be opened in
-append mode, then I<all> trace output (currently including that
-from other handles) is redirected to that file.  A warning is
-generated if the file can't be opened.
+$trace_file parameter, which may be either the name of a file to be
+openned by DBI in append mode, or a reference to an existing writable
+(possibly layered) filehandle. If $trace_file is a filename,
+and can be opened in append mode, or $trace_file is a writable
+filehandle, then I<all> trace output (currently including that from
+other handles) is redirected to that file. A warning is generated
+if $trace_file can't be opened or is not writable.
 
-Further calls to trace() without a $trace_filename do not alter where
-the trace output is sent. If $trace_filename is undefined, then
-trace output is sent to C<STDERR> and the previous trace file is closed.
+Further calls to trace() without $trace_file do not alter where
+the trace output is sent. If $trace_file is undefined, then
+trace output is sent to C<STDERR> and, if the prior trace was openned with
+$trace_file as a filename, the previous trace file is closed; if $trace_file was
+a filehandle, the filehandle is B<not> closed.
 
-Currently $trace_filename can't be a filehandle. But meanwhile you
-can use the special strings C<"STDERR"> and C<"STDOUT"> to select
-those filehandles.
+B<NOTE>: If $trace_file is specified as a filehandle, the filehandle
+should not be closed until all DBI operations are completed, or the
+application has reset the trace file via another call to
+C<trace()> that changes the trace file.
+
+=head2 Tracing to Layered Filehandles
+
+B<NOTE>:
+
+=over 4
+
+=item *
+Tied filehandles are not currently supported, as
+tie operations are not available to the PerlIO
+methods used by the DBI.
+
+=item *
+PerlIO layer support requires Perl version 5.8 or higher.
+
+=back
+
+As of version 5.8, Perl provides the ability to layer various
+"disciplines" on an open filehandle via the L<PerlIO> module.
+
+A simple example of using PerlIO layers is to use a scalar as the output:
+
+    my $scalar = '';
+    open( my $fh, "+>:scalar", \$scalar );
+    $dbh->trace( 2, $fh );
+
+Now all trace output is simply appended to $scalar.
+
+A more complex application of tracing to a layered filehandle is the
+use of a custom layer (I<Refer to >L<Perlio::via> I<for details
+on creating custom PerlIO layers.>). Consider an application with the
+following logger module:
+
+    package MyFancyLogger;
+
+    sub new
+    {
+        my $self = {};
+        my $fh;
+        open $fh, '>', 'fancylog.log';
+        $self->{_fh} = $fh;
+        $self->{_buf} = '';
+        return bless $self, shift;
+    }
+
+    sub log
+    {
+        my $self = shift;
+        return unless exists $self->{_fh};
+        my $fh = $self->{_fh};
+        $self->{_buf} .= shift;
+    #
+    # DBI feeds us pieces at a time, so accumulate a complete line
+    # before outputing
+    #
+        print $fh "At ", scalar localtime(), ':', $self->{_buf}, "\n" and
+        $self->{_buf} = ''
+            if $self->{_buf}=~tr/\n//;
+    }
+
+    sub close {
+        my $self = shift;
+        return unless exists $self->{_fh};
+        my $fh = $self->{_fh};
+        print $fh "At ", scalar localtime(), ':', $self->{_buf}, "\n" and
+        $self->{_buf} = ''
+            if $self->{_buf};
+        close $fh;
+        delete $self->{_fh};
+    }
+
+    1;
+
+To redirect DBI traces to this logger requires creating
+a package for the layer:
+
+    package PerlIO::via::MyFancyLogLayer;
+
+    sub PUSHED
+    {
+        my ($class,$mode,$fh) = @_;
+        my $logger;
+        return bless \$logger,$class;
+    }
+
+    sub OPEN {
+        my ($self, $path, $mode, $fh) = @_;
+        #
+        # $path is actually our logger object
+        #
+        $$self = $path;
+        return 1;
+    }
+
+    sub WRITE
+    {
+        my ($self, $buf, $fh) = @_;
+        $$self->log($buf);
+        return length($buf);
+    }
+
+    sub CLOSE {
+        my $self = shift;
+        $$self->close();
+        return 0;
+    }
+
+    1;
+
+
+The application can then cause DBI traces to be routed to the
+logger using
+
+    use PerlIO::via::MyFancyLogLayer;
+
+    open my $fh, '>:via(MyFancyLogLayer)', MyFancyLogger->new();
+
+    $dbh->trace('SQL', $fh);
+
+Now all trace output will be processed by MyFancyLogger's
+log() method.
 
 =head2 Trace Content
 
