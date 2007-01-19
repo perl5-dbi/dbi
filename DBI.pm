@@ -319,6 +319,7 @@ my $dbd_prefix_registry = {
   df_      => { class => 'DBD::DF',		},
   f_       => { class => 'DBD::File',		},
   file_    => { class => 'DBD::TextFile',	},
+  fwd_     => { class => 'DBD::Forward',	},
   ib_      => { class => 'DBD::InterBase',	},
   ing_     => { class => 'DBD::Ingres',		},
   ix_      => { class => 'DBD::Informix',	},
@@ -3376,7 +3377,7 @@ statement handles created by the L</prepare_cached> method.  For a
 driver handle, returns a reference to the cache (hash) of
 database handles created by the L</connect_cached> method.
 
-=item C<Type> (scalar)
+=item C<Type> (scalar, read-only)
 
 The C<Type> attribute identifies the type of a DBI handle.  Returns
 "dr" for driver handles, "db" for database handles and "st" for

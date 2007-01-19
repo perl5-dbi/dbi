@@ -4,6 +4,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+XXX document DBD::Forward
+
 =head2 Changes in DBI 1.XX (svn rev XX),   XX
 
   Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
