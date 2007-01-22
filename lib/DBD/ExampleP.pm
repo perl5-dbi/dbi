@@ -329,7 +329,8 @@
 
     sub fetch {
 	my $sth = shift;
-	my $dh  = $sth->{dbd_datahandle};
+	my $dh  = $sth->{dbd_datahandle}
+            or return $sth->set_err(1, "fetch without successful execute");
 	my $dir = $sth->{dbd_dir};
 	my %s;
 

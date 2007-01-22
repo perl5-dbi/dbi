@@ -26,8 +26,11 @@ our @sth_std_attr = qw(
     CursorName
 );
 
+# XXX tracing
+
 sub _connect {
     my $request = shift;
+    local $ENV{DBI_AUTOPROXY};
     my $connect_args = $request->connect_args;
     my ($dsn, $u, $p, $attr) = @$connect_args;
     # XXX need way to limit/purge connect cache over time
@@ -38,8 +41,13 @@ sub _connect {
         PrintError => 0,
         RaiseError => 1,
     });
-    # $dbh->trace(2);
+    #$dbh->trace(1);
     return $dbh;
+}
+
+sub _reset_dbh {
+    my ($dbh) = @_;
+    $dbh->trace(0, \*STDERR);
 }
 
 sub execute_request {
@@ -78,27 +86,38 @@ sub execute_dbh_request {
     });
     $response->last_insert_id = $dbh->last_insert_id( @{ $request->dbh_last_insert_id_args })
         if $dbh && $rv && $request->dbh_last_insert_id_args;
+    _reset_dbh($dbh);
     return $response;
 }
 
 sub execute_sth_request {
     my $request = shift;
     my $dbh;
-    my $rv;
-    my $resultset_list = eval {
+    my $sth;
+
+    my $rv = eval {
         $dbh = _connect($request);
 
         my $meth = $request->dbh_method_name;
         my $args = $request->dbh_method_args;
-        my $sth = $dbh->$meth(@$args);
+        $sth = $dbh->$meth(@$args);
 
         for my $meth_call (@{ $request->sth_method_calls }) {
             my $method = shift @$meth_call;
             $sth->$method(@$meth_call);
         }
 
-        $rv = $sth->execute();
+        $sth->execute();
+    };
+    my $response = DBI::Forward::Response->new({
+        rv     => $rv,
+        err    => $DBI::err,
+        errstr => $DBI::errstr,
+        state  => $DBI::state,
+    });
 
+    # even if the eval failed we still want to gather attribute values
+    my $resultset_list = eval {
         my $attr_list = $request->sth_result_attr;
         $attr_list = [ keys %$attr_list ] if ref $attr_list eq 'HASH';
         my $rs_list = [];
@@ -109,13 +128,12 @@ sub execute_sth_request {
 
         $rs_list;
     };
-    my $response = DBI::Forward::Response->new({
-        rv     => $rv,
-        err    => $DBI::err,
-        errstr => $DBI::errstr,
-        state  => $DBI::state,
-        sth_resultsets => $resultset_list,
-    });
+    $response->sth_resultsets( $resultset_list );
+
+    # XXX would be nice to be able to support streaming of results
+    # which would reduce memory usage and latency for large results
+
+    _reset_dbh($dbh);
 
     return $response;
 }
@@ -126,7 +144,12 @@ sub fetch_result_set {
     for my $attr (@sth_std_attr, @$extra_attr) {
         $meta{ $attr } = $sth->{$attr};
     }
-    $meta{rowset} = $sth->fetchall_arrayref();
+    if ($sth->FETCH('NUM_OF_FIELDS')) { # if a select
+        $meta{rowset} = eval { $sth->fetchall_arrayref() };
+        $meta{err}    = $DBI::err;
+        $meta{errstr} = $DBI::errstr;
+        $meta{state}  = $DBI::state;
+    }
     return \%meta;
 }
 

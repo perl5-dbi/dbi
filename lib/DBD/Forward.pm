@@ -32,16 +32,19 @@
         Taint TaintIn TaintOut
         TraceLevel
         Warn
+        dbi_connect_closure
     );
 
     our $drh = undef;	# holds driver handle once initialised
+    our $methods_already_installed;
 
     sub driver{
 	return $drh if $drh;
 
         DBI->setup_driver('DBD::Forward');
 
-        DBD::Forward::db->install_method('fwd_dbh_method', { O=> 0x0004 }); # IMA_KEEP_ERR
+        DBD::Forward::db->install_method('fwd_dbh_method', { O=> 0x0004 }) # IMA_KEEP_ERR
+            unless $methods_already_installed++;
 
 	my($class, $attr) = @_;
 	$class .= "::dr";
@@ -144,7 +147,9 @@
         my $request = $dbh->{fwd_request};
         $request->init_request($method, \@args, wantarray);
 
-        my $response = $dbh->{fwd_trans}->execute($request);
+        my $transport = $dbh->{fwd_trans}
+            or return $dbh->set_err(1, "Not connected (no transport)");
+        my $response = $transport->execute($request);
 
         $dbh->{fwd_response} = $response;
 
@@ -155,13 +160,11 @@
     }
 
     # Methods that should be forwarded
-    # XXX ping? local or remote - add policy attribute
     # XXX get_info? special sub to lazy-cache individual values
     for my $method (qw(
         do data_sources
         table_info column_info primary_key_info foreign_key_info statistics_info
         type_info_all get_info
-        ping
     )) {
         no strict 'refs';
         *$method = sub { return shift->fwd_dbh_method($method, undef, @_) }
@@ -177,6 +180,13 @@
 
     # for quote we rely on the default method + type_info_all
     # for quote_identifier we rely on the default method + get_info
+
+    sub ping {
+        my $dbh = shift;
+        # XXX local or remote - add policy attribute
+        return 0 unless $dbh->FETCH('Active');
+        return $dbh->fwd_dbh_method('ping', undef, @_);
+    }
 
     sub last_insert_id {
         my $dbh = shift;
@@ -201,8 +211,9 @@
         }
 	return $dbh->SUPER::STORE($attrib => $value)
             if $dbh_local_store_attrib{$attrib}  # handle locally
-            or $attrib =~ m/^[a-z]/              # driver-private
             or not $dbh->FETCH('Active');        # not yet connected
+
+        # XXX    or $attrib =~ m/^[a-z]/              # driver-private
 
         # ignore values that aren't actually being changed
         my $prev = $dbh->FETCH($attrib);
@@ -215,8 +226,9 @@
     }
 
     sub disconnect {
-        # XXX discard state for dbh and destroy child handles
-	shift->STORE(Active => 0);
+	my $dbh = shift;
+        $dbh->{fwd_trans} = undef;
+	$dbh->STORE(Active => 0);
     }
 
     sub prepare {
@@ -243,6 +255,26 @@
     $imp_data_size = 0;
     use strict;
 
+    my %sth_local_store_attrib = (%DBD::Forward::xxh_local_store_attrib, NUM_OF_FIELDS => 1);
+
+
+    # sth methods that should always fail, at least for now
+    for my $method (qw(
+        bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch
+    )) {
+        no strict 'refs';
+        *$method = sub { return shift->set_err(1, "$method not available") }
+    }
+
+
+    sub bind_param {
+        my ($sth, $param, $value, $attr) = @_;
+        $sth->{ParamValues}{$param} = $value;
+        push @{ $sth->{fwd_method_calls} }, [ 'bind_param', $param, $value, $attr ];
+        return 1;
+    }
+
+
     sub execute {
 	my($sth, @bind) = @_;
 
@@ -259,54 +291,58 @@
         $sth->{fwd_response} = $response;
         $sth->{fwd_method_calls} = [];
 
-        # setup first resultset
-        $sth->more_results if $response->sth_resultsets;
+        # setup first resultset - including atributes
+        if ($response->sth_resultsets) {
+            $sth->more_results;
+        }
 
         $sth->set_err($response->err, $response->errstr, $response->state);
+
         return $response->rv;
     }
 
 
-    # Methods that should always fail, at least for now
-    for my $method (qw(
-        bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch
-    )) {
-        no strict 'refs';
-        *$method = sub { return shift->set_err(1, "$method not available") }
+    sub more_results {
+	my ($sth) = @_;
+
+	$sth->finish if $sth->FETCH('Active');
+
+	my $resultset_list = $sth->{fwd_response}->sth_resultsets
+            or return $sth->set_err(1, "No sth_resultsets");
+
+        my $meta = shift @$resultset_list
+            or return undef; # no more result sets
+
+        # pull out the special non-atributes first
+        my ($rowset, $err, $errstr, $state)
+            = delete @{$meta}{qw(rowset err errstr state)};
+
+        # copy meta attributes into attribute cache
+        my $NUM_OF_FIELDS = delete $meta->{NUM_OF_FIELDS} || 0;
+        $sth->STORE('NUM_OF_FIELDS', $NUM_OF_FIELDS);
+        $sth->{$_} = $meta->{$_} for keys %$meta;
+
+        if ($NUM_OF_FIELDS > 0) {
+            $sth->{fwd_current_rowset} = $rowset;
+            $sth->{fwd_current_rowset_err} = [ $err, $errstr, $state ] if $err;
+            $sth->STORE(Active => 1) if $rowset;
+        }
+
+	return $sth;
     }
 
-
-    sub bind_param {
-        my ($sth, $param, $value, $attr) = @_;
-        $sth->{ParamValues}{$param} = $value;
-        push @{ $sth->{fwd_method_calls} }, [ 'bind_param', $param, $value, $attr ];
-        return 1;
-    }
 
     sub fetchrow_arrayref {
 	my ($sth) = @_;
-	my $resultset = $sth->{fwd_current_resultset}
-            or return $sth->set_err(1, "No result set available");
+	my $resultset = $sth->{fwd_current_rowset}
+            or return $sth->set_err( @{ $sth->{fwd_current_rowset_err} } );
         return shift @$resultset if @$resultset;
 	$sth->finish;     # no more data so finish
 	return undef;
     }
     *fetch = \&fetchrow_arrayref; # alias
 
-    sub more_results {
-	my ($sth) = @_;
-	$sth->finish if $sth->FETCH('Active');
-	my $resultset_list = $sth->{fwd_response}->sth_resultsets
-            or return $sth->set_err(1, "No sth_resultsets");
-        return undef unless @$resultset_list;
-        my $meta = shift @$resultset_list
-            or return undef; # no more result sets
-        $sth->{fwd_current_resultset} = delete $meta->{rowset}
-            or return $sth->set_err(1, "No rowset in meta");
-        # copy meta attributes into attribute cache
-        $sth->{$_} = $meta->{$_} for keys %$meta;
-	return $sth;
-    }
+    # XXX fetchall_arrayref - for speed
 
     sub rows {
         my $sth = shift;
@@ -314,10 +350,21 @@
         return $response->rv;
     }
 
+
     sub STORE {
 	my ($sth, $attrib, $value) = @_;
-        DBD::Forward::_note_attrib_store($sth, $attrib, $value);
-	return $sth->SUPER::STORE($attrib, $value);
+	return $sth->SUPER::STORE($attrib => $value)
+            if $sth_local_store_attrib{$attrib}  # handle locally
+            or $attrib =~ m/^[a-z]/;             # driver-private
+
+        # ignore values that aren't actually being changed
+        my $prev = $sth->FETCH($attrib);
+        return 1 if !defined $value && !defined $prev
+                 or defined $value && defined $prev && $value eq $prev;
+
+        # sth attributes are set at connect-time - see connect()
+        Carp::carp("Can't alter \$sth->{$attrib}");
+        return $sth->set_err(1, "Can't alter \$sth->{$attrib}");
     }
 
 }

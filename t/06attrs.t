@@ -17,6 +17,8 @@ BEGIN {
 
 $|=1;
 
+my $using_autoproxy = ($ENV{DBI_AUTOPROXY});
+
 # Connect to the example driver.
 my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
                            { 
@@ -66,7 +68,8 @@ ok(!defined $dbh->{Statement},    '... checking Statement attribute for dbh');
 ok(!defined $dbh->{RowCacheSize}, '... checking RowCacheSize attribute for dbh');
 
 is($dbh->{FetchHashKeyName}, 'NAME',  '... checking FetchHashKeyName attribute for dbh');
-is($dbh->{Name},             'dummy', '... checking Name attribute for dbh');	# fails for Multiplex
+is($dbh->{Name},             'dummy', '... checking Name attribute for dbh')	# fails for Multiplex
+    unless $using_autoproxy && ok(1);
 
 cmp_ok($dbh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for dbh');
 cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for dbh');
@@ -75,7 +78,7 @@ cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadL
 eval { 
     $dbh->do('select foo from foo') 
 };
-like($@, qr/^DBD::(ExampleP|Multiplex)::db do failed: Unknown field names: foo/ , '... catching exception');
+like($@, qr/^DBD::(ExampleP|Multiplex|Forward)::db do failed: Unknown field names: foo/ , '... catching exception');
 
 ok(defined $dbh->err, '... $dbh->err is undefined');
 like($dbh->errstr,  qr/^Unknown field names: foo\b/, '... checking $dbh->errstr');
@@ -133,7 +136,8 @@ cmp_ok($drh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLeve
 cmp_ok($drh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for drh');
 
 is($drh->{FetchHashKeyName}, 'NAME',     '... checking FetchHashKeyName attribute for drh');
-is($drh->{Name},             'ExampleP', '... checking Name attribute for drh');
+is($drh->{Name},             'ExampleP', '... checking Name attribute for drh')
+    unless $using_autoproxy && ok(1);
 
 ## ----------------------------------------------------------------------------
 # Test the statement handle attributes.
@@ -151,10 +155,10 @@ eval {
     $sth->execute("foo") 
 };
 # we don't check actual opendir error msg because of locale differences
-like($@, qr/^DBD::(ExampleP|Multiplex)::st execute failed: opendir\(foo\): /i, '... checking exception');
+like($@, qr/^DBD::(ExampleP|Multiplex|Forward)::st execute failed: .*opendir\(foo\): /msi, '... checking exception');
 
 # Test all of the statement handle attributes.
-like($sth->errstr, qr/^opendir\(foo\): /, '... checking $sth->errstr');
+like($sth->errstr, qr/opendir\(foo\): /, '... checking $sth->errstr');
 is($sth->state, 'S1000', '... checking $sth->state');
 ok($sth->{Executed}, '... checking Executed attribute for sth');	# even though it failed
 ok($dbh->{Executed}, '... checking Exceuted attribute for dbh');	# due to $sth->prepare, even though it failed

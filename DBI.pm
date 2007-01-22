@@ -584,6 +584,8 @@ sub connect {
 	$driver = $proxy;
 	DBI->trace_msg("       DBI_AUTOPROXY: dbi:$driver($driver_attrib_spec):$dsn\n");
     }
+    # avoid recursion if proxy calls DBI->connect itself
+    local $ENV{DBI_AUTOPROXY};
 
     my %attributes;	# take a copy we can delete from
     if ($old_driver) {
