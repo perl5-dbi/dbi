@@ -1114,6 +1114,80 @@ equal to zero.
 
   $sth->execute() or die $sth->errstr;
 
+=head4 The execute_array(), execute_for_fetch() and bind_param_array() methods
+
+In general, DBD's only need to implement C<execute_for_fetch()> and
+C<bind_param_array>. DBI's default C<execute_array()> will invoke the
+DBD's C<execute_for_fetch()> as needed.
+
+The following sequence describes the interaction between
+DBI C<execute_array> and a DBD's C<execute_for_fetch>:
+
+=over
+
+=item 1
+
+App calls C<$sth-E<gt>execute_array(\%attrs, @array_of_arrays)>
+
+=item 2
+
+If C<@array_of_arrays> was specified, DBI processes C<@array_of_arrays> by calling
+DBD's C<bind_param_array()>. Alternately, App may have directly called
+C<bind_param_array()>
+
+=item 3
+
+DBD validates and binds each array
+
+=item 4
+
+DBI retrieves the validated param arrays from DBD's ParamArray attribute
+
+=item 5
+
+DBI calls DBD's C<execute_for_fetch($fetch_tuple_sub, \@tuple_status)>,
+where C<&$fetch_tuple_sub> is a closure to iterate over the
+returned ParamArray values, and C<\@tuple_status> is an array to receive
+the disposition status of each tuple.
+
+=item 6
+
+DBD iteratively calls C<&$fetch_tuple_sub> to retrieve parameter tuples
+to be added to its bulk database operation/request.
+
+=item 7
+
+when DBD reaches the limit of tuples it can handle in a single database
+operation/request, or the C<&$fetch_tuple_sub> indicates no more
+tuples by returning undef, the DBD executes the bulk operation, and
+reports the disposition of each tuple in \@tuple_status.
+
+=item 8
+
+DBD repeats steps 6 and 7 until all tuples are processed.
+
+=back
+
+E.g., here's the essence of L<DBD::Oracle>'s execute_for_fetch:
+
+       while (1) {
+           my @tuple_batch;
+           for (my $i = 0; $i < $batch_size; $i++) {
+                push @tuple_batch, [ @{$fetch_tuple_sub->() || last} ];
+           }
+           last unless @tuple_batch;
+           my $res = ora_execute_array($sth, \@tuple_batch,
+              scalar(@tuple_batch), $tuple_batch_status);
+           push @$tuple_status, @$tuple_batch_status;
+       }
+
+Note that DBI's default execute_array()/execute_for_fetch() implementation
+requires the use of positional (i.e., '?') placeholders. Drivers
+which B<require> named placeholders must either emulate positional
+placeholders (e.g., see L<DBD::Oracle>), or must implement their own
+execute_array()/execute_for_fetch() methods to properly sequence bound
+parameter arrays.
+
 =head4 Fetching data
 
 Only one method needs to be written for fetching data, C<fetchrow_arrayref()>.
