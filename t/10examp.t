@@ -1,4 +1,4 @@
-#!perl -Tw
+#!perl -w
 
 use lib qw(blib/arch blib/lib);	# needed since -T ignores PERL5LIB
 use DBI qw(:sql_types);
@@ -12,7 +12,7 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 263;
+use Test::More tests => 216;
 
 # "globals"
 my ($r, $dbh);
@@ -59,7 +59,7 @@ DBI->trace(@DBI::dbi_debug) if @DBI::dbi_debug;
 
 my $dbh2;
 eval {
-    $dbh2 = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError => 1, AutoCommit => 0 });
+    $dbh2 = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError => 1, AutoCommit => 1 });
 };
 like($@, qr/install_driver\(NoneSuch\) failed/, '... we should have an exception here');
 ok(!$dbh2, '... $dbh2 should not be defined');
@@ -103,50 +103,10 @@ $dbh->{PrintError} = 0;
 ok($dbh->{AutoCommit} == 1);
 cmp_ok($dbh->{PrintError}, '==', 0, '... PrintError should be 0');
 
-SKIP: {
-	skip "cant test this if we have DBI::PurePerl", 1 if $DBI::PurePerl;
-	$dbh->{Taint} = 1;	
-	ok($dbh->{Taint}      == 1);
-}
-
 is($dbh->{FetchHashKeyName}, 'NAME', '... FetchHashKey is NAME');
+
+# test access to driver-private attributes
 like($dbh->{example_driver_path}, qr/DBD\/ExampleP\.pm$/, '... checking the example driver_path');
-
-sub check_quote {
-	# checking quote
-	is($dbh->quote("quote's"),         "'quote''s'", '... quoting strings with embedded single quotes');
-	is($dbh->quote("42", SQL_VARCHAR), "'42'",       '... quoting number as SQL_VARCHAR');
-	is($dbh->quote("42", SQL_INTEGER), "42",         '... quoting number as SQL_INTEGER');
-	is($dbh->quote(undef),			   "NULL",		 '... quoting undef as NULL');
-}
-
-check_quote();
-
-my $get_info = $dbh->{examplep_get_info} || {};
-
-sub check_quote_identifier {
-	# quote_identifier
-	$get_info->{29}  ='"';					# SQL_IDENTIFIER_QUOTE_CHAR
-	$dbh->{examplep_get_info} = $get_info;	# trigger STORE
-	
-	is($dbh->quote_identifier('foo'),             '"foo"',       '... properly quotes foo as "foo"');
-	is($dbh->quote_identifier('f"o'),             '"f""o"',      '... properly quotes f"o as "f""o"');
-	is($dbh->quote_identifier('foo','bar'),       '"foo"."bar"', '... properly quotes foo, bar as "foo"."bar"');
-	is($dbh->quote_identifier(undef,undef,'bar'), '"bar"',       '... properly quotes undef, undef, bar as "bar"');
-
-	is($dbh->quote_identifier('foo',undef,'bar'), '"foo"."bar"', '... properly quotes foo, undef, bar as "foo"."bar"');
-
-	$get_info->{41}  ='@';                  # SQL_CATALOG_NAME_SEPARATOR
-	$get_info->{114} = 2;                   # SQL_CATALOG_LOCATION
-	$dbh->{examplep_get_info} = $get_info;	# trigger STORE
-
-	# force cache refresh
-	$dbh->{dbi_quote_identifier_cache} = undef; 
-	is($dbh->quote_identifier('foo',undef,'bar'), '"bar"@"foo"', '... now quotes it as "bar"@"foo" after flushing cache');
-}
-
-check_quote_identifier();
-
 
 print "others\n";
 eval { $dbh->commit('dummy') };
@@ -200,42 +160,12 @@ ok("@{[sort values %{$csr_b->{NAME_lc_hash}}]}" eq "0 1 2");
 ok("@{[sort keys   %{$csr_b->{NAME_uc_hash}}]}" eq "MODE NAME SIZE");
 ok("@{[sort values %{$csr_b->{NAME_uc_hash}}]}" eq "0 1 2");
 
-SKIP: {
-	skip "do not test with DBI::PurePerl", 15 if $DBI::PurePerl;
-	
-    # Check Taint* attribute switching
-
-    #$dbh->{'Taint'} = 1; # set in connect
-    ok($dbh->{'Taint'});
-    ok($dbh->{'TaintIn'} == 1);
-    ok($dbh->{'TaintOut'} == 1);
-
-    $dbh->{'TaintOut'} = 0;
-    ok($dbh->{'Taint'} == 0);
-    ok($dbh->{'TaintIn'} == 1);
-    ok($dbh->{'TaintOut'} == 0);
-
-    $dbh->{'Taint'} = 0;
-    ok($dbh->{'Taint'} == 0);
-    ok($dbh->{'TaintIn'} == 0);
-    ok($dbh->{'TaintOut'} == 0);
-
-    $dbh->{'TaintIn'} = 1;
-    ok($dbh->{'Taint'} == 0);
-    ok($dbh->{'TaintIn'} == 1);
-    ok($dbh->{'TaintOut'} == 0);
-
-    $dbh->{'TaintOut'} = 1;
-    ok($dbh->{'Taint'} == 1);
-    ok($dbh->{'TaintIn'} == 1);
-    ok($dbh->{'TaintOut'} == 1);
-}
 
 # get a dir always readable on all platforms
 my $dir = getcwd() || cwd();
 $dir = VMS::Filespec::unixify($dir) if $^O eq 'VMS';
 # untaint $dir
-$dir =~ m/(.*)/; $dir = $1 || die;
+#$dir =~ m/(.*)/; $dir = $1 || die;
 
 
 # ---
@@ -243,7 +173,6 @@ $dir =~ m/(.*)/; $dir = $1 || die;
 my($col0, $col1, $col2, $col3, $rows);
 my(@row_a, @row_b);
 
-ok($csr_a->{Taint} = 1) unless $DBI::PurePerl && ok(1);
 #$csr_a->trace(5);
 ok($csr_a->bind_columns(undef, \($col0, $col1, $col2)) );
 ok($csr_a->execute( $dir ), $DBI::errstr);
@@ -267,87 +196,6 @@ ok ! eval { $csr_a->bind_col(0, undef) };
 like $@, '/bind_col: column 0 is not a valid column \(1..3\)/', 'errstr should contain error message';
 ok ! eval { $csr_a->bind_col(4, undef) };
 like $@, '/bind_col: column 4 is not a valid column \(1..3\)/', 'errstr should contain error message';
-
-SKIP: {
-
-    # Check Taint attribute works. This requires this test to be run
-    # manually with the -T flag: "perl -T -Mblib t/examp.t"
-    sub is_tainted {
-	my $foo;
-	return ! eval { ($foo=join('',@_)), kill 0; 1; };
-    }
-
-    skip " Taint attribute tests skipped\n", 19 unless(is_tainted($^X) && !$DBI::PurePerl);
-
-    $dbh->{'Taint'} = 0;
-    my $st;
-    eval { $st = $dbh->prepare($std_sql); };
-    ok(ref $st);
-
-    ok($st->{'Taint'} == 0);
-
-    ok($st->execute( $dir ));
-
-    my @row = $st->fetchrow_array;
-    ok(@row);
-
-    ok(!is_tainted($row[0]));
-    ok(!is_tainted($row[1]));
-    ok(!is_tainted($row[2]));
-
-    $st->{'TaintIn'} = 1;
-
-    @row = $st->fetchrow_array;
-    ok(@row);
-
-    ok(!is_tainted($row[0]));
-    ok(!is_tainted($row[1]));
-    ok(!is_tainted($row[2]));
-
-    $st->{'TaintOut'} = 1;
-
-    @row = $st->fetchrow_array;
-    ok(@row);
-
-    ok(is_tainted($row[0]));
-    ok(is_tainted($row[1]));
-    ok(is_tainted($row[2]));
-
-    $st->finish;
-
-    # check simple method call values
-    #ok(1);
-    # check simple attribute values
-    #ok(1); # is_tainted($dbh->{AutoCommit}) );
-    # check nested attribute values (where a ref is returned)
-    #ok(is_tainted($csr_a->{NAME}->[0]) );
-    # check checking for tainted values
-
-    $dbh->{'Taint'} = $csr_a->{'Taint'} = 1;
-    eval { $dbh->prepare($^X); 1; };
-    ok($@ =~ /Insecure dependency/, $@);
-    eval { $csr_a->execute($^X); 1; };
-    ok($@ =~ /Insecure dependency/, $@);
-    undef $@;
-
-    $dbh->{'TaintIn'} = $csr_a->{'TaintIn'} = 0;
-
-    eval { $dbh->prepare($^X); 1; };
-    ok(!$@);
-    eval { $csr_a->execute($^X); 1; };
-    ok(!$@);
-
-    # Reset taint status to what it was before this block, so that
-    # tests later in the file don't get confused
-    $dbh->{'Taint'} = $csr_a->{'Taint'} = 1;
-}
-
-
-SKIP: {
-	skip "do not test with DBI::PurePerl", 1 if $DBI::PurePerl;
-    $csr_a->{Taint} = 0;
-    ok($csr_a->{Taint} == 0);
-}
 
 ok($csr_b->bind_param(1, $dir));
 ok($csr_b->execute());
@@ -644,7 +492,7 @@ ok(!$dbh->{HandleError});
 						File::Spec->catfile($dump_dir, 'dumpcsr.tst')
 						: 
 						"$dump_dir/dumpcsr.tst";
-	($dump_file) = ($dump_file =~ m/^(.*)$/);	# untaint
+        #($dump_file) = ($dump_file =~ m/^(.*)$/);	# untaint
 
 	SKIP: {
 		skip "# dump_results test skipped: unable to open $dump_file: $!\n", 2 unless (open(DUMP_RESULTS, ">$dump_file"));
@@ -696,7 +544,6 @@ my @tables = $dbh->tables(undef, undef, "%", "VIEW");
 ok(@tables == @tables_expected, "Table count mismatch".@tables_expected." vs ".@tables);
 ok($tables[$_] eq $tables_expected[$_], "$tables[$_] ne $tables_expected[$_]")
 	foreach (0..$#tables_expected);
-
 
 for (my $i = 0;  $i < 300;  $i += 100) {
 	print "Testing the fake directories ($i).\n";

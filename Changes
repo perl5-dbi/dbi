@@ -14,11 +14,23 @@ XXX document DBD::Forward
   Fixed to compile for perl built with -DNO_MATHOMS thanks to Jerry D. Hedden.
   Fixed to work for bleadperl (r29544) thanks to Nicholas Clark.
     Users of Perl >= 5.9.5 will require DBI >= 1.54.
-  Changed t/40profile.t to skip tests for perl < 5.8.0.
-  Updated DBI::DBD docs for driver authors thanks to Ammon Riley.
+  Fixed rare error when profiling access to $DBI::err etc tied variables.
 
+  Changed t/40profile.t to skip tests for perl < 5.8.0.
+  Changed setting trace file to no longer write "Trace file set" to new file.
+  Changed 'handle cleared whilst still active' warning for dbh
+    to only be given for dbh that have active sth or are not AutoCommit.
+  Changed take_imp_data to call finish on any Active child sth.
+  Updated DBI::DBD docs for driver authors thanks to Ammon Riley
+    and Dean Arnold.
+
+  Added new DBD::Forward 'stateless proxy' driver and framework,
+    and the DBI test suite is now also executed via DBD::Forward.
+  Added ability for drivers to implement func() method
+    so proxy drivers can proxy the func method itself.
   Added SQL_BIGINT type code (resolved to the ODBC/JDBC value (-5))
-  Updated trace to support filehandle argument.
+  Added ability for trace() to support filehandle argument,
+    including tracing into a string, thanks to Dean Arnold.
 
 =head2 Changes in DBI 1.53 (svn rev 7995),   31st October 2006
 

@@ -673,7 +673,6 @@ set_trace_file(SV *file)
 	close_trace_file();
     }
     DBILOGFP = fp;
-    PerlIO_printf(DBILOGFP,"    Trace file set\n");
     /* if this line causes your compiler or linker to choke	*/
     /* then just comment it out, it's not essential.	*/
     PerlIO_setlinebuf(fp);	/* force line buffered output */
@@ -1297,9 +1296,14 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	    }
 	}
 
-	if (DBIc_ACTIVE(imp_xxh)) {	/* bad news		*/
-	    warn("DBI handle 0x%x cleared whilst still active", (unsigned)DBIc_MY_H(imp_xxh));
-	    dump = TRUE;
+	if (DBIc_ACTIVE(imp_xxh)) {	/* bad news, potentially	*/
+            /* warn for sth, warn for dbh only if it has active sth or isn't AutoCommit */
+            if (DBIc_TYPE(imp_xxh) >= DBIt_ST
+            || (DBIc_ACTIVE_KIDS(imp_xxh) || !DBIc_has(imp_xxh, DBIcf_AutoCommit))
+            ) {
+                warn("DBI handle 0x%x cleared whilst still active", (unsigned)DBIc_MY_H(imp_xxh));
+                dump = TRUE;
+            }
 	}
 
 	/* check that the implementor has done its own housekeeping	*/
@@ -1697,8 +1701,19 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     }
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_FIELDS")) {
 	D_imp_sth(h);
-	if (DBIc_NUM_FIELDS(imp_sth) > 0)	/* don't change NUM_FIELDS! */
-	    croak("NUM_OF_FIELDS already set to %d", DBIc_NUM_FIELDS(imp_sth));
+	if (DBIc_NUM_FIELDS(imp_sth) > 0	/* don't change NUM_FIELDS! */
+        &&  DBIc_ACTIVE(imp_sth)                /* if sth is Active */
+        ) {
+	    croak("Can't change NUM_OF_FIELDS (already set to %d)", DBIc_NUM_FIELDS(imp_sth));
+        }
+        if (DBIc_NUM_FIELDS(imp_sth) > 0
+        && SvIV(valuesv) != DBIc_NUM_FIELDS(imp_sth)
+        && DBIc_TRACE_LEVEL(imp_sth)
+        && DBIc_FIELDS_AV(imp_sth)
+        ) {
+            PerlIO_printf(DBILOGFP,"Warning: changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated",
+                    SvIV(valuesv), DBIc_NUM_FIELDS(imp_sth));
+        }
 	DBIc_NUM_FIELDS(imp_sth) = SvIV(valuesv);
 	cacheit = 1;
     }
@@ -2301,7 +2316,6 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
 	return;
 
     h_hv = (HV*)SvRV(dbih_inner(h, "dbi_profile"));
-    /*h_hv = (SvROK(h)) ? (HV*)SvRV(h) : (HV*)h; */
 
     profile = *hv_fetch(h_hv, "Profile", 7, 1);
     if (profile && SvMAGICAL(profile))
@@ -2322,9 +2336,9 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
     statement_pv = SvPV_nolen(statement_sv);
 
     if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
-	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "dbi_profile %s %f q{%s}\n",
-		neatsvpv((SvTYPE(method)==SVt_PVCV) ? (SV*)CvGV(method) : method, 0),
-		ti, neatsvpv(statement_sv,0));
+	PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile %s %fs %s\n",
+            neatsvpv((SvTYPE(method)==SVt_PVCV) ? (SV*)CvGV(method) : method, 0),
+            ti, neatsvpv(statement_sv,0));
 
     dest_node = _profile_next_node(profile, "Data");
 
@@ -2952,6 +2966,18 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 
 	imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), meth_name, FALSE);
+
+        /* if method was a 'func' then try falling back to real 'func' method */
+        if (!imp_msv && (ima_flags & IMA_FUNC_REDIRECT)) {
+            imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), "func", FALSE);
+            if (imp_msv) {
+                /* driver does have func method so undo the earlier 'func' stack changes */
+                PUSHs(sv_2mortal(newSVpv(meth_name,0)));
+                PUTBACK;
+                ++items;
+                meth_name = "func";
+            }
+        }
 
 	if (trace_level >= 2) {
 	    PerlIO *logfp = DBILOGFP;
@@ -4110,8 +4136,10 @@ FETCH(sv)
     }
     if (trace)
 	PerlIO_printf(DBILOGFP,"    <- $DBI::%s= %s\n", meth, neatsvpv(ST(0),0));
-    if (profile_t1)
-	dbi_profile(DBI_LAST_HANDLE, imp_xxh, &sv_undef, (SV*)cv, profile_t1, dbi_time());
+    if (profile_t1) {
+        SV *h = sv_2mortal(newRV(DBI_LAST_HANDLE));
+	dbi_profile(h, imp_xxh, &sv_undef, (SV*)cv, profile_t1, dbi_time());
+    }
 
 
 MODULE = DBI   PACKAGE = DBD::_::db
@@ -4148,8 +4176,8 @@ take_imp_data(h)
      *
      * If the drivers imp_xxh_t structure contains SV*'s, or other interpreter
      * specific items, they should be freed by the drivers own take_imp_data()
-     * method. The drivers take_imp_data() method (or Driver.xst code) can then call
-     * SUPER::take_imp_data() to finalize the removal of the imp_xxh_t structure.
+     * method before it then calls SUPER::take_imp_data() to finalize removal
+     * of the imp_xxh_t structure.
      *
      * The driver needs to view the take_imp_data method as being nearly the
      * same as disconnect+DESTROY only not actually calling the database API to
@@ -4158,9 +4186,8 @@ take_imp_data(h)
      * in a 'clean' state such that if the drivers own DESTROY method was
      * called it would be able to properly handle the contents of the
      * structure. This is important in case a new handle created using this
-     * imp_data, possibly in a new thread, might end up being DESTROY's before
-     * the driver has had a chance to 're-setup' the data. See
-     * dbih_setup_handle()
+     * imp_data, possibly in a new thread, might end up being DESTROY'd before
+     * the driver has had a chance to 're-setup' the data. See dbih_setup_handle()
      *
      * All the above relates to the 'typical use case' for a compiled driver.
      * For a pure-perl driver using a socket pair, for example, the drivers
@@ -4182,7 +4209,7 @@ take_imp_data(h)
     /* Ideally there should be no child statement handles existing when
      * take_imp_data is called because when those statement handles are
      * destroyed they may need to interact with the 'zombie' parent dbh.
-     * So we do our best to kill neautralize them.
+     * So we do our best to neautralize them (finish & rebless)
      */
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_dbh_t*)imp_xxh))
 	clear_cached_kids(h, imp_xxh, "take_imp_data", 0);
@@ -4193,6 +4220,12 @@ take_imp_data(h)
 	for (kidslots = AvFILL(av); kidslots >= 0; --kidslots) {
 	    SV **hp = av_fetch(av, kidslots, FALSE);
 	    if (hp && SvROK(*hp) && SvMAGICAL(SvRV(*hp))) {
+                PUSHMARK(sp);
+                XPUSHs(*hp);
+                PUTBACK;
+                perl_call_method("finish", G_SCALAR|G_DISCARD);
+                SPAGAIN;
+                PUTBACK;
 		sv_unmagic(SvRV(*hp), 'P'); /* untie */
 		sv_bless(*hp, zombie_stash); /* neutralise */
 	    }

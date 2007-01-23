@@ -232,7 +232,6 @@ sub  _install_method {
 	if IMA_STUB & $bitmask;
 
     push @pre_call_frag, q{
-	#$method_name = $imp . '::' . pop @_;
 	$method_name = pop @_;
     } if IMA_FUNC_REDIRECT & $bitmask;
 
@@ -398,6 +397,9 @@ sub  _install_method {
 
 	my @ret;
         my $sub = $imp->can($method_name);
+        if (!$sub and IMA_FUNC_REDIRECT & $bitmask and $sub = $imp->can('func')) {
+            push @_, $method_name;
+        }
 	if ($sub) {
 	    (wantarray) ? (@ret = &$sub($h,@_)) : (@ret = scalar &$sub($h,@_));
 	}
@@ -405,7 +407,7 @@ sub  _install_method {
 	    # XXX could try explicit fallback to $imp->can('AUTOLOAD') etc
 	    # which would then let Multiplex pass PurePerl tests, but some
 	    # hook into install_method may be better.
-	    croak "Can't find DBI method $method_name for $h (via $imp)"
+	    croak "Can't locate DBI object method \"$method_name\" via package \"$imp\""
 		if ] . ((IMA_NOT_FOUND_OKAY & $bitmask) ? 0 : 1) . q[;
 	}
 
@@ -475,6 +477,7 @@ sub _setup_handle {
 	$h_inner->{FetchHashKeyName}	||= 'NAME';
 	$h_inner->{LongReadLen}		||= 80;
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
+	$h_inner->{Type}                ||= 'dr';
     }
     $h_inner->{"_call_depth"} = 0;
     $h_inner->{ErrCount} = 0;
@@ -674,15 +677,15 @@ sub trace {	# XXX should set per-handle level, not global
 sub FETCH {
     my($h,$key)= @_;
     my $v = $h->{$key};
-#warn ((exists $h->{$key}) ? "$key=$v\n" : "$key NONEXISTANT\n");
+    #warn ((exists $h->{$key}) ? "$key=$v\n" : "$key NONEXISTANT\n");
     return $v if defined $v;
     if ($key =~ /^NAME_.c$/) {
         my $cols = $h->FETCH('NAME');
         return undef unless $cols;
         my @lcols = map { lc $_ } @$cols;
-        $h->STORE('NAME_lc', \@lcols);
+        $h->{NAME_lc} = \@lcols;
         my @ucols = map { uc $_ } @$cols;
-        $h->STORE('NAME_uc',\@ucols);
+        $h->{NAME_uc} = \@ucols;
         return $h->FETCH($key);
     }
     if ($key =~ /^NAME.*_hash$/) {
@@ -704,7 +707,7 @@ sub FETCH {
             return "dr" if $h->isa('DBI::dr');
             return "db" if $h->isa('DBI::db');
             return "st" if $h->isa('DBI::st');
-            Carp::carp( sprintf "Can't get determine Type for %s",$h );
+            Carp::carp( sprintf "Can't determine Type for %s",$h );
         }
 	if (!$is_valid_attribute{$key} and $key =~ m/^[A-Z]/) {
 	    local $^W; # hide undef warnings

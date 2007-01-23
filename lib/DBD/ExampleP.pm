@@ -60,7 +60,11 @@
         my($drh, $dbname, $user, $auth)= @_;
         my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dbname });
         $dbh->STORE('Active', 1);
-        $dbh->{examplep_get_info} = {};
+        $dbh->{examplep_get_info} = {
+            29 => '"',  # SQL_IDENTIFIER_QUOTE_CHAR
+            41 => '.',  # SQL_CATALOG_NAME_SEPARATOR
+            114 => 1,   # SQL_CATALOG_LOCATION
+        };
         $dbh->{Name} = $dbname;
         return $outer;
     }
@@ -329,8 +333,6 @@
 
     sub fetch {
 	my $sth = shift;
-	my $dh  = $sth->{dbd_datahandle}
-            or return $sth->set_err(1, "fetch without successful execute");
 	my $dir = $sth->{dbd_dir};
 	my %s;
 
@@ -346,6 +348,8 @@
 	          $time, $time, $time, 512, 2, "file$num")
 	}
 	else {			# normal mode
+            my $dh  = $sth->{dbd_datahandle}
+                or return $sth->set_err(1, "fetch without successful execute");
 	    my $f = readdir($dh);
 	    unless ($f) {
 		$sth->finish;
@@ -409,7 +413,7 @@
 
     sub DESTROY {
 	my $sth = shift;
-	$sth->finish if $sth->SUPER::FETCH('Active');
+        #$sth->finish if $sth->SUPER::FETCH('Active');
     }
 
     *parse_trace_flag = \&DBD::ExampleP::db::parse_trace_flag;

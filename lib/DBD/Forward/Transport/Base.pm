@@ -32,7 +32,8 @@ sub thaw_data {
 sub _dump {
     my ($self, $label, $data) = @_;
     require Data::Dumper;
-    warn "$label=".Dumper($request);
+    warn "$label=".Dumper($data);
+
 }
 
 1;

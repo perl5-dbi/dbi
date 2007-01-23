@@ -79,6 +79,8 @@
 	return $dbh->SUPER::STORE($attrib, $value);
     }
 
+    sub ping { 1 }
+
     sub disconnect {
 	shift->STORE(Active => 0);
     }

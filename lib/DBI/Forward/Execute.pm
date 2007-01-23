@@ -41,14 +41,35 @@ sub _connect {
         PrintError => 0,
         RaiseError => 1,
     });
-    #$dbh->trace(1);
+    #$dbh->trace(0);
     return $dbh;
 }
 
+
 sub _reset_dbh {
     my ($dbh) = @_;
-    $dbh->trace(0, \*STDERR);
+    $dbh->set_err(undef, undef); # clear any error state
+    #$dbh->trace(0, \*STDERR);
 }
+
+
+sub _new_response_with_err {
+    my ($rv) = @_;
+
+    my ($err, $errstr, $state) = ($DBI::err, $DBI::errstr, $DBI::state);
+    if ($@ and !$errstr || $@ !~ /^DBD::/) {
+        $err ||= 1;
+        $errstr = ($errstr) ? "$errstr; $@" : $@;
+    }
+    my $response = DBI::Forward::Response->new({
+        rv     => $rv,
+        err    => $err,
+        errstr => $errstr,
+        state  => $state,
+    });
+    return $response;
+}
+
 
 sub execute_request {
     my $request = shift;
@@ -78,17 +99,15 @@ sub execute_dbh_request {
             : scalar $dbh->$meth(@$args);
         \@rv;
     };
-    my $response = DBI::Forward::Response->new({
-        rv     => $rv,
-        err    => $DBI::err,
-        errstr => $DBI::errstr,
-        state  => $DBI::state,
-    });
-    $response->last_insert_id = $dbh->last_insert_id( @{ $request->dbh_last_insert_id_args })
-        if $dbh && $rv && $request->dbh_last_insert_id_args;
-    _reset_dbh($dbh);
+    my $response = _new_response_with_err($rv);
+    if ($dbh) {
+        $response->last_insert_id = $dbh->last_insert_id( @{ $request->dbh_last_insert_id_args })
+            if $rv && $request->dbh_last_insert_id_args;
+        _reset_dbh($dbh);
+    }
     return $response;
 }
+
 
 sub execute_sth_request {
     my $request = shift;
@@ -109,15 +128,10 @@ sub execute_sth_request {
 
         $sth->execute();
     };
-    my $response = DBI::Forward::Response->new({
-        rv     => $rv,
-        err    => $DBI::err,
-        errstr => $DBI::errstr,
-        state  => $DBI::state,
-    });
+    my $response = _new_response_with_err($rv);
 
     # even if the eval failed we still want to gather attribute values
-    my $resultset_list = eval {
+    my $resultset_list = $sth && eval {
         my $attr_list = $request->sth_result_attr;
         $attr_list = [ keys %$attr_list ] if ref $attr_list eq 'HASH';
         my $rs_list = [];
@@ -133,10 +147,11 @@ sub execute_sth_request {
     # XXX would be nice to be able to support streaming of results
     # which would reduce memory usage and latency for large results
 
-    _reset_dbh($dbh);
+    _reset_dbh($dbh) if $dbh;
 
     return $response;
 }
+
 
 sub fetch_result_set {
     my ($sth, $extra_attr) = @_;

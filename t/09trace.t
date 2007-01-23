@@ -94,7 +94,7 @@ $dbh->{TraceLevel} = 'ALL';
 ok $dbh->{TraceLevel};
 
 {
-    print "unknown parse_trace_flag\n";
+    print "test unknown parse_trace_flag\n";
     my $warn = 0;
     local $SIG{__WARN__} = sub {
         if ($_[0] =~ /unknown/i) { ++$warn; print "warn: ",@_ }else{ warn @_ }

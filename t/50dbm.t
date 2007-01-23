@@ -5,6 +5,8 @@ use File::Path;
 use Test::More;
 use Config qw(%Config);
 
+my $using_dbd_forward_null = ($ENV{DBI_AUTOPROXY}||'') =~ /dbi:Forward.*transport=null/i;
+
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
 BEGIN {
@@ -42,7 +44,7 @@ BEGIN {
     print "Using DBM modules: @dbm_types\n";
     print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
-    my $num_tests = (1+@mldbm_types) * @dbm_types * 11;
+    my $num_tests = (1+@mldbm_types) * @dbm_types * 12;
 	
     if (!$num_tests) {
         plan skip_all => "No DBM modules available";
@@ -80,26 +82,42 @@ sub do_test {
     # (This test script doesn't test that locking actually works anyway.)
 
     my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
+
+    if ($using_dbd_forward_null) {
+        $dsn .= ";f_dir=$dir";
+    }
+
     my $dbh = DBI->connect( $dsn );
 
-    if ($DBI::VERSION >= 1.37 ) { # needed for install_method
-        print $dbh->dbm_versions;
+    my $dbm_versions;
+    if ($DBI::VERSION >= 1.37   # needed for install_method
+    && !$ENV{DBI_AUTOPROXY}     # can't transparently proxy driver-private methods
+    ) {
+        $dbm_versions = $dbh->dbm_versions;
     }
     else {
-        print $dbh->func('dbm_versions');
+        $dbm_versions = $dbh->func('dbm_versions');
     }
+    print $dbm_versions;
+    ok($dbm_versions);
     isa_ok($dbh, 'DBI::db');
 
     # test if it correctly accepts valid $dbh attributes
-    #
-    eval {$dbh->{f_dir}=$dir};
-    ok(!$@);
-    eval {$dbh->{dbm_mldbm}=$mldbm};
-    ok(!$@);
+    SKIP: {
+        skip "Can't set attributes after connect using DBD::Forward", 2
+            if $using_dbd_forward_null;
+        eval {$dbh->{f_dir}=$dir};
+        ok(!$@);
+        eval {$dbh->{dbm_mldbm}=$mldbm};
+        ok(!$@);
+    }
 
     # test if it correctly rejects invalid $dbh attributes
     #
-    eval {$dbh->{dbm_bad_name}=1};
+    eval {
+        local $SIG{__WARN__} = sub { } if $using_dbd_forward_null;
+        $dbh->{dbm_bad_name}=1;
+    };
     ok($@);
 
     for my $sql ( @$stmts ) {

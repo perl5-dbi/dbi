@@ -24,6 +24,8 @@ if (!$HAS_WEAKEN) {
 
 plan tests => 14;
 
+my $drh;
+
 {
     # make 10 connections
     my @dbh;
@@ -33,12 +35,11 @@ plan tests => 14;
     }
     
     # get the driver handle
-    my %drivers = DBI->installed_drivers();
-    my $driver = $drivers{ExampleP};
-    ok $driver;
+    $drh = $dbh[0]->{Driver};
+    ok $drh;
 
     # get the kids, should be the same list of connections
-    my $db_handles = $driver->{ChildHandles};
+    my $db_handles = $drh->{ChildHandles};
     is ref $db_handles, 'ARRAY';
     is scalar @$db_handles, scalar @dbh;
 
@@ -52,10 +53,7 @@ plan tests => 14;
 
 # now all the out-of-scope DB handles should be gone
 {
-    my %drivers = DBI->installed_drivers();
-    my $driver = $drivers{ExampleP};
-
-    my $handles = $driver->{ChildHandles};
+    my $handles = $drh->{ChildHandles};
     my @db_handles = grep { defined } @$handles;
     is scalar @db_handles, 0, "All handles should be undef now";
 }
@@ -68,9 +66,10 @@ is_deeply $empty, [], "ChildHandles should be an array-ref if wekref is availabl
 # test child handles for statement handles
 {
     my @sth;
-    for (1 .. 200) {
+    my $sth_count = 200;
+    for (1 .. $sth_count) {
         my $sth = $dbh->prepare('SELECT name FROM t');
-        push(@sth, $sth);
+        push @sth, $sth;
     }
     my $handles = $dbh->{ChildHandles};
     is scalar @$handles, scalar @sth;
@@ -85,10 +84,11 @@ is_deeply $empty, [], "ChildHandles should be an array-ref if wekref is availabl
         show_child_handles($_, $level + 1) 
           for (grep { defined } @{$h->{ChildHandles}});
     }   
-    show_child_handles($_) for (values %{{DBI->installed_drivers()}});
+    my $drh = $dbh->{Driver};
+    show_child_handles($drh, 0);
     print @lines[0..4];
 
-    is scalar @lines, 202;
+    is scalar @lines, $sth_count + 2;
     like $lines[0], qr/^drh/;
     like $lines[1], qr/^dbh/;
     like $lines[2], qr/^sth/;

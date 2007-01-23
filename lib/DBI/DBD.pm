@@ -3002,6 +3002,9 @@ sub dbd_edit_mm_attribs {
 	    pp => {	name => "DBI::PurePerl",
 			add => [ 'local $ENV{DBI_PUREPERL} = 2;' ],
 	    },
+	    fw => {	name => "DBD::Forward",
+			add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null';} ],
+	    },
 	    mx => {	name => "DBD::Multiplex",
 			add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
 	    }

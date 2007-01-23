@@ -115,6 +115,7 @@ foreach (1,2,3) {
   $sth3->fetchrow_hashref;
   $sth3->finish;
 }
+$dbh->disconnect;
 undef $dbh;
 
 # load dbi.prof

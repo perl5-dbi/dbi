@@ -577,8 +577,9 @@ sub connect {
 	my $proxy = 'Proxy';
 	if ($dbi_autoproxy =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i) {
 	    $proxy = $1;
-	    my $attr_spec = $2 || '';
-	    $driver_attrib_spec = ($driver_attrib_spec) ? "$driver_attrib_spec,$attr_spec" : $attr_spec;
+	    $driver_attrib_spec = join ",",
+                ($driver_attrib_spec) ? $driver_attrib_spec : (),
+                ($2                 ) ? $2                  : ();
 	}
 	$dsn = "$dbi_autoproxy;dsn=dbi:$driver:$dsn";
 	$driver = $proxy;

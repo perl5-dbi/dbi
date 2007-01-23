@@ -17,10 +17,13 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
+# XXX track installed_methods and install proxies on client side after connect?
+
     # attributes we'll allow local STORE
     our %xxh_local_store_attrib = map { $_=>1 } qw(
         Active
         CachedKids
+        Callbacks
         ErrCount Executed
         FetchHashKeyName
         HandleError HandleSetErr
@@ -28,11 +31,13 @@
         PrintError PrintWarn
         Profile
         RaiseError
+        RootClass
         ShowErrorStatement
         Taint TaintIn TaintOut
         TraceLevel
         Warn
         dbi_connect_closure
+        dbi_quote_identifier_cache
     );
 
     our $drh = undef;	# holds driver handle once initialised
@@ -100,7 +105,7 @@
 
         my $transport_class = $dsn_attr{fwd_transport}
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
-        $transport_class = "DBI::Forward::Transport::$dsn_attr{fwd_transport}"
+        $transport_class = "DBD::Forward::Transport::$dsn_attr{fwd_transport}"
             unless $transport_class =~ /::/;
         eval "require $transport_class"
             or return $drh->set_err(1, "Error loading $transport_class: $@");
@@ -122,8 +127,17 @@
             fwd_request => $fwd_request,
         });
 
-        # store and delete the attributes before marking connection Active
-        $dbh->STORE($_ => delete $attr->{$_}) for keys %$attr;
+        $dbh->STORE(Active => 0); # mark as inactive temporarily for STORE
+
+        # Store and delete the attributes before marking connection Active
+        # Leave RaiseError & PrintError in %$attr so DBI's connect can
+        # act on them if the connect fails
+        $dbh->STORE($_ => delete $attr->{$_})
+            for grep { !m/^(RaiseError|PrintError)$/ } keys %$attr;
+
+        # test the connection XXX control via a policy later
+        $dbh->fwd_dbh_method('ping', undef)
+            or return;
 
         $dbh->STORE(Active => 1);
 
@@ -149,7 +163,11 @@
 
         my $transport = $dbh->{fwd_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
-        my $response = $transport->execute($request);
+
+        eval { $transport->transmit_request($request) }
+            or return $dbh->set_err(1, "transmit_request failed: $@");
+
+        my $response = $transport->receive_response;
 
         $dbh->{fwd_response} = $response;
 
@@ -162,9 +180,11 @@
     # Methods that should be forwarded
     # XXX get_info? special sub to lazy-cache individual values
     for my $method (qw(
-        do data_sources
+        data_sources
         table_info column_info primary_key_info foreign_key_info statistics_info
         type_info_all get_info
+        parse_trace_flags parse_trace_flag
+        func
     )) {
         no strict 'refs';
         *$method = sub { return shift->fwd_dbh_method($method, undef, @_) }
@@ -180,6 +200,13 @@
 
     # for quote we rely on the default method + type_info_all
     # for quote_identifier we rely on the default method + get_info
+
+    sub do {
+        my $dbh = shift;
+        delete $dbh->{Statement}; # avoid "Modification of non-creatable hash value attempted"
+        $dbh->{Statement} = $_[0]; # for profiling and ShowErrorStatement
+        return $dbh->fwd_dbh_method('do', undef, @_);
+    }
 
     sub ping {
         my $dbh = shift;
@@ -197,8 +224,15 @@
 
     sub FETCH {
 	my ($dbh, $attrib) = @_;
-	# AutoCommit needs special handling
-	return 1 if $attrib eq 'AutoCommit';
+	return 1 if $attrib eq 'AutoCommit'; # AutoCommit needs special handling
+
+        # forward driver-private attributes
+        if ($attrib =~ m/^[a-z]/) { # XXX policy? precache on connect?
+            my $value = $dbh->fwd_dbh_method('FETCH', undef, $attrib);
+            $dbh->{$attrib} = $value;
+            return $value;
+        }
+
 	# else pass up to DBI to handle
 	return $dbh->SUPER::FETCH($attrib);
     }
@@ -206,7 +240,7 @@
     sub STORE {
 	my ($dbh, $attrib, $value) = @_;
         if ($attrib eq 'AutoCommit') {
-            return 1 if $value;
+            return $dbh->SUPER::STORE($attrib => -901) if $value;
             croak "Can't enable transactions when using DBD::Forward";
         }
 	return $dbh->SUPER::STORE($attrib => $value)
@@ -286,7 +320,13 @@
         $request->sth_method_calls($sth->{fwd_method_calls});
         $request->sth_result_attr({});
 
-        my $response = $sth->{fwd_trans}->execute($request);
+        my $transport = $sth->{fwd_trans}
+            or return $sth->set_err(1, "Not connected (no transport)");
+
+        eval { $transport->transmit_request($request) }
+            or return $sth->set_err(1, "transmit_request failed: $@");
+
+        my $response = $transport->receive_response;
 
         $sth->{fwd_response} = $response;
         $sth->{fwd_method_calls} = [];
@@ -296,6 +336,7 @@
             $sth->more_results;
         }
 
+        # set error/warn/info (after more_results as that'll clear err)
         $sth->set_err($response->err, $response->errstr, $response->state);
 
         return $response->rv;
@@ -324,7 +365,8 @@
 
         if ($NUM_OF_FIELDS > 0) {
             $sth->{fwd_current_rowset} = $rowset;
-            $sth->{fwd_current_rowset_err} = [ $err, $errstr, $state ] if $err;
+            $sth->{fwd_current_rowset_err} = [ $err, $errstr, $state ]
+                if defined $err;
             $sth->STORE(Active => 1) if $rowset;
         }
 
@@ -336,13 +378,19 @@
 	my ($sth) = @_;
 	my $resultset = $sth->{fwd_current_rowset}
             or return $sth->set_err( @{ $sth->{fwd_current_rowset_err} } );
-        return shift @$resultset if @$resultset;
+        return $sth->_set_fbav(shift @$resultset) if @$resultset;
 	$sth->finish;     # no more data so finish
 	return undef;
     }
     *fetch = \&fetchrow_arrayref; # alias
 
-    # XXX fetchall_arrayref - for speed
+    sub fetchall_arrayref {
+	my ($sth) = @_;
+	my $resultset = $sth->{fwd_current_rowset}
+            or return $sth->set_err( @{ $sth->{fwd_current_rowset_err} } );
+	$sth->finish;     # no more data so finish
+        return $resultset;
+    }
 
     sub rows {
         my $sth = shift;
@@ -358,9 +406,9 @@
             or $attrib =~ m/^[a-z]/;             # driver-private
 
         # ignore values that aren't actually being changed
-        my $prev = $sth->FETCH($attrib);
-        return 1 if !defined $value && !defined $prev
-                 or defined $value && defined $prev && $value eq $prev;
+        #my $prev = $sth->FETCH($attrib);
+        #return 1 if !defined $value && !defined $prev
+        #         or defined $value && defined $prev && $value eq $prev;
 
         # sth attributes are set at connect-time - see connect()
         Carp::carp("Can't alter \$sth->{$attrib}");

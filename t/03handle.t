@@ -120,7 +120,7 @@ do {
 
 	ok($sth4->execute("."), '... fourth statement handle executed properly');
 	ok($sth4->{Active}, '... fourth statement handle is Active');
-	
+
 	my $sth5 = $dbh->prepare_cached($sql, undef, 1);
 	isa_ok($sth5, 'DBI::st');
 	
