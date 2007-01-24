@@ -90,7 +90,7 @@ sub execute_request {
 sub execute_dbh_request {
     my $request = shift;
     my $dbh;
-    my $rv = eval {
+    my $rv_ref = eval {
         $dbh = _connect($request);
         my $meth = $request->dbh_method_name;
         my $args = $request->dbh_method_args;
@@ -99,11 +99,18 @@ sub execute_dbh_request {
             : scalar $dbh->$meth(@$args);
         \@rv;
     };
-    my $response = _new_response_with_err($rv);
+    my $response = _new_response_with_err($rv_ref);
     if ($dbh) {
         $response->last_insert_id = $dbh->last_insert_id( @{ $request->dbh_last_insert_id_args })
-            if $rv && $request->dbh_last_insert_id_args;
+            if $rv_ref && $request->dbh_last_insert_id_args;
         _reset_dbh($dbh);
+    }
+    if ($rv_ref and UNIVERSAL::isa($rv_ref->[0],'DBI::st')) {
+        my $rv = $rv_ref->[0];
+        # dbh_method_call was probably a metadata method like table_info
+        # that returns a statement handle, so turn the $sth into resultset
+        $response->sth_resultsets( _gather_sth_resultsets($rv, $request) );
+        $response->rv("(sth)");
     }
     return $response;
 }
@@ -120,18 +127,32 @@ sub execute_sth_request {
         my $meth = $request->dbh_method_name;
         my $args = $request->dbh_method_args;
         $sth = $dbh->$meth(@$args);
+        my $last = '(sth)'; # a true value
 
+        # execute methods on the sth, e.g., bind_param & execute
         for my $meth_call (@{ $request->sth_method_calls }) {
             my $method = shift @$meth_call;
-            $sth->$method(@$meth_call);
+            $last = $sth->$method(@$meth_call);
         }
-
-        $sth->execute();
+        $last;
     };
     my $response = _new_response_with_err($rv);
 
-    # even if the eval failed we still want to gather attribute values
-    my $resultset_list = $sth && eval {
+    # even if the eval failed we still want to try to gather attribute values
+    $response->sth_resultsets( _gather_sth_resultsets($sth, $request) ) if $sth;
+
+    # XXX would be nice to be able to support streaming of results
+    # which would reduce memory usage and latency for large results
+
+    _reset_dbh($dbh) if $dbh;
+
+    return $response;
+}
+
+
+sub _gather_sth_resultsets {
+    my ($sth, $request) = @_;
+    return eval {
         my $attr_list = $request->sth_result_attr;
         $attr_list = [ keys %$attr_list ] if ref $attr_list eq 'HASH';
         my $rs_list = [];
@@ -142,14 +163,6 @@ sub execute_sth_request {
 
         $rs_list;
     };
-    $response->sth_resultsets( $resultset_list );
-
-    # XXX would be nice to be able to support streaming of results
-    # which would reduce memory usage and latency for large results
-
-    _reset_dbh($dbh) if $dbh;
-
-    return $response;
 }
 
 

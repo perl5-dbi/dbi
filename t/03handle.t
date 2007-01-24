@@ -359,7 +359,7 @@ do {
     isa_ok($sth, "DBI::st");
 
     cmp_ok($sth->{NUM_OF_PARAMS}, '==', 0, '... NUM_OF_PARAMS is 0');
-    ok(!defined $sth->{NUM_OF_FIELDS}, '... NUM_OF_FIELDS is undefined');
+    is($sth->{NUM_OF_FIELDS}, undef, '... NUM_OF_FIELDS should be undef');
     is($sth->{Statement}, "foo bar", '... Statement is "foo bar"');
 
     ok(!defined $sth->{NAME},         '... NAME is undefined');

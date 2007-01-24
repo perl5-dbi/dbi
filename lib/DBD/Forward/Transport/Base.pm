@@ -18,11 +18,13 @@ __PACKAGE__->mk_accessors(qw(
 sub freeze_data {
     my ($self, $data) = @_;
     $self->_dump(ref($data), $data) if $debug;
+    local $Storable::forgive_me = 1; # for CODE refs etc
     return freeze($data);
 }   
 
 sub thaw_data {
     my ($self, $frozen_data) = @_;
+    local $Storable::forgive_me = 1; # for CODE refs etc
     my $data = thaw($frozen_data);
     $self->_dump(ref($data), $data) if $debug;
     return $data;
@@ -32,7 +34,8 @@ sub thaw_data {
 sub _dump {
     my ($self, $label, $data) = @_;
     require Data::Dumper;
-    warn "$label=".Dumper($data);
+    # XXX dd settings
+    warn "$label=".Data::Dumper::Dumper($data);
 
 }
 

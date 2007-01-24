@@ -1714,7 +1714,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
             PerlIO_printf(DBILOGFP,"Warning: changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated",
                     SvIV(valuesv), DBIc_NUM_FIELDS(imp_sth));
         }
-	DBIc_NUM_FIELDS(imp_sth) = SvIV(valuesv);
+	DBIc_NUM_FIELDS(imp_sth) = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
 	cacheit = 1;
     }
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_PARAMS")) {

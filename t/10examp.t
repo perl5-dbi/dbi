@@ -12,7 +12,7 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 216;
+use Test::More tests => 206;
 
 # "globals"
 my ($r, $dbh);
@@ -133,7 +133,7 @@ ok(ref $csr_a);
 ok($csr_a->{NUM_OF_FIELDS} == 3);
 
 SKIP: {
-	skip "dont test for DBI::PurePerl", 3 if $DBI::PurePerl;
+    skip "inner/outer handles not fully supported for DBI::PurePerl", 3 if $DBI::PurePerl;
     ok(tied %{ $csr_a->{Database} });	# ie is 'outer' handle
     ok($csr_a->{Database} eq $dbh, "$csr_a->{Database} ne $dbh")
 	unless $dbh->{mx_handle_list} && ok(1); # skip for Multiplex tests
@@ -141,11 +141,13 @@ SKIP: {
 }
 
 my $driver_name = $csr_a->{Database}->{Driver}->{Name};
-ok($driver_name eq 'ExampleP');
+ok($driver_name eq 'ExampleP')
+    unless $ENV{DBI_AUTOPROXY} && ok(1);
 
 # --- FetchHashKeyName
 $dbh->{FetchHashKeyName} = 'NAME_uc';
 my $csr_b = $dbh->prepare($std_sql);
+$csr_b->execute('.');
 ok(ref $csr_b);
 
 ok($csr_a != $csr_b);
@@ -347,25 +349,6 @@ ok($r->[1] eq $row_b[1]);
 
 # ---
 
-print "begin_work...\n";
-ok($dbh->{AutoCommit});
-ok(!$dbh->{BegunWork});
-
-ok($dbh->begin_work);
-ok(!$dbh->{AutoCommit});
-ok($dbh->{BegunWork});
-
-$dbh->commit;
-ok($dbh->{AutoCommit});
-ok(!$dbh->{BegunWork});
-
-ok($dbh->begin_work({}));
-$dbh->rollback;
-ok($dbh->{AutoCommit});
-ok(!$dbh->{BegunWork});
-
-# ---
-
 print "others...\n";
 my $csr_c;
 $csr_c = $dbh->prepare("select unknown_field_name1 from ?");
@@ -450,7 +433,7 @@ ok($@ =~ m/^HandleError:/, $@);
 print "HandleError -> 0 -> RaiseError\n";
 $HandleErrorReturn = 0;
 ok(! eval { $csr_c = $dbh->prepare($error_sql); 1; });
-ok($@ =~ m/^DBD::(ExampleP|Multiplex)::db prepare failed:/, $@);
+ok($@ =~ m/^DBD::(ExampleP|Multiplex|Forward)::db prepare failed:/, $@);
 
 print "HandleError -> 1 -> return (original)undef\n";
 $HandleErrorReturn = 1;

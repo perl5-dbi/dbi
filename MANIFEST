@@ -75,6 +75,7 @@ t/42prof_data.t
 t/43prof_env.t
 t/50dbm.t
 t/60preparse.t
+t/65transact.t
 t/70callbacks.t
 t/72childhandles.t
 t/80proxy.t

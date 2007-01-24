@@ -48,8 +48,10 @@
 
         DBI->setup_driver('DBD::Forward');
 
-        DBD::Forward::db->install_method('fwd_dbh_method', { O=> 0x0004 }) # IMA_KEEP_ERR
-            unless $methods_already_installed++;
+        unless ($methods_already_installed++) {
+            DBD::Forward::db->install_method('fwd_dbh_method', { O=> 0x0004 }); # IMA_KEEP_ERR
+            DBD::Forward::st->install_method('fwd_sth_method', { O=> 0x0004 }); # IMA_KEEP_ERR
+        }
 
 	my($class, $attr) = @_;
 	$class .= "::dr";
@@ -125,6 +127,7 @@
             'USER' => $user,
             fwd_trans => $fwd_trans,
             fwd_request => $fwd_request,
+            fwd_policy => undef, # XXX
         });
 
         $dbh->STORE(Active => 0); # mark as inactive temporarily for STORE
@@ -138,6 +141,7 @@
         # test the connection XXX control via a policy later
         $dbh->fwd_dbh_method('ping', undef)
             or return;
+            # unless $policy->skip_connect_ping($attr, $dsn, $user, $auth, $attr);
 
         $dbh->STORE(Active => 1);
 
@@ -157,7 +161,6 @@
 
     sub fwd_dbh_method {
         my ($dbh, $method, $meta, @args) = @_;
-        $dbh->trace_msg("     fwd_dbh_method($dbh, $method, @args)\n");
         my $request = $dbh->{fwd_request};
         $request->init_request($method, \@args, wantarray);
 
@@ -168,12 +171,22 @@
             or return $dbh->set_err(1, "transmit_request failed: $@");
 
         my $response = $transport->receive_response;
+        my $rv = $response->rv;
 
         $dbh->{fwd_response} = $response;
 
+        if (my $resultset_list = $response->sth_resultsets) {
+            # setup an sth but don't execute/forward it
+            my $sth = $dbh->prepare(undef, { fwd_skip_early_prepare => 1 }); # XXX
+            # set the sth response to our dbh response
+            (tied %$sth)->{fwd_response} = $response;
+            # setup the set with the results in our response
+            $sth->more_results;
+            $rv = [ $sth ];
+        }
+
         $dbh->set_err($response->err, $response->errstr, $response->state);
-        #$dbh->rows($response->rows); # can't, and not needed?
-        my $rv = $response->rv;
+
         return (wantarray) ? @$rv : $rv->[0];
     }
 
@@ -195,7 +208,7 @@
         begin_work commit rollback
     )) {
         no strict 'refs';
-        *$method = sub { return shift->set_err(1, "$method not available") }
+        *$method = sub { return shift->set_err(1, "$method not available with DBD::Forward") }
     }
 
     # for quote we rely on the default method + type_info_all
@@ -211,7 +224,7 @@
     sub ping {
         my $dbh = shift;
         # XXX local or remote - add policy attribute
-        return 0 unless $dbh->FETCH('Active');
+        return 0 unless $dbh->SUPER::FETCH('Active');
         return $dbh->fwd_dbh_method('ping', undef, @_);
     }
 
@@ -224,7 +237,6 @@
 
     sub FETCH {
 	my ($dbh, $attrib) = @_;
-	return 1 if $attrib eq 'AutoCommit'; # AutoCommit needs special handling
 
         # forward driver-private attributes
         if ($attrib =~ m/^[a-z]/) { # XXX policy? precache on connect?
@@ -265,21 +277,34 @@
 	$dbh->STORE(Active => 0);
     }
 
+    # XXX + prepare_cached ?
+    #
     sub prepare {
 	my ($dbh, $statement, $attr)= @_;
 
         return $dbh->set_err(1, "Can't prepare when disconnected")
             unless $dbh->FETCH('Active');
 
-	my ($outer, $sth) = DBI::_new_sth($dbh, {
+        my $policy = $attr->{fwd_policy} || $dbh->{fwd_policy};
+
+	my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
 	    Statement => $statement,
-            fwd_prepare_args => [ $statement, $attr ],
+            fwd_prepare_call => [ 'prepare', [ $statement, $attr ] ],
             fwd_method_calls => [],
             fwd_request => $dbh->{fwd_request},
             fwd_trans => $dbh->{fwd_trans},
+            fwd_policy => $policy,
         });
 
-	$outer;
+        #my $p_sep = $policy->skip_early_prepare($attr, $dbh, $statement, $attr, $sth);
+        my $p_sep = 0;
+
+        $p_sep = 1 if not defined $statement; # XXX hack, see fwd_dbh_method
+        if (not $p_sep) {
+            $sth->fwd_sth_method() or return undef;
+        }
+
+	return $sth;
     }
 
 }
@@ -291,55 +316,67 @@
 
     my %sth_local_store_attrib = (%DBD::Forward::xxh_local_store_attrib, NUM_OF_FIELDS => 1);
 
+    sub fwd_sth_method {
+        my ($sth) = @_;
+
+        if (my $ParamValues = $sth->{ParamValues}) {
+            my $ParamAttr = $sth->{ParamAttr};
+            while ( my ($p, $v) = each %$ParamValues) {
+                # unshift to put binds before execute call
+                unshift @{ $sth->{fwd_method_calls} },
+                    [ 'bind_param', $p, $v, $ParamAttr->{$p} ];
+            }
+        }
+
+        my $request = $sth->{fwd_request};
+        $request->init_request(@{$sth->{fwd_prepare_call}}, undef);
+        $request->sth_method_calls($sth->{fwd_method_calls});
+        $request->sth_result_attr({});
+
+        my $transport = $sth->{fwd_trans}
+            or return $sth->set_err(1, "Not connected (no transport)");
+        eval { $transport->transmit_request($request) }
+            or return $sth->set_err(1, "transmit_request failed: $@");
+        my $response = $transport->receive_response;
+        $sth->{fwd_response} = $response;
+        delete $sth->{fwd_method_calls};
+
+        if ($response->sth_resultsets) {
+            # setup first resultset - including atributes
+            $sth->more_results;
+        }
+        else {
+            $sth->{fwd_rows} = $response->rv;
+        }
+        # set error/warn/info (after more_results as that'll clear err)
+        $sth->set_err($response->err, $response->errstr, $response->state);
+
+        return $response->rv;
+    }
+
 
     # sth methods that should always fail, at least for now
     for my $method (qw(
         bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch
     )) {
         no strict 'refs';
-        *$method = sub { return shift->set_err(1, "$method not available") }
+        *$method = sub { return shift->set_err(1, "$method not available with DBD::Forward, yet (patches welcome)") }
     }
 
 
     sub bind_param {
         my ($sth, $param, $value, $attr) = @_;
         $sth->{ParamValues}{$param} = $value;
-        push @{ $sth->{fwd_method_calls} }, [ 'bind_param', $param, $value, $attr ];
+        $sth->{ParamAttr}{$param} = $attr;
         return 1;
     }
 
 
     sub execute {
-	my($sth, @bind) = @_;
-
-        # XXX validate that @bind==NUM_OFPARAM
-        $sth->bind_param($_, $bind[$_-1]) for (1..@bind);
-
-        my $request = $sth->{fwd_request};
-        $request->init_request('prepare', $sth->{fwd_prepare_args}, undef);
-        $request->sth_method_calls($sth->{fwd_method_calls});
-        $request->sth_result_attr({});
-
-        my $transport = $sth->{fwd_trans}
-            or return $sth->set_err(1, "Not connected (no transport)");
-
-        eval { $transport->transmit_request($request) }
-            or return $sth->set_err(1, "transmit_request failed: $@");
-
-        my $response = $transport->receive_response;
-
-        $sth->{fwd_response} = $response;
-        $sth->{fwd_method_calls} = [];
-
-        # setup first resultset - including atributes
-        if ($response->sth_resultsets) {
-            $sth->more_results;
-        }
-
-        # set error/warn/info (after more_results as that'll clear err)
-        $sth->set_err($response->err, $response->errstr, $response->state);
-
-        return $response->rv;
+	my $sth = shift;
+        $sth->bind_param($_, $_[$_-1]) for (1..@_);
+        push @{ $sth->{fwd_method_calls} }, [ 'execute' ];
+        return $sth->fwd_sth_method;
     }
 
 
@@ -359,11 +396,12 @@
             = delete @{$meta}{qw(rowset err errstr state)};
 
         # copy meta attributes into attribute cache
-        my $NUM_OF_FIELDS = delete $meta->{NUM_OF_FIELDS} || 0;
+        my $NUM_OF_FIELDS = delete $meta->{NUM_OF_FIELDS};
         $sth->STORE('NUM_OF_FIELDS', $NUM_OF_FIELDS);
         $sth->{$_} = $meta->{$_} for keys %$meta;
 
-        if ($NUM_OF_FIELDS > 0) {
+        if (($NUM_OF_FIELDS||0) > 0) {
+            $sth->{fwd_rows}           = ($rowset) ? @$rowset : -1;
             $sth->{fwd_current_rowset} = $rowset;
             $sth->{fwd_current_rowset_err} = [ $err, $errstr, $state ]
                 if defined $err;
@@ -384,18 +422,21 @@
     }
     *fetch = \&fetchrow_arrayref; # alias
 
+
     sub fetchall_arrayref {
-	my ($sth) = @_;
+        my ($sth, $slice, $max_rows) = @_;
+        my $mode = ref($slice) || 'ARRAY';
+        return $sth->SUPER::fetchall_arrayref($slice, $max_rows)
+            if ref($slice) or defined $max_rows;
 	my $resultset = $sth->{fwd_current_rowset}
             or return $sth->set_err( @{ $sth->{fwd_current_rowset_err} } );
 	$sth->finish;     # no more data so finish
         return $resultset;
     }
 
+
     sub rows {
-        my $sth = shift;
-        my $response = $sth->{fwd_response} or return -1;
-        return $response->rv;
+        return shift->{fwd_rows};
     }
 
 
@@ -405,12 +446,8 @@
             if $sth_local_store_attrib{$attrib}  # handle locally
             or $attrib =~ m/^[a-z]/;             # driver-private
 
-        # ignore values that aren't actually being changed
-        #my $prev = $sth->FETCH($attrib);
-        #return 1 if !defined $value && !defined $prev
-        #         or defined $value && defined $prev && $value eq $prev;
-
-        # sth attributes are set at connect-time - see connect()
+        # XXX could perhaps do
+        # XXX? push @{ $sth->{fwd_method_calls} }, [ 'STORE', $attrib, $value ];
         Carp::carp("Can't alter \$sth->{$attrib}");
         return $sth->set_err(1, "Can't alter \$sth->{$attrib}");
     }

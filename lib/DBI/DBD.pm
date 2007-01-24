@@ -3000,22 +3000,22 @@ sub dbd_edit_mm_attribs {
 	# so 'make' creates them and 'make clean' deletes them
 	my %test_variants = (
 	    pp => {	name => "DBI::PurePerl",
-			add => [ 'local $ENV{DBI_PUREPERL} = 2;' ],
+			add => [ '$ENV{DBI_PUREPERL} = 2' ],
 	    },
 	    fw => {	name => "DBD::Forward",
-			add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null';} ],
+			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null'} ],
 	    },
-	    mx => {	name => "DBD::Multiplex",
-			add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
-	    }
+	    xpf => {	name => "PurePerl & Forward",
+			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null'} ],
+	    },
+	#   mx => {	name => "DBD::Multiplex",
+	#               add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
+	#   }
 	#   px => {	name => "DBD::Proxy",
 	#		need mechanism for starting/stopping the proxy server
 	#		add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Proxy:XXX';} ],
 	#   }
 	);
-	# currently many tests fail - DBD::Multiplex needs more work
-	# to bring it up to date and improve transparency.
-	delete $test_variants{mx}; # unless -f "lib/DBD/Multiplex.pm";
 
 	opendir DIR, 't' or die "Can't create variants of tests in 't' directory: $!";
 	my @tests = grep { /\.t$/ } readdir DIR;
@@ -3023,18 +3023,19 @@ sub dbd_edit_mm_attribs {
 
 	# XXX one day we may try combinations here, ie pp+mx!
 
-	foreach my $test (sort @tests) {
-	    next if $test !~ /^[0-8]/;
-	    my $usethr = ($test =~ /(\d+|\b)thr/ && $] >= 5.008 && $Config{useithreads});
+        while ( my ($v_type, $v_info) = each %test_variants ) {
+            printf "Creating test wrappers for $v_info->{name}:\n";
 
-	    while ( my ($v_type, $v_info) = each %test_variants ) {
-		my $v_test = "t/zv${v_type}_$test";
-		printf "Creating %-16s test variant: $v_test %s\n",
-		    $v_info->{name}, ($usethr) ? "(use threads)" : "";
+            foreach my $test (sort @tests) {
+                next if $test !~ /^\d/;
+                my $usethr = ($test =~ /(\d+|\b)thr/ && $] >= 5.008 && $Config{useithreads});
+                my $v_test = "t/zv${v_type}_$test";
+                my $v_perl = ($test =~ /taint/) ? "perl -wT" : "perl -w";
+		printf "%s %s\n", $v_test, ($usethr) ? "(use threads)" : "";
 		open PPT, ">$v_test" or warn "Can't create $v_test: $!";
-		print PPT "#!perl -w\n";
+		print PPT "#!$v_perl\n";
 		print PPT "use threads;\n" if $usethr;
-		print PPT "$_\n" foreach @{$v_info->{add}};
+		print PPT "$_;\n" foreach @{$v_info->{add}};
 		print PPT "do 't/$test' or warn \$!;\n";
 		print PPT 'die if $@;'."\n";
 		print PPT "exit 0\n";
