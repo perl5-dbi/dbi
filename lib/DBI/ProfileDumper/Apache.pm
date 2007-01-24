@@ -119,9 +119,10 @@ it under the same terms as Perl 5 itself.
 
 =cut
 
-use vars qw($VERSION @ISA);
-$VERSION = "1.1";
-@ISA = qw(DBI::ProfileDumper);
+our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+
+our @ISA = qw(DBI::ProfileDumper);
+
 use DBI::ProfileDumper;
 use File::Spec;
 

@@ -4,8 +4,9 @@
     require DBI;
     require Carp;
 
-    @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.10 $ =~ /(\d+)\.(\d+)/o);
+    our @EXPORT = qw(); # Do NOT @EXPORT anything.
+    our $VERSION = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 #   $Id$
 #

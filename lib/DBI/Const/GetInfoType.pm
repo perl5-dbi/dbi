@@ -19,7 +19,8 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %GetInfoType);
 @EXPORT = qw(%GetInfoType);
 
 my
-$VERSION = sprintf "%d.%02d", '$Revision: 1.5 $ ' =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 =head1 NAME
 

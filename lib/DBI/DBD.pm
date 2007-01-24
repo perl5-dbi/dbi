@@ -3,7 +3,10 @@ package DBI::DBD;
 
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
-$VERSION = sprintf("%d.%02d", q$Revision: 11.22 $ =~ /(\d+)\.(\d+)/o);
+# don't use Revision here because that's not in svn:keywords so that the
+# examples that use it below won't be messed up
+$VERSION = sprintf("12.%06d", q$Id$ =~ /(\d+)/o);
+
 
 # $Id$
 #
@@ -639,7 +642,15 @@ It is recommended that you use a two-part (1.23) or three-part (1.23.45)
 version number. Also consider the CPAN system, which gets confused and
 considers version 1.10 to precede version 1.9, so that using a raw CVS,
 RCS or SCCS version number is probably not appropriate (despite being
-very common). For RCS or CVS you can use this code:
+very common).
+
+For Subversion you could use:
+
+  $VERSION = sprintf("12.%06d", q$Revision: 12345 $ =~ /(\d+)/o);
+
+(use lots of leading zeros on the second portion so if you move the code to a
+shared repository like svn.perl.org the much larger revision numbers won't
+cause a problem, at least not for a few years).  For RCS or CVS you can use:
 
   $VERSION = sprintf "%d.%02d", '$Revision: 11.21 $ ' =~ /(\d+)\.(\d+)/;
 

@@ -5,11 +5,11 @@
     require Carp;
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.4 $ =~ /(\d+)\.(\d+)/o);
+    $VERSION = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
 
 #   $Id$
 #
-#   Copyright (c) 1994, Tim Bunce
+#   Copyright (c) 1994-2007 Tim Bunce
 #
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.

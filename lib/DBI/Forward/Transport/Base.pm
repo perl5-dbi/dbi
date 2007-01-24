@@ -1,11 +1,20 @@
 package DBD::Forward::Transport::Base;
 
+#   $Id$
+#
+#   Copyright (c) 2007, Tim Bunce, Ireland
+#
+#   You may distribute under the terms of either the GNU General Public
+#   License or the Artistic License, as specified in the Perl README file.
+
 use strict;
 use warnings;
 
 use Storable qw(freeze thaw);
 
 use base qw(Class::Accessor::Fast);
+
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our $debug = $ENV{DBD_FORWARD_DEBUG} || 0;
 

@@ -40,7 +40,8 @@ Volunteers welcome!
 ${'DBI::VERSION'}	# hide version from PAUSE indexer
    = "0.01";
 
-my $Revision = substr(q$Revision: 11.2 $, 10);
+my $Revision = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 sub DBI::W32ODBC::import { }	# must trick here since we're called DBI/W32ODBC.pm
 

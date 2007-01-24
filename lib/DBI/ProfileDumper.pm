@@ -153,9 +153,10 @@ it under the same terms as Perl 5 itself.
 
 # inherit from DBI::Profile
 use DBI::Profile;
-use vars qw(@ISA $VERSION);
-@ISA = ("DBI::Profile");
-$VERSION = "1.0";
+
+our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+
+our @ISA = ("DBI::Profile");
 
 use Carp qw(croak);
 use Symbol;

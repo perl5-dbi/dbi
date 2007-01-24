@@ -60,7 +60,7 @@ use DBI ();
 use strict;
 use vars qw($VERSION $drh);
 
-$VERSION = sprintf("%d.%03d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/o);
+$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
 
 $drh = undef;	# Holds driver handle once it has been initialized.
 

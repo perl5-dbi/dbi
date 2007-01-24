@@ -14,7 +14,7 @@
 
 BEGIN {
     print "$0 @ARGV\n";
-    print q{DBI test application $Revision: 11.7 $}."\n";
+    print q{DBI test application $Revision$}."\n";
     $| = 1;
 }
 

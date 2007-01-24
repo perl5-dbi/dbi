@@ -8,9 +8,9 @@
     require DBI::Forward::Response;
     require Carp;
 
-    our $VERSION = sprintf("%d.%02d", q$Revision: 11.4 $ =~ /(\d+)\.(\d+)/o);
+    our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-#   $Id: Forward.pm 2488 2006-02-07 22:24:43Z timbo $
+#   $Id$
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #

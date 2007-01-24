@@ -18,20 +18,11 @@
 ### commercial products, such as books, magazine articles or CD-ROMs should be
 ### made to Alligator Descartes <I<http://www.symbolstone.org/descarte/contact.html>>.
 ### 
-### $Log: FAQ.pm,v $
-# Revision 11.2  2001/08/24  22:10:44  timbo
-# *** empty log message ***
-#
-# Revision 10.8  2001/05/29  23:25:55  timbo
-# *** empty log message ***
-#
-# Revision 10.7  2001/03/28  14:52:07  timbo
-# Main checkin prior to 1.15 release
-#
 
 package DBI::FAQ;
 
-$VERSION = '0.38';
+our $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 =head1 NAME
 

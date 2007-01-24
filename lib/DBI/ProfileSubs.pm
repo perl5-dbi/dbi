@@ -1,5 +1,7 @@
 package DBI::ProfileSubs;
 
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+
 =head1 NAME
 
 DBI::ProfileSubs - Subroutines for dynamic profile Path

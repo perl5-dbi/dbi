@@ -574,7 +574,8 @@ use Carp;
 
 use DBI qw(dbi_time dbi_profile dbi_profile_merge);
 
-$VERSION = sprintf "%d.%02d", '$Revision: 1.7 $ ' =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 @ISA = qw(Exporter);
 @EXPORT = qw(

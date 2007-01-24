@@ -35,7 +35,8 @@ The API for this module is private and subject to change.
 =cut
 
 my
-$VERSION = sprintf "%d.%02d", '$Revision: 1.3 $ ' =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 %InfoTypes =
 (

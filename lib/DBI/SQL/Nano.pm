@@ -22,7 +22,8 @@ use warnings;
 require DBI; # for looks_like_number()
 use vars qw( $VERSION $versions );
 BEGIN {
-    $VERSION = '0.03';
+    $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
+
     $versions->{nano_version} = $VERSION;
     if ($ENV{DBI_SQL_NANO} || !eval { require "SQL/Statement.pm" }) {
         @DBI::SQL::Nano::Statement::ISA = qw(DBI::SQL::Nano::Statement_);

@@ -2,6 +2,8 @@
 
 DBI::Changes - List of significant changes to the DBI
 
+(As of $Date:$ $Revision$)
+
 =cut
 
 XXX document DBD::Forward
@@ -25,12 +27,13 @@ XXX document DBD::Forward
     and Dean Arnold.
 
   Added new DBD::Forward 'stateless proxy' driver and framework,
-    and the DBI test suite is now also executed via DBD::Forward.
+    and the DBI test suite is now also executed via DBD::Forward,
+    and DBD::Forward+DBI::PurePerl, in addition to DBI::PurePerl.
+  Added ability for trace() to support filehandle argument,
+    including tracing into a string, thanks to Dean Arnold.
   Added ability for drivers to implement func() method
     so proxy drivers can proxy the func method itself.
   Added SQL_BIGINT type code (resolved to the ODBC/JDBC value (-5))
-  Added ability for trace() to support filehandle argument,
-    including tracing into a string, thanks to Dean Arnold.
 
 =head2 Changes in DBI 1.53 (svn rev 7995),   31st October 2006
 

@@ -6,7 +6,8 @@
     use DBI qw(:sql_types);
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("%d.%02d", q$Revision: 11.12 $ =~ /(\d+)\.(\d+)/o);
+    $VERSION = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
+
 
 #   $Id$
 #
