@@ -17,7 +17,7 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-# XXX track installed_methods and install proxies on client side after connect?
+
 
     # attributes we'll allow local STORE
     our %xxh_local_store_attrib = map { $_=>1 } qw(
@@ -256,15 +256,10 @@
             croak "Can't enable transactions when using DBD::Forward";
         }
 	return $dbh->SUPER::STORE($attrib => $value)
-            if $dbh_local_store_attrib{$attrib}  # handle locally
-            or not $dbh->FETCH('Active');        # not yet connected
-
-        # XXX    or $attrib =~ m/^[a-z]/              # driver-private
-
-        # ignore values that aren't actually being changed
-        my $prev = $dbh->FETCH($attrib);
-        return 1 if !defined $value && !defined $prev
-                 or defined $value && defined $prev && $value eq $prev;
+            # we handle this attribute locally
+            if $dbh_local_store_attrib{$attrib}
+            # not yet connected (and being called by connect())
+            or not $dbh->FETCH('Active');
 
         # dbh attributes are set at connect-time - see connect()
         Carp::carp("Can't alter \$dbh->{$attrib}");
@@ -455,3 +450,186 @@
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+DBD::Forward - A stateless-proxy driver for communicating with a remote DBI
+
+=head1 SYNOPSIS
+
+  use DBI;
+
+  $dbh = DBI->connect("dbi:Forward:transport=$transport;...;dsn=$dsn",
+                      $user, $passwd, \%attributes);
+
+The C<transport=$transport> part specifies the name of the module to use to
+transport the requests to the remote DBI. If $transport doesn't contain any
+double colons then it's prefixed with C<DBD::Forward::Transport::>.
+
+The C<dsn=$dsn part I<must> be the last element of the dsn because everything
+after C<dsn=> is assumed to be the DSN that the remote DBI should use.
+
+The C<...> represents attributes that influence the operation of the driver or
+transport. These are described below or in the documentation of the transport
+module being used.
+
+=head1 DESCRIPTION
+
+DBD::Forward is a DBI database driver that forwards requests to another DBI driver,
+usually in a seperate process, often on a separate machine.
+
+It is very similar to DBD::Proxy. The major difference is that DBD::Forward
+assumes no state is maintained on the remote end. What does that mean?
+It means that every request contains all the information needed to create the
+required state. (So, for example, every request includes the DSN to connect to.)
+Each request can be sent to any available server. The server executes
+the request and returns a single response that includes all the data.
+
+This is very similar to the way http works as a stateless protocol for the web.
+Each request from your web browser can be handled by a different web server process.
+
+This may seem like pointless overhead but there are situations where this is a
+very good thing. Let's consider a specific case.
+
+Imagine using DBD::Forward with an http transport. Your application calls
+connect(), prepare("select * from table where foo=?"), bind_param(), and execute().
+At this point DBD::Forward builds a request containing all the information
+about the method calls. It then uses the httpd transport to send that request
+to an apache web server.
+
+This 'dbi execute' web server executes the request (using DBI::Forward::Execute
+and related modules) and builds a response that contains all the rows of data,
+if the statement returned any, along with all the attributes that describe the
+results, such as $sth->{NAME}. This response is sent back to DBD::Forward which
+unpacks it and presents it to the application as if it had executed the
+statement itself.
+
+Okay, but you still don't see the point? Well let's consider what we've gained:
+
+=head3 Connection Pooling and Throttling
+
+The 'dbi execute' web server leverages all the functionality of web
+infrastructure in terms of load balancing, high-availability, firewalls, access
+management, proxying, caching.
+
+At it's most basic level you get a configurable pool of persistent database connections.
+
+=head3 Simple Scaling
+
+Got thousands of processes all trying to connect to the database? You can use
+DBD::Forward to connect them to your pool of 'dbi execute' web servers instead.
+
+=head3 Caching
+
+Not yet implemented, but the single request-response architecture lends itself to caching.
+
+=head3 Fewer Network Round-trips
+
+DBD::Forward sends as few requests as possible.
+
+=head3 Thin Clients / Unsupported Platforms
+
+You no longer need drivers for your database on every system.
+DBD::Forward is pure perl
+
+=head1 CONSTRAINTS
+
+There are naturally a some constraints imposed by DBD::Forward. But not many:
+
+=head2 You can't change database handle attributes
+
+You can't change database handle attributes after you've connected.
+Use the connect() call to specify all the attribute settings you want.
+
+This is because it's critical that when a request is complete the database
+handle is left in the same state it was when first connected.
+
+=head2 AutoCommit only
+
+Transactions aren't supported.
+
+=head1 CAVEATS
+
+A few things to keep in mind when using DBD::Forward:
+
+=head2 Driver-private Methods
+
+These can be called via the func() method on the dbh
+but not the sth.
+
+=head2 Driver-private Statement Handle Attributes
+
+Driver-private sth attributes can be set in the prepare() call. XXX
+
+Driver-private sth attributes can't be read, currently. In future it will be
+possible to indicate which sth attributes you'd like to be able to read.
+
+=head1 Array Methods
+
+The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
+are not currently supported. Patches welcome, of course.
+
+=head1 Multiple Resultsets
+
+Multiple resultsets are supported if the driver supports the more_results() method.
+
+=head1 CONNECTING
+
+XXX
+
+=head2 Using DBI_AUTOPROXY
+
+XXX
+
+=head1 CONFIGURING VIA POLICY
+
+XXX
+
+=head1 AUTHOR AND COPYRIGHT
+
+The DBI module is Copyright (c) 2007 Tim Bunce. Ireland.
+All rights reserved.
+            
+You may distribute under the terms of either the GNU General Public
+License or the Artistic License, as specified in the Perl README file.
+
+=head1 SEE ALSO
+
+L<DBD::Forward::Request>, L<DBD::Forward::Response>, L<DBD::Forward::Transport::Base>,
+
+L<DBI>, L<DBI::Forward::Execute>.
+
+
+=head1 TODO
+
+dbh STORE doesn't record set attributes
+
+Driver-private sth attributes - set via prepare() - change DBI spec
+Auto-configure based on driver name.
+Automatically send back everything in sth attribute cache?
+
+Caching of get_info values
+
+prepare vs prepare_cached
+
+Driver-private sth methods via func? Can't be sure of state?
+
+Sybase specific features.
+
+XXX track installed_methods and install proxies on client side after connect?
+
+XXX add hooks into transport base class for checking & updating a cache
+   ie via a standard cache interface such as:
+   http://search.cpan.org/~robm/Cache-FastMmap/FastMmap.pm
+   http://search.cpan.org/~bradfitz/Cache-Memcached/lib/Cache/Memcached.pm
+   http://search.cpan.org/~dclinton/Cache-Cache/
+   http://search.cpan.org/~cleishman/Cache/
+
+Also caching instructions could be passed through the httpd transport layer
+in such a way that appropriate http cache headers are added to the results
+so that web caches (squid etc) could be used to implement the caching.
+(May require the use of GET rather than POST requests.)
+
+=cut
