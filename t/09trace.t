@@ -13,6 +13,7 @@ use Test::More tests => 66;
 ## ----------------------------------------------------------------------------
 
 BEGIN { 
+    $ENV{DBI_TRACE} = 0; # for PurePerl - ensure DBI_TRACE is in the env
     use_ok( 'DBI' ); 
 }
 

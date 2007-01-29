@@ -2,13 +2,20 @@
 
 DBI::Changes - List of significant changes to the DBI
 
-(As of $Date:$ $Revision$)
+(As of $Date$ $Revision$)
 
 =cut
 
-XXX document DBD::Forward
+XXX document DBD::Gofer
 
 =head2 Changes in DBI 1.XX (svn rev XX),   XX
+
+  NOTE: This version has some subtle changes in DBI internals.
+  It's possible, though doubtful, that some may affect your code.
+  I recommend some extra texting before using this release.
+  Or perhaps I'm just being over cautious...
+
+  NOTE: The 'next big thing' is DBD::Gofer. Take a look.
 
   Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
   Fixed compile warnings in bleadperl on freebsd-6.1-release
@@ -22,13 +29,14 @@ XXX document DBD::Forward
   Changed setting trace file to no longer write "Trace file set" to new file.
   Changed 'handle cleared whilst still active' warning for dbh
     to only be given for dbh that have active sth or are not AutoCommit.
-  Changed take_imp_data to call finish on any Active child sth.
+  Changed take_imp_data to call finish on all Active child sth.
+  Changed DBI::PurePerl trace() method to be more consistent.
   Updated DBI::DBD docs for driver authors thanks to Ammon Riley
     and Dean Arnold.
 
-  Added new DBD::Forward 'stateless proxy' driver and framework,
-    and the DBI test suite is now also executed via DBD::Forward,
-    and DBD::Forward+DBI::PurePerl, in addition to DBI::PurePerl.
+  Added new DBD::Gofer 'stateless proxy' driver and framework,
+    and the DBI test suite is now also executed via DBD::Gofer,
+    and DBD::Gofer+DBI::PurePerl, in addition to DBI::PurePerl.
   Added ability for trace() to support filehandle argument,
     including tracing into a string, thanks to Dean Arnold.
   Added ability for drivers to implement func() method

@@ -69,8 +69,9 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 my $t_file = __FILE__;
 $dbh->do("set foo=1"); my $line = __LINE__;
 my $expected_caller = "40profile.t line $line";
-$expected_caller .= " via zvfw_40profile.t line 3"
-    if $0 =~ /zvfw_/;
+$expected_caller .= " via ${1}40profile.t line 3"
+    if $0 =~ /(zv\w+_)/;
+print Dumper($dbh->{Profile});
 is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Path' => [ '!MethodName', '!Caller2' ],
 	'Data' => { 'do' => {
@@ -163,7 +164,7 @@ $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count
 is_deeply $tmp, bless {
 	'Path' => [ '!Statement' ],
 	'Data' => {
-		''   => [ 3, 0, 0, 0, 0, 0, 0 ],
+		''   => [ 7, 0, 0, 0, 0, 0, 0 ],
 		$sql => [ -1, 0, 0, 0, 0, 0, 0 ],
 		'set foo=1' => [ 1, 0, 0, 0, 0, 0, 0 ],
 	}
@@ -200,6 +201,13 @@ $tmp->{Data}{usrnam}{""}{foo} = {};
 is_deeply $tmp, bless {
     'Path' => [ '{Username}', '!Statement', 'foo', '!MethodName' ],
     'Data' => {
+        '' => { # because Profile was enabled by DBI just before Username was set
+            '' => {
+                'foo' => {
+                    'STORE' => [ 3, 0, 0, 0, 0, 0, 0 ],
+                }
+            }
+        },
 	'usrnam' => {
 	    '' => {
 		    'foo' => { },
@@ -216,7 +224,6 @@ is_deeply $tmp, bless {
 	},
     },
 } => 'DBI::Profile';
-
 
 $dbh->{Profile}->{Path} = [ '!File', '!File2', '!Caller', '!Caller2' ];
 $dbh->{Profile}->{Data} = undef;
@@ -275,10 +282,10 @@ sub run_test1 {
 }
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'bar' }, 'baz' ] });
-is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 8, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 12, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'ping','pong' } ] });
-is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 8, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 12, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { \undef } ] });
 is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
@@ -286,7 +293,7 @@ is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
 # check what code ref sees in $_
 $tmp = run_test1( { Path => [ sub { $_ } ] });
 is_deeply $tmp, {
-  '' => [ 3, 0, 0, 0, 0, 0, 0 ],
+  '' => [ 7, 0, 0, 0, 0, 0, 0 ],
   'select name from .' => [ 5, 0, 0, 0, 0, 0, 0 ]
 }, '$_ should contain statement';
 
@@ -294,6 +301,7 @@ is_deeply $tmp, {
 $tmp = run_test1( { Path => [ sub { my ($h,$method) = @_; return \undef if $method =~ /^[A-Z]+$/; return (ref $h, $method) } ] });
 is_deeply $tmp, {
   'DBI::db' => {
+    'connected' => [ 1, 0, 0, 0, 0, 0, 0 ],
     'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
   },
   'DBI::st' => {

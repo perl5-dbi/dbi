@@ -5,7 +5,7 @@ use File::Path;
 use Test::More;
 use Config qw(%Config);
 
-my $using_dbd_forward_null = ($ENV{DBI_AUTOPROXY}||'') =~ /dbi:Forward.*transport=null/i;
+my $using_dbd_gofer_null = ($ENV{DBI_AUTOPROXY}||'') =~ /dbi:Gofer.*transport=null/i;
 
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
@@ -83,7 +83,7 @@ sub do_test {
 
     my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
 
-    if ($using_dbd_forward_null) {
+    if ($using_dbd_gofer_null) {
         $dsn .= ";f_dir=$dir";
     }
 
@@ -104,8 +104,8 @@ sub do_test {
 
     # test if it correctly accepts valid $dbh attributes
     SKIP: {
-        skip "Can't set attributes after connect using DBD::Forward", 2
-            if $using_dbd_forward_null;
+        skip "Can't set attributes after connect using DBD::Gofer", 2
+            if $using_dbd_gofer_null;
         eval {$dbh->{f_dir}=$dir};
         ok(!$@);
         eval {$dbh->{dbm_mldbm}=$mldbm};
@@ -115,7 +115,7 @@ sub do_test {
     # test if it correctly rejects invalid $dbh attributes
     #
     eval {
-        local $SIG{__WARN__} = sub { } if $using_dbd_forward_null;
+        local $SIG{__WARN__} = sub { } if $using_dbd_gofer_null;
         $dbh->{dbm_bad_name}=1;
     };
     ok($@);

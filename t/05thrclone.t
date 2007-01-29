@@ -20,6 +20,12 @@ my $threads = 10;
 
 plan tests => 3 + 4 * $threads;
 
+# Something about DBD::Gofer causes a problem. Older versions didn't leak. It
+# started at some point in development but I didn't track it down at the time
+# so the exact change that made it start is now lost in the mists of time.
+warn " You can ignore the $threads 'Scalars leaked' messages (or send me a patch to fix the underlying problem)\n"
+    if $ENV{DBI_AUTOPROXY};
+
 {
     package threads_sub;
     use base qw(threads);

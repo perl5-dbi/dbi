@@ -58,7 +58,7 @@ print "Switch: $switch->{'Attribution'}, $switch->{'Version'}\n";
 print "Available Drivers: ",join(", ",DBI->available_drivers(1)),"\n";
 
 
-my $dbh = DBI->connect("dbi:$driver:", '', ''); # old-style connect syntax
+my $dbh = DBI->connect("dbi:$driver:", '', '');
 $dbh->debug($::opt_h);
 
 if (0) {
@@ -115,19 +115,10 @@ else {
 	    (split / /, $Config{gccversion}||$Config{ccversion}||'')[0]||'',
 	    $Config{optimize};
 
-  if (0) {
-    $null_dbh = DBI->connect('dbi:mysql:VC_log','','',{RaiseError=>1});
-    $null_sth = $null_dbh->prepare('select * from big');
-    $null_sth->execute();
-    $t1 = new Benchmark;
-    1 while ($null_sth->fetchrow_hashref());
-    #1 while ($null_sth->fetchrow_arrayref());
-    $td = Benchmark::timediff(Benchmark->new, $t1);
-    $tds= Benchmark::timestr($td);
-    $dur = $td->cpu_a;
-    printf "$DBI::rows in $tds\n";
-  }
+    $null_dbh->disconnect;
 }
+
+$dbh->disconnect;
 
 #DBI->trace(4);
 print "$0 done\n";

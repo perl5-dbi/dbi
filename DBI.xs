@@ -2445,10 +2445,10 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
 			imp_dbh_t *imp_dbh = (DBIc_TYPE(imp_xxh) <= DBIt_DB) ? (imp_dbh_t*)imp_xxh : (imp_dbh_t*)DBIc_PARENT_COM(imp_xxh);
 			dbh_outer_hv = DBIc_MY_H(imp_dbh);
 			if (SvTYPE(dbh_outer_hv) != SVt_PVHV)
-			    return;	/* global destruction - bail */
+			    return;	/* presumably global destruction - bail */
 			dbh_inner_hv = (HV*)SvRV(dbih_inner((SV*)dbh_outer_hv, "profile"));
 			if (SvTYPE(dbh_inner_hv) != SVt_PVHV)
-			    return;	/* global destruction - bail */
+			    return;	/* presumably global destruction - bail */
 		    }
 		    /* fetch from inner first, then outer if key doesn't exist */
 		    /* (yes, this is an evil premature optimization) */
@@ -3964,21 +3964,25 @@ trace(class, level_sv=&sv_undef, file=Nullsv)
     CODE:
     {
     dPERINTERP;
-    /* Return old/current value. No change if new value not given.	*/
-    IV level = parse_trace_flags(class, level_sv, (RETVAL = (DBIS) ? DBIS->debug : 0));
+    IV level;
     if (!DBIS) {
 	ix=ix;		/* avoid 'unused variable' warnings	*/
 	croak("DBI not initialised");
     }
+    /* Return old/current value. No change if new value not given.	*/
+    RETVAL = (DBIS) ? DBIS->debug : 0;
+    level = parse_trace_flags(class, level_sv, RETVAL);
     if (level)		/* call before or after altering DBI trace level */
         set_trace_file(file);
     if (level != RETVAL) {
 	if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
-	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d)\n",
+	    PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d) at %s\n",
 		XS_VERSION, dbi_build_opt,
                 (long)(level & DBIc_TRACE_FLAGS_MASK),
                 (long)(level & DBIc_TRACE_LEVEL_MASK),
-		(int)PerlProc_getpid());
+		(int)PerlProc_getpid(),
+                log_where(Nullsv, 0, "", "", 1, 1, 0)
+            );
 	    if (!PL_dowarn)
 		PerlIO_printf(DBILOGFP,"    Note: perl is running without the recommended perl -w option\n");
 	    PerlIO_flush(DBILOGFP);
@@ -4143,6 +4147,15 @@ FETCH(sv)
 
 
 MODULE = DBI   PACKAGE = DBD::_::db
+
+void
+connected(...)
+    CODE:
+    /* defined here just to avoid AUTOLOAD */
+    (void)cv;
+    (void)items;
+    ST(0) = &sv_undef;
+
 
 SV *
 preparse(dbh, statement, ps_accept, ps_return, foo=Nullch)

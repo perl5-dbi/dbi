@@ -40,7 +40,7 @@ is(scalar keys %drivers, 1);
 ok(exists $drivers{ExampleP});
 ok($drivers{ExampleP}->isa('DBI::dr'));
 
-my $using_dbd_forward_null = ($ENV{DBI_AUTOPROXY}||'') =~ /dbi:Forward.*transport=null/i;
+my $using_dbd_gofer_null = ($ENV{DBI_AUTOPROXY}||'') =~ /dbi:Gofer.*transport=null/i;
 
 ## ----------------------------------------------------------------------------
 # do database handle tests inside do BLOCK to capture scope
@@ -49,7 +49,7 @@ do {
     my $dbh = DBI->connect("dbi:$driver:", '', '');
     isa_ok($dbh, 'DBI::db');
 
-    my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_forward_null
+    my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_gofer_null
     
     SKIP: {
         skip "Kids and ActiveKids attributes not supported under DBI::PurePerl", 2 if $DBI::PurePerl;
@@ -140,7 +140,7 @@ do {
 
     SKIP: {
 	skip "swap_inner_handle() not supported under DBI::PurePerl", 23 if $DBI::PurePerl;
-	skip "swap_inner_handle() not testable under DBI_AUTOPROXY", 23 if $using_dbd_forward_null;
+	skip "swap_inner_handle() not testable under DBI_AUTOPROXY", 23 if $using_dbd_gofer_null;
     
         my $sth6 = $dbh->prepare($sql);
         $sth6->execute(".");
@@ -186,6 +186,7 @@ do {
 
     ok(  $dbh->ping, 'ping should be true before disconnect');
     $dbh->disconnect;
+    $dbh->{PrintError} = 0; # silence 'not connected' warning
     ok( !$dbh->ping, 'ping should be false after disconnect');
 
     SKIP: {
@@ -197,7 +198,7 @@ do {
     
 };
 
-if ($using_dbd_forward_null) {
+if ($using_dbd_gofer_null) {
     $drh->{CachedKids} = {};
 }
 
@@ -248,7 +249,7 @@ sub work {
 
 SKIP: {
     skip "Kids attribute not supported under DBI::PurePerl", 25 if $DBI::PurePerl;
-    skip "drh Kids not testable under DBI_AUTOPROXY", 25 if $using_dbd_forward_null;
+    skip "drh Kids not testable under DBI_AUTOPROXY", 25 if $using_dbd_gofer_null;
 
     foreach my $args (
         {},
@@ -269,11 +270,11 @@ SKIP: {
 
 SKIP: {
     skip "take_imp_data test not supported under DBI::PurePerl", 19 if $DBI::PurePerl;
-    skip "take_imp_data test not supported under DBI_AUTOPROXY", 19 if $using_dbd_forward_null;
+    skip "take_imp_data test not supported under DBI_AUTOPROXY", 19 if $using_dbd_gofer_null;
 
     my $dbh = DBI->connect("dbi:$driver:", '', '');
     isa_ok($dbh, "DBI::db");
-    my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_forward_null
+    my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_gofer_null
 
     cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) here');
 

@@ -3010,14 +3010,14 @@ sub dbd_edit_mm_attribs {
 	# XXX need to convert this to work within the generated Makefile
 	# so 'make' creates them and 'make clean' deletes them
 	my %test_variants = (
-	    pp => {	name => "DBI::PurePerl",
+	    p => {	name => "DBI::PurePerl",
 			add => [ '$ENV{DBI_PUREPERL} = 2' ],
 	    },
-	    fw => {	name => "DBD::Forward",
-			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null'} ],
+	    g => {	name => "DBD::Gofer",
+			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null'} ],
 	    },
-	    xpf => {	name => "PurePerl & Forward",
-			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Forward:transport=null'} ],
+	    xgp => {	name => "PurePerl & Gofer",
+			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null'} ],
 	    },
 	#   mx => {	name => "DBD::Multiplex",
 	#               add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
@@ -3047,7 +3047,7 @@ sub dbd_edit_mm_attribs {
 		print PPT "#!$v_perl\n";
 		print PPT "use threads;\n" if $usethr;
 		print PPT "$_;\n" foreach @{$v_info->{add}};
-		print PPT "do 't/$test' or warn \$!;\n";
+		print PPT "require 't/$test'; # or warn \$!;\n";
 		print PPT 'die if $@;'."\n";
 		print PPT "exit 0\n";
 		close PPT or warn "Error writing $v_test: $!";

@@ -484,26 +484,27 @@ sub _setup_handle {
     $h_inner->{ErrCount} = 0;
     $h_inner->{Active} = 1;
 }
+
 sub constant {
-    warn "constant @_"; return;
+    warn "constant(@_) called unexpectedly"; return undef;
 }
+
 sub trace {
     my ($h, $level, $file) = @_;
     $level = $h->parse_trace_flags($level)
 	if defined $level and !DBI::looks_like_number($level);
     my $old_level = $DBI::dbi_debug;
-    _set_trace_file($file);
+    _set_trace_file($file) if $level;
     if (defined $level) {
 	$DBI::dbi_debug = $level;
 	print $DBI::tfh "    DBI $DBI::VERSION (PurePerl) "
                 . "dispatch trace level set to $DBI::dbi_debug\n"
 		if $DBI::dbi_debug & 0xF;
-        if ($level==0 and fileno($DBI::tfh)) {
-	    _set_trace_file("");
-        }
     }
+    _set_trace_file($file) if !$level;
     return $old_level;
 }
+
 sub _set_trace_file {
     my ($file) = @_;
     return unless defined $file;
@@ -814,6 +815,13 @@ sub rows {
 }
 sub DESTROY {
 }
+
+package
+	DBD::_::db;
+
+sub connected {
+}
+
 
 package
 	DBD::_::st;

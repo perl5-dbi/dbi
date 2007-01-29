@@ -37,7 +37,14 @@
 {   package DBD::NullP::dr; # ====== DRIVER ======
     $imp_data_size = 0;
     use strict;
-    # we use default (dummy) connect method
+
+    sub connect { # normally overridden, but a handy default
+        my $dbh = shift->SUPER::connect(@_)
+            or return;
+        $dbh->STORE(Active => 1); 
+        $dbh;
+    }
+
 
     sub DESTROY { undef }
 }

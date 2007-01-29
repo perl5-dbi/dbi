@@ -73,13 +73,14 @@ sub check_connect_cached {
 	# This test checks that connect_cached works
 	# and how it then relates to the CachedKids 
 	# attribute for the driver.
-
-	my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '');
-	my $dbh_cached_2 = DBI->connect_cached('dbi:ExampleP:', '', '');
-	my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
-	
+#DBI->trace(4);
+	my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0});
 	isa_ok($dbh_cached_1, "DBI::db");
+
+	my $dbh_cached_2 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0});
 	isa_ok($dbh_cached_2, "DBI::db");
+
+	my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
 	isa_ok($dbh_cached_3, "DBI::db");
 	
 	is($dbh_cached_1, $dbh_cached_2, '... these 2 handles are cached, so they are the same');
@@ -433,7 +434,7 @@ ok($@ =~ m/^HandleError:/, $@);
 print "HandleError -> 0 -> RaiseError\n";
 $HandleErrorReturn = 0;
 ok(! eval { $csr_c = $dbh->prepare($error_sql); 1; });
-ok($@ =~ m/^DBD::(ExampleP|Multiplex|Forward)::db prepare failed:/, $@);
+ok($@ =~ m/^DBD::(ExampleP|Multiplex|Gofer)::db prepare failed:/, $@);
 
 print "HandleError -> 1 -> return (original)undef\n";
 $HandleErrorReturn = 1;

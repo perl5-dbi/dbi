@@ -89,6 +89,7 @@ $dbh = DBI->connect("dbi:Sponge:foo","","", {
 	RaiseError => 1,
 	RootClass => "MyDBI",
 	CompatMode => 1, # just for clone test
+        dbi_foo => 1, # just to help debugging clone etc
 });
 isa_ok( $dbh, 'MyDBI::db');
 is($dbh->{CompatMode}, 1);

@@ -78,7 +78,7 @@ cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadL
 eval { 
     $dbh->do('select foo from foo') 
 };
-like($@, qr/^DBD::(ExampleP|Multiplex|Forward)::db do failed: Unknown field names: foo/ , '... catching exception');
+like($@, qr/^DBD::(ExampleP|Multiplex|Gofer)::db do failed: Unknown field names: foo/ , '... catching exception');
 
 ok(defined $dbh->err, '... $dbh->err is undefined');
 like($dbh->errstr,  qr/^Unknown field names: foo\b/, '... checking $dbh->errstr');
@@ -155,7 +155,7 @@ eval {
     $sth->execute("foo") 
 };
 # we don't check actual opendir error msg because of locale differences
-like($@, qr/^DBD::(ExampleP|Multiplex|Forward)::st execute failed: .*opendir\(foo\): /msi, '... checking exception');
+like($@, qr/^DBD::(ExampleP|Multiplex|Gofer)::st execute failed: .*opendir\(foo\): /msi, '... checking exception');
 
 # Test all of the statement handle attributes.
 like($sth->errstr, qr/opendir\(foo\): /, '... checking $sth->errstr');

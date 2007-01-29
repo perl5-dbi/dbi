@@ -121,7 +121,7 @@ Tim he's very likely to just forward it to the mailing list.
 =head2 NOTES
 
 This is the DBI specification that corresponds to the DBI version 1.54
-($Revision:$).
+($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
 you have the latest copy.
@@ -320,7 +320,7 @@ my $dbd_prefix_registry = {
   df_      => { class => 'DBD::DF',		},
   f_       => { class => 'DBD::File',		},
   file_    => { class => 'DBD::TextFile',	},
-  fwd_     => { class => 'DBD::Forward',	},
+  go_      => { class => 'DBD::Gofer',  	},
   ib_      => { class => 'DBD::InterBase',	},
   ing_     => { class => 'DBD::Ingres',		},
   ix_      => { class => 'DBD::Informix',	},
@@ -401,7 +401,7 @@ my $keeperr = { O=>0x0004 };
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], },
 	clone   	=> { U =>[1,2,'[\%attr]'] },
-	connected   	=> { O=>0x0100 },
+	connected   	=> undef,
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800 },
@@ -573,9 +573,10 @@ sub connect {
 	or Carp::croak("Can't connect to data source $dsn, no database driver specified "
 		."and DBI_DSN env var not set");
 
+    my $proxy;
     if ($ENV{DBI_AUTOPROXY} && $driver ne 'Proxy' && $driver ne 'Sponge' && $driver ne 'Switch') {
 	my $dbi_autoproxy = $ENV{DBI_AUTOPROXY};
-	my $proxy = 'Proxy';
+	$proxy = 'Proxy';
 	if ($dbi_autoproxy =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i) {
 	    $proxy = $1;
 	    $driver_attrib_spec = join ",",
@@ -610,23 +611,16 @@ sub connect {
     # attributes in DSN take precedence over \%attr connect parameter
     $user =        $attr->{Username} if defined $attr->{Username};
     $pass = delete $attr->{Password} if defined $attr->{Password};
-
-    ($user, $pass) = $drh->default_user($user, $pass, $attr)
-	if !(defined $user && defined $pass);
-
-    $attr->{Username} = $user;	# store username as attribute
+    if ( !(defined $user && defined $pass) ) {
+        ($user, $pass) = $drh->default_user($user, $pass, $attr);
+    }
+    $attr->{Username} = $user; # force the Username to be the actual one used
 
     my $connect_closure = sub {
 	my ($old_dbh, $override_attr) = @_;
 
-	my $attr = {
-	    # copy so we can edit them each time we're called
-	    %attributes,
-	    # merge in modified attr in %$old_dbh, this should also copy in
-	    # the dbi_connect_closure attribute so we can reconnect again.
-	    %{ $override_attr || {} },
-	};
-	#warn "connect_closure: ".Data::Dumper::Dumper([\%attributes, $override_attr]);
+        #use Data::Dumper;
+        #warn "connect_closure: ".Data::Dumper::Dumper([$attr,\%attributes, $override_attr]);
 
 	my $dbh;
 	unless ($dbh = $drh->$connect_meth($dsn, $user, $pass, $attr)) {
@@ -648,45 +642,48 @@ sub connect {
 	    return $dbh; # normally undef, but HandleError could change it
 	}
 
-	# handle basic RootClass subclassing:
-	my $rebless_class = $attr->{RootClass} || ($class ne 'DBI' ? $class : '');
-	if ($rebless_class) {
-	    no strict 'refs';
-	    if ($attr->{RootClass}) {	# explicit attribute (rather than static call)
-		delete $attr->{RootClass};
-		DBI::_load_class($rebless_class, 0);
-	    }
-	    unless (@{"$rebless_class\::db::ISA"} && @{"$rebless_class\::st::ISA"}) {
-		Carp::carp("DBI subclasses '$rebless_class\::db' and ::st are not setup, RootClass ignored");
-		$rebless_class = undef;
-		$class = 'DBI';
-	    }
-	    else {
-		$dbh->{RootClass} = $rebless_class; # $dbh->STORE called via plain DBI::db
-		DBI::_set_isa([$rebless_class], 'DBI');     # sets up both '::db' and '::st'
-		DBI::_rebless($dbh, $rebless_class);        # appends '::db'
-	    }
-	}
+        # merge any attribute overrides but don't change $attr itself (for closure)
+        my $apply = { ($override_attr) ? (%$attr, %$override_attr ) : %$attr };
 
-	if (%$attr) {
+        # handle basic RootClass subclassing:
+        my $rebless_class = $apply->{RootClass} || ($class ne 'DBI' ? $class : '');
+        if ($rebless_class) {
+            no strict 'refs';
+            if ($apply->{RootClass}) { # explicit attribute (ie not static methd call class)
+                delete $apply->{RootClass};
+                DBI::_load_class($rebless_class, 0);
+            }
+            unless (@{"$rebless_class\::db::ISA"} && @{"$rebless_class\::st::ISA"}) {
+                Carp::carp("DBI subclasses '$rebless_class\::db' and ::st are not setup, RootClass ignored");
+                $rebless_class = undef;
+                $class = 'DBI';
+            }
+            else {
+                $dbh->{RootClass} = $rebless_class; # $dbh->STORE called via plain DBI::db
+                DBI::_set_isa([$rebless_class], 'DBI');     # sets up both '::db' and '::st'
+                DBI::_rebless($dbh, $rebless_class);        # appends '::db'
+            }
+        }
 
-	    DBI::_rebless_dbtype_subclass($dbh, $rebless_class||$class, delete $attr->{DbTypeSubclass}, $attr)
-		if $attr->{DbTypeSubclass};
+	if (%$apply) {
 
+            if ($apply->{DbTypeSubclass}) {
+                my $DbTypeSubclass = delete $apply->{DbTypeSubclass};
+                DBI::_rebless_dbtype_subclass($dbh, $rebless_class||$class, $DbTypeSubclass);
+            }
 	    my $a;
-	    foreach $a (qw(RaiseError PrintError AutoCommit)) { # do these first
-		next unless  exists $attr->{$a};
-		$dbh->{$a} = delete $attr->{$a};
+	    foreach $a (qw(Profile RaiseError PrintError AutoCommit)) { # do these first
+		next unless  exists $apply->{$a};
+		$dbh->{$a} = delete $apply->{$a};
 	    }
-	    foreach $a (keys %$attr) {
-		eval { $dbh->{$a} = $attr->{$a} } or $@ && warn $@;
+	    while ( my ($a, $v) = each %$apply) {
+		eval { $dbh->{$a} = $v } or $@ && warn $@;
 	    }
 	}
 
-	# if we've been subclassed then let the subclass know that we're connected
-	# and pass in the original arguments
-	$dbh->connected(@orig_args)
-	    if ref $dbh ne 'DBI::db';
+        # confirm to driver (ie if subclassed) that we've connected sucessfully
+        # and finished the attribute setup. pass in the original arguments
+	$dbh->connected(@orig_args); #if ref $dbh ne 'DBI::db' or $proxy;
 
 	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
 
@@ -842,9 +839,9 @@ sub _set_isa {
 
 
 sub _rebless_dbtype_subclass {
-    my ($dbh, $rootclass, $DbTypeSubclass, $attr) = @_;
+    my ($dbh, $rootclass, $DbTypeSubclass) = @_;
     # determine the db type names for class hierarchy
-    my @hierarchy = DBI::_dbtype_names($dbh, $DbTypeSubclass, $attr);
+    my @hierarchy = DBI::_dbtype_names($dbh, $DbTypeSubclass);
     # add the rootclass prefix to each ('DBI::' or 'MyDBI::' etc)
     $_ = $rootclass.'::'.$_ foreach (@hierarchy);
     # load the modules from the 'top down'
@@ -857,7 +854,7 @@ sub _rebless_dbtype_subclass {
 
 
 sub _dbtype_names { # list dbtypes for hierarchy, ie Informix=>ADO=>ODBC
-    my ($dbh, $DbTypeSubclass, $attr) = @_;
+    my ($dbh, $DbTypeSubclass) = @_;
 
     if ($DbTypeSubclass && $DbTypeSubclass ne '1' && ref $DbTypeSubclass ne 'CODE') {
 	# treat $DbTypeSubclass as a comma separated list of names
@@ -1421,6 +1418,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# XXX debatable as there's no "server side" here
 	# (and now many uses would trigger warnings on DESTROY)
 	# $this->STORE(Active => 1);
+        # so drivers should set it in their own connect
 	$this;
     }
 

@@ -62,10 +62,10 @@ sub test_select {
 }
 
 my $err1 = test_select( My::DBI->connect(@con_info) );
-Test::More::like($err1, qr/^DBD::(ExampleP|Multiplex|Forward)::db selectrow_arrayref failed: opendir/, '... checking error');
+Test::More::like($err1, qr/^DBD::(ExampleP|Multiplex|Gofer)::db selectrow_arrayref failed: opendir/, '... checking error');
 
 my $err2 = test_select( DBI->connect(@con_info) );
-Test::More::like($err2, qr/^DBD::(ExampleP|Multiplex|Forward)::db selectrow_arrayref failed: opendir/, '... checking error');
+Test::More::like($err2, qr/^DBD::(ExampleP|Multiplex|Gofer)::db selectrow_arrayref failed: opendir/, '... checking error');
 
 package main;
 
