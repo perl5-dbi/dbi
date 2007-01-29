@@ -1,6 +1,6 @@
-package DBD::Forward::Transport::Base;
+package DBD::Gofer::Transport::Base;
 
-#   $Id$
+#   $Id: Base.pm 8696 2007-01-24 23:12:38Z timbo $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -14,26 +14,27 @@ use Storable qw(freeze thaw);
 
 use base qw(Class::Accessor::Fast);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
 
-our $debug = $ENV{DBD_FORWARD_DEBUG} || 0;
+our $debug = $ENV{DBI_GOFER_TRACE} || 0;
 
 
 __PACKAGE__->mk_accessors(qw(
-    fwd_dsn
+    go_dsn
 ));
 
 
 sub freeze_data {
     my ($self, $data) = @_;
-    $self->_dump(ref($data), $data) if $debug;
+    $self->_dump("DBI_GOFER_TRACE ".ref($data), $data) if $debug;
+    local $Storable::forgive_me = 1; # for CODE refs etc
     return freeze($data);
 }   
 
 sub thaw_data {
     my ($self, $frozen_data) = @_;
     my $data = thaw($frozen_data);
-    $self->_dump(ref($data), $data) if $debug;
+    $self->_dump("DBI_GOFER_TRACE ".ref($data), $data) if $debug;
     return $data;
 }
 

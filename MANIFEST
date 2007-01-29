@@ -24,9 +24,9 @@ lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
 lib/DBD/File.pm			A driver base class for simple drivers
-lib/DBD/Forward.pm              DBD::Forward 'stateless proxy' driver
-lib/DBD/Forward/Transport/Base.pm Base class for DBD::Forward driver transport classes
-lib/DBD/Forward/Transport/null.pm DBD::Forward transport that executes locally (for testing)
+lib/DBD/Gofer.pm                DBD::Gofer 'stateless proxy' driver
+lib/DBD/Gofer/Transport/Base.pm Base class for DBD::Gofer driver transport classes
+lib/DBD/Gofer/Transport/null.pm DBD::Gofer transport that executes locally (for testing)
 lib/DBD/NullP.pm		An empty example Driver module
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
@@ -37,10 +37,10 @@ lib/DBI/Const/GetInfoType.pm	GetInfo type code data based on standards
 lib/DBI/DBD.pm			Some basic help for people writing DBI drivers
 lib/DBI/DBD/Metadata.pm		Metadata tools for people writing DBI drivers
 lib/DBI/FAQ.pm			The DBI FAQ in module form for perldoc
-lib/DBI/Forward/Execute.pm      Execution logic for DBD::Forward server
-lib/DBI/Forward/Request.pm      Request object from DBD::Forward
-lib/DBI/Forward/Response.pm     Response object for DBD::Forward
-lib/DBI/Forward/Transport/Base.pm Base class for DBD::Forward server transport classes
+lib/DBI/Gofer/Execute.pm        Execution logic for DBD::Gofer server
+lib/DBI/Gofer/Request.pm        Request object from DBD::Gofer
+lib/DBI/Gofer/Response.pm       Response object for DBD::Gofer
+lib/DBI/Gofer/Transport/Base.pm Base class for DBD::Gofer server transport classes
 lib/DBI/Profile.pm		Manage DBI usage profile data
 lib/DBI/ProfileData.pm
 lib/DBI/ProfileDumper.pm
@@ -79,7 +79,7 @@ t/65transact.t
 t/70callbacks.t
 t/72childhandles.t
 t/80proxy.t
-t/85forward.t
+t/85gofer.t
 t/pod.t
 test.pl			Assorted informal tests, including tests for memory leaks
 typemap

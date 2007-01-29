@@ -1,6 +1,6 @@
-package DBI::Forward::Request;
+package DBI::Gofer::Request;
 
-#   $Id$
+#   $Id: Request.pm 8696 2007-01-24 23:12:38Z timbo $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -9,7 +9,7 @@ package DBI::Forward::Request;
 
 use base qw(Class::Accessor::Fast);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
 
 
 __PACKAGE__->mk_accessors(qw(

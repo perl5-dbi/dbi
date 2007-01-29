@@ -1,6 +1,6 @@
-package DBI::Forward::Execute;
+package DBI::Gofer::Execute;
 
-#   $Id$
+#   $Id: Execute.pm 8696 2007-01-24 23:12:38Z timbo $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -11,12 +11,12 @@ use strict;
 use warnings;
 
 use DBI;
-use DBI::Forward::Request;
-use DBI::Forward::Response;
+use DBI::Gofer::Request;
+use DBI::Gofer::Response;
 
 use base qw(Exporter);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
 
 our @EXPORT_OK = qw(
     execute_request
@@ -35,6 +35,10 @@ our @sth_std_attr = qw(
     CursorName
 );
 
+our $trace = $ENV{DBI_GOFER_TRACE};
+
+our $recurse = 0;
+
 # XXX tracing
 
 sub _connect {
@@ -42,14 +46,22 @@ sub _connect {
     local $ENV{DBI_AUTOPROXY};
     my $connect_args = $request->connect_args;
     my ($dsn, $u, $p, $attr) = @$connect_args;
+    # delete attributes we don't want to affect the server-side
+    delete @{$attr}{qw(Profile InactiveDestroy Warn HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
+    my $connect_method = 'connect_cached';
+#$connect_method = 'connect';
     # XXX need way to limit/purge connect cache over time
-    my $dbh = DBI->connect_cached($dsn, $u, $p, {
+    my $dbh = DBI->$connect_method($dsn, $u, $p, {
         %$attr,
-        # override some attributes
+        # force some attributes the way we want them
         PrintWarn  => 0,
         PrintError => 0,
         RaiseError => 1,
+        # ensure this connect_cached doesn't have the same args as the client
+        # because that causes subtle issues if in the same process (ie transport=null)
+        dbi_go_execute_unique => 42+$recurse+rand(),
     });
+    die "NOT CONNECTED" if $dbh and not $dbh->{Active};
     #$dbh->trace(0);
     return $dbh;
 }
@@ -70,7 +82,7 @@ sub _new_response_with_err {
         $err ||= 1;
         $errstr = ($errstr) ? "$errstr; $@" : $@;
     }
-    my $response = DBI::Forward::Response->new({
+    my $response = DBI::Gofer::Response->new({
         rv     => $rv,
         err    => $err,
         errstr => $errstr,
@@ -82,6 +94,9 @@ sub _new_response_with_err {
 
 sub execute_request {
     my $request = shift;
+    local $recurse = $recurse + 1;
+    warn "Gofer request level $recurse\n" if $trace;
+    # guaranteed not to throw an exception
     my $response = eval {
         ($request->is_sth_request)
             ? execute_sth_request($request)
@@ -89,10 +104,12 @@ sub execute_request {
     };
     if ($@) {
         warn $@; # XXX
-        $response = DBI::Forward::Response->new({
+        chomp $@;
+        $response = DBI::Gofer::Response->new({
             err => 1, errstr => $@, state  => '',
         });
     }
+    warn "Gofer response level $recurse: ".$response->rv."\n" if $trace;
     return $response;
 }
 
@@ -120,6 +137,11 @@ sub execute_dbh_request {
         # that returns a statement handle, so turn the $sth into resultset
         $response->sth_resultsets( _gather_sth_resultsets($rv, $request) );
         $response->rv("(sth)");
+    }
+    if (0) {
+        # if not using connect_cached then we want to gracefu
+        local $SIG{__WARN__} = sub {};
+        undef $dbh;
     }
     return $response;
 }
