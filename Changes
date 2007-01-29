@@ -8,14 +8,15 @@ DBI::Changes - List of significant changes to the DBI
 
 XXX document DBD::Gofer
 
-=head2 Changes in DBI 1.XX (svn rev XX),   XX
+=head2 Changes in DBI 1.54 (svn rev 8745),  29th January 2007
 
   NOTE: This version has some subtle changes in DBI internals.
   It's possible, though doubtful, that some may affect your code.
   I recommend some extra texting before using this release.
   Or perhaps I'm just being over cautious...
 
-  NOTE: The 'next big thing' is DBD::Gofer. Take a look.
+  NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
+  Take a look!
 
   Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
   Fixed compile warnings in bleadperl on freebsd-6.1-release

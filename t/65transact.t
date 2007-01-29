@@ -31,4 +31,4 @@ $dbh->rollback;
 ok($dbh->{AutoCommit});
 ok(!$dbh->{BegunWork});
 
-exit 0;
+1;

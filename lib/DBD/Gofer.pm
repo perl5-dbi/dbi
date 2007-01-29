@@ -8,9 +8,9 @@
     require DBI::Gofer::Response;
     require Carp;
 
-    our $VERSION = sprintf("0.%06d", q$Revision: 8705 $ =~ /(\d+)/o);
+    our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-#   $Id: Gofer.pm 8705 2007-01-26 01:08:25Z timbo $
+#   $Id$
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -95,6 +95,11 @@
         my $go_dsn = ($dsn =~ s/\bdsn=(.*)$// && $1)
             or return $drh->set_err(1, "No dsn= argument in '$orig_dsn'");
 
+        if ($attr->{go_bypass}) { # don't use DBD::Gofer for this connection
+            # useful for testing with DBI_AUTOPROXY, e.g., t/03handle.t
+            return DBI->connect($go_dsn, $user, $auth, $attr);
+        }
+
         my %dsn_attr = (%dsn_attr_defaults, go_dsn => $go_dsn);
         # extract any go_ attributes from the connect() attr arg
         for my $k (grep { /^go_/ } keys %$attr) {
@@ -114,7 +119,7 @@
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$dsn_attr{go_transport}"
             unless $transport_class =~ /::/;
-        eval "require $transport_class"
+        eval "require $transport_class" # XXX fix unsafe string eval
             or return $drh->set_err(1, "Error loading $transport_class: $@");
         my $go_trans = eval { $transport_class->new(\%dsn_attr) }
             or return $drh->set_err(1, "Error instanciating $transport_class: $@");

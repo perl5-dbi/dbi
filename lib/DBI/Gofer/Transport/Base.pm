@@ -1,6 +1,6 @@
-package DBD::Gofer::Transport::Base;
+package DBI::Gofer::Transport::Base;
 
-#   $Id: Base.pm 8696 2007-01-24 23:12:38Z timbo $
+#   $Id$
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -14,35 +14,47 @@ use Storable qw(freeze thaw);
 
 use base qw(Class::Accessor::Fast);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-our $debug = $ENV{DBI_GOFER_TRACE} || 0;
+sub _init_trace { $ENV{DBI_GOFER_TRACE} || 0 }
 
 
 __PACKAGE__->mk_accessors(qw(
+    trace
     go_dsn
 ));
 
 
+sub new {
+    my ($class, $args) = @_;
+    $args->{trace} ||= $class->_init_trace;
+    return $class->SUPER::new($args);
+}
+
+
 sub freeze_data {
-    my ($self, $data) = @_;
-    $self->_dump("DBI_GOFER_TRACE ".ref($data), $data) if $debug;
+    my ($self, $data, $skip_trace) = @_;
+    $self->_dump("freezing ".ref($data), $data)
+        if !$skip_trace and $self->trace;
     local $Storable::forgive_me = 1; # for CODE refs etc
     return freeze($data);
 }   
 
 sub thaw_data {
-    my ($self, $frozen_data) = @_;
+    my ($self, $frozen_data, $skip_trace) = @_;
     my $data = thaw($frozen_data);
-    $self->_dump("DBI_GOFER_TRACE ".ref($data), $data) if $debug;
+    $self->_dump("thawing ".ref($data), $data)
+        if !$skip_trace and $self->trace;
     return $data;
 }
+
 
 
 sub _dump {
     my ($self, $label, $data) = @_;
     require Data::Dumper;
-    warn "$label=".Dumper($request);
+    # XXX config dumper format
+    warn "$label=".Dumper($data);
 }
 
 1;

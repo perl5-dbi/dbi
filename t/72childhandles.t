@@ -24,6 +24,8 @@ if (!$HAS_WEAKEN) {
 
 plan tests => 14;
 
+my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
+
 my $drh;
 
 {
@@ -66,7 +68,7 @@ is_deeply $empty, [], "ChildHandles should be an array-ref if wekref is availabl
 # test child handles for statement handles
 {
     my @sth;
-    my $sth_count = 200;
+    my $sth_count = 20;
     for (1 .. $sth_count) {
         my $sth = $dbh->prepare('SELECT name FROM t');
         push @sth, $sth;
@@ -99,7 +101,9 @@ my @live = grep { defined $_ } @$handles;
 is scalar @live, 0, "handles should be gone now";
 
 # test that the childhandle array does not grow uncontrollably
-{
+SKIP: {
+    skip "slow tests avoided when using DBD::Gofer", 2 if $using_dbd_gofer;
+
     for (1 .. 1000) {
         my $sth = $dbh->prepare('SELECT name FROM t');
     }
@@ -108,3 +112,5 @@ is scalar @live, 0, "handles should be gone now";
     my @live = grep { defined } @$handles;
     is scalar @live, 0;
 }
+
+1;

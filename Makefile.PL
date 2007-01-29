@@ -289,6 +289,7 @@ DBI.c: Perl$(OBJ_EXT)
 inst_libdbi = ' . File::Spec->catdir($self->{INST_LIB}, 'DBI') . '
 changes_pm = '  . File::Spec->catfile($self->{INST_LIB}, 'DBI', 'Changes.pm') . '
 roadmap_pm = '  . File::Spec->catfile($self->{INST_LIB}, 'DBI', 'Roadmap.pm') . '
+'.q{
 
 config :: $(changes_pm) $(roadmap_pm)
 	$(NOECHO) $(NOOP)
@@ -302,7 +303,10 @@ $(roadmap_pm): Roadmap.pod
 	$(MKPATH) $(inst_libdbi)
 	$(RM_F) $(roadmap_pm)
 	$(CP) Roadmap.pod $(roadmap_pm)
-';
+
+checkkeywords:
+	find lib -type f -name .svn -prune -o -name \*.pm -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
+};
 
     return $xst;
 }

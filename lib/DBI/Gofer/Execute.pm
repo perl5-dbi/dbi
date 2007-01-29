@@ -1,6 +1,6 @@
 package DBI::Gofer::Execute;
 
-#   $Id: Execute.pm 8696 2007-01-24 23:12:38Z timbo $
+#   $Id$
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -16,7 +16,7 @@ use DBI::Gofer::Response;
 
 use base qw(Exporter);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our @EXPORT_OK = qw(
     execute_request
@@ -24,7 +24,7 @@ our @EXPORT_OK = qw(
     execute_sth_request
 );
 
-our @sth_std_attr = qw(
+my @sth_std_attr = qw(
     NUM_OF_PARAMS
     NUM_OF_FIELDS
     NAME
@@ -32,7 +32,58 @@ our @sth_std_attr = qw(
     NULLABLE
     PRECISION
     SCALE
-    CursorName
+);
+
+my %extra_attr = (
+    # what driver-specific attributes should be returned for the driver being used?
+    # keyed by $dbh->{Driver}{Name}
+    # XXX for dbh attr only need to be returned on first access by client
+    # the client should then cache them. So need a way to indicate that.
+    # XXX for sth should split into attr specific to resultsets (where NUM_OF_FIELDS > 0) and others
+    # which would reduce processing/traffic for non-select statements
+    mysql  => {
+        dbh => [qw(
+        )],
+        sth => [qw(
+            mysql_is_blob mysql_is_key mysql_is_num mysql_is_pri_key mysql_is_auto_increment
+            mysql_length mysql_max_length mysql_table mysql_type mysql_type_name
+        )],
+    },
+    Pg  => {
+        dbh => [qw(
+            pg_protocol pg_lib_version pg_server_version
+            pg_db pg_host pg_port pg_default_port
+            pg_options pg_pid
+        )],
+        sth => [qw(
+            pg_size pg_type pg_oid_status pg_cmd_status
+        )],
+    },
+    Sybase => {
+        dbh => [qw(
+            syb_dynamic_supported syb_oc_version syb_server_version syb_server_version_string
+        )],
+        sth => [qw(
+            syb_types syb_result_type syb_proc_status
+        )],
+    },
+);
+
+my %extra_sth_attr = (
+    # what driver-specific attributes should be returned for the driver being used?
+    # keyed by $dbh->{Driver}{Name}
+    # XXX could split into attr specific to resultsets (where NUM_OF_FIELDS > 0) and others
+    # which would reduce processing/traffic for non-select statements
+    mysql  => [qw(
+        mysql_is_blob mysql_is_key mysql_is_num mysql_is_pri_key mysql_is_auto_increment
+        mysql_length mysql_max_length mysql_table mysql_type mysql_type_name
+    )],
+    Pg  => [qw(
+        pg_size pg_type pg_oid_status pg_cmd_status
+    )],
+    Sybase => [qw(
+        syb_types syb_result_type syb_proc_status
+    )],
 );
 
 our $trace = $ENV{DBI_GOFER_TRACE};
@@ -43,13 +94,16 @@ our $recurse = 0;
 
 sub _connect {
     my $request = shift;
-    local $ENV{DBI_AUTOPROXY};
+
+    local $ENV{DBI_AUTOPROXY}; # limit the insanity
+
     my $connect_args = $request->connect_args;
     my ($dsn, $u, $p, $attr) = @$connect_args;
     # delete attributes we don't want to affect the server-side
     delete @{$attr}{qw(Profile InactiveDestroy Warn HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
     my $connect_method = 'connect_cached';
-#$connect_method = 'connect';
+    #$connect_method = 'connect';
+
     # XXX need way to limit/purge connect cache over time
     my $dbh = DBI->$connect_method($dsn, $u, $p, {
         %$attr,
@@ -70,7 +124,6 @@ sub _connect {
 sub _reset_dbh {
     my ($dbh) = @_;
     $dbh->set_err(undef, undef); # clear any error state
-    #$dbh->trace(0, \*STDERR);
 }
 
 
@@ -78,16 +131,22 @@ sub _new_response_with_err {
     my ($rv) = @_;
 
     my ($err, $errstr, $state) = ($DBI::err, $DBI::errstr, $DBI::state);
+
+    # if we caught an exception and there's either no DBI error, or the
+    # exception itself doesn't look like a DBI exception, then append the
+    # exception to errstr
     if ($@ and !$errstr || $@ !~ /^DBD::/) {
         $err ||= 1;
         $errstr = ($errstr) ? "$errstr; $@" : $@;
     }
+
     my $response = DBI::Gofer::Response->new({
         rv     => $rv,
         err    => $err,
         errstr => $errstr,
         state  => $state,
     });
+
     return $response;
 }
 
@@ -109,9 +168,10 @@ sub execute_request {
             err => 1, errstr => $@, state  => '',
         });
     }
-    warn "Gofer response level $recurse: ".$response->rv."\n" if $trace;
+    #warn "Gofer response level $recurse: ".$response->rv."\n" if $trace;
     return $response;
 }
+
 
 sub execute_dbh_request {
     my $request = shift;
@@ -137,11 +197,6 @@ sub execute_dbh_request {
         # that returns a statement handle, so turn the $sth into resultset
         $response->sth_resultsets( _gather_sth_resultsets($rv, $request) );
         $response->rv("(sth)");
-    }
-    if (0) {
-        # if not using connect_cached then we want to gracefu
-        local $SIG{__WARN__} = sub {};
-        undef $dbh;
     }
     return $response;
 }
@@ -184,13 +239,24 @@ sub execute_sth_request {
 sub _gather_sth_resultsets {
     my ($sth, $request) = @_;
     return eval {
-        my $attr_list = $request->sth_result_attr;
-        $attr_list = [ keys %$attr_list ] if ref $attr_list eq 'HASH';
+        my $driver_name = $sth->{Database}{Driver}{Name};
+        my $extra_sth_attr = $extra_sth_attr{$driver_name} || [];
+
+        my $sth_attr = {};
+        $sth_attr->{$_} = 1 for (@sth_std_attr, @$extra_sth_attr);
+
+        # let the client add/remove sth atributes
+        if (my $sth_result_attr = $request->sth_result_attr) {
+            $sth_attr->{$_} = $sth_result_attr->{$_}
+                for keys %$sth_result_attr;
+        }
+
         my $rs_list = [];
         do {
-            my $rs = fetch_result_set($sth, $attr_list);
+            my $rs = fetch_result_set($sth, $sth_attr);
             push @$rs_list, $rs;
-        } while $sth->more_results;
+        } while $sth->more_results
+             || $sth->{syb_more_results};
 
         $rs_list;
     };
@@ -198,12 +264,17 @@ sub _gather_sth_resultsets {
 
 
 sub fetch_result_set {
-    my ($sth, $extra_attr) = @_;
+    my ($sth, $extra_sth_attr) = @_;
     my %meta;
-    for my $attr (@sth_std_attr, @$extra_attr) {
-        $meta{ $attr } = $sth->{$attr};
+    while ( my ($attr,$use) = each %$extra_sth_attr ) {
+        next unless $use;
+        my $v = eval { $sth->FETCH($attr) };
+        warn $@ if $@;
+        $meta{ $attr } = $v if defined $v;
     }
-    if ($sth->FETCH('NUM_OF_FIELDS')) { # if a select
+    my $NUM_OF_FIELDS = $meta{NUM_OF_FIELDS};
+    $NUM_OF_FIELDS = $sth->FETCH('NUM_OF_FIELDS') unless defined $NUM_OF_FIELDS;
+    if ($NUM_OF_FIELDS) { # is a select
         $meta{rowset} = eval { $sth->fetchall_arrayref() };
         $meta{err}    = $DBI::err;
         $meta{errstr} = $DBI::errstr;
