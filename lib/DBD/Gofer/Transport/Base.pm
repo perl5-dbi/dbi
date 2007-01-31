@@ -14,6 +14,6 @@ use base qw(DBI::Gofer::Transport::Base);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-sub _init_debug { $ENV{DBD_GOFER_TRACE} || 0 }
+sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
 
 1;

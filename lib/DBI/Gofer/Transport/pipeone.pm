@@ -1,4 +1,4 @@
-package DBI::Gofer::Transport::pipe;
+package DBI::Gofer::Transport::pipeone;
 
 #   $Id$
 #
@@ -21,7 +21,7 @@ our @EXPORT = qw(run_one_stdio);
 
 sub run_one_stdio {
 
-    my $self = DBI::Gofer::Transport::pipe->new();
+    my $self = DBI::Gofer::Transport::pipeone->new();
 
     my $frozen_request = do { local $/; <STDIN> };
 

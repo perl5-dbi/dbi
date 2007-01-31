@@ -1,4 +1,4 @@
-package DBD::Gofer::Transport::pipe;
+package DBD::Gofer::Transport::pipeone;
 
 #   $Id$
 #
@@ -18,8 +18,33 @@ use base qw(DBD::Gofer::Transport::Base);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
+    connection_info
     response_info
 )); 
+
+
+sub start_pipe_command {
+    my ($self, $cmd) = @_;
+
+    # ensure subprocess will use the same modules as us
+    local $ENV{PERL5LIB} = join ":", @INC;
+
+    # limit various forms of insanity, for now
+    local $ENV{DBI_TRACE};
+    local $ENV{DBI_AUTOPROXY};
+    local $ENV{DBI_PROFILE};
+
+    my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
+    my $pid = open3($wfh, $rfh, $efh, $cmd)
+        or die "error starting $cmd: $!\n";
+    warn "Started pid $pid: $cmd\n" if $self->trace;
+
+    return {
+        cmd=>$cmd,
+        pid=>$pid,
+        wfh=>$wfh, rfh=>$rfh, efh=>$efh,
+    };
+}
 
 
 sub transmit_request {
@@ -28,36 +53,28 @@ sub transmit_request {
     my $info = eval { 
         my $frozen_request = $self->freeze_data($request);
 
-        local $ENV{DBI_TRACE};
-        local $ENV{DBI_AUTOPROXY};
-        local $ENV{DBI_PROFILE};
-        local $ENV{PERL5LIB} = join ":", @INC;
-        my $cmd = "perl -MDBI::Gofer::Transport::pipe -e run_one_stdio";
+        my $cmd = "perl -MDBI::Gofer::Transport::pipeone -e run_one_stdio";
+        my $info = $self->start_pipe_command($cmd);
 
-        my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
-        my $pid = open3($wfh, $rfh, $efh, $cmd)
-            or die "error starting subprocess: $!\n";
-
+        my $wfh = delete $info->{wfh};
         # send frozen request
         print $wfh $frozen_request;
         # indicate that there's no more
         close $wfh
-            or die "error writing to subprocess: $!\n";
+            or die "error writing to $cmd: $!\n";
 
-        # so far so good. return the state info
-        { pid=>$pid, rfh=>$rfh, efh=>$efh };
+        $info; # so far so good. return the state info
     };
     if ($@) {
-    warn $@;
-        $info = {};
-        $info->{response} = DBI::Gofer::Response->new({
-            err    => 1,
-            errstr => $@,
-        }); 
+        my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
+        $self->response_info($response);
+    }
+    else {
+        $self->response_info(undef);
     }
 
     # record what we need to get a response, ready for receive_response()
-    $self->response_info( $info );
+    $self->connection_info( $info );
 
     return 1;
 }
@@ -66,10 +83,11 @@ sub transmit_request {
 sub receive_response {
     my $self = shift;
 
-    my $info = $self->response_info || die;
-    my ($response, $pid, $rfh, $efh) = @{$info}{qw(response pid rfh efh)};
-
+    my $response = $self->response_info;
     return $response if $response; # failed while starting
+
+    my $info = $self->connection_info || die;
+    my ($pid, $rfh, $efh) = @{$info}{qw(pid rfh efh)};
 
     waitpid $info->{pid}, 0
         or warn "waitpid: $!"; # XXX do something more useful?
@@ -80,13 +98,12 @@ sub receive_response {
     if (not $frozen_response) { # no output on stdout at all
         return DBI::Gofer::Response->new({
             err    => 1,
-            errstr => "pipe command failed: $stderr_msg",
+            errstr => "pipeone command failed: $stderr_msg",
         }); 
     }
     warn "STDERR message: $stderr_msg" if $stderr_msg; # XXX do something more useful
-    #warn DBI::neat($frozen_response);
 
-    # XXX may be corrupt
+    # XXX need to be able to detect and deal with corruption
     $response = $self->thaw_data($frozen_response);
 
     return $response;

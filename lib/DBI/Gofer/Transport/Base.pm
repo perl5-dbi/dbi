@@ -54,7 +54,7 @@ sub _dump {
     my ($self, $label, $data) = @_;
     require Data::Dumper;
     # XXX config dumper format
-    warn "$label=".Dumper($data);
+    warn "$label=".Data::Dumper::Dumper($data);
 }
 
 1;

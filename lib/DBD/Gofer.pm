@@ -489,9 +489,9 @@ double colons then it's prefixed with C<DBD::Gofer::Transport::>.
 The C<dsn=$dsn> part I<must> be the last element of the dsn because everything
 after C<dsn=> is assumed to be the DSN that the remote DBI should use.
 
-The C<...> represents attributes that influence the operation of the driver or
-transport. These are described below or in the documentation of the transport
-module being used.
+The C<...> represents attributes that influence the operation of the Gofer
+driver or transport. These are described below or in the documentation of the
+transport module being used.
 
 =head1 DESCRIPTION
 
@@ -499,11 +499,11 @@ DBD::Gofer is a DBI database driver that forwards requests to another DBI driver
 usually in a seperate process, often on a separate machine.
 
 It is very similar to DBD::Proxy. The major difference is that DBD::Gofer
-assumes no state is maintained on the remote end. What does that mean?
-It means that every request contains all the information needed to create the
-required state. (So, for example, every request includes the DSN to connect to.)
-Each request can be sent to any available server. The server executes
-the request and returns a single response that includes all the data.
+assumes no state is maintained on the remote end. That means every request
+contains all the information needed to create the required state. (So, for
+example, every request includes the DSN to connect to.) Each request can be
+sent to any available server. The server executes the request and returns a
+single response that includes all the data.
 
 This is very similar to the way http works as a stateless protocol for the web.
 Each request from your web browser can be handled by a different web server process.
