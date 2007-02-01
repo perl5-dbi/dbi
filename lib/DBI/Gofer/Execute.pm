@@ -155,6 +155,8 @@ sub execute_request {
     my $request = shift;
     local $recurse = $recurse + 1;
     warn "Gofer request level $recurse\n" if $trace;
+    my @warnings;
+    local $SIG{__WARN__} = sub { push @warnings, @_ };
     # guaranteed not to throw an exception
     my $response = eval {
         ($request->is_sth_request)
@@ -162,13 +164,13 @@ sub execute_request {
             : execute_dbh_request($request);
     };
     if ($@) {
-        warn $@; # XXX
         chomp $@;
         $response = DBI::Gofer::Response->new({
             err => 1, errstr => $@, state  => '',
         });
     }
     #warn "Gofer response level $recurse: ".$response->rv."\n" if $trace;
+    $response->warnings(\@warnings) if @warnings;
     return $response;
 }
 

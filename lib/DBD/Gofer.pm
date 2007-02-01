@@ -69,8 +69,18 @@
 	$drh;
     }
 
+
     sub CLONE {
         undef $drh;
+    }
+
+
+    sub set_err_from_response {
+        my ($h, $response) = @_;
+        # set error/warn/info
+        my $warnings = $response->warnings || [];
+        warn $_ for @$warnings;
+        return $h->set_err($response->err, $response->errstr, $response->state);
     }
 
 }
@@ -119,7 +129,7 @@
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$dsn_attr{go_transport}"
             unless $transport_class =~ /::/;
-        eval "require $transport_class" # XXX fix unsafe string eval
+        _load_class($transport_class)
             or return $drh->set_err(1, "Error loading $transport_class: $@");
         my $go_trans = eval { $transport_class->new(\%dsn_attr) }
             or return $drh->set_err(1, "Error instanciating $transport_class: $@");
@@ -158,6 +168,17 @@
     }
 
     sub DESTROY { undef }
+
+
+    sub _load_class { # return true or false+$@
+        my $class = shift;
+        (my $pm = $class) =~ s{::}{/}g;
+        $pm .= ".pm";
+        return 1 if eval { require $pm };
+        delete $INC{$pm}; # shouldn't be needed (perl bug?) and assigning undef isn't enough
+        undef; # error in $@
+    }
+
 }
 
 
@@ -198,7 +219,7 @@
             $rv = [ $sth ];
         }
 
-        $dbh->set_err($response->err, $response->errstr, $response->state);
+        DBD::Gofer::set_err_from_response($dbh, $response);
 
         return (wantarray) ? @$rv : $rv->[0];
     }
@@ -362,11 +383,10 @@
             $sth->{go_rows} = $response->rv;
         }
         # set error/warn/info (after more_results as that'll clear err)
-        $sth->set_err($response->err, $response->errstr, $response->state);
+        DBD::Gofer::set_err_from_response($sth, $response);
 
         return $response->rv;
     }
-
 
     # sth methods that should always fail, at least for now
     for my $method (qw(
@@ -479,15 +499,21 @@ DBD::Gofer - A stateless-proxy driver for communicating with a remote DBI
 
   use DBI;
 
-  $dbh = DBI->connect("dbi:Gofer:transport=$transport;...;dsn=$dsn",
+  $original_dsn = "dbi:..."; # your original DBI Data Source Name
+
+  $dbh = DBI->connect("dbi:Gofer:transport=$transport;...;dsn=$original_dsn",
                       $user, $passwd, \%attributes);
+
+  ... use $dbh as if it was connected to $original_dsn ...
+
 
 The C<transport=$transport> part specifies the name of the module to use to
 transport the requests to the remote DBI. If $transport doesn't contain any
 double colons then it's prefixed with C<DBD::Gofer::Transport::>.
 
-The C<dsn=$dsn> part I<must> be the last element of the dsn because everything
-after C<dsn=> is assumed to be the DSN that the remote DBI should use.
+The C<dsn=$original_dsn> part I<must be the last element> of the DSN because
+everything after C<dsn=> is assumed to be the DSN that the remote DBI should
+use.
 
 The C<...> represents attributes that influence the operation of the Gofer
 driver or transport. These are described below or in the documentation of the
@@ -495,13 +521,15 @@ transport module being used.
 
 =head1 DESCRIPTION
 
-DBD::Gofer is a DBI database driver that forwards requests to another DBI driver,
-usually in a seperate process, often on a separate machine.
+DBD::Gofer is a DBI database driver that forwards requests to another DBI
+driver, usually in a seperate process, often on a separate machine. It tries to
+be as transparent as possible so it appears that you are using the remote
+driver directly.
 
-It is very similar to DBD::Proxy. The major difference is that DBD::Gofer
-assumes no state is maintained on the remote end. That means every request
-contains all the information needed to create the required state. (So, for
-example, every request includes the DSN to connect to.) Each request can be
+DBD::Gofer is very similar to DBD::Proxy. The major difference is that with
+DBD::Gofer no state is maintained on the remote end. That means every
+request contains all the information needed to create the required state. (So,
+for example, every request includes the DSN to connect to.) Each request can be
 sent to any available server. The server executes the request and returns a
 single response that includes all the data.
 
@@ -549,8 +577,7 @@ DBD::Gofer sends as few requests as possible.
 
 =head3 Thin Clients / Unsupported Platforms
 
-You no longer need drivers for your database on every system.
-DBD::Gofer is pure perl
+You no longer need drivers for your database on every system.  DBD::Gofer is pure perl.
 
 =head1 CONSTRAINTS
 
@@ -564,42 +591,128 @@ Use the connect() call to specify all the attribute settings you want.
 This is because it's critical that when a request is complete the database
 handle is left in the same state it was when first connected.
 
-=head2 AutoCommit only
+=head2 You can't use transactions.
 
-Transactions aren't supported.
+AutoCommit only. Transactions aren't supported.
+
+=head2 You need to use func() to call driver-private dbh methods
+
+So instead of the new-style:
+
+    $dbh->foo_method_name(...)
+
+you need to use the old-style:
+
+    $dbh->func(..., 'foo_method_name');
+
+This constraint might be removed in future.
+
+=head2 You can't call driver-private sth methods
+
+But few people need to do that.
+
+=head2 Array Methods are not supported
+
+The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
+are not currently supported. Patches welcome, of course.
 
 =head1 CAVEATS
 
 A few things to keep in mind when using DBD::Gofer:
 
-=head2 Driver-private Methods
+=head2 Driver-private Database Handle Attributes
 
-These can be called via the func() method on the dbh
-but not the sth.
+Some driver-private dbh attributes may not be available, currently.
+In future it will be possible to indicate which attributes you'd like to be
+able to read.
 
 =head2 Driver-private Statement Handle Attributes
 
-Driver-private sth attributes can be set in the prepare() call. XXX
+Driver-private sth attributes can be set in the prepare() call. TODO
 
-Driver-private sth attributes can't be read, currently. In future it will be
-possible to indicate which sth attributes you'd like to be able to read.
-
-=head1 Array Methods
-
-The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
-are not currently supported. Patches welcome, of course.
+Some driver-private sth attributes may not be available, currently.
+In future it will be possible to indicate which attributes you'd like to be
+able to read.
 
 =head1 Multiple Resultsets
 
 Multiple resultsets are supported if the driver supports the more_results() method.
 
+=head1 TRANSPORTS
+
+DBD::Gofer doesn't concern itself with transporting requests and responses to and fro.
+For that it uses special Gofer transport modules.
+
+Gofer transport modules usually come in pairs: one for the 'client' DBD::Gofer
+driver to use and one for the remote 'server' end. They have very similar names:
+
+    DBD::Gofer::Transport::<foo>
+    DBI::Gofer::Transport::<foo>
+
+Several transport modules are provided with DBD::Gofer:
+
+=head2 null
+
+The null transport is the simplest of them all. It doesn't actually transport the request anywhere.
+It just serializes (freezes) the request into a string, then thaws it back into
+a data structure before passing it to DBI::Gofer::Execute to execute. The same
+freeze and thaw is applied to the results.
+
+The null transport is the best way to test if your application will work with Gofer.
+Just set the DBI_AUTOPROXY environment variable to "C<dbi:Gofer:transport=null>"
+(see L</DBI_AUTOPROXY> below) and run your application, or ideally its test suite, as usual.
+
+It doesn't take any parameters.
+
+=head2 pipeone
+
+The pipeone transport launches a subprocess for each request. It passes in the
+request and reads the response. The fact that a new subprocess is started for
+each request proves that the server side is truely stateless. It also makes
+this transport very slow. It's useful, however, both as a proof of concept and
+as a base class for the stream driver.
+
+It doesn't take any parameters.
+
+=head2 stream
+
+The stream driver also launches a subprocess and writes requests and reads
+responses, like the pipeone transport.  In this case, however, the subprocess
+is expected to handle more that one request. (Though it will be restarted if it exits.)
+
+This is the first transport that is truly useful because it can launch the
+subprocess using ssh. This means you can now use DBD::Gofer to easily access
+any databases that's accessible from any system you can login to.
+
+XXX ssh
+
+=head2 http
+
+The http driver uses the http protocol to send Gofer requests and receive replies.
+
+XXX not yet implemented
+
 =head1 CONNECTING
+
+Simply prefix your existing DSN with "C<dbi:Gofer:transport=$transport;dsn=>"
+where $transport is the name of the Gofer transport you want to use (see L</TRANSPORTS>).
+The C<transport> and C<dsn> attributes must be specified and the C<dsn> attributes must be last.
+
+Other attributes can be specified in the DSN to configure DBD::Gofer and/or the transport being used.
 
 XXX
 
 =head2 Using DBI_AUTOPROXY
 
-XXX
+The simplest way to try out DBD::Gofer is to set the DBI_AUTOPROXY environment variable.
+In this case you don't include the C<dsn=> part.
+
+    export DBI_AUTOPROXY=dbi:Gofer:transport=null
+
+or
+
+    export DBI_AUTOPROXY=dbi:Gofer:transport=stream;ssh=user@example.com
+
 
 =head1 CONFIGURING VIA POLICY
 
@@ -607,11 +720,11 @@ XXX
 
 =head1 AUTHOR AND COPYRIGHT
 
-The DBI module is Copyright (c) 2007 Tim Bunce. Ireland.
-All rights reserved.
-            
-You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl README file.
+The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
+Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+
+You may distribute under the terms of either the GNU General Public License or
+the Artistic License, as specified in the Perl README file.
 
 =head1 SEE ALSO
 
@@ -622,7 +735,7 @@ L<DBI>, L<DBI::Gofer::Execute>.
 
 =head1 TODO
 
-dbh STORE doesn't record set attributes
+Test existing compiled drivers (ie DBD::mysql) for binary compatibility
 
 Driver-private sth attributes - set via prepare() - change DBI spec
 Auto-configure based on driver name.
@@ -633,8 +746,6 @@ Caching of get_info values
 prepare vs prepare_cached
 
 Driver-private sth methods via func? Can't be sure of state?
-
-Sybase specific features.
 
 XXX track installed_methods and install proxies on client side after connect?
 
@@ -652,6 +763,10 @@ so that web caches (squid etc) could be used to implement the caching.
 
 check clone tests
 
-add early test that connected dbh is active
+Add policy mechanism
+
+Add mecahism for transports to list config params
+and for Gofer to apply any that match
+(and warn if any left over?)
 
 =cut

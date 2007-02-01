@@ -98,7 +98,7 @@ ok $dbh->{TraceLevel};
     print "test unknown parse_trace_flag\n";
     my $warn = 0;
     local $SIG{__WARN__} = sub {
-        if ($_[0] =~ /unknown/i) { ++$warn; print "warn: ",@_ }else{ warn @_ }
+        if ($_[0] =~ /unknown/i) { ++$warn; print "caught warn: ",@_ }else{ warn @_ }
         };
     is $dbh->parse_trace_flag("nonesuch"), undef;
     is $warn, 0;

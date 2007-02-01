@@ -25,6 +25,7 @@ __PACKAGE__->mk_accessors(qw(
 
 sub start_pipe_command {
     my ($self, $cmd) = @_;
+    $cmd = [ $cmd ] unless ref $cmd eq 'ARRAY';
 
     # ensure subprocess will use the same modules as us
     local $ENV{PERL5LIB} = join ":", @INC;
@@ -35,7 +36,7 @@ sub start_pipe_command {
     local $ENV{DBI_PROFILE};
 
     my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
-    my $pid = open3($wfh, $rfh, $efh, $cmd)
+    my $pid = open3($wfh, $rfh, $efh, @$cmd)
         or die "error starting $cmd: $!\n";
     warn "Started pid $pid: $cmd\n" if $self->trace;
 
@@ -47,13 +48,22 @@ sub start_pipe_command {
 }
 
 
+sub cmd_as_string {
+    my $self = shift;
+    # XXX meant to return a prroperly shell-escaped string suitable for system
+    # but its only for debugging so that can wait
+    my $connection_info = $self->connection_info;
+    return join " ", @{$connection_info->{cmd}};
+}
+
+
 sub transmit_request {
     my ($self, $request) = @_;
 
     my $info = eval { 
         my $frozen_request = $self->freeze_data($request);
 
-        my $cmd = "perl -MDBI::Gofer::Transport::pipeone -e run_one_stdio";
+        my $cmd = [qw(perl -MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
         my $info = $self->start_pipe_command($cmd);
 
         my $wfh = delete $info->{wfh};

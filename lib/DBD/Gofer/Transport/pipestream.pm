@@ -17,6 +17,10 @@ use base qw(DBD::Gofer::Transport::pipeone);
 
 our $VERSION = sprintf("0.%06d", q$Revision: 8748 $ =~ /(\d+)/o);
 
+__PACKAGE__->mk_accessors(qw(
+    ssh
+)); 
+
 
 sub nonblock;
 
@@ -27,8 +31,15 @@ sub transmit_request {
 
         my $connection = $self->connection_info;
         if (not $connection || ($connection->{pid} && not kill 0, $connection->{pid})) {
-            my $cmd = "perl -MDBI::Gofer::Transport::pipestream -e run_stdio_hex";
-            #$cmd = "DBI_TRACE=2=/tmp/pipestream.log $cmd";
+            my $cmd = [qw(perl -MDBI::Gofer::Transport::pipestream -e run_stdio_hex)];
+            #push @$cmd, "DBI_TRACE=2=/tmp/pipestream.log", "sh", "-c";
+            if (0) {
+                my $ssh = 'timbo@localhost';
+                unshift @$cmd, 'ssh', '-q', split(' ', $ssh);
+            }
+            # XXX add a handshake - some message from DBI::Gofer::Transport::pipestream that's
+            # sent as soon as it starts that we can wait for to report success - and soak up
+            # and useful warnings etc from shh before we get it.
             $connection = $self->start_pipe_command($cmd);
             nonblock($connection->{efh});
             $self->connection_info($connection);
@@ -65,24 +76,34 @@ sub receive_response {
     my $connection = $self->connection_info || die;
     my ($pid, $rfh, $efh) = @{$connection}{qw(pid rfh efh)};
 
+    # blocks till a newline has been read
     my $frozen_response = <$rfh>; # always one line
-    my $stderr_msg      = do { local $/; <$efh> }; # nonblocking
+    my $frozen_response_errno = $!;
 
-    chomp $stderr_msg if $stderr_msg;
+    # must read any stderr output _afterwards_
+    # warnings during execution are caught and returned as part
+    # of the response object. So stderr should be silent.
+    my $stderr_msg = do { local $/; <$efh> }; # nonblocking
 
-    if (not $frozen_response) { # no output on stdout at all
-    warn "STDERR err message: $stderr_msg" if $stderr_msg; # XXX do something more useful
-        return DBI::Gofer::Response->new({
-            err    => 1,
-            errstr => "Error reading from $connection->{cmd}: $stderr_msg",
-        }); 
+    # if we got no output on stdout at all then the command has
+    # proably exited, possibly with an error to stderr.
+    # Turn this situation into a reasonably useful DBI error.
+    if (not $frozen_response or !chomp $frozen_response) {
+        chomp $stderr_msg if $stderr_msg;
+        my $msg = sprintf("Error reading from %s (pid %d%s): ",
+            $self->cmd_as_string, $pid, (kill 0, $pid) ? "" : ", exited");
+        $msg .= $stderr_msg || $frozen_response_errno;
+        return DBI::Gofer::Response->new({ err => 1, errstr => $msg }); 
     }
-    chomp $frozen_response if $frozen_response;
-    warn "STDERR additional message: $stderr_msg" if $stderr_msg; # XXX do something more useful
     #warn DBI::neat($frozen_response);
+    warn "pipestream stderr message: $stderr_msg\n" if $stderr_msg && $self->trace;
 
     # XXX need to be able to detect and deal with corruption
     $response = $self->thaw_data(pack("H*",$frozen_response));
+
+    # add any stderr messages as a warning (ie PrintWarn)
+    $response->add_err(0, $stderr_msg, undef, $self->trace)
+        if $stderr_msg;
 
     return $response;
 }

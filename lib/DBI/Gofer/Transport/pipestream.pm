@@ -24,6 +24,8 @@ sub run_stdio_hex {
     my $self = DBI::Gofer::Transport::pipestream->new();
     local $| = 1;
 
+    #warn "STARTED $$";
+
     while ( my $frozen_request = <STDIN> ) {
 
         my $request = $self->thaw_data( pack "H*", $frozen_request );

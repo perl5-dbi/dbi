@@ -80,7 +80,7 @@ static int	set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *s
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int	dbi_hash _((const char *string, long i));
 static void	dbih_dumphandle _((SV *h, const char *msg, int level));
-static void	dbih_dumpcom _((imp_xxh_t *imp_xxh, const char *msg, int level));
+static int 	dbih_dumpcom _((imp_xxh_t *imp_xxh, const char *msg, int level));
 char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
 
@@ -119,6 +119,7 @@ typedef struct dbi_ima_st {
 #define IMA_EXECUTE	   	0x1000	/* do/execute: DBIcf_Executed	*/
 #define IMA_SHOW_ERR_STMT   	0x2000	/* dbh meth relates to Statement*/
 #define IMA_HIDE_ERR_PARAMVALUES 0x4000	/* ParamValues are not relevant */
+#define IMA_IS_FACTORY          0x8000	/* new h ie connect and prepare */
 
 #define DBIc_STATE_adjust(imp_xxh, state)				 \
     (SvOK(state)	/* SQLSTATE is implemented by driver   */	 \
@@ -206,6 +207,10 @@ savepv_using_sv(char *str)
     strcpy(buf, str);
     return buf;
 }
+
+/* handy for embedding into condition expression for debugging */
+static int warn1(char *s) { warn(s); return 1; }
+static int dump1(SV *sv)  { dTHX; sv_dump(sv); return 1; }
 
 
 /* --- */
@@ -1183,7 +1188,7 @@ dbih_dumphandle(SV *h, const char *msg, int level)
     dbih_dumpcom(imp_xxh, msg, level);
 }
 
-static void
+static int
 dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 {
     dTHX;
@@ -1218,10 +1223,15 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
     if (DBIc_is(imp_xxh, DBIcf_Profile))	sv_catpv(flags,"Profile ");
     if (DBIc_is(imp_xxh, DBIcf_Callbacks))	sv_catpv(flags,"Callbacks ");
     PerlIO_printf(DBILOGFP,"%s FLAGS 0x%lx: %s\n", pad, (long)DBIc_FLAGS(imp_xxh), SvPV(flags,lna));
+    if (SvOK(DBIc_ERR(imp_xxh)))
+        PerlIO_printf(DBILOGFP,"%s ERR %s\n",	pad, neatsvpv((SV*)DBIc_ERR(imp_xxh),0));
+    if (SvOK(DBIc_ERR(imp_xxh)))
+        PerlIO_printf(DBILOGFP,"%s ERRSTR %s\n",	pad, neatsvpv((SV*)DBIc_ERRSTR(imp_xxh),0));
     PerlIO_printf(DBILOGFP,"%s PARENT %s\n",	pad, neatsvpv((SV*)DBIc_PARENT_H(imp_xxh),0));
     PerlIO_printf(DBILOGFP,"%s KIDS %ld (%ld Active)\n", pad,
 		    (long)DBIc_KIDS(imp_xxh), (long)DBIc_ACTIVE_KIDS(imp_xxh));
-    PerlIO_printf(DBILOGFP,"%s IMP_DATA %s\n", pad, neatsvpv(DBIc_IMP_DATA(imp_xxh),0));
+    if (DBIc_IMP_DATA(imp_xxh) && SvOK(DBIc_IMP_DATA(imp_xxh)))
+        PerlIO_printf(DBILOGFP,"%s IMP_DATA %s\n", pad, neatsvpv(DBIc_IMP_DATA(imp_xxh),0));
     if (DBIc_LongReadLen(imp_xxh) != DBIc_LongReadLen_init)
 	PerlIO_printf(DBILOGFP,"%s LongReadLen %ld\n", pad, (long)DBIc_LongReadLen(imp_xxh));
 
@@ -1246,6 +1256,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 	    PerlIO_printf(DBILOGFP,"%s   '%s' => %s\n", pad, key, neatsvpv(value,0));
 	}
     }
+    return 1;
 }
 
 
@@ -2912,7 +2923,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     if (!keep_error && !(*meth_name=='s' && strEQ(meth_name,"set_err"))) {
 	SV *err_sv;
-	if (trace_level >= 4 && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
+	if (trace_level && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
 	    PerlIO *logfp = DBILOGFP;
 	    PerlIO_printf(logfp, "    !! %s: %s CLEARED by call to %s method\n",
 		SvTRUE(err_sv) ? "ERROR" : strlen(SvPV_nolen(err_sv)) ? "warn" : "info",
@@ -3060,9 +3071,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
 	SPAGAIN;
 
-	if (trace_level) { /* XXX restore local vars so ST(n) works below	*/
-	    sp -= outitems; ax = (sp - stack_base) + 1;
-	}
+	/* XXX restore local vars so ST(n) works below	*/
+        sp -= outitems;
+        ax = (sp - stack_base) + 1;
 
 #ifdef DBI_save_hv_fetch_ent
 	if (is_FETCH)
@@ -3230,6 +3241,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		}
 	    }
 	}
+    }
+
+    if (ima_flags & IMA_IS_FACTORY && SvROK(ST(0))) {
+        SV *h_new = ST(0);
+        D_impdata(imp_xxh_new, imp_xxh_t, h_new);
+        if (SvOK(DBIc_ERR(imp_xxh_new))) {
+            set_err_sv(h, imp_xxh, DBIc_ERR(imp_xxh_new), DBIc_ERRSTR(imp_xxh_new), DBIc_STATE(imp_xxh_new), &sv_no);
+        }
     }
 
     if (   !keep_error			/* is a new err/warn/info		*/
