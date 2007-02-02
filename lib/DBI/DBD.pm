@@ -3047,9 +3047,7 @@ sub dbd_edit_mm_attribs {
 		print PPT "#!$v_perl\n";
 		print PPT "use threads;\n" if $usethr;
 		print PPT "$_;\n" foreach @{$v_info->{add}};
-		print PPT "require 't/$test'; # or warn \$!;\n";
-		print PPT 'die if $@;'."\n";
-		print PPT "exit 0\n";
+		print PPT "require './t/$test'; # or warn \$!;\n";
 		close PPT or warn "Error writing $v_test: $!";
 	    }
 	}
