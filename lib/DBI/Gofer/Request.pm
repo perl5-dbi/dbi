@@ -7,7 +7,7 @@ package DBI::Gofer::Request;
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-use base qw(Class::Accessor::Fast);
+use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 

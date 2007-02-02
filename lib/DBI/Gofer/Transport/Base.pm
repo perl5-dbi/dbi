@@ -12,7 +12,7 @@ use warnings;
 
 use Storable qw(freeze thaw);
 
-use base qw(Class::Accessor::Fast);
+use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
