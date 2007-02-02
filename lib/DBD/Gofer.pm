@@ -682,10 +682,11 @@ responses, like the pipeone transport.  In this case, however, the subprocess
 is expected to handle more that one request. (Though it will be restarted if it exits.)
 
 This is the first transport that is truly useful because it can launch the
-subprocess using ssh. This means you can now use DBD::Gofer to easily access
-any databases that's accessible from any system you can login to.
+subprocess on a remote machine using ssh. This means you can now use DBD::Gofer
+to easily access any databases that's accessible from any system you can login to.
+You also get all the benefits of ssh, including encryption and optional compression.
 
-XXX ssh
+See L</DBI_AUTOPROXY> below for an example.
 
 =head2 http
 
@@ -736,11 +737,17 @@ L<DBI>, L<DBI::Gofer::Execute>.
 
 =head1 TODO
 
+Random brain dump...
+
+Add policy mechanism
+
+Add mecahism for transports to list config params
+and for Gofer to apply any that match
+(and warn if any left over?)
+
 Test existing compiled drivers (ie DBD::mysql) for binary compatibility
 
 Driver-private sth attributes - set via prepare() - change DBI spec
-Auto-configure based on driver name.
-Automatically send back everything in sth attribute cache?
 
 Caching of get_info values
 
@@ -748,26 +755,17 @@ prepare vs prepare_cached
 
 Driver-private sth methods via func? Can't be sure of state?
 
-XXX track installed_methods and install proxies on client side after connect?
+track installed_methods and install proxies on client side after connect?
 
-XXX add hooks into transport base class for checking & updating a cache
+add hooks into transport base class for checking & updating a cache
    ie via a standard cache interface such as:
    http://search.cpan.org/~robm/Cache-FastMmap/FastMmap.pm
    http://search.cpan.org/~bradfitz/Cache-Memcached/lib/Cache/Memcached.pm
    http://search.cpan.org/~dclinton/Cache-Cache/
    http://search.cpan.org/~cleishman/Cache/
-
 Also caching instructions could be passed through the httpd transport layer
 in such a way that appropriate http cache headers are added to the results
 so that web caches (squid etc) could be used to implement the caching.
 (May require the use of GET rather than POST requests.)
-
-check clone tests
-
-Add policy mechanism
-
-Add mecahism for transports to list config params
-and for Gofer to apply any that match
-(and warn if any left over?)
 
 =cut
