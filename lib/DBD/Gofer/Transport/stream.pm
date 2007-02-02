@@ -1,4 +1,4 @@
-package DBD::Gofer::Transport::pipestream;
+package DBD::Gofer::Transport::stream;
 
 #   $Id: pipeone.pm 8748 2007-01-29 22:49:42Z timbo $
 #
@@ -31,13 +31,13 @@ sub transmit_request {
 
         my $connection = $self->connection_info;
         if (not $connection || ($connection->{pid} && not kill 0, $connection->{pid})) {
-            my $cmd = [qw(perl -MDBI::Gofer::Transport::pipestream -e run_stdio_hex)];
-            #push @$cmd, "DBI_TRACE=2=/tmp/pipestream.log", "sh", "-c";
+            my $cmd = [qw(perl -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
+            #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
             if (0) {
                 my $ssh = 'timbo@localhost';
                 unshift @$cmd, 'ssh', '-q', split(' ', $ssh);
             }
-            # XXX add a handshake - some message from DBI::Gofer::Transport::pipestream that's
+            # XXX add a handshake - some message from DBI::Gofer::Transport::stream that's
             # sent as soon as it starts that we can wait for to report success - and soak up
             # and useful warnings etc from shh before we get it.
             $connection = $self->start_pipe_command($cmd);
@@ -96,7 +96,7 @@ sub receive_response {
         return DBI::Gofer::Response->new({ err => 1, errstr => $msg }); 
     }
     #warn DBI::neat($frozen_response);
-    warn "pipestream stderr message: $stderr_msg\n" if $stderr_msg && $self->trace;
+    warn "Gofer stream stderr message: $stderr_msg\n" if $stderr_msg && $self->trace;
 
     # XXX need to be able to detect and deal with corruption
     $response = $self->thaw_data(pack("H*",$frozen_response));

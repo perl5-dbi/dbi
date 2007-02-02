@@ -1,6 +1,6 @@
-package DBI::Gofer::Transport::pipestream;
+package DBI::Gofer::Transport::stream;
 
-#   $Id: pipestream.pm 8748 2007-01-29 22:49:42Z timbo $
+#   $Id: stream.pm 8748 2007-01-29 22:49:42Z timbo $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -21,7 +21,7 @@ our @EXPORT = qw(run_stdio_hex);
 
 sub run_stdio_hex {
 
-    my $self = DBI::Gofer::Transport::pipestream->new();
+    my $self = DBI::Gofer::Transport::stream->new();
     local $| = 1;
 
     #warn "STARTED $$";
