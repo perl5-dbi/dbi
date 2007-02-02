@@ -399,7 +399,6 @@ struct dbistate_st {
 
     I32 debug;
     PerlIO *logfp;
-    IO *logfp_ref;	/* DAA keep ptr to filehandle for refcounting */
 
     /* pointers to DBI functions which the DBD's will want to use	*/
     char      * (*neat_svpv)	_((SV *sv, STRLEN maxlen));
@@ -423,7 +422,11 @@ struct dbistate_st {
     int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, const char *err, IV err_i, const char *errstr, const char *state, const char *method));
     int         (*bind_col)     _((SV *sth, SV *col, SV *ref, SV *attribs));
 
-    void *pad2[5];
+    IO *logfp_ref;	/* DAA keep ptr to filehandle for refcounting */
+
+    /* WARNING: Only add new structure members here, and reduce pad2 to keep */
+    /* the memory footprint exactly the same */
+    void *pad2[4];
 };
 
 /* macros for backwards compatibility */
