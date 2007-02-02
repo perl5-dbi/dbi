@@ -26,7 +26,9 @@ lib/DBD/ExampleP.pm		A very simple example Driver module
 lib/DBD/File.pm			A driver base class for simple drivers
 lib/DBD/Gofer.pm                DBD::Gofer 'stateless proxy' driver
 lib/DBD/Gofer/Transport/Base.pm Base class for DBD::Gofer driver transport classes
-lib/DBD/Gofer/Transport/null.pm DBD::Gofer transport that executes locally (for testing)
+lib/DBD/Gofer/Transport/null.pm DBD::Gofer transport that executes in same process (for testing)
+lib/DBD/Gofer/Transport/pipeone.pm DBD::Gofer transport to new subprocess for each request
+lib/DBD/Gofer/Transport/stream.pm DBD::Gofer transport for ssh etc
 lib/DBD/NullP.pm		An empty example Driver module
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
@@ -41,6 +43,8 @@ lib/DBI/Gofer/Execute.pm        Execution logic for DBD::Gofer server
 lib/DBI/Gofer/Request.pm        Request object from DBD::Gofer
 lib/DBI/Gofer/Response.pm       Response object for DBD::Gofer
 lib/DBI/Gofer/Transport/Base.pm Base class for DBD::Gofer server transport classes
+lib/DBI/Gofer/Transport/pipeone.pm  DBD::Gofer transport for single requests
+lib/DBI/Gofer/Transport/stream.pm   DBI::Gofer transport for ssh etc
 lib/DBI/Profile.pm		Manage DBI usage profile data
 lib/DBI/ProfileData.pm
 lib/DBI/ProfileDumper.pm

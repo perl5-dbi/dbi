@@ -10,13 +10,13 @@ XXX document DBD::Gofer
 
 =head2 Changes in DBI 1.54 (svn rev 8745),  29th January 2007
 
-  NOTE: This version has some subtle changes in DBI internals.
+  NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
+  Take a look!
+
+  WARNING: This version has some subtle changes in DBI internals.
   It's possible, though doubtful, that some may affect your code.
   I recommend some extra texting before using this release.
   Or perhaps I'm just being over cautious...
-
-  NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
-  Take a look!
 
   Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
   Fixed compile warnings in bleadperl on freebsd-6.1-release
@@ -32,6 +32,9 @@ XXX document DBD::Gofer
     to only be given for dbh that have active sth or are not AutoCommit.
   Changed take_imp_data to call finish on all Active child sth.
   Changed DBI::PurePerl trace() method to be more consistent.
+  Changed handle factory methods, like connect, prepare, and table_info,
+    to copy any error/warn/info state of the handle being returned
+    up into the handle the method was called on.
   Updated DBI::DBD docs for driver authors thanks to Ammon Riley
     and Dean Arnold.
 

@@ -91,6 +91,7 @@
     my %dsn_attr_defaults = (
         go_dsn => undef,
         go_url => undef,
+        go_ssh => undef,
         go_transport => undef,
     );
 
@@ -102,20 +103,20 @@
         my $orig_dsn = $dsn;
 
         # first remove dsn= and everything after it
-        my $go_dsn = ($dsn =~ s/\bdsn=(.*)$// && $1)
+        my $remote_dsn = ($dsn =~ s/\bdsn=(.*)$// && $1)
             or return $drh->set_err(1, "No dsn= argument in '$orig_dsn'");
 
         if ($attr->{go_bypass}) { # don't use DBD::Gofer for this connection
             # useful for testing with DBI_AUTOPROXY, e.g., t/03handle.t
-            return DBI->connect($go_dsn, $user, $auth, $attr);
+            return DBI->connect($remote_dsn, $user, $auth, $attr);
         }
 
-        my %dsn_attr = (%dsn_attr_defaults, go_dsn => $go_dsn);
+        my %dsn_attr = (%dsn_attr_defaults, go_dsn => $remote_dsn);
         # extract any go_ attributes from the connect() attr arg
         for my $k (grep { /^go_/ } keys %$attr) {
             $dsn_attr{$k} = delete $attr->{$k};
         }
-        # then override those with any attributes embedded in our dsn (not go_dsn)
+        # then override those with any attributes embedded in our dsn (not remote_dsn)
         for my $kv (grep /=/, split /;/, $dsn, -1) {
             my ($k, $v) = split /=/, $kv, 2;
             $dsn_attr{ "go_$k" } = $v;
@@ -125,9 +126,9 @@
             return $drh->set_err(1, "Unknown attributes: @{[ keys %dsn_attr ]}");
         }
 
-        my $transport_class = $dsn_attr{go_transport}
+        my $transport_class = delete $dsn_attr{go_transport}
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
-        $transport_class = "DBD::Gofer::Transport::$dsn_attr{go_transport}"
+        $transport_class = "DBD::Gofer::Transport::$transport_class"
             unless $transport_class =~ /::/;
         _load_class($transport_class)
             or return $drh->set_err(1, "Error loading $transport_class: $@");
@@ -141,7 +142,7 @@
             my $go_attr = { %$attr };
             delete @{$go_attr}{qw(Profile HandleError HandleSetErr Callbacks)};
             $request_class->new({
-                connect_args => [ $go_dsn, $user, $auth, $go_attr ]
+                connect_args => [ $remote_dsn, $user, $auth, $go_attr ]
             })
         } or return $drh->set_err(1, "Error instanciating $request_class $@");
 

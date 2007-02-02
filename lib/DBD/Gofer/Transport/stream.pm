@@ -18,7 +18,7 @@ use base qw(DBD::Gofer::Transport::pipeone);
 our $VERSION = sprintf("0.%06d", q$Revision: 8748 $ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
-    ssh
+    go_ssh
 )); 
 
 
@@ -33,9 +33,13 @@ sub transmit_request {
         if (not $connection || ($connection->{pid} && not kill 0, $connection->{pid})) {
             my $cmd = [qw(perl -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
             #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
-            if (0) {
-                my $ssh = 'timbo@localhost';
-                unshift @$cmd, 'ssh', '-q', split(' ', $ssh);
+            if (my $ssh = $self->go_ssh) {
+                #my $ssh = 'timbo@localhost';
+                my $setup_env = join "||", map { "source $_ 2>/dev/null" }
+                                    qw(.bash_profile .bash_login .profile);
+                my $setup = $setup_env.q{; eval "$@"};
+                unshift @$cmd, qw(ssh -q), split(' ', $ssh), qw(bash -c), $setup;
+                #warn "[@$cmd]";
             }
             # XXX add a handshake - some message from DBI::Gofer::Transport::stream that's
             # sent as soon as it starts that we can wait for to report success - and soak up
