@@ -7566,9 +7566,17 @@ to Alligator Descartes for starting work on the first edition of the
 "Programming the Perl DBI" book and letting me jump on board.
 
 The DBI and DBD::Oracle were originally developed while I was Technical
-Director (CTO) of the Paul Ingram Group (www.ig.co.uk).  So I'd
-especially like to thank Paul for his generosity and vision in
-supporting this work for many years.
+Director (CTO) of Ingeneering in the UK (L<http://www.ig.co.uk>) (formerly known as the
+Paul Ingram Group).  So I'd especially like to thank Paul for his generosity
+and vision in supporting this work for many years.
+
+A couple of specific DBI features have been sponsored by enlightened companies:
+
+The development of the swap_inner_handle() method was sponsored by BizRate.com (L<http://BizRate.com>)
+
+The development of DBD::Gofer and related modules was sponsored by
+Shopzilla.com (L<http://Shopzilla.com>), where I currently work.
+
 
 =head1 CONTRIBUTING
 
