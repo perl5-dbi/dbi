@@ -6,9 +6,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-XXX document DBD::Gofer
 
-=head2 Changes in DBI 1.54 (svn rev 8784),  1st February 2007
+=head2 Changes in DBI 1.54 (svn rev 8791),  2nd February 2007
 
   NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
   Take a look!
