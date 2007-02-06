@@ -302,7 +302,7 @@
             && do { local $^W; $value eq $dbh->FETCH($attrib) }; # XXX undefs
 
         # dbh attributes are set at connect-time - see connect()
-        Carp::carp("Can't alter \$dbh->{$attrib}");
+        Carp::carp("Can't alter \$dbh->{$attrib}") if $dbh->FETCH('Warn');
         return $dbh->set_err(1, "Can't alter \$dbh->{$attrib}");
     }
 
@@ -478,11 +478,15 @@
 	my ($sth, $attrib, $value) = @_;
 	return $sth->SUPER::STORE($attrib => $value)
             if $sth_local_store_attrib{$attrib}  # handle locally
-            or $attrib =~ m/^[a-z]/;             # driver-private
+            or $attrib =~ m/^[a-z]/;             # driver-private XXX
 
-        # XXX could perhaps do
-        # XXX? push @{ $sth->{go_method_calls} }, [ 'STORE', $attrib, $value ];
-        Carp::carp("Can't alter \$sth->{$attrib}");
+        # could perhaps do
+        #   push @{ $sth->{go_method_calls} }, [ 'STORE', $attrib, $value ];
+        # if not $sth->FETCH('Executed')
+        # but how to handle repeat executions? How to we know when an
+        # attribute is being set to affect the current resultset or the
+        # next execution? Could just always use go_method_calls I guess.
+        Carp::carp("Can't alter \$sth->{$attrib}") if $sth->FETCH('Warn');
         return $sth->set_err(1, "Can't alter \$sth->{$attrib}");
     }
 

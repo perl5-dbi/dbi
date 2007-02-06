@@ -209,9 +209,10 @@ savepv_using_sv(char *str)
 }
 
 /* handy for embedding into condition expression for debugging */
+/*
 static int warn1(char *s) { warn(s); return 1; }
 static int dump1(SV *sv)  { dTHX; sv_dump(sv); return 1; }
-
+*/
 
 /* --- */
 

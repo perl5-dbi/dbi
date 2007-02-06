@@ -28,7 +28,8 @@ BEGIN {
 
     if ("@ARGV" eq "all") {
 	# test with as many of the major DBM types as are available
-	for (qw( SDBM_File GDBM_File DB_File BerkeleyDB NDBM_File ODBM_File )) {
+        # skip NDBM and ODBM as they don't support EXISTS
+	for (qw( SDBM_File GDBM_File DB_File BerkeleyDB )) {
 	    push @dbm_types, $_ if eval { local $^W; require "$_.pm" };
 	}
     }
