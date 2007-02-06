@@ -1300,8 +1300,8 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
 	    imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh; /* works for DRH also */
 	    if (DBIc_CACHED_KIDS(imp_dbh)) {
-		warn("DBI handle 0x%x cleared whilst still holding %d cached kids",
-			(unsigned)DBIc_MY_H(imp_xxh), (int)HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
+		warn("DBI handle 0x%lx cleared whilst still holding %d cached kids",
+			(unsigned long)DBIc_MY_H(imp_xxh), (int)HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
 		SvREFCNT_dec(DBIc_CACHED_KIDS(imp_dbh)); /* may recurse */
 		DBIc_CACHED_KIDS(imp_dbh) = Nullhv;
 	    }
@@ -1312,20 +1312,20 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
             if (DBIc_TYPE(imp_xxh) >= DBIt_ST
             || (DBIc_ACTIVE_KIDS(imp_xxh) || !DBIc_has(imp_xxh, DBIcf_AutoCommit))
             ) {
-                warn("DBI handle 0x%x cleared whilst still active", (unsigned)DBIc_MY_H(imp_xxh));
+                warn("DBI handle 0x%lx cleared whilst still active", (unsigned long)DBIc_MY_H(imp_xxh));
                 dump = TRUE;
             }
 	}
 
 	/* check that the implementor has done its own housekeeping	*/
 	if (DBIc_IMPSET(imp_xxh)) {
-	    warn("DBI handle 0x%x has uncleared implementors data", (unsigned)DBIc_MY_H(imp_xxh));
+	    warn("DBI handle 0x%lx has uncleared implementors data", (unsigned long)DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	if (DBIc_KIDS(imp_xxh)) {
-	    warn("DBI handle 0x%x has %d uncleared child handles",
-		    (unsigned)DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
+	    warn("DBI handle 0x%lx has %d uncleared child handles",
+		    (unsigned long)DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
 	    dump = TRUE;
 	}
     }
@@ -2680,6 +2680,12 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    if (imp_xxh && DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh))
 		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, trace_level);
 	    if (trace_level >= 3)
+                /* XXX might be better to move this down to after call_depth has been
+                 * incremented and then also SvREFCNT_dec(mg->mg_obj) to force an immediate
+                 * DESTROY of the inner handle if there are no other refs to it.
+                 * That way the inner DESTROY is properly flagged as a nested call,
+                 * and the outer DESTROY gets profiled more accurately, and callbacks work.
+                 */
                 PerlIO_printf(DBILOGFP,
 		    "%c   <> DESTROY(%s) ignored for outer handle (inner %s has ref cnt %ld)\n",
 		    (dirty?'!':' '), neatsvpv(h,0), neatsvpv(mg->mg_obj,0),
@@ -2784,8 +2790,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    }
 	    XSRETURN(0); /* don't DESTROY handle, if it is not our's !*/
 	}
-	croak("%s %s failed: handle %d is owned by thread %x not current thread %x (%s)",
-	    HvNAME(DBIc_IMP_STASH(imp_xxh)), meth_name, DBIc_TYPE(imp_xxh), (unsigned)h_perl, (unsigned)my_perl,
+	croak("%s %s failed: handle %d is owned by thread %lx not current thread %lx (%s)",
+	    HvNAME(DBIc_IMP_STASH(imp_xxh)), meth_name, DBIc_TYPE(imp_xxh),
+            (unsigned long)h_perl, (unsigned long)my_perl,
 	    "handles can't be shared between threads and your driver may need a CLONE method added");
     }
 }

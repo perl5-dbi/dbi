@@ -1,5 +1,6 @@
 #!perl -w                                         # -*- perl -*-
 # vim:sw=4:ts=8
+$|=1;
 
 use strict;
 use warnings;
@@ -10,10 +11,13 @@ use DBI;
 
 use lib "/Users/timbo/dbi/trunk/lib";
 
+# so users can try others from the command line
+my $dbm = $ARGV[0] || "SDBM_File";
+
 # use DBD::Gofer directly.
 # when combined with DBI_AUTOPROXY this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
 #
-my $dsn = "dbi:Gofer:transport=null;dsn=dbi:DBM:dbm_type=SDBM_File;lockfile=0";
+my $dsn = "dbi:Gofer:transport=null;dsn=dbi:DBM:dbm_type=$dbm;lockfile=0";
 my $dbh = DBI->connect($dsn);
 ok $dbh, 'should connect';
 

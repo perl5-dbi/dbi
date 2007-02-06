@@ -1,4 +1,5 @@
 #!perl -w
+$|=1;
 
 # --- Test DBI support for threads created after the DBI was loaded
 

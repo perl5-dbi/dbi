@@ -1,4 +1,5 @@
 #!perl -w
+$|=1;
 
 #
 # test script for DBI::Profile

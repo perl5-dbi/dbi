@@ -86,11 +86,12 @@ my %extra_sth_attr = (
     )],
 );
 
-our $trace = $ENV{DBI_GOFER_TRACE};
 
-our $recurse = 0;
+# set trace for server-side gofer
+# Could use DBI_TRACE env var when it's a separate process
+# but using DBI_GOFER_TRACE makes testing easier (e.g., with null transport)
+DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 
-# XXX tracing
 
 sub _connect {
     my $request = shift;
@@ -113,7 +114,7 @@ sub _connect {
         RaiseError => 1,
         # ensure this connect_cached doesn't have the same args as the client
         # because that causes subtle issues if in the same process (ie transport=null)
-        dbi_go_execute_unique => 42+$recurse+rand(),
+        dbi_go_execute_unique => rand(),
     });
     die "NOT CONNECTED" if $dbh and not $dbh->{Active};
     #$dbh->trace(0);
@@ -153,8 +154,7 @@ sub _new_response_with_err {
 
 sub execute_request {
     my $request = shift;
-    local $recurse = $recurse + 1;
-    warn "Gofer request level $recurse\n" if $trace;
+    DBI->trace_msg("-----> execute_request\n");
     my @warnings;
     local $SIG{__WARN__} = sub { push @warnings, @_ };
     # guaranteed not to throw an exception
@@ -169,8 +169,8 @@ sub execute_request {
             err => 1, errstr => $@, state  => '',
         });
     }
-    #warn "Gofer response level $recurse: ".$response->rv."\n" if $trace;
     $response->warnings(\@warnings) if @warnings;
+    DBI->trace_msg("<----- execute_request\n");
     return $response;
 }
 

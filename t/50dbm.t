@@ -1,4 +1,5 @@
 #!perl -w
+$|=1;
 
 use strict;
 use File::Path;
@@ -26,9 +27,9 @@ BEGIN {
     }
 
     if ("@ARGV" eq "all") {
-	# test with as many of the 5 major DBM types as are available
-	for (qw( SDBM_File GDBM_File NDBM_File ODBM_File DB_File BerkeleyDB )){
-	    push @dbm_types, $_ if eval { require "$_.pm" };
+	# test with as many of the major DBM types as are available
+	for (qw( SDBM_File GDBM_File DB_File BerkeleyDB NDBM_File ODBM_File )) {
+	    push @dbm_types, $_ if eval { local $^W; require "$_.pm" };
 	}
     }
     elsif (@ARGV) {
@@ -49,9 +50,9 @@ BEGIN {
     if (!$num_tests) {
         plan skip_all => "No DBM modules available";
     }
-	else {
-		plan tests => $num_tests;
-	}
+    else {
+        plan tests => $num_tests;
+    }
 }
 
 my $dir = './test_output';
@@ -66,7 +67,8 @@ for my $mldbm ( '', @mldbm_types ) {
     my @sql = split /\s*;\n/, $sql;
     for my $dbm_type ( @dbm_types ) {
 	print "\n--- Using $dbm_type ($mldbm) ---\n";
-        do_test( $dbm_type, \@sql, $mldbm );
+        eval { do_test( $dbm_type, \@sql, $mldbm ) }
+            or warn $@;
     }
 }
 rmtree $dir;
@@ -75,13 +77,12 @@ sub do_test {
     my $dtype = shift;
     my $stmts = shift;
     my $mldbm = shift;
-    $|=1;
 
     # The DBI can't test locking here, sadly, because of the risk it'll hang
     # on systems with broken NFS locking daemons.
     # (This test script doesn't test that locking actually works anyway.)
 
-    my $dsn ="dbi:DBM(RaiseError=1,PrintError=0):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
+    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
 
     if ($using_dbd_gofer) {
         $dsn .= ";f_dir=$dir";
@@ -116,6 +117,8 @@ sub do_test {
     #
     eval {
         local $SIG{__WARN__} = sub { } if $using_dbd_gofer;
+        local $dbh->{RaiseError} = 1;
+        local $dbh->{PrintError} = 0;
         $dbh->{dbm_bad_name}=1;
     };
     ok($@);
@@ -150,6 +153,7 @@ sub do_test {
         is $DBI::rows, keys %$expected_results;
     }
     $dbh->disconnect;
+    return 1;
 }
 1;
 __DATA__

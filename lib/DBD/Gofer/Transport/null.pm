@@ -34,13 +34,11 @@ sub transmit_request {
     # enabled for the 'client' because it gets very hard to follow.
     # So control the Gofer 'server' side independently
     # but similar logic as used for DBI_TRACE parsing.
-    my $prev_trace_level = DBI->trace(
-        ($ENV{DBD_GOFER_NULL_TRACE}) ? (split /=/, $ENV{DBD_GOFER_NULL_TRACE}) : (0)
-    );
+    #my $prev_trace_level = DBI->trace( ($ENV{DBD_GOFER_NULL_TRACE}) ? (split /=/, $ENV{DBD_GOFER_NULL_TRACE}) : (0));
 
     my $response = execute_request( $self->thaw_data($frozen_request,1) );
 
-    DBI->trace($prev_trace_level);
+    #DBI->trace($prev_trace_level);
 
     # put response 'on the shelf' ready for receive_response()
     $self->pending_response( $response );

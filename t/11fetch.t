@@ -1,5 +1,6 @@
 #!perl -w
 # vim:ts=8:sw=4
+$|=1;
 
 use strict;
 
