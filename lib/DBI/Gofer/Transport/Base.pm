@@ -16,22 +16,15 @@ use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-sub _init_trace { $ENV{DBI_GOFER_TRACE} || 0 }
-
 
 __PACKAGE__->mk_accessors(qw(
     trace
-    go_dsn
-    go_url
-    go_ssh
 ));
 
 
-sub _new {
-    my ($class, $args) = @_;
-    $args->{trace} ||= $class->_init_trace;
-    return $class->SUPER::new($args);
-}
+sub _init_trace { $ENV{DBI_GOFER_TRACE} || 0 }
+
+
 sub new {
     my ($class, $args) = @_;
     $args->{trace} ||= $class->_init_trace;

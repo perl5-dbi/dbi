@@ -91,7 +91,6 @@
     my %dsn_attr_defaults = (
         go_dsn => undef,
         go_url => undef,
-        go_ssh => undef,
         go_transport => undef,
     );
 
@@ -717,7 +716,7 @@ In this case you don't include the C<dsn=> part.
 
 or
 
-    export DBI_AUTOPROXY=dbi:Gofer:transport=stream;ssh=user@example.com
+    export DBI_AUTOPROXY=dbi:Gofer:transport=stream;url=ssh:user@example.com
 
 
 =head1 CONFIGURING VIA POLICY

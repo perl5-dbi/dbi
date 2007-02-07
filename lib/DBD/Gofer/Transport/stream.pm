@@ -18,7 +18,6 @@ use base qw(DBD::Gofer::Transport::pipeone);
 our $VERSION = sprintf("0.%06d", q$Revision: 8748 $ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
-    go_ssh
 )); 
 
 
@@ -33,13 +32,14 @@ sub transmit_request {
         if (not $connection || ($connection->{pid} && not kill 0, $connection->{pid})) {
             my $cmd = [qw(perl -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
             #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
-            if (my $ssh = $self->go_ssh) {
-                #my $ssh = 'timbo@localhost';
+            if (my $url = $self->go_url) {
+                die "Only 'ssh:user\@host' style url supported by this transport"
+                    unless $url =~ s/^ssh://;
+                my $ssh = $url;
                 my $setup_env = join "||", map { "source $_ 2>/dev/null" }
                                     qw(.bash_profile .bash_login .profile);
                 my $setup = $setup_env.q{; eval "$@"};
                 unshift @$cmd, qw(ssh -q), split(' ', $ssh), qw(bash -c), $setup;
-                #warn "[@$cmd]";
             }
             # XXX add a handshake - some message from DBI::Gofer::Transport::stream that's
             # sent as soon as it starts that we can wait for to report success - and soak up
@@ -81,6 +81,7 @@ sub receive_response {
     my ($pid, $rfh, $efh) = @{$connection}{qw(pid rfh efh)};
 
     # blocks till a newline has been read
+    $! = 0;
     my $frozen_response = <$rfh>; # always one line
     my $frozen_response_errno = $!;
 

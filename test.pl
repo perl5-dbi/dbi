@@ -49,7 +49,7 @@ my $driver = $ARGV[0] || ($::opt_m ? 'NullP' : 'ExampleP');
 
 # Now ask for some information from the DBI Switch
 my $switch = DBI->internal;
-$switch->debug($::opt_h); # 2=detailed handle trace
+$switch->trace($::opt_h); # 2=detailed handle trace
 
 DBI->trace($::opt_d, $::opt_l) if $::opt_d || $::opt_l;
 
@@ -58,8 +58,8 @@ print "Switch: $switch->{'Attribution'}, $switch->{'Version'}\n";
 print "Available Drivers: ",join(", ",DBI->available_drivers(1)),"\n";
 
 
-my $dbh = DBI->connect("dbi:$driver:", '', '');
-$dbh->debug($::opt_h);
+my $dbh = DBI->connect("dbi:$driver:", '', '') or die;
+$dbh->trace($::opt_h);
 
 if (0) {
     DBI->trace(3);
@@ -109,11 +109,12 @@ else {
     my $tds= Benchmark::timestr($td);
     my $dur = $td->cpu_a || (1/$count); # fudge if cpu_a==0
 
-    printf "%5d NullP sth/s perl %8s %s (%s %s %s)\n\n",
+    printf "%5d NullP sth/s perl %8s %s (%s %s %s) %fs\n\n",
 	    $count/$dur, $], $Config{archname},
 	    $Config{gccversion} ? 'gcc' : $Config{cc},
 	    (split / /, $Config{gccversion}||$Config{ccversion}||'')[0]||'',
-	    $Config{optimize};
+	    $Config{optimize},
+            $dur/$count;
 
     $null_dbh->disconnect;
 }

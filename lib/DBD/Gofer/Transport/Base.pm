@@ -14,6 +14,13 @@ use base qw(DBI::Gofer::Transport::Base);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
+__PACKAGE__->mk_accessors(qw(
+    trace
+    go_dsn
+    go_url
+));
+
+
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
 
 1;
