@@ -1,6 +1,6 @@
 package DBD::Gofer::Transport::stream;
 
-#   $Id: pipeone.pm 8748 2007-01-29 22:49:42Z timbo $
+#   $Id$
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -15,7 +15,7 @@ use Fcntl;
 
 use base qw(DBD::Gofer::Transport::pipeone);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 8748 $ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
 )); 

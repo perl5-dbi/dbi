@@ -7,7 +7,7 @@ my $script = <<'SCRIPT';
 
 use strict;
 
-my $VERSION = "1.0";
+my $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
 
 use DBI::ProfileData;
 use Getopt::Long;
@@ -22,14 +22,38 @@ my (%match, %exclude);
 
 # get options from command line
 GetOptions(
-           'version'        => sub { die "dbiprof $VERSION\n"; },
+           'version'        => sub { die "dbiprof $VERSION\n" },
+           'help'           => sub { exit usage() },
            'number=i'       => \$number,
            'sort=s'         => \$sort,
            'reverse'        => \$reverse,
            'match=s'        => \%match,
            'exclude=s'      => \%exclude,
            'case-sensitive' => \$case_sensitive,
-          );
+) or exit usage();
+
+sub usage {
+    print <<EOS;
+dbiprof [options] [files]
+
+Merges DBI profile data contain in files and prints a summary.
+
+files: defaults to $filename
+
+options:
+
+    -number=N        show top N, defaults to $number
+    -sort=S          sort by S, defaults to $sort
+    -reverse         reverse the sort
+    -match=K=V       for filtering, see docs
+    -exclude=K=V     for filtering, see docs
+    -case_sensitive  for -match and -exclude
+    -version         print version number and exit
+    -help            print this help
+
+EOS
+    return 1;
+}
 
 # list of files defaults to dbi.prof
 my @files = @ARGV ? @ARGV : ('dbi.prof');
@@ -40,20 +64,22 @@ my $prof;
 eval { $prof = DBI::ProfileData->new(Files => \@files) };
 die "Unable to load profile data: $@\n" if $@;
 
-# handle matches
-while (my ($key, $val) = each %match) {
-    if ($val =~ m!^/(.+)/$!) {
-        $val = $case_sensitive ? qr/$1/ : qr/$1/i;
-    } 
-    $prof->match($key, $val, case_sensitive => $case_sensitive);
+if (%match) { # handle matches
+    while (my ($key, $val) = each %match) {
+        if ($val =~ m!^/(.+)/$!) {
+            $val = $case_sensitive ? qr/$1/ : qr/$1/i;
+        } 
+        $prof->match($key, $val, case_sensitive => $case_sensitive);
+    }
 }
 
-# handle excludes
-while (my ($key, $val) = each %exclude) {
-    if ($val =~ m!^/(.+)/$!) {
-        $val = $case_sensitive ? qr/$1/ : qr/$1/i;
-    } 
-    $prof->exclude($key, $val, case_sensitive => $case_sensitive);
+if (%exclude) { # handle excludes
+    while (my ($key, $val) = each %exclude) {
+        if ($val =~ m!^/(.+)/$!) {
+            $val = $case_sensitive ? qr/$1/ : qr/$1/i;
+        } 
+        $prof->exclude($key, $val, case_sensitive => $case_sensitive);
+    }
 }
 
 # sort the data

@@ -1,6 +1,6 @@
 package DBI::Util::_accessor;
 use strict;
-our $VERSION = sprintf("0.%06d", q$Revision: 8696 $ =~ /(\d+)/);
+our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
 
 # heavily cut-down (but compatible) version of Class::Accessor::Fast to avoid the dependency
 

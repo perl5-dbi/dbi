@@ -305,7 +305,9 @@ $(roadmap_pm): Roadmap.pod
 	$(CP) Roadmap.pod $(roadmap_pm)
 
 checkkeywords:
-	find lib -type f -name .svn -prune -o -name \*.pm -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
+	$(RM_F) blib
+	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
+            -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 };
 
     return $xst;
