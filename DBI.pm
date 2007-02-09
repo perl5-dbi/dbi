@@ -2219,14 +2219,11 @@ Perl supports binary data in Perl strings, and the DBI will pass binary
 data to and from the driver without change. It is up to the driver
 implementors to decide how they wish to handle such binary data.
 
-Most databases that understand multiple character sets have a
-default global charset. Text stored in the database is, or should
-be, stored in that charset; if not, then that's the fault of either
-the database or the application that inserted the data. When text is
-fetched it should be automatically converted to the charset of the
-client, presumably based on the locale. If a driver needs to set a
-flag to get that behaviour, then it should do so; it should not require
-the application to do that.
+Perl supports two kinds of strings: unicode (utf8 internally) and non-unicode
+(defaults to iso-8859-1 if forced to assume an encoding).  Drivers should
+accept both kinds of strings and, if required, convert them to the character
+set of the database being used. Similarly, when fetching from the database
+character data that isn't iso-8859-1 the driver should convert it into utf8.
 
 Multiple SQL statements may not be combined in a single statement
 handle (C<$sth>), although some databases and drivers do support this
