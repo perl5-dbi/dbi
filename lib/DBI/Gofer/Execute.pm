@@ -11,18 +11,22 @@ use strict;
 use warnings;
 
 use DBI;
-use DBI::Gofer::Request;
 use DBI::Gofer::Response;
 
-use base qw(Exporter);
+use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-our @EXPORT_OK = qw(
-    execute_request
-    execute_dbh_request
-    execute_sth_request
-);
+__PACKAGE__->mk_accessors(qw(
+    connect_args
+    dbh_method_name
+    dbh_method_args
+    dbh_wantarray
+    dbh_last_insert_id_args
+    sth_method_calls
+    sth_result_attr
+)); 
+
 
 my @sth_std_attr = qw(
     NUM_OF_PARAMS
@@ -67,23 +71,6 @@ my %extra_attr = (
             syb_types syb_result_type syb_proc_status
         )],
     },
-);
-
-my %extra_sth_attr = (
-    # what driver-specific attributes should be returned for the driver being used?
-    # keyed by $dbh->{Driver}{Name}
-    # XXX could split into attr specific to resultsets (where NUM_OF_FIELDS > 0) and others
-    # which would reduce processing/traffic for non-select statements
-    mysql  => [qw(
-        mysql_is_blob mysql_is_key mysql_is_num mysql_is_pri_key mysql_is_auto_increment
-        mysql_length mysql_max_length mysql_table mysql_type mysql_type_name
-    )],
-    Pg  => [qw(
-        pg_size pg_type pg_oid_status pg_cmd_status
-    )],
-    Sybase => [qw(
-        syb_types syb_result_type syb_proc_status
-    )],
 );
 
 
@@ -153,7 +140,7 @@ sub _new_response_with_err {
 
 
 sub execute_request {
-    my $request = shift;
+    my ($self, $request) = @_;
     DBI->trace_msg("-----> execute_request\n");
     my @warnings;
     local $SIG{__WARN__} = sub { push @warnings, @_ };
@@ -242,7 +229,7 @@ sub _gather_sth_resultsets {
     my ($sth, $request) = @_;
     return eval {
         my $driver_name = $sth->{Database}{Driver}{Name};
-        my $extra_sth_attr = $extra_sth_attr{$driver_name} || [];
+        my $extra_sth_attr = $extra_attr{$driver_name}{sth} || [];
 
         my $sth_attr = {};
         $sth_attr->{$_} = 1 for (@sth_std_attr, @$extra_sth_attr);

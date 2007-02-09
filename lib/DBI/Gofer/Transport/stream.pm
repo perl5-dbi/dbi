@@ -10,7 +10,7 @@ package DBI::Gofer::Transport::stream;
 use strict;
 use warnings;
 
-use DBI::Gofer::Execute qw(execute_request);
+use DBI::Gofer::Execute;
 
 use base qw(DBI::Gofer::Transport::pipeone Exporter);
 
@@ -18,6 +18,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our @EXPORT = qw(run_stdio_hex);
 
+my $executor = DBI::Gofer::Execute->new();
 
 sub run_stdio_hex {
 
@@ -29,7 +30,7 @@ sub run_stdio_hex {
     while ( my $frozen_request = <STDIN> ) {
 
         my $request = $self->thaw_data( pack "H*", $frozen_request );
-        my $response = execute_request( $request );
+        my $response = $executor->execute_request( $request );
 
         my $frozen_response = unpack "H*", $self->freeze_data($response);
 

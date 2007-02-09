@@ -12,13 +12,15 @@ use warnings;
 
 use base qw(DBD::Gofer::Transport::Base);
 
-use DBI::Gofer::Execute qw(execute_request);
+use DBI::Gofer::Execute;
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     pending_response
 )); 
+
+my $executor = DBI::Gofer::Execute->new();
 
 
 sub transmit_request {
@@ -36,7 +38,7 @@ sub transmit_request {
     # but similar logic as used for DBI_TRACE parsing.
     #my $prev_trace_level = DBI->trace( ($ENV{DBD_GOFER_NULL_TRACE}) ? (split /=/, $ENV{DBD_GOFER_NULL_TRACE}) : (0));
 
-    my $response = execute_request( $self->thaw_data($frozen_request,1) );
+    my $response = $executor->execute_request( $self->thaw_data($frozen_request,1) );
 
     #DBI->trace($prev_trace_level);
 

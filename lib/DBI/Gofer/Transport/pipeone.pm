@@ -10,7 +10,7 @@ package DBI::Gofer::Transport::pipeone;
 use strict;
 use warnings;
 
-use DBI::Gofer::Execute qw(execute_request);
+use DBI::Gofer::Execute;
 
 use base qw(DBI::Gofer::Transport::Base Exporter);
 
@@ -18,6 +18,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our @EXPORT = qw(run_one_stdio);
 
+my $executor = DBI::Gofer::Execute->new();
 
 sub run_one_stdio {
 
@@ -25,7 +26,7 @@ sub run_one_stdio {
 
     my $frozen_request = do { local $/; <STDIN> };
 
-    my $response = execute_request( $self->thaw_data($frozen_request) );
+    my $response = $executor->execute_request( $self->thaw_data($frozen_request) );
 
     my $frozen_response = $self->freeze_data($response);
 
