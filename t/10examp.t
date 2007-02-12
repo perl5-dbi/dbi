@@ -492,22 +492,24 @@ ok(!$dbh->{HandleError});
 
 print "table_info\n";
 # First generate a list of all subdirectories
-$dir = $haveFileSpec ? File::Spec->curdir() : ".";
+$dir = getcwd();
 ok(opendir(DIR, $dir));
 my(%dirs, %unexpected, %missing);
 while (defined(my $file = readdir(DIR))) {
     $dirs{$file} = 1 if -d $file;
 }
+print "Local $dir subdirs: @{[ keys %dirs ]}\n";
 closedir(DIR);
-my $sth = $dbh->table_info(undef, undef, "%", "TABLE");
+#$dbh->trace(9);
+my $sth = $dbh->table_info($dir, undef, "%", "TABLE");
 ok($sth);
 %unexpected = %dirs;
 %missing = ();
 while (my $ref = $sth->fetchrow_hashref()) {
     if (exists($unexpected{$ref->{'TABLE_NAME'}})) {
-		delete $unexpected{$ref->{'TABLE_NAME'}};
+        delete $unexpected{$ref->{'TABLE_NAME'}};
     } else {
-		$missing{$ref->{'TABLE_NAME'}} = 1;
+        $missing{$ref->{'TABLE_NAME'}} = 1;
     }
 }
 ok(keys %unexpected == 0)
@@ -515,6 +517,7 @@ ok(keys %unexpected == 0)
 ok(keys %missing == 0)
     or print "Missing directories: ", join(",", keys %missing), "\n";
 
+#$dbh->trace(0); die 1;
 
 print "tables\n";
 my @tables_expected = (

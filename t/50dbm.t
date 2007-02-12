@@ -4,6 +4,7 @@ $|=1;
 use strict;
 use File::Path;
 use Test::More;
+use Cwd;
 use Config qw(%Config);
 
 my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
@@ -56,7 +57,7 @@ BEGIN {
     }
 }
 
-my $dir = './test_output';
+my $dir = getcwd().'/test_output';
 
 rmtree $dir;
 mkpath $dir;

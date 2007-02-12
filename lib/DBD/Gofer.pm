@@ -134,14 +134,18 @@
         my $go_trans = eval { $transport_class->new(\%dsn_attr) }
             or return $drh->set_err(1, "Error instanciating $transport_class: $@");
 
-        # XXX user/pass of fwd server vs db server
         my $request_class = "DBI::Gofer::Request";
         my $go_request = eval {
-            # copy and delete any attributes we can't serialize (and don't want to)
             my $go_attr = { %$attr };
+            # XXX user/pass of fwd server vs db server ? also impact of autoproxy
+            if ($user) {
+                $go_attr->{Username} = $user;
+                $go_attr->{Password} = $auth;
+            }
+            # delete any attributes we can't serialize (or don't want to)
             delete @{$go_attr}{qw(Profile HandleError HandleSetErr Callbacks)};
             $request_class->new({
-                connect_args => [ $remote_dsn, $user, $auth, $go_attr ]
+                connect_args => [ $remote_dsn, $go_attr ]
             })
         } or return $drh->set_err(1, "Error instanciating $request_class $@");
 
@@ -200,6 +204,8 @@
 
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
+        my $TraceLevel = $dbh->FETCH('TraceLevel');
+        $transport->trace( $TraceLevel - 4 ) if $TraceLevel > 4;
 
         eval { $transport->transmit_request($request) }
             or return $dbh->set_err(1, "transmit_request failed: $@");
@@ -369,8 +375,11 @@
 
         my $transport = $sth->{go_trans}
             or return $sth->set_err(1, "Not connected (no transport)");
+        my $TraceLevel = $sth->FETCH('TraceLevel');
+        $transport->trace( $TraceLevel - 4 ) if $TraceLevel > 4;
         eval { $transport->transmit_request($request) }
             or return $sth->set_err(1, "transmit_request failed: $@");
+
         my $response = $transport->receive_response;
         $sth->{go_response} = $response;
         delete $sth->{go_method_calls};

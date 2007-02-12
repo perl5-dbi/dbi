@@ -768,10 +768,10 @@ sub set_err {
 
     if ($h->{errstr}) {
 	$h->{errstr} .= sprintf " [err was %s now %s]", $h->{err}, $errnum
-		if $h->{err} && $errnum;
+		if $h->{err} && $errnum && $h->{err} ne $errnum;
 	$h->{errstr} .= sprintf " [state was %s now %s]", $h->{state}, $state
-		if $h->{state} and $h->{state} ne "S1000" && $state;
-	$h->{errstr} .= "\n$msg";
+		if $h->{state} and $h->{state} ne "S1000" && $state && $h->{state} ne $state;
+	$h->{errstr} .= "\n$msg" if $h->{errstr} ne $msg;
 	$DBI::errstr = $h->{errstr};
     }
     else {

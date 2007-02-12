@@ -31,6 +31,8 @@ DBI::Changes - List of significant changes to the DBI
     to only be given for dbh that have active sth or are not AutoCommit.
   Changed take_imp_data to call finish on all Active child sth.
   Changed DBI::PurePerl trace() method to be more consistent.
+  Changed set_err method to effectively not append to errstr if the new errstr
+    is the same as the current one.
   Changed handle factory methods, like connect, prepare, and table_info,
     to copy any error/warn/info state of the handle being returned
     up into the handle the method was called on.

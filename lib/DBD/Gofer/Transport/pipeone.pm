@@ -38,7 +38,7 @@ sub start_pipe_command {
     my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
     my $pid = open3($wfh, $rfh, $efh, @$cmd)
         or die "error starting $cmd: $!\n";
-    warn "Started pid $pid: $cmd\n" if $self->trace;
+    $self->trace_msg("Started pid $pid: $cmd\n") if $self->trace;
 
     return {
         cmd=>$cmd,

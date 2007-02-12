@@ -65,8 +65,23 @@ sub thaw_data {
 sub _dump {
     my ($self, $label, $data) = @_;
     require Data::Dumper;
-    # XXX config dumper format
-    warn "$label=".Data::Dumper::Dumper($data);
+    local $Data::Dumper::Indent    = 1;
+    local $Data::Dumper::Terse     = 1;
+    local $Data::Dumper::Useqq     = 1;
+    local $Data::Dumper::Sortkeys  = 1;
+    local $Data::Dumper::Quotekeys = 0;
+    local $Data::Dumper::Deparse   = 0;
+    local $Data::Dumper::Purity    = 0;
+    $self->trace_msg("$label=".Data::Dumper::Dumper($data));
+}
+
+
+sub trace_msg {
+    my ($self, $msg, $min_level) = @_;
+    $min_level = 1 unless defined $min_level;
+    # modeled on DBI's trace_msg method
+    return 0 if $self->trace < $min_level;
+    return DBI->trace_msg($msg, 1); # XXX two min_levels at play here
 }
 
 1;

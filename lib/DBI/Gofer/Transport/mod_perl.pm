@@ -13,7 +13,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 my $transport = __PACKAGE__->new();
 
-my %executor_configs;
+my %executor_configs = ( default => { } );
 my %executor_cache;
 
 
@@ -35,6 +35,14 @@ sub handler ($$) {
 }
 
 
+my $proto_config = { # defines valid keys and types for exector config
+    default_connect_dsn => 1,
+    forced_connect_dsn  => 1,
+    default_connect_attributes => {},
+    forced_connect_attributes  => {},
+};
+
+
 sub executor_for_uri {
     my ($self, $r) = @_;
     my $uri = $r->uri;
@@ -50,17 +58,23 @@ sub executor_for_uri {
         if (!$config) {
             # die if an unknown config is requested but not defined
             # (don't die for 'default' unless it was explicitly requested)
-            die "$uri: GoferConfig '$config_name' not defined"
-                unless $config_name eq 'default'
-                   and !$r_dir_config->get('GoferConfig');
+            die "$uri: GoferConfig '$config_name' not defined";
             next;
         }
-        for my $type (qw(require default force)) {
-            my $type_config = $config->{$type};
-            next if !$type_config or !%$type_config;
-            warn "$uri: GoferConfig $config_name $type (@{[ %$type_config ]})\n";
-            my $merged = $merged_config{$type} ||= {};
-            $merged->{$_} = $type_config->{$_} for keys %$type_config;
+        while ( my ($item_name, $proto_type) = each %$proto_config ) {
+            next if not exists $config->{$item_name};
+            my $item_value = $config->{$item_name};
+            if (ref $proto_type) {
+                my $merged = $merged_config{$item_name} ||= {};
+                warn "$uri: GoferConfig $config_name $item_name (@{[ %$item_value ]})\n"
+                    if keys %$item_value;
+                $merged->{$_} = $item_value->{$_} for keys %$item_value;
+            }
+            else {
+                warn "$uri: GoferConfig $config_name $item_name: '$item_value'\n"
+                    if defined $item_value;
+                $merged_config{$item_name} = $item_value;
+            }
         }
     }
     my $executor = DBI::Gofer::Execute->new(\%merged_config);
@@ -70,6 +84,11 @@ sub executor_for_uri {
 
 sub configuration { # one-time setup from httpd.conf
     my ($self, $configs) = @_;
+    while ( my ($config_name, $config) = each %$configs ) {
+        my @bad = grep { not exists $proto_config->{$_} } keys %$config;
+        warn "Unknown keys in $self configuration '$config_name': @bad\n"
+            if @bad;
+    }
     %executor_configs = %$configs;
 }
 

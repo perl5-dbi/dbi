@@ -1,5 +1,6 @@
 package DBI::Util::_accessor;
 use strict;
+use Carp;
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
 
 # heavily cut-down (but compatible) version of Class::Accessor::Fast to avoid the dependency
@@ -7,8 +8,12 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
 sub new {
     my($proto, $fields) = @_;
     my($class) = ref $proto || $proto;
-    $fields = {} unless defined $fields;
-    # make a copy of $fields.
+    $fields ||= {};
+
+    my @dubious = grep { !m/^_/ && !$proto->can($_) } keys %$fields;
+    carp "$class doesn't have accessors for fields: @dubious" if @dubious;
+
+    # make a (shallow) copy of $fields.
     bless {%$fields}, $class;
 }
 

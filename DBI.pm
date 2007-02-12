@@ -3148,11 +3148,12 @@ provides an alternate return value.
 Some special rules apply if the C<err> or C<errstr>
 values for the handle are I<already> set...
 
-If C<errstr> is true then: "C< [err was %s now %s]>" is appended if
-$err is true and C<err> is already true; "C< [state was %s now %s]>"
-is appended if $state is true and C<state> is already true; then
-"C<\n>" and the new $errstr are appended. Obviously the C<%s>'s
-above are replaced by the corresponding values.
+If C<errstr> is true then: "C< [err was %s now %s]>" is appended if $err is
+true and C<err> is already true and the new err value differs from the original
+one. Similarly "C< [state was %s now %s]>" is appended if $state is true and C<state> is
+already true and the new state value differs from the original one. Finally
+"C<\n>" and the new $errstr are appended if $errstr differs from the existing
+errstr value. Obviously the C<%s>'s above are replaced by the corresponding values.
 
 The handle C<err> value is set to $err if: $err is true; or handle
 C<err> value is undef; or $err is defined and the length is greater

@@ -56,7 +56,7 @@ sub transmit_request {
         # send frozen request
         print $wfh $frozen_request # autoflush enabled
             or die "Error sending request: $!";
-        warn "Request: $frozen_request" if $self->trace >= 3;
+        $self->trace_msg("Request: $frozen_request\n") if $self->trace >= 3;
     };
     if ($@) {
         my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
@@ -101,7 +101,8 @@ sub receive_response {
         return DBI::Gofer::Response->new({ err => 1, errstr => $msg }); 
     }
     #warn DBI::neat($frozen_response);
-    warn "Gofer stream stderr message: $stderr_msg\n" if $stderr_msg && $self->trace;
+    $self->trace_msg("Gofer stream stderr message: $stderr_msg\n")
+        if $stderr_msg && $self->trace;
 
     # XXX need to be able to detect and deal with corruption
     $response = $self->thaw_data(pack("H*",$frozen_response));

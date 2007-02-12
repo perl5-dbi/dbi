@@ -513,12 +513,14 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 
     if (SvTRUE(h_errstr)) {
 	/* append current err, if any, to errstr if it's going to change */
-	if (SvTRUE(h_err) && SvTRUE(err))
+	if (SvTRUE(h_err) && SvTRUE(err) && strNE(SvPV_nolen(h_err), SvPV_nolen(err)))
 	    sv_catpvf(h_errstr, " [err was %s now %s]", SvPV_nolen(h_err), SvPV_nolen(err));
-	if (SvTRUE(h_state) && SvTRUE(state))
+	if (SvTRUE(h_state) && SvTRUE(state) && strNE(SvPV_nolen(h_state), SvPV_nolen(state)))
 	    sv_catpvf(h_errstr, " [state was %s now %s]", SvPV_nolen(h_state), SvPV_nolen(state));
-	sv_catpvn(h_errstr, "\n", 1);
-        sv_catsv(h_errstr, errstr);
+        if (strNE(SvPV_nolen(h_errstr), SvPV_nolen(errstr))) {
+            sv_catpvn(h_errstr, "\n", 1);
+            sv_catsv(h_errstr, errstr);
+        }
     }
     else
 	sv_setsv(h_errstr, errstr);

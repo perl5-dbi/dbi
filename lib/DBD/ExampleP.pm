@@ -135,7 +135,7 @@
 	# Return a list of all subdirectories
 	my $dh = Symbol::gensym(); # "DBD::ExampleP::".++$DBD::ExampleP::gensym;
 	my $haveFileSpec = eval { require File::Spec };
-	my $dir = $haveFileSpec ? File::Spec->curdir() : ".";
+	my $dir = $catalog || ($haveFileSpec ? File::Spec->curdir() : ".");
 	my @list;
 	if ($types{VIEW}) {	# for use by test harness
 	    push @list, [ undef, "schema",  "table",  'VIEW', undef ];
@@ -147,13 +147,13 @@
 	if ($types{TABLE}) {
 	    no strict 'refs';
 	    opendir($dh, $dir)
-		or return $dbh->set_err(int($!),
-					"Failed to open directory $dir: $!");
-	    while (defined(my $file = readdir($dh))) {
+		or return $dbh->set_err(int($!), "Failed to open directory $dir: $!");
+	    while (defined(my $item = readdir($dh))) {
+                my $file = ($haveFileSpec) ? File::Spec->catdir($dir,$item) : $item;
 		next unless -d $file;
 		my($dev, $ino, $mode, $nlink, $uid) = lstat($file);
 		my $pwnam = undef; # eval { scalar(getpwnam($uid)) } || $uid;
-		push @list, [ $dir, $pwnam, $file, 'TABLE', undef ];
+		push @list, [ $dir, $pwnam, $item, 'TABLE', undef ];
 	    }
 	    close($dh);
 	}

@@ -19,14 +19,21 @@ use base qw(DBI::Util::_accessor);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
-    connect_args
-    dbh_method_name
-    dbh_method_args
-    dbh_wantarray
-    dbh_last_insert_id_args
-    sth_method_calls
-    sth_result_attr
+    check_connect
+    default_connect_dsn
+    forced_connect_dsn
+    default_connect_attributes
+    forced_connect_attributes
+    requests_served_count
 )); 
+
+
+sub new {
+    my ($self, $args) = @_;
+    $args->{default_connect_attributes} ||= {};
+    $args->{forced_connect_attributes}  ||= {};
+    return $self->SUPER::new($args);
+}
 
 
 my @sth_std_attr = qw(
@@ -84,20 +91,58 @@ DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 sub _connect {
     my ($self, $request) = @_;
 
-    local $ENV{DBI_AUTOPROXY}; # limit the insanity
+    # just a quick hack for now
+    if (++$self->{request_count} % 100 == 0) { # XXX config
+        # discard CachedKids from time to time
+        my %drivers = DBI->installed_drivers();
+        while ( my ($driver, $drh) = each %drivers ) {
+            next if $driver eq 'Gofer'; # ie transport=null when testing
+            next unless my $CK = $drh->{CachedKids};
+            # XXX currently we discard all regardless
+            # because that avoids the need to also handle
+            # limiting the prepared statement cache
+            my $cached_dbh_count = keys %$CK;
+            #next unless $cached_dbh_count > 20; # XXX config
 
-    my ($dsn, $u, $p, $attr) = @{ $request->connect_args };
+            DBI->trace_msg("Clearing $cached_dbh_count cached dbh from $driver");
+            $_->{Active} && $_->disconnect for values %$CK;
+            %$CK = ();
+        }
+    }
+
+    my ($dsn, $attr) = @{ $request->connect_args };
     # delete attributes we don't want to affect the server-side
-    delete @{$attr}{qw(Profile InactiveDestroy Warn HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
+    # (Could just do this on client-side and trust the client. DoS?)
+    delete @{$attr}{qw(Profile InactiveDestroy HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
     my $connect_method = 'connect_cached';
 
-    # XXX need way to limit/purge connect cache over time
-    my $dbh = DBI->$connect_method($dsn, $u, $p, {
+    my $check_connect = $self->check_connect;
+    $check_connect->($dsn, $attr, $connect_method, $request) if $check_connect;
+
+    $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
+        or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";
+
+    local $ENV{DBI_AUTOPROXY}; # limit the insanity
+
+    # XXX implement our own private connect_cached method?
+    my $dbh = DBI->$connect_method($dsn, undef, undef, {
+
+        # the configured default attributes, if any
+        %{ $self->default_connect_attributes },
+
+        # the requested attributes
         %$attr,
-        # force some attributes the way we want them
+
+        # force some attributes the way we'd like them
         PrintWarn  => 0,
         PrintError => 0,
+
+        # the configured default attributes, if any
+        %{ $self->forced_connect_attributes },
+
+        # RaiseError must be enabled
         RaiseError => 1,
+
         # ensure this connect_cached doesn't have the same args as the client
         # because that causes subtle issues if in the same process (ie transport=null)
         dbi_go_execute_unique => __PACKAGE__,
@@ -145,12 +190,16 @@ sub execute_request {
     my @warnings;
     local $SIG{__WARN__} = sub { push @warnings, @_ };
     DBI->trace_msg("-----> execute_request\n");
+
     my $response = eval {
+
         ($request->is_sth_request)
             ? $self->execute_sth_request($request)
             : $self->execute_dbh_request($request);
     };
-    $response = $self->new_response_with_err(undef, $@) if $@;
+    $response = $self->new_response_with_err(undef, $@)
+        if $@;
+
     $response->warnings(\@warnings) if @warnings;
     DBI->trace_msg("<----- execute_request\n");
     return $response;
@@ -266,5 +315,6 @@ sub fetch_result_set {
     }
     return \%meta;
 }
+
 
 1;
