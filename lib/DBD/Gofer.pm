@@ -92,6 +92,7 @@
         go_dsn => undef,
         go_url => undef,
         go_transport => undef,
+        go_policy => undef,
     );
 
     $imp_data_size = 0;
@@ -125,6 +126,20 @@
             return $drh->set_err(1, "Unknown attributes: @{[ keys %dsn_attr ]}");
         }
 
+        if (not ref $dsn_attr{go_policy}) { # if not a policy object already
+            my $policy_class = $dsn_attr{go_policy} || 'pedantic';
+            $policy_class = "DBD::Gofer::Policy::$policy_class"
+                unless $policy_class =~ /::/;
+            _load_class($policy_class)
+                or return $drh->set_err(1, "Error loading $policy_class: $@");
+            # replace policy name in %dsn_attr with policy object
+            $dsn_attr{go_policy} = eval { $policy_class->new(\%dsn_attr) }
+                or return $drh->set_err(1, "Error instanciating $policy_class: $@");
+        }
+        # policy object is left in $dsn_attr{go_policy} so transport can see it
+        my $go_policy = $dsn_attr{go_policy};
+
+        my $request_class = "DBI::Gofer::Request";
         my $transport_class = delete $dsn_attr{go_transport}
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$transport_class"
@@ -134,7 +149,6 @@
         my $go_trans = eval { $transport_class->new(\%dsn_attr) }
             or return $drh->set_err(1, "Error instanciating $transport_class: $@");
 
-        my $request_class = "DBI::Gofer::Request";
         my $go_request = eval {
             my $go_attr = { %$attr };
             # XXX user/pass of fwd server vs db server ? also impact of autoproxy
@@ -154,19 +168,21 @@
             'USER' => $user,
             go_trans => $go_trans,
             go_request => $go_request,
-            go_policy => undef, # XXX
+            go_policy => $go_policy,
         });
 
-        $dbh->STORE(Active => 0); # mark as inactive temporarily for STORE
+        # mark as inactive temporarily for STORE. Active not set until connected() called.
+        $dbh->STORE(Active => 0);
 
-        # test the connection XXX control via a policy later
-        unless ($dbh->go_dbh_method(undef, 'ping')) {
-            return undef if $dbh->err; # error already recorded, typically
-            return $dbh->set_err(1, "ping failed");
+        # should we ping to check the connection
+        # and fetch dbh attributes
+        my $skip_connect_check = $go_policy->skip_connect_check($attr, $dbh);
+        if (not $skip_connect_check) {
+            if (not $dbh->go_dbh_method(undef, 'ping')) {
+                return undef if $dbh->err; # error already recorded, typically
+                return $dbh->set_err(1, "ping failed");
+            }
         }
-            # unless $policy->skip_connect_ping($attr, $dsn, $user, $auth, $attr);
-
-        # Active not set until connected() called.
 
         return $dbh;
     }
@@ -219,12 +235,16 @@
         $dbh->{go_response} = $response;
 
         if (my $resultset_list = $response->sth_resultsets) {
+            # dbh method call returned one or more resultsets
+            # (was probably a metadata method like table_info)
+            #
             # setup an sth but don't execute/forward it
-            my $sth = $dbh->prepare(undef, { go_skip_early_prepare => 1 }); # XXX
+            my $sth = $dbh->prepare(undef, { go_skip_prepare_check => 1 });
             # set the sth response to our dbh response
             (tied %$sth)->{go_response} = $response;
-            # setup the set with the results in our response
+            # setup the sth with the results in our response
             $sth->more_results;
+            # and return that new sth as if it came from original request
             $rv = [ $sth ];
         }
 
@@ -268,14 +288,13 @@
         my $dbh = shift;
         return $dbh->set_err(0, "can't ping while not connected") # warning
             unless $dbh->SUPER::FETCH('Active');
-        # XXX local or remote - add policy attribute
-        return $dbh->go_dbh_method(undef, 'ping', @_);
+        my $skip_ping = $dbh->{go_policy}->skip_ping();
+        return ($skip_ping) ? 1 : $dbh->go_dbh_method(undef, 'ping', @_);
     }
 
     sub last_insert_id {
         my $dbh = shift;
         my $response = $dbh->{go_response} or return undef;
-        # will be undef unless last_insert_id was explicitly requested
         return $response->last_insert_id;
     }
 
@@ -339,17 +358,14 @@
 	my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
 	    Statement => $statement,
             go_prepare_call => [ 'prepare', $statement, $attr ],
-            go_method_calls => [],
+            # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
             go_trans => $dbh->{go_trans},
             go_policy => $policy,
         });
 
-        #my $skip_early_prepare = $policy->skip_early_prepare($attr, $dbh, $statement, $attr, $sth);
-        my $skip_early_prepare = 0;
-
-        $skip_early_prepare = 1 if not defined $statement; # XXX hack, see go_dbh_method
-        if (not $skip_early_prepare) {
+        my $skip_prepare_check = $policy->skip_prepare_check($attr, $dbh, $statement, $attr, $sth);
+        if (not $skip_prepare_check) {
             $sth->go_sth_method() or return undef;
         }
 
@@ -379,13 +395,17 @@
 
         my $request = $sth->{go_request};
         $request->init_request($sth->{go_prepare_call}, undef);
-        $request->sth_method_calls($sth->{go_method_calls});
-        $request->sth_result_attr({});
+        $request->sth_method_calls($sth->{go_method_calls})
+            if $sth->{go_method_calls};
+        $request->sth_result_attr({}); # (currently) indicates this is an sth request
+
+        $request->last_insert_id_args($sth->{go_last_insert_id_args})
+            if $sth->{go_last_insert_id_args};
 
         my $transport = $sth->{go_trans}
             or return $sth->set_err(1, "Not connected (no transport)");
         my $TraceLevel = $sth->FETCH('TraceLevel');
-        $transport->trace( $TraceLevel - 4 ) if $TraceLevel > 4;
+        $transport->trace( (($TraceLevel-4) > 0) ? $TraceLevel-4 : 0 );
         eval { $transport->transmit_request($request) }
             or return $sth->set_err(1, "transmit_request failed: $@");
 
@@ -493,18 +513,26 @@
 
     sub STORE {
 	my ($sth, $attrib, $value) = @_;
-	return $sth->SUPER::STORE($attrib => $value)
-            if $sth_local_store_attrib{$attrib}  # handle locally
-            or $attrib =~ m/^[a-z]/;             # driver-private XXX
 
-        # could perhaps do
-        #   push @{ $sth->{go_method_calls} }, [ 'STORE', $attrib, $value ];
-        # if not $sth->FETCH('Executed')
+	return $sth->SUPER::STORE($attrib => $value)
+            if $sth_local_store_attrib{$attrib}; # handle locally
+
+        # otherwise warn but do it anyway
+        # this will probably need refining later
+        my $msg = "Altering \$sth->{$attrib} won't affect proxied handle";
+        Carp::carp($msg) if $sth->FETCH('Warn');
+
+        # XXX could perhaps do
+        #   push @{ $sth->{go_method_calls} }, [ 'STORE', $attrib, $value ]
+        #       if not $sth->FETCH('Executed');
         # but how to handle repeat executions? How to we know when an
         # attribute is being set to affect the current resultset or the
-        # next execution? Could just always use go_method_calls I guess.
-        Carp::carp("Can't alter \$sth->{$attrib}") if $sth->FETCH('Warn');
-        return $sth->set_err(1, "Can't alter \$sth->{$attrib}");
+        # next execution?
+        # Could just always use go_method_calls I guess.
+
+	$sth->SUPER::STORE($attrib => $value);
+
+        return $sth->set_err(1, $msg);
     }
 
 }
@@ -660,6 +688,25 @@ able to read.
 
 Multiple resultsets are supported if the driver supports the more_results() method.
 
+=head1 Use of last_insert_id requires a minor code change
+
+To enable use of last_insert_id you need to indicate to DBD::Gofer that you'd
+like to use it.  You do that my adding a C<go_last_insert_id_args> attribute to
+the do() or prepare() method calls. For example:
+
+    $dbh->do($sql, { go_last_insert_id_args => [...] });
+
+or
+
+    $sth = $dbh->prepare($sql, { go_last_insert_id_args => [...] });
+
+The array reference should contains the args that you want passed to the
+last_insert_id() method.
+
+XXX needs testing
+
+XXX allow $dbh->{go_last_insert_id_args} = [] to enable it by default?
+
 =head1 TRANSPORTS
 
 DBD::Gofer doesn't concern itself with transporting requests and responses to and fro.
@@ -713,7 +760,8 @@ See L</DBI_AUTOPROXY> below for an example.
 
 The http driver uses the http protocol to send Gofer requests and receive replies.
 
-XXX not yet implemented
+The DBI::Gofer::Transport::mod_perl module implements the corresponding server-side
+transport.
 
 =head1 CONNECTING
 
@@ -721,18 +769,18 @@ Simply prefix your existing DSN with "C<dbi:Gofer:transport=$transport;dsn=>"
 where $transport is the name of the Gofer transport you want to use (see L</TRANSPORTS>).
 The C<transport> and C<dsn> attributes must be specified and the C<dsn> attributes must be last.
 
-Other attributes can be specified in the DSN to configure DBD::Gofer and/or the transport being used.
-
-XXX
+Other attributes can be specified in the DSN to configure DBD::Gofer and/or the
+Gofer transport module being used. The two main attributes after C<transport>,
+are C<url> and C<policy>. These are described below.
 
 =head2 Using DBI_AUTOPROXY
 
 The simplest way to try out DBD::Gofer is to set the DBI_AUTOPROXY environment variable.
-In this case you don't include the C<dsn=> part.
+In this case you don't include the C<dsn=> part. For example:
 
     export DBI_AUTOPROXY=dbi:Gofer:transport=null
 
-or
+or, for a more useful example, try:
 
     export DBI_AUTOPROXY=dbi:Gofer:transport=stream;url=ssh:user@example.com
 
@@ -749,11 +797,18 @@ Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
 You may distribute under the terms of either the GNU General Public License or
 the Artistic License, as specified in the Perl README file.
 
+=head1 ACKNOWLEDGEMENTS
+
+The development of DBD::Gofer and related modules was sponsored by
+Shopzilla.com (L<http://Shopzilla.com>), where I currently work.
+
 =head1 SEE ALSO
 
-L<DBD::Gofer::Request>, L<DBD::Gofer::Response>, L<DBD::Gofer::Transport::Base>,
+L<DBI::Gofer::Request>, L<DBI::Gofer::Response>, L<DBI::Gofer::Execute>.
 
-L<DBI>, L<DBI::Gofer::Execute>.
+L<DBI::Gofer::Transport::Base>
+
+L<DBI>
 
 
 =head1 TODO

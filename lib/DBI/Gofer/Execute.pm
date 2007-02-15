@@ -220,8 +220,10 @@ sub execute_dbh_request {
     };
     my $response = $self->new_response_with_err($rv_ref, $@);
     if ($dbh) {
-        $response->last_insert_id = $dbh->last_insert_id( @{ $request->dbh_last_insert_id_args })
-            if $rv_ref && $request->dbh_last_insert_id_args;
+        if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
+            my $id = $dbh->last_insert_id( @$lid_args );
+            $response->last_insert_id( $id );
+        }
         $self->reset_dbh($dbh);
     }
     if ($rv_ref and UNIVERSAL::isa($rv_ref->[0],'DBI::st')) {
@@ -239,6 +241,7 @@ sub execute_sth_request {
     my ($self, $request) = @_;
     my $dbh;
     my $sth;
+    my $last_insert_id;
 
     my $rv = eval {
         $dbh = $self->_connect($request);
@@ -249,13 +252,22 @@ sub execute_sth_request {
         my $last = '(sth)'; # a true value (don't try to return actual sth)
 
         # execute methods on the sth, e.g., bind_param & execute
-        for my $meth_call (@{ $request->sth_method_calls }) {
-            my $method = shift @$meth_call;
-            $last = $sth->$method(@$meth_call);
+        if (my $calls = $request->sth_method_calls) {
+            for my $meth_call (@$calls) {
+                my $method = shift @$meth_call;
+                $last = $sth->$method(@$meth_call);
+            }
         }
+
+        if (my $lid_args = $request->dbh_last_insert_id_args) {
+            $last_insert_id = $dbh->last_insert_id( @$lid_args );
+        }
+
         $last;
     };
     my $response = $self->new_response_with_err($rv, $@);
+
+    $response->last_insert_id( $last_insert_id ) if defined $last_insert_id;
 
     # even if the eval failed we still want to try to gather attribute values
     $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) ) if $sth;

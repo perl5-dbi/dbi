@@ -36,7 +36,7 @@ sub execute {
     my $sth = shift;
     # we localize an attribute here to check that the correpoding STORE
     # at scope exit doesn't clear any recorded error
-    local $sth->{dbd_dummy} = 0;
+    local $sth->{Warn} = 0;
     my $rv = $sth->SUPER::execute(@_);
     return $rv;
 }

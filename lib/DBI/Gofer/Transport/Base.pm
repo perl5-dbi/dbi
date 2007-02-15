@@ -19,6 +19,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     trace
+    go_policy
 ));
 
 

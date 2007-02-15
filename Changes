@@ -6,9 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-Implement policies
-Add attr-passthru to prepare()
+Implement more policies
 Add $dbh->private_attribute_info method
+Add attr-passthru to prepare()?
+Test policies.
 
 
 =head2 Changes in DBI 1.54 (svn rev 8791),  2nd February 2007
@@ -18,7 +19,7 @@ Add $dbh->private_attribute_info method
 
   WARNING: This version has some subtle changes in DBI internals.
   It's possible, though doubtful, that some may affect your code.
-  I recommend some extra texting before using this release.
+  I recommend some extra testing before using this release.
   Or perhaps I'm just being over cautious...
 
   Fixed type_info when called for multiple dbh thanks to Cosimo Streppone.
