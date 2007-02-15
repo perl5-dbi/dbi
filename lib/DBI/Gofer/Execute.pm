@@ -211,8 +211,8 @@ sub execute_dbh_request {
     my $dbh;
     my $rv_ref = eval {
         $dbh = $self->_connect($request);
-        my $meth = $request->dbh_method_name;
-        my $args = $request->dbh_method_args;
+        my $args = $request->dbh_method_call; # [ 'method_name', @args ]
+        my $meth = shift @$args;
         my @rv = ($request->dbh_wantarray)
             ?        $dbh->$meth(@$args)
             : scalar $dbh->$meth(@$args);
@@ -243,8 +243,8 @@ sub execute_sth_request {
     my $rv = eval {
         $dbh = $self->_connect($request);
 
-        my $meth = $request->dbh_method_name;
-        my $args = $request->dbh_method_args;
+        my $args = $request->dbh_method_call; # [ 'method_name', @args ]
+        my $meth = shift @$args;
         $sth = $dbh->$meth(@$args);
         my $last = '(sth)'; # a true value (don't try to return actual sth)
 

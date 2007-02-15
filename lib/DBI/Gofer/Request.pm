@@ -14,8 +14,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     connect_args
-    dbh_method_name
-    dbh_method_args
+    dbh_method_call
     dbh_wantarray
     dbh_last_insert_id_args
     sth_method_calls
@@ -33,10 +32,9 @@ sub is_sth_request {
 }
 
 sub init_request {
-    my ($self, $method, $args_ref, $wantarray) = @_;
+    my ($self, $method_and_args, $wantarray) = @_;
     $self->reset;
-    $self->dbh_method_name($method);
-    $self->dbh_method_args($args_ref);
+    $self->dbh_method_call($method_and_args);
     $self->dbh_wantarray($wantarray);
 }
 

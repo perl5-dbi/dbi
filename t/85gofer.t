@@ -9,8 +9,6 @@ use Test::More 'no_plan';
 
 use DBI;
 
-use lib "/Users/timbo/dbi/trunk/lib";
-
 # so users can try others from the command line
 my $dbm = $ARGV[0] || "SDBM_File";
 

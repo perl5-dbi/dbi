@@ -82,7 +82,7 @@ sub executor_for_uri {
 }
 
 
-sub configuration { # one-time setup from httpd.conf
+sub configuration {           # one-time setup from httpd.conf
     my ($self, $configs) = @_;
     while ( my ($config_name, $config) = each %$configs ) {
         my @bad = grep { not exists $proto_config->{$_} } keys %$config;

@@ -6,6 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+Implement policies
+Add attr-passthru to prepare()
+Add $dbh->private_attribute_info method
+
 
 =head2 Changes in DBI 1.54 (svn rev 8791),  2nd February 2007
 

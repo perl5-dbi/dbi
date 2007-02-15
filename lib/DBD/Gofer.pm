@@ -40,7 +40,7 @@
         dbi_connect_closure
         dbi_go_execute_unique
     );
-    our %xxh_local_store_if_same_attrib = map { $_=>1 } qw(
+    our %xxh_local_store_attrib_if_same_value = map { $_=>1 } qw(
         Username
         dbi_connect_method
     );
@@ -160,7 +160,7 @@
         $dbh->STORE(Active => 0); # mark as inactive temporarily for STORE
 
         # test the connection XXX control via a policy later
-        unless ($dbh->go_dbh_method('ping', undef)) {
+        unless ($dbh->go_dbh_method(undef, 'ping')) {
             return undef if $dbh->err; # error already recorded, typically
             return $dbh->set_err(1, "ping failed");
         }
@@ -189,7 +189,7 @@
 {   package DBD::Gofer::db; # ====== DATABASE ======
     $imp_data_size = 0;
     use strict;
-    use Carp qw(croak);
+    use Carp qw(carp croak);
 
     my %dbh_local_store_attrib = %DBD::Gofer::xxh_local_store_attrib;
 
@@ -198,9 +198,12 @@
     }
 
     sub go_dbh_method {
-        my ($dbh, $method, $meta, @args) = @_;
+        my $dbh = shift;
+        my $meta = shift;
+        # $method and @args left in @_
+
         my $request = $dbh->{go_request};
-        $request->init_request($method, \@args, wantarray);
+        $request->init_request(\@_, wantarray);
 
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
@@ -240,7 +243,7 @@
         func
     )) {
         no strict 'refs';
-        *$method = sub { return shift->go_dbh_method($method, undef, @_) }
+        *$method = sub { return shift->go_dbh_method(undef, $method, @_) }
     }
 
     # Methods that should always fail
@@ -258,7 +261,7 @@
         my $dbh = shift;
         delete $dbh->{Statement}; # avoid "Modification of non-creatable hash value attempted"
         $dbh->{Statement} = $_[0]; # for profiling and ShowErrorStatement
-        return $dbh->go_dbh_method('do', undef, @_);
+        return $dbh->go_dbh_method(undef, 'do', @_);
     }
 
     sub ping {
@@ -266,7 +269,7 @@
         return $dbh->set_err(0, "can't ping while not connected") # warning
             unless $dbh->SUPER::FETCH('Active');
         # XXX local or remote - add policy attribute
-        return $dbh->go_dbh_method('ping', undef, @_);
+        return $dbh->go_dbh_method(undef, 'ping', @_);
     }
 
     sub last_insert_id {
@@ -281,7 +284,7 @@
 
         # forward driver-private attributes
         if ($attrib =~ m/^[a-z]/) { # XXX policy? precache on connect?
-            my $value = $dbh->go_dbh_method('FETCH', undef, $attrib);
+            my $value = $dbh->go_dbh_method(undef, 'FETCH', $attrib);
             $dbh->{$attrib} = $value;
             return $value;
         }
@@ -303,11 +306,17 @@
             or not $dbh->FETCH('Active');
 
 	return $dbh->SUPER::STORE($attrib => $value)
-            if $DBD::Gofer::xxh_local_store_if_same_attrib{$attrib}
-            && do { local $^W; $value eq $dbh->FETCH($attrib) }; # XXX undefs
+            if $DBD::Gofer::xxh_local_store_attrib_if_same_value{$attrib}
+            && do { # return true if values are the same
+                my $crnt = $dbh->FETCH($attrib);
+                local $^W;
+                (defined($value) ^ defined($crnt))
+                    ? 0 # definedness differs
+                    : $value eq $crnt;
+            };
 
         # dbh attributes are set at connect-time - see connect()
-        Carp::carp("Can't alter \$dbh->{$attrib}") if $dbh->FETCH('Warn');
+        carp("Can't alter \$dbh->{$attrib}") if $dbh->FETCH('Warn');
         return $dbh->set_err(1, "Can't alter \$dbh->{$attrib}");
     }
 
@@ -329,18 +338,18 @@
 
 	my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
 	    Statement => $statement,
-            go_prepare_call => [ 'prepare', [ $statement, $attr ] ],
+            go_prepare_call => [ 'prepare', $statement, $attr ],
             go_method_calls => [],
             go_request => $dbh->{go_request},
             go_trans => $dbh->{go_trans},
             go_policy => $policy,
         });
 
-        #my $p_sep = $policy->skip_early_prepare($attr, $dbh, $statement, $attr, $sth);
-        my $p_sep = 0;
+        #my $skip_early_prepare = $policy->skip_early_prepare($attr, $dbh, $statement, $attr, $sth);
+        my $skip_early_prepare = 0;
 
-        $p_sep = 1 if not defined $statement; # XXX hack, see go_dbh_method
-        if (not $p_sep) {
+        $skip_early_prepare = 1 if not defined $statement; # XXX hack, see go_dbh_method
+        if (not $skip_early_prepare) {
             $sth->go_sth_method() or return undef;
         }
 
@@ -369,7 +378,7 @@
         }
 
         my $request = $sth->{go_request};
-        $request->init_request(@{$sth->{go_prepare_call}}, undef);
+        $request->init_request($sth->{go_prepare_call}, undef);
         $request->sth_method_calls($sth->{go_method_calls});
         $request->sth_result_attr({});
 
