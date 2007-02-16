@@ -92,7 +92,7 @@ sub _connect {
     my ($self, $request) = @_;
 
     # just a quick hack for now
-    if (++$self->{request_count} % 100 == 0) { # XXX config
+    if (++$self->{request_count} % 1000 == 0) { # XXX config
         # discard CachedKids from time to time
         my %drivers = DBI->installed_drivers();
         while ( my ($driver, $drh) = each %drivers ) {

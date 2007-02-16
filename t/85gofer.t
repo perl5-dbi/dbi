@@ -54,14 +54,14 @@ run_tests('no', {}, 'pedantic') if $perf_count;
 
 while ( my ($activity, $stats_hash) = each %durations ) {
     print "\n";
-    $stats_hash->{baseline} = delete $stats_hash->{"no+pedantic"};
-    for my $perf_tag (sort keys %$stats_hash) {
+    $stats_hash->{'~baseline~'} = delete $stats_hash->{"no+pedantic"};
+    for my $perf_tag (reverse sort keys %$stats_hash) {
         my $dur = $stats_hash->{$perf_tag};
         printf "  %6s %-13s: %.6fsec (%5d/sec)",
             $activity, $perf_tag, $dur/$perf_count, $perf_count/$dur;
-        my $baseline_dur = $stats_hash->{baseline};
-        printf " %+dms", (($dur-$baseline_dur)/$perf_count)*1000
-            unless $perf_tag eq 'baseline';
+        my $baseline_dur = $stats_hash->{'~baseline~'};
+        printf " %+5.1fms", (($dur-$baseline_dur)/$perf_count)*1000
+            unless $perf_tag eq '~baseline~';
         print "\n";
     }
 }
