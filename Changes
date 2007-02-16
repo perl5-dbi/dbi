@@ -6,10 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-Implement more policies
-Add $dbh->private_attribute_info method
 Add attr-passthru to prepare()?
 Test policies.
+Guard against version skew.
 
 
 =head2 Changes in DBI 1.54 (svn rev 8791),  2nd February 2007
@@ -52,6 +51,7 @@ Test policies.
   Added ability for drivers to implement func() method
     so proxy drivers can proxy the func method itself.
   Added SQL_BIGINT type code (resolved to the ODBC/JDBC value (-5))
+  Added $h->private_attribute_info method.
 
 =head2 Changes in DBI 1.53 (svn rev 7995),   31st October 2006
 

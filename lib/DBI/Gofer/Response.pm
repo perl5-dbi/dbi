@@ -17,6 +17,7 @@ __PACKAGE__->mk_accessors(qw(
     errstr
     state
     last_insert_id
+    dbh_attributes
     sth_resultsets
     warnings
 ));
@@ -24,21 +25,22 @@ __PACKAGE__->mk_accessors(qw(
 
 sub add_err {
     my ($self, $err, $errstr, $state, $trace) = @_;
-    chomp $errstr if $errstr;
-    $state ||= '';
-    warn "add_err($err, $errstr, $state)" if $trace and $errstr || $err;
 
     # acts like the DBI's set_err method.
     # this code copied from DBI::PurePerl's set_err method.
+
+    chomp $errstr if $errstr;
+    $state ||= '';
+    warn "add_err($err, $errstr, $state)" if $trace and $errstr || $err;
 
     my ($r_err, $r_errstr, $r_state) = ($self->{err}, $self->{errstr}, $self->{state});
 
     if ($r_errstr) {
         $r_errstr .= sprintf " [err was %s now %s]", $r_err, $err
-                if $r_err && $err;
+                if $r_err && $err && $r_err ne $err;
         $r_errstr .= sprintf " [state was %s now %s]", $r_state, $state
-                if $r_state and $r_state ne "S1000" && $state;
-        $r_errstr .= "\n$errstr";
+                if $r_state and $r_state ne "S1000" && $state && $r_state ne $state;
+        $r_errstr .= "\n$errstr" if $r_errstr ne $errstr;
     }   
     else { 
         $r_errstr = $errstr;

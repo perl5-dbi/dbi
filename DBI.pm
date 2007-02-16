@@ -389,6 +389,7 @@ my $keeperr = { O=>0x0004 };
 	trace		=> { U =>[1,3,'[$trace_level, [$filename]]'],	O=>0x0004 },
 	trace_msg	=> { U =>[2,3,'$message_text [, $min_level ]' ],	O=>0x0004, T=>8 },
 	swap_inner_handle => { U =>[2,3,'$h [, $allow_reparent ]'] },
+        private_attribute_info => { },
     },
     dr => {		# Database Driver Interface
 	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000 },
@@ -1393,6 +1394,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	#      0xddDDDDrL (driver, DBI, reserved, Level)
 	return 0x00000100 if $name eq 'SQL';
 	return;
+    }
+
+    sub private_attribute_info {
+        return undef;
     }
 
 }
@@ -3249,6 +3254,14 @@ check if $trace_flag_name is a driver specific trace flags and, if
 not, then call the DBIs default parse_trace_flag().
 
 The parse_trace_flag() method was added in DBI 1.42.
+
+=item C<private_attribute_info>
+
+  $array_ref = $h->private_attribute_info();
+
+Returns a reference to an array containing the names of driver-private
+attributes available for that kind of handle (driver, database, statement),
+or else undef.
 
 =item C<swap_inner_handle>
 

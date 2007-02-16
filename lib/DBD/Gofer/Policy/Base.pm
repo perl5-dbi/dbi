@@ -18,6 +18,8 @@ my %policy_defaults = (
     skip_connect_check => 0,
     skip_prepare_check => 0,
     skip_ping => 0,
+    dbh_attribute_update => 'every',
+    dbh_attribute_list => ['*'],
 );
 
 my $base_policy_file = $INC{"DBD/Gofer/Policy/Base.pm"};

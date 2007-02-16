@@ -103,7 +103,7 @@
         my $orig_dsn = $dsn;
 
         # first remove dsn= and everything after it
-        my $remote_dsn = ($dsn =~ s/\bdsn=(.*)$// && $1)
+        my $remote_dsn = ($dsn =~ s/;?\bdsn=(.*)$// && $1)
             or return $drh->set_err(1, "No dsn= argument in '$orig_dsn'");
 
         if ($attr->{go_bypass}) { # don't use DBD::Gofer for this connection
@@ -220,6 +220,13 @@
 
         my $request = $dbh->{go_request};
         $request->init_request(\@_, wantarray);
+        ++$dbh->{go_request_count};
+
+        my $go_policy = $dbh->{go_policy};
+        my $dbh_attribute_update = $go_policy->dbh_attribute_update();
+        $request->dbh_attributes( $go_policy->dbh_attribute_list() )
+            if $dbh_attribute_update eq 'every'
+            or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
 
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
@@ -230,10 +237,15 @@
             or return $dbh->set_err(1, "transmit_request failed: $@");
 
         my $response = $transport->receive_response;
-        my $rv = $response->rv;
-
         $dbh->{go_response} = $response;
 
+        if (my $dbh_attributes = $response->dbh_attributes) {
+            # XXX we don't STORE here, we just stuff the value into the attribute cache
+            $dbh->{$_} = $dbh_attributes->{$_}
+                for keys %$dbh_attributes;
+        }
+
+        my $rv = $response->rv;
         if (my $resultset_list = $response->sth_resultsets) {
             # dbh method call returned one or more resultsets
             # (was probably a metadata method like table_info)
@@ -393,14 +405,23 @@
             }
         }
 
+        my $dbh = $sth->{Database} or die 42; # XXX
+        ++$dbh->{go_request_count};
+
         my $request = $sth->{go_request};
         $request->init_request($sth->{go_prepare_call}, undef);
         $request->sth_method_calls($sth->{go_method_calls})
             if $sth->{go_method_calls};
-        $request->sth_result_attr({}); # (currently) indicates this is an sth request
+        $request->sth_result_attr({}); # (currently) also indicates this is an sth request
 
         $request->last_insert_id_args($sth->{go_last_insert_id_args})
             if $sth->{go_last_insert_id_args};
+
+        my $go_policy = $sth->{go_policy};
+        my $dbh_attribute_update = $go_policy->dbh_attribute_update();
+        $request->dbh_attributes( $go_policy->dbh_attribute_list() )
+            if $dbh_attribute_update eq 'every'
+            or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
 
         my $transport = $sth->{go_trans}
             or return $sth->set_err(1, "Not connected (no transport)");
@@ -409,12 +430,20 @@
         eval { $transport->transmit_request($request) }
             or return $sth->set_err(1, "transmit_request failed: $@");
 
-        my $response = $transport->receive_response;
-        $sth->{go_response} = $response;
         delete $sth->{go_method_calls};
 
+        my $response = $transport->receive_response;
+        $sth->{go_response} = $response;
+
+        if (my $dbh_attributes = $response->dbh_attributes) {
+            # XXX we don't STORE here, we just stuff the value into the attribute cache
+            $dbh->{$_} = $dbh_attributes->{$_}
+                for keys %$dbh_attributes;
+        }
+
+        my $rv = $response->rv;
         if ($response->sth_resultsets) {
-            # setup first resultset - including atributes
+            # setup first resultset - including sth attributes
             $sth->more_results;
         }
         else {

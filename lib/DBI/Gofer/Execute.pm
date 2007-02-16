@@ -208,6 +208,7 @@ sub execute_request {
 
 sub execute_dbh_request {
     my ($self, $request) = @_;
+
     my $dbh;
     my $rv_ref = eval {
         $dbh = $self->_connect($request);
@@ -219,13 +220,31 @@ sub execute_dbh_request {
         \@rv;
     };
     my $response = $self->new_response_with_err($rv_ref, $@);
-    if ($dbh) {
-        if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
-            my $id = $dbh->last_insert_id( @$lid_args );
-            $response->last_insert_id( $id );
+
+    return $response if not $dbh;
+
+    # does this request also want any dbh attributes returned?
+    if (my $dbh_attributes = $request->dbh_attributes) {
+        my @req_attr_names = @$dbh_attributes;
+        if ($req_attr_names[0] eq '*') { # auto include std + private
+            shift @req_attr_names;
+            # add ChopBlanks LongReadLen LongTruncOk because drivers may have different defaults
+            # plus Name so the client gets the real Name of the connection
+            push @req_attr_names, qw(ChopBlanks LongReadLen LongTruncOk Name);
+            my $pai = $dbh->private_attribute_info
+                   || $extra_attr{ $dbh->{Driver}{Name} }{dbh} || [];
+            push @req_attr_names, @$pai;
         }
-        $self->reset_dbh($dbh);
+        my %dbh_attr_values;
+        $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
+        $response->dbh_attributes(\%dbh_attr_values);
     }
+
+    if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
+        my $id = $dbh->last_insert_id( @$lid_args );
+        $response->last_insert_id( $id );
+    }
+
     if ($rv_ref and UNIVERSAL::isa($rv_ref->[0],'DBI::st')) {
         # dbh_method_call was probably a metadata method like table_info
         # that returns a statement handle, so turn the $sth into resultset
@@ -233,6 +252,10 @@ sub execute_dbh_request {
         $response->sth_resultsets( $self->gather_sth_resultsets($rv, $request) );
         $response->rv("(sth)"); # don't try to return actual sth
     }
+
+    # we're finished with this dbh for this request
+    $self->reset_dbh($dbh);
+
     return $response;
 }
 

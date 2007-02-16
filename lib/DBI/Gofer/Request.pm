@@ -16,6 +16,7 @@ __PACKAGE__->mk_accessors(qw(
     connect_args
     dbh_method_call
     dbh_wantarray
+    dbh_attributes
     dbh_last_insert_id_args
     sth_method_calls
     sth_result_attr
