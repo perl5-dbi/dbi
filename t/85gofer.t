@@ -23,8 +23,13 @@ my $dbm = $ARGV[0] || "SDBM_File";
 my $remote_driver_dsn = "dbm_type=$dbm;lockfile=0";
 my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
 
-# use DBD::Gofer directly.
-# when combined with DBI_AUTOPROXY this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
+if ($ENV{DBI_AUTOPROXY}) {
+    # this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
+    # rather than disable it we let it run because we're twisted
+    # and because it helps find more bugs (though debugging can be painful)
+    warn "\n$0 is running with DBI_AUTOPROXY enabled ($ENV{DBI_AUTOPROXY})\n"
+        unless $0 =~ /\bzv/; # don't warn for t/zvg_85gofer.t
+}
 
 my $username = getpwuid($>);
 my %transports = (

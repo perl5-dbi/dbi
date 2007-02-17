@@ -96,3 +96,26 @@ sub receive_response {
 1;
 
 __END__
+
+=head1 NAME
+    
+DBD::Gofer::Transport::http - DBD::Gofer client transport using http
+
+=head1 SYNOPSIS
+
+  my $remote_dsn = "..."
+  DBI->connect("dbi:Gofer:transport=http;url=http://gofer.example.com/gofer;dsn=$remote_dsn",...)
+
+or, enable by setting the DBI_AUTOPROXY environment variable:
+
+  export DBI_AUTOPROXY='dbi:Gofer:transport=http;url=http://gofer.example.com/gofer'
+
+=head1 DESCRIPTION
+
+Connect with DBI::Gofer servers that use http transports, i.e., L<DBI::Gofer::Transport::mod_perl>.
+
+=head1 SEE ALSO
+
+L<DBD::Gofer> and L<DBI::Gofer::Transport::mod_perl>
+
+=cut

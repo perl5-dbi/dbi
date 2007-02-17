@@ -7,11 +7,14 @@ DBI::Changes - List of significant changes to the DBI
 =cut
 
 Add attr-passthru to prepare()?
-Test policies.
 Guard against version skew.
+Terminology
+routing %dsn_attr to both transport and DBD::Gofer + warn about unknown ones.
+I could make the short name do a lookup in both DBD::Gofer::Transport and DBIx::Gofer::Transport.
+Document user/passwd issues at the various levels of the stack
 
 
-=head2 Changes in DBI 1.54 (svn rev 8791),  2nd February 2007
+=head2 Changes in DBI 1.54 (svn rev 9118),  16th February 2007
 
   NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
   Take a look!

@@ -33,5 +33,16 @@ sub run_one_stdio {
     print $frozen_response;
 }
 
-
 1;
+__END__
+
+=head1 NAME
+    
+DBI::Gofer::Transport::pipeone - DBD::Gofer server-side transport for pipeone
+    
+=head1 SYNOPSIS
+
+See L<DBD::Gofer::Transport::pipeone>.
+
+=cut
+

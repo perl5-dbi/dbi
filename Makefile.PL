@@ -99,7 +99,7 @@ if ($@) {
     You do *not* need these modules for typical DBI usage.
 
 MSG
-    sleep 2;
+    sleep 1;
 }
 
 if (@missing) {
@@ -111,7 +111,7 @@ Optional modules are available from any CPAN mirror, in particular
     ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
 
 MSG
-    sleep 4;
+    sleep 1;
 }
 
  

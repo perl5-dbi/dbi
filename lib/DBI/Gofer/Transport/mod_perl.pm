@@ -97,3 +97,84 @@ sub configuration {           # one-time setup from httpd.conf
 __END__
 
 also need a CGI/FastCGI transport
+
+=head1 NAME
+    
+DBI::Gofer::Transport::mod_perl - DBD::Gofer server-side transport for http
+
+=head1 SYNOPSIS
+
+In httpd.conf:
+
+    <Location /gofer>
+        SetHandler perl-script 
+        PerlHandler DBI::Gofer::Transport::mod_perl
+    </Location>
+
+For the client-side see L<DBD::Gofer::Transport::http>.
+
+=head1 DESCRIPTION
+
+This module implements a DBD::Gofer server-side http transport for mod_perl.
+After configuring this into your httpd.conf, users will be able to use the DBI
+to connect to databases via your apache httpd.
+
+=head1 CONFIGURATION
+
+Rather than provide a DBI proxy that will connect to any database as any user,
+you may well want to restrict access to just one or a few databases.
+
+Or perhaps you want the database passwords to be stored only in httpd.conf so
+you don't have to maintain them in all your clients. In this case you'd
+probably want to use standard https security and authentication.
+
+These kinds of configurations are supported by DBI::Gofer::Transport::mod_perl.
+
+The most simple configuration looks like:
+                 
+    <Location /gofer>
+        SetHandler perl-script
+        PerlHandler DBI::Gofer::Transport::mod_perl
+    </Location>
+
+That's equivalent to:
+
+    <Perl>
+        DBI::Gofer::Transport::mod_perl->configuration({
+            default => {
+                default_connect_dsn => undef,
+                forced_connect_dsn  => undef,
+                default_connect_attributes => { },
+                forced_connect_attributes  => { },
+            },
+        });
+    </Perl>
+
+    <Location /gofer/example>
+        SetHandler perl-script
+        PerlSetVar GoferConfig default
+        PerlHandler DBI::Gofer::Transport::mod_perl
+    </Location>
+
+The DBI::Gofer::Transport::mod_perl->configuration({...}) call defines named configurations.
+The C<PerlSetVar GoferConfig> clause specifies the configuration to be used for that location.
+
+XXX add detail inclusing specific examples
+
+A single location can specify multiple configurations using C<PerlAddVar>:
+
+        PerlSetVar GoferConfig default
+        PerlAddVar GoferConfig example_foo
+        PerlAddVar GoferConfig example_bar
+
+in which case the configurations are merged with any entries in later
+configurations overriding those in earlier ones. In this way a small number of
+configurations can be mix-n-matched to create specific configurations for
+specific location urls.
+
+=head1 SEE ALSO
+
+L<DBD::Gofer> and L<DBD::Gofer::Transport::http>.
+
+=cut
+

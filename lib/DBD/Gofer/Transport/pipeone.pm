@@ -124,7 +124,34 @@ sub receive_response {
 
 __END__
 
-Spectacularly inefficient.
+=head1 NAME
+    
+DBD::Gofer::Transport::pipeone - DBD::Gofer client transport for testing
 
-Intended as a test of the truely stateless nature of the Gofer servers,
-and an example implementation of a transport that talks to another process.
+=head1 SYNOPSIS
+
+  $original_dsn = "...";
+  DBI->connect("dbi:Gofer:transport=pipeone;dsn=$original_dsn",...)
+
+or, enable by setting the DBI_AUTOPROXY environment variable:
+
+  export DBI_AUTOPROXY="dbi:Gofer:transport=pipeone"
+
+=head1 DESCRIPTION
+
+Connect via DBD::Gofer and execute each request by starting executing a subprocess.
+
+This is, as you might imagine, spectacularly inefficient!
+
+It's only intended for testing. Specifically it demonstrates that the server
+side is completely stateless.
+
+It also provides a base class for the much more useful L<DBD::Gofer::Transport::stream>
+transport.
+
+=head1 SEE ALSO
+
+L<DBD::Gofer>
+
+=cut
+

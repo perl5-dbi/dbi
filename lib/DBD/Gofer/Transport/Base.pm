@@ -24,3 +24,26 @@ __PACKAGE__->mk_accessors(qw(
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
 
 1;
+
+=head1 NAME
+
+DBD::Gofer::Transport::Base - base class for DBD::Gofer client transports
+
+=head1 SEE ALSO
+
+L<DBD::Gofer>
+
+and some example transports:
+
+L<DBD::Gofer::Transport::stream>
+
+L<DBD::Gofer::Transport::http>
+
+L<DBI::Gofer::Transport::mod_perl>
+
+=cut
+
+
+=cut
+
+

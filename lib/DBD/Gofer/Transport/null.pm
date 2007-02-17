@@ -65,3 +65,40 @@ sub receive_response {
 
 
 1;
+__END__
+
+=head1 NAME
+    
+DBD::Gofer::Transport::null - DBD::Gofer client transport for testing
+
+=head1 SYNOPSIS
+
+  my $original_dsn = "..."
+  DBI->connect("dbi:Gofer:transport=null;dsn=$original_dsn",...)
+
+or, enable by setting the DBI_AUTOPROXY environment variable:
+
+  export DBI_AUTOPROXY="dbi:Gofer:transport=null"
+
+=head1 DESCRIPTION
+
+Connect via DBD::Gofer but execute the requests within the same process.
+
+This is a quick and simple way to test applications for compatibility with the
+(few) restrictions that DBD::Gofer imposes.
+
+It also provides a simple, portable way for the DBI test suite to be used to
+test DBD::Gofer on all platforms with no setup.
+
+Also, by measuring the difference in performance between normal connections and
+connections via C<dbi:Gofer:transport=null> the basic cost of using DBD::Gofer
+can be measured. Furthermore, the additional cost of more advanced transports can be 
+isolated by comparing their performance with the null transport.
+
+The C<t/85gofer.t> script in the DBI distribution includes a comparative benchmark.
+
+=head1 SEE ALSO
+
+L<DBD::Gofer>
+
+=cut

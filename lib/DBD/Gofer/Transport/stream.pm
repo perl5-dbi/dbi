@@ -128,3 +128,44 @@ sub nonblock {
 
 __END__
 
+=head1 NAME
+    
+DBD::Gofer::Transport::stream - DBD::Gofer transport for stdio streaming
+
+=head1 SYNOPSIS
+
+  DBI->connect('dbi:Gofer:transport=stream;url=ssh:username@host.example.com;dsn=dbi:...',...)
+
+or, enable by setting the DBI_AUTOPROXY environment variable:
+
+  export DBI_AUTOPROXY='dbi:Gofer:transport=stream;url=ssh:username@host.example.com'
+
+=head1 DESCRIPTION
+
+Without the C<url=> parameter it launches a subprocess as
+
+  perl -MDBI::Gofer::Transport::stream -e run_stdio_hex
+
+and feeds requests into it and reads responses from it. But that's not very useful.
+
+With a C<url=ssh:username@host.example.com> parameter it launches a subprocess as
+something like
+
+  ssh -q ssh:username@host.example.com bash -c $setup $run
+
+where $run is the command shown above, and $command is
+
+  source .bash_profile 2>/dev/null \
+  || source .bash_login 2>/dev/null \
+  || source .profile 2>/dev/null \
+  ; eval "$@"
+
+which is trying (in a limited an unportable way) to setup the environment
+(PATH, PERL5LIB etc) as it would be if you had logged in to that system.
+
+=head1 SEE ALSO
+
+L<DBD::Gofer>
+
+=cut
+
