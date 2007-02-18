@@ -42,8 +42,3 @@ L<DBD::Gofer::Transport::http>
 L<DBI::Gofer::Transport::mod_perl>
 
 =cut
-
-
-=cut
-
-

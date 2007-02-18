@@ -12,6 +12,7 @@ use warnings;
 
 use IPC::Open3 qw(open3);
 use Symbol qw(gensym);
+use Config;
 
 use base qw(DBD::Gofer::Transport::Base);
 
@@ -23,12 +24,22 @@ __PACKAGE__->mk_accessors(qw(
 )); 
 
 
+my $this_perl = $^X;
+$this_perl .= $Config{_exe}
+    if $^O ne 'VMS' && $this_perl !~ m/$Config{_exe}$/i;
+
+
 sub start_pipe_command {
     my ($self, $cmd) = @_;
     $cmd = [ $cmd ] unless ref $cmd eq 'ARRAY';
 
-    # ensure subprocess will use the same modules as us
-    local $ENV{PERL5LIB} = join ":", @INC;
+    # translate any SAMEPERL in cmd to $this_perl
+    $_ eq 'SAMEPERL' and $_ = $this_perl
+        for @$cmd;
+
+    # if it's important that the subprocess uses the same
+    # (versions of) modules as us then the caller should
+    # set PERL5LIB itself.
 
     # limit various forms of insanity, for now
     local $ENV{DBI_TRACE};
@@ -37,7 +48,7 @@ sub start_pipe_command {
 
     my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
     my $pid = open3($wfh, $rfh, $efh, @$cmd)
-        or die "error starting $cmd: $!\n";
+        or die "error starting @$cmd: $!\n";
     $self->trace_msg("Started pid $pid: $cmd\n") if $self->trace;
 
     return {
@@ -63,7 +74,7 @@ sub transmit_request {
     my $info = eval { 
         my $frozen_request = $self->freeze_data($request);
 
-        my $cmd = [qw(perl -MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
+        my $cmd = [ qw(SAMEPERL -MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
         my $info = $self->start_pipe_command($cmd);
 
         my $wfh = delete $info->{wfh};
@@ -71,7 +82,7 @@ sub transmit_request {
         print $wfh $frozen_request;
         # indicate that there's no more
         close $wfh
-            or die "error writing to $cmd: $!\n";
+            or die "error writing to @$cmd: $!\n";
 
         $info; # so far so good. return the state info
     };
@@ -97,7 +108,7 @@ sub receive_response {
     return $response if $response; # failed while starting
 
     my $info = $self->connection_info || die;
-    my ($pid, $rfh, $efh) = @{$info}{qw(pid rfh efh)};
+    my ($pid, $rfh, $efh, $cmd) = @{$info}{qw(pid rfh efh cmd)};
 
     waitpid $info->{pid}, 0
         or warn "waitpid: $!"; # XXX do something more useful?
@@ -108,13 +119,17 @@ sub receive_response {
     if (not $frozen_response) { # no output on stdout at all
         return DBI::Gofer::Response->new({
             err    => 1,
-            errstr => "pipeone command failed: $stderr_msg",
+            errstr => ref($self)." command (@$cmd) failed: $stderr_msg",
         }); 
     }
-    warn "STDERR message: $stderr_msg" if $stderr_msg; # XXX do something more useful
 
     # XXX need to be able to detect and deal with corruption
     $response = $self->thaw_data($frozen_response);
+
+    if ($stderr_msg) {
+        warn "STDERR message from @$cmd: $stderr_msg"; # XXX remove later
+        $response->add_err(0, $stderr_msg);
+    }
 
     return $response;
 }

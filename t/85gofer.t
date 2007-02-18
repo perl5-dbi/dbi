@@ -31,10 +31,16 @@ if ($ENV{DBI_AUTOPROXY}) {
         unless $0 =~ /\bzv/; # don't warn for t/zvg_85gofer.t
 }
 
+# ensure subprocess (for pipeone and stream transport) will use the same modules as us, ie ./blib
+local $ENV{PERL5LIB} = join ":", @INC;
+
+
+# XXX add way for a transport to be tested with multiple dsns
 my $username = getpwuid($>);
 my %transports = (
     null => {},
     pipeone => {},
+    stream => {},
 #   stream => { url => "ssh:$username\@localhost" },
     http => { url => "http://localhost:8001/gofer" },
 );
@@ -88,7 +94,7 @@ sub run_tests {
     $dsn = $remote_dsn if $transport eq 'no';
     print " $dsn\n";
 
-    my $dbh = DBI->connect($dsn, undef, undef, { HandleError => sub { print $_[0]; 1 } } );
+    my $dbh = DBI->connect($dsn, undef, undef, { } );
     ok $dbh, 'should connect';
     die "$test_run_tag aborted\n" unless $dbh;
 
@@ -100,8 +106,10 @@ sub run_tests {
     ok $dbh->do("CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))");
     die "$test_run_tag aborted\n" if $DBI::err;
 
-    my $sth;
-    $sth = $dbh->prepare("complete non-sql gibberish");
+    my $sth = do {
+        local $dbh->{PrintError} = 0;
+        $dbh->prepare("complete non-sql gibberish");
+    };
     ($policy->skip_prepare_check)
         ? isa_ok $sth, 'DBI::st'
         : is $sth, undef, 'should detect prepare failure';

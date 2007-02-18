@@ -30,7 +30,7 @@ sub transmit_request {
 
         my $connection = $self->connection_info;
         if (not $connection || ($connection->{pid} && not kill 0, $connection->{pid})) {
-            my $cmd = [qw(perl -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
+            my $cmd = [qw(SAMEPERL -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
             #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
             if (my $url = $self->go_url) {
                 die "Only 'ssh:user\@host' style url supported by this transport"
@@ -39,6 +39,7 @@ sub transmit_request {
                 my $setup_env = join "||", map { "source $_ 2>/dev/null" }
                                     qw(.bash_profile .bash_login .profile);
                 my $setup = $setup_env.q{; eval "$@"};
+                $cmd->[0] = 'perl'; # don't use SAMEPERL on remote system
                 unshift @$cmd, qw(ssh -q), split(' ', $ssh), qw(bash -c), $setup;
             }
             # XXX add a handshake - some message from DBI::Gofer::Transport::stream that's
