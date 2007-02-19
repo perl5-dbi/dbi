@@ -88,13 +88,6 @@
 
 {   package DBD::Gofer::dr; # ====== DRIVER ======
 
-    my %dsn_attr_defaults = (
-        go_dsn => undef,
-        go_url => undef,
-        go_transport => undef,
-        go_policy => undef,
-    );
-
     $imp_data_size = 0;
     use strict;
 
@@ -111,44 +104,40 @@
             return DBI->connect($remote_dsn, $user, $auth, $attr);
         }
 
-        my %dsn_attr = (%dsn_attr_defaults, go_dsn => $remote_dsn);
+        my %go_attr;
         # extract any go_ attributes from the connect() attr arg
         for my $k (grep { /^go_/ } keys %$attr) {
-            $dsn_attr{$k} = delete $attr->{$k};
+            $go_attr{$k} = delete $attr->{$k};
         }
         # then override those with any attributes embedded in our dsn (not remote_dsn)
         for my $kv (grep /=/, split /;/, $dsn, -1) {
             my ($k, $v) = split /=/, $kv, 2;
-            $dsn_attr{ "go_$k" } = $v;
-        }
-        if (keys %dsn_attr > keys %dsn_attr_defaults) {
-            delete @dsn_attr{ keys %dsn_attr_defaults };
-            return $drh->set_err(1, "Unknown attributes: @{[ keys %dsn_attr ]}");
+            $go_attr{ "go_$k" } = $v;
         }
 
-        if (not ref $dsn_attr{go_policy}) { # if not a policy object already
-            my $policy_class = $dsn_attr{go_policy} || 'pedantic';
+        if (not ref $go_attr{go_policy}) { # if not a policy object already
+            my $policy_class = $go_attr{go_policy} || 'pedantic';
             $policy_class = "DBD::Gofer::Policy::$policy_class"
                 unless $policy_class =~ /::/;
             _load_class($policy_class)
                 or return $drh->set_err(1, "Error loading $policy_class: $@");
-            # replace policy name in %dsn_attr with policy object
-            $dsn_attr{go_policy} = eval { $policy_class->new(\%dsn_attr) }
+            # replace policy name in %go_attr with policy object
+            $go_attr{go_policy} = eval { $policy_class->new(\%go_attr) }
                 or return $drh->set_err(1, "Error instanciating $policy_class: $@");
         }
-        # policy object is left in $dsn_attr{go_policy} so transport can see it
-        my $go_policy = $dsn_attr{go_policy};
+        # policy object is left in $go_attr{go_policy} so transport can see it
+        my $go_policy = $go_attr{go_policy};
 
-        my $request_class = "DBI::Gofer::Request";
-        my $transport_class = delete $dsn_attr{go_transport}
+        my $transport_class = delete $go_attr{go_transport}
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$transport_class"
             unless $transport_class =~ /::/;
         _load_class($transport_class)
             or return $drh->set_err(1, "Error loading $transport_class: $@");
-        my $go_trans = eval { $transport_class->new(\%dsn_attr) }
+        my $go_trans = eval { $transport_class->new(\%go_attr) }
             or return $drh->set_err(1, "Error instanciating $transport_class: $@");
 
+        my $request_class = "DBI::Gofer::Request";
         my $go_request = eval {
             my $go_attr = { %$attr };
             # XXX user/pass of fwd server vs db server ? also impact of autoproxy
