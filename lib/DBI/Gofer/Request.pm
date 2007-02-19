@@ -13,6 +13,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 
 __PACKAGE__->mk_accessors(qw(
+    version
     connect_args
     dbh_method_call
     dbh_wantarray
@@ -22,10 +23,18 @@ __PACKAGE__->mk_accessors(qw(
     sth_result_attr
 ));
 
+
+sub new {
+    my ($self, $args) = @_;
+    $args->{version} ||= $VERSION;
+    return $self->SUPER::new($args);
+}
+
+
 sub reset {
     my $self = shift;
-    # remove everything except connect
-    %$self = ( connect_args => $self->{connect_args} );
+    # remove everything except connect and version
+    %$self = ( version => $self->{version}, connect_args => $self->{connect_args} );
 }
 
 sub is_sth_request {

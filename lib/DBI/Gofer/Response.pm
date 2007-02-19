@@ -12,6 +12,7 @@ use base qw(DBI::Util::_accessor);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
+    version
     rv
     err
     errstr
@@ -21,6 +22,13 @@ __PACKAGE__->mk_accessors(qw(
     sth_resultsets
     warnings
 ));
+
+
+sub new {
+    my ($self, $args) = @_;
+    $args->{version} ||= $VERSION;
+    return $self->SUPER::new($args);
+}   
 
 
 sub add_err {

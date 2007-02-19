@@ -193,6 +193,10 @@ sub execute_request {
 
     my $response = eval {
 
+        my $version = $request->version || 0;
+        die ref($request)." version $version is not supported"
+            if $version < 0.009116 or $version >= 1;
+
         ($request->is_sth_request)
             ? $self->execute_sth_request($request)
             : $self->execute_dbh_request($request);
