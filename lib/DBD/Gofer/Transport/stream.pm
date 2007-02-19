@@ -28,10 +28,23 @@ my %persist;
 sub nonblock;
 
 
+sub new {
+    my ($self, $args) = @_;
+    if ($args->{go_perl} and not ref $args->{go_perl}) {
+        # user can override the perl to be used, either with an array ref
+        # containing the command name and args to use, or with a string
+        # (ie via the DSN) in which case, to enable args to be passed,
+        # we split on two or more consecutive spaces (otherwise the path
+        # to perl couldn't contain a space itself).
+        $args->{go_perl} = [ split /\s{2,}/, $args->{go_perl} ];
+    }
+    return $self->SUPER::new($args);
+}
+
+
 sub _connection_key {
     my ($self) = @_;
-    my $go_perl = $self->go_perl;
-    return join "~", $self->go_url, ref $go_perl ? @$go_perl : $go_perl||"";
+    return join "~", $self->go_url||"", @{ $self->go_perl || [] };
 }
 
 
@@ -86,12 +99,7 @@ sub _make_connection {
 
     my $cmd = [qw(SAMEPERL -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
     if (my $perl = $self->go_perl) {
-        # user can override the perl to be used, either with an array ref
-        # containing the command name and args to use, or with a string
-        # (ie via the DSN) in which case, to enable args to be passed,
-        # we split on two or more consecutive spaces (otherwise the path
-        # to perl couldn't contain a space itself).
-        splice @$cmd, 0, 1, (ref $perl ? @$perl : split /\s{2,}/,$perl);
+        splice @$cmd, 0, 1, @$perl;
     }
 
     #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
