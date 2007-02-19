@@ -202,12 +202,22 @@ sub empty {
     shift->{Data} = {};
 }
 
+sub _print {
+	my($fh) = shift;
+	
+	# isolate us against globals which effect print
+	local($\, $,);
+	
+	print $fh @_;
+}
+
+
 # write header to a filehandle
 sub write_header {
     my ($self, $fh) = @_;
 
     # module name and version number
-    print $fh ref($self), " ", $self->VERSION, "\n";
+    _print $fh, ref($self), " ", $self->VERSION, "\n";
 
     # print out Path
     my @path_words;
@@ -216,15 +226,15 @@ sub write_header {
             push @path_words, $_;
         }
     }
-    print $fh "Path = [ ", join(', ', @path_words), " ]\n";
+    _print $fh, "Path = [ ", join(', ', @path_words), " ]\n";
 
     # print out $0 and @ARGV
-    print $fh "Program = $0";
-    print $fh " ", join(", ", @ARGV) if @ARGV;
-    print $fh "\n";
+    _print $fh, "Program = $0";
+    _print $fh, " ", join(", ", @ARGV) if @ARGV;
+    _print $fh, "\n";
 
     # all done
-    print $fh "\n";
+    _print $fh, "\n";
 }
 
 # write data in the proscribed format
@@ -236,10 +246,10 @@ sub write_data {
     
     while (my ($key, $value) = each(%$data)) {
         # output a key
-        print $fh "+ ", $level, " ", quote_key($key), "\n";
+        _print $fh, "+ ", $level, " ", quote_key($key), "\n";
         if (UNIVERSAL::isa($value,'ARRAY')) {
             # output a data set for a leaf node
-            printf $fh "= %4d %.6f %.6f %.6f %.6f %.6f %.6f\n", @$value;
+            _print $fh, sprintf "= %4d %.6f %.6f %.6f %.6f %.6f %.6f\n", @$value;
         } else {
             # recurse through keys - this could be rewritten to use a
             # stack for some small performance gain

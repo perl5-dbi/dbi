@@ -1,4 +1,6 @@
-#!perl -w
+#!perl -wl
+# Using -l to ensure ProfileDumper is isolated from changes to $/ and $\ and such
+
 $|=1;
 
 use strict;
@@ -16,7 +18,7 @@ BEGIN {
 		plan skip_all => 'profiling not supported for DBI::PurePerl';
 	}
 	else {
-		plan tests => 12;
+		plan tests => 15;
 	}
 }
 
@@ -58,19 +60,24 @@ undef $dbh;
 ok( -s "dbi.prof", 'Profile is on disk and nonzero size' );
 
 open(PROF, "dbi.prof") or die $!;
-my $prof = join('', <PROF>);
+my @prof = <PROF>;
 close PROF;
 
 # has a header?
-ok( $prof =~ /^DBI::ProfileDumper\s+([\d.]+)/, 'Found a version number' );
+ok( $prof[0] =~ /^DBI::ProfileDumper\s+([\d.]+)/, 'Found a version number' );
 # Can't use like() because we need $1
 
 # version matches VERSION? (DBI::ProfileDumper uses $self->VERSION so
 # it's a stringified version object that looks like N.N.N)
 is( $1, DBI::ProfileDumper->VERSION, 'Version numbers match' );
 
+like( $prof[1], qr{^Path\s+=\s+\[\s+\]}, 'Found the Path');
+ok( $prof[2] =~ m{^Program\s+=\s+(\S+)}, 'Found the Program');
+
+is( $1, $0, 'Program matches' );
+
 # check that expected key is there
-like($prof, qr/\+\s+1\s+\Q$sql\E/m);
+like(join('', @prof), qr/\+\s+1\s+\Q$sql\E/m);
 
 # unlink("dbi.prof"); # now done by 'make clean'
 

@@ -31,6 +31,8 @@ Make new connection and retry if send request fails - build into architecture?
   Fixed to work for bleadperl (r29544) thanks to Nicholas Clark.
     Users of Perl >= 5.9.5 will require DBI >= 1.54.
   Fixed rare error when profiling access to $DBI::err etc tied variables.
+  Fixed DBI::ProfileDumper to not be affected by changes to $/ and $,
+    thanks to Michael Schwern.
 
   Changed t/40profile.t to skip tests for perl < 5.8.0.
   Changed setting trace file to no longer write "Trace file set" to new file.
