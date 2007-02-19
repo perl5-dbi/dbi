@@ -116,7 +116,7 @@
         }
 
         if (not ref $go_attr{go_policy}) { # if not a policy object already
-            my $policy_class = $go_attr{go_policy} || 'pedantic';
+            my $policy_class = $go_attr{go_policy} || 'classic';
             $policy_class = "DBD::Gofer::Policy::$policy_class"
                 unless $policy_class =~ /::/;
             _load_class($policy_class)
@@ -807,6 +807,14 @@ or, for a more useful example, try:
 
 XXX
 
+policy=pedantic is most transparent but slow
+
+policy=classic is a reasonable compromise, and is the default
+
+policy=rush is fastest but may require code changes in application
+
+See L<DBD::Gofer::Policy::Base> for more information.
+
 =head1 AUTHOR AND COPYRIGHT
 
 The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
@@ -824,22 +832,17 @@ Shopzilla.com (L<http://Shopzilla.com>), where I currently work.
 
 L<DBI::Gofer::Request>, L<DBI::Gofer::Response>, L<DBI::Gofer::Execute>.
 
-L<DBI::Gofer::Transport::Base>
+L<DBI::Gofer::Transport::Base>, L<DBD::Gofer::Policy::Base>.
 
 L<DBI>
-
 
 =head1 TODO
 
 Random brain dump...
 
-Add policy mechanism
+Document policy mechanism
 
-Add mecahism for transports to list config params
-and for Gofer to apply any that match
-(and warn if any left over?)
-
-Test existing compiled drivers (ie DBD::mysql) for binary compatibility
+Add mecahism for transports to list config params and for Gofer to apply any that match (and warn if any left over?)
 
 Driver-private sth attributes - set via prepare() - change DBI spec
 
@@ -851,7 +854,7 @@ Driver-private sth methods via func? Can't be sure of state?
 
 track installed_methods and install proxies on client side after connect?
 
-add hooks into transport base class for checking & updating a cache
+add hooks into transport base class for checking & updating a result set cache
    ie via a standard cache interface such as:
    http://search.cpan.org/~robm/Cache-FastMmap/FastMmap.pm
    http://search.cpan.org/~bradfitz/Cache-Memcached/lib/Cache/Memcached.pm
