@@ -1726,7 +1726,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         && DBIc_FIELDS_AV(imp_sth)
         ) {
             PerlIO_printf(DBILOGFP,"Warning: changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated",
-                    SvIV(valuesv), DBIc_NUM_FIELDS(imp_sth));
+                    (int)SvIV(valuesv), DBIc_NUM_FIELDS(imp_sth));
         }
 	DBIc_NUM_FIELDS(imp_sth) = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
 	cacheit = 1;
@@ -2337,7 +2337,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
     if (!profile || !SvROK(profile)) {
 	DBIc_set(imp_xxh, DBIcf_Profile, 0); /* disable */
 	if (!dirty)
-	    warn("Profile attribute isn't a hash ref (%s,%d)", neatsvpv(profile,0), SvTYPE(profile));
+	    warn("Profile attribute isn't a hash ref (%s,%ld)", neatsvpv(profile,0), (long)SvTYPE(profile));
 	return;
     }
 
@@ -2514,8 +2514,8 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
 	if (SvROK(tmp))
 	    tmp = SvRV(tmp);
 	if (SvTYPE(tmp) != SVt_PVAV)
-	    croak("Invalid Profile data leaf element: %s (type %d)",
-		    neatsvpv(tmp,0), SvTYPE(tmp));
+	    croak("Invalid Profile data leaf element: %s (type %ld)",
+		    neatsvpv(tmp,0), (long)SvTYPE(tmp));
 	av = (AV*)tmp;
 	sv_inc( *av_fetch(av, DBIprof_COUNT, 1));
 	tmp = *av_fetch(av, DBIprof_TOTAL_TIME, 1);
