@@ -5,6 +5,7 @@ $|=1;
 use strict;
 use warnings;
 
+use Cwd;
 use Time::HiRes qw(time);
 use Data::Dumper;
 use Test::More 'no_plan';
@@ -35,27 +36,32 @@ if ($ENV{DBI_AUTOPROXY}) {
 local $ENV{PERL5LIB} = join ":", @INC;
 
 
-# XXX add way for a transport to be tested with multiple dsns
-my $username = getpwuid($>);
-my %transports = (
-    null => {},
-    pipeone => {},
-    stream => {},
-#   stream => { url => "ssh:$username\@localhost" },
-    http => { url => "http://localhost:8001/gofer" },
-);
-# delete stream test for everyone else because it's to dependent
-# on local configuration issues unrelated to the DBI
-delete $transports{stream} unless $username eq 'timbo' && -d '.svn';
-delete $transports{http} unless $username eq 'timbo' && -d '.svn';
+my $getcwd = getcwd();
+my $username = eval { getpwuid($>) } || ''; # fails on windows
+my $can_ssh = ($username && $username eq 'timbo' && -d '.svn');
 
-for my $transport (keys %transports) {
-    my $trans_attr = $transports{$transport};
+my %trials = (
+    null       => {},
+    pipeone    => {},
+    stream     => {},
+    stream_ssh => ($can_ssh)
+                ? { url => "ssh:$username\@localhost", perl=>"SAMEPERL  -Mblib=$getcwd/blib" }
+                : undef,
+    http       => { url => "http://localhost:8001/gofer" },
+);
+
+# too dependant on local config to make a standard test
+delete $trials{http} unless $username eq 'timbo' && -d '.svn';
+
+for my $trial (keys %trials) {
+    (my $transport = $trial) =~ s/_.*//;
+    my $trans_attr = $trials{$trial}
+        or next;
 
     for my $policy_name (qw(pedantic classic rush)) {
 
         eval { run_tests($transport, $trans_attr, $policy_name) };
-        ($@) ? fail($@) : pass();
+        ($@) ? fail("$trial: $@") : pass();
 
     }
 }

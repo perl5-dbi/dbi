@@ -64,7 +64,7 @@ sub cmd_as_string {
     # XXX meant to return a prroperly shell-escaped string suitable for system
     # but its only for debugging so that can wait
     my $connection_info = $self->connection_info;
-    return join " ", @{$connection_info->{cmd}};
+    return join " ", map { "'$_'" } @{$connection_info->{cmd}};
 }
 
 

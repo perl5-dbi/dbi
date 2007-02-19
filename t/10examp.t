@@ -46,7 +46,8 @@ sub trace_to_file {
 		ok( -s $trace_file, "trace file size = " . -s $trace_file);
 	}
 
-	is( unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
+	my $unlinked = unlink( $trace_file );
+	ok( $unlinked, "Remove trace file $trace_file ($!)" );
 	ok( !-e $trace_file, "Trace file actually gone" );
 
 	DBI->trace($orig_trace_level);	# no way to restore previous outfile XXX
