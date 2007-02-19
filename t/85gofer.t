@@ -8,9 +8,17 @@ use warnings;
 use Cwd;
 use Time::HiRes qw(time);
 use Data::Dumper;
-use Test::More 'no_plan';
+use Test::More;
 
 use DBI;
+
+if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
+    plan skip_all => "transport+policy tests skipped with non-gofer DBI_AUTOPROXY"
+        if $ap !~ /^dbi:Gofer/i;
+    plan skip_all => "transport+policy tests skipped with non-pedantic policy in DBI_AUTOPROXY"
+        if $ap !~ /policy=pedantic\b/i;
+}
+plan 'no_plan';
 
 # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
 # next line forces use of Nano rather than default behaviour

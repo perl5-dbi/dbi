@@ -3014,7 +3014,7 @@ sub dbd_edit_mm_attribs {
 			add => [ '$ENV{DBI_PUREPERL} = 2' ],
 	    },
 	    g => {	name => "DBD::Gofer",
-			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null'} ],
+			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
 	    },
 	    xgp => {	name => "PurePerl & Gofer",
 			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null'} ],

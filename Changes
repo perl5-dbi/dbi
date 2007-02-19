@@ -12,7 +12,7 @@ I could make the short transport/policy name do a lookup in both DBD::Gofer::Tra
 Document user/passwd issues at the various levels of the stack
 
 
-=head2 Changes in DBI 1.54 (svn rev 9138),  19th February 2007
+=head2 Changes in DBI 1.54 (svn rev 9140),  19th February 2007
 
   NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
   Take a look!
