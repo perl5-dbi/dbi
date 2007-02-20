@@ -219,8 +219,6 @@
 
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
-        my $TraceLevel = $dbh->FETCH('TraceLevel');
-        $transport->trace( $TraceLevel - 4 ) if $TraceLevel > 4;
 
         eval { $transport->transmit_request($request) }
             or return $dbh->set_err(1, "transmit_request failed: $@");
@@ -414,8 +412,6 @@
 
         my $transport = $sth->{go_trans}
             or return $sth->set_err(1, "Not connected (no transport)");
-        my $TraceLevel = $sth->FETCH('TraceLevel');
-        $transport->trace( (($TraceLevel-4) > 0) ? $TraceLevel-4 : 0 );
         eval { $transport->transmit_request($request) }
             or return $sth->set_err(1, "transmit_request failed: $@");
 
@@ -881,5 +877,7 @@ Also caching instructions could be passed through the httpd transport layer
 in such a way that appropriate http cache headers are added to the results
 so that web caches (squid etc) could be used to implement the caching.
 (May require the use of GET rather than POST requests.)
+
+Neat way for $h->trace to enable transport tracing.
 
 =cut

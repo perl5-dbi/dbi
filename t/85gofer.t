@@ -47,7 +47,7 @@ local $ENV{PERL5LIB} = join ":", @INC;
 my $getcwd = getcwd();
 my $username = eval { getpwuid($>) } || ''; # fails on windows
 my $can_ssh = ($username && $username eq 'timbo' && -d '.svn');
-my $perl = "SAMEPERL  -Mblib=$getcwd/blib"; # ensure sameperl and our blib (note two spaces)
+my $perl = "$^X  -Mblib=$getcwd/blib"; # ensure sameperl and our blib (note two spaces)
 
 my %trials = (
     null       => {},
@@ -56,7 +56,7 @@ my %trials = (
     stream_ssh => ($can_ssh)
                 ? { perl=>$perl, url => "ssh:$username\@localhost" }
                 : undef,
-    http       => { url => "http://localhost:8001/gofer" },
+    #http       => { url => "http://localhost:8001/gofer" },
 );
 
 # too dependant on local config to make a standard test

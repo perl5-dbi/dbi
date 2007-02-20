@@ -41,7 +41,7 @@ sub _connection_get {
     $persist = $persist_all if not defined $persist;
     my $key = ($persist) ? $self->_connection_key : '';
     if ($persist{$key} && $self->_connection_check($persist{$key})) {
-        DBI->trace_msg("reusing persistent connection $key");
+        DBI->trace_msg("reusing persistent connection $key\n",0) if $self->trace >= 1;
         return $persist{$key};
     }
 
@@ -83,25 +83,23 @@ sub _connection_kill {
 sub _make_connection {
     my ($self) = @_;
 
-    my $cmd = [qw(SAMEPERL -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
-    if (0 and my $perl = $self->go_perl) {
-        splice @$cmd, 0, 1, @$perl;
-    }
+    my $go_perl = $self->go_perl;
+    my $cmd = [ @$go_perl, qw(-MDBI::Gofer::Transport::stream -e run_stdio_hex)];
 
     #push @$cmd, "DBI_TRACE=2=/tmp/goferstream.log", "sh", "-c";
     if (my $url = $self->go_url) {
         die "Only 'ssh:user\@host' style url supported by this transport"
             unless $url =~ s/^ssh://;
-        $cmd->[0] = 'perl' unless $self->go_perl; # don't use SAMEPERL on remote system
         my $ssh = $url;
         my $setup_env = join "||", map { "source $_ 2>/dev/null" } qw(.bash_profile .bash_login .profile);
-        #my $setup_env = "{ . .bash_profile || . .bash_login || . .profile; } 2>/dev/null";
         my $setup = $setup_env.q{; exec "$@"};
+        # don't use $^X on remote system by default as it's possibly wrong
+        $cmd->[0] = 'perl' if "@$go_perl" eq $^X;
         # -x not only 'Disables X11 forwarding' but also makes connections *much* faster
         unshift @$cmd, qw(ssh -xq), split(' ', $ssh), qw(bash -c), $setup;
     }
 
-    DBI->trace_msg("new connection: @$cmd");
+    DBI->trace_msg("new connection: @$cmd\n",0) if $self->trace;
 
     # XXX add a handshake - some message from DBI::Gofer::Transport::stream that's
     # sent as soon as it starts that we can wait for to report success - and soak up
@@ -134,7 +132,7 @@ sub transmit_request {
                 $self->_connection_kill;
                 die "Error sending request: $!";
             };
-        $self->trace_msg("Request: $frozen_request\n") if $self->trace >= 3;
+        $self->trace_msg("Request: $frozen_request\n",0) if $self->trace >= 4;
     };
     if ($@) {
         my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
@@ -178,8 +176,11 @@ sub receive_response {
         $msg .= $stderr_msg || $frozen_response_errno;
         return DBI::Gofer::Response->new({ err => 1, errstr => $msg }); 
     }
+
+    $self->trace_msg("Response: $frozen_response\n",0) if $self->trace >= 4;
+
     #warn DBI::neat($frozen_response);
-    $self->trace_msg("Gofer stream stderr message: $stderr_msg\n")
+    $self->trace_msg("Gofer stream stderr message: $stderr_msg\n",0)
         if $stderr_msg && $self->trace;
 
     # XXX need to be able to detect and deal with corruption

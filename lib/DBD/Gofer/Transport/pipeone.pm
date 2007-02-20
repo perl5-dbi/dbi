@@ -12,7 +12,6 @@ use warnings;
 
 use IPC::Open3 qw(open3);
 use Symbol qw(gensym);
-use Config;
 
 use base qw(DBD::Gofer::Transport::Base);
 
@@ -25,14 +24,10 @@ __PACKAGE__->mk_accessors(qw(
 )); 
 
 
-my $this_perl = $^X;
-$this_perl .= $Config{_exe}
-    if $^O ne 'VMS' && $this_perl !~ m/$Config{_exe}$/i;
-
-
 sub new {
     my ($self, $args) = @_;
-    if ($args->{go_perl} and not ref $args->{go_perl}) {
+    $args->{go_perl} ||= [ $^X ];
+    if (not ref $args->{go_perl}) {
         # user can override the perl to be used, either with an array ref
         # containing the command name and args to use, or with a string
         # (ie via the DSN) in which case, to enable args to be passed,
@@ -48,15 +43,6 @@ sub start_pipe_command {
     my ($self, $cmd) = @_;
     $cmd = [ $cmd ] unless ref $cmd eq 'ARRAY';
 
-    # translate any SAMEPERL in cmd to $this_perl
-    my $perl = $self->go_perl || [ $this_perl ];
-    for (my $i=0; $i < @$cmd; $i++) {
-        next unless $cmd->[$i] eq 'SAMEPERL';
-        splice @$cmd, $i, 1, @$perl;
-        $i += @$perl - 1;
-    }
-    $_ eq 'SAMEPERL' and $_ = $this_perl for @$cmd;
-
     # if it's important that the subprocess uses the same
     # (versions of) modules as us then the caller should
     # set PERL5LIB itself.
@@ -69,7 +55,7 @@ sub start_pipe_command {
     my ($wfh, $rfh, $efh) = (gensym, gensym, gensym);
     my $pid = open3($wfh, $rfh, $efh, @$cmd)
         or die "error starting @$cmd: $!\n";
-    $self->trace_msg("Started pid $pid: $cmd\n") if $self->trace;
+    $self->trace_msg("Started pid $pid: $cmd\n",0) if $self->trace;
 
     return {
         cmd=>$cmd,
@@ -94,7 +80,7 @@ sub transmit_request {
     my $info = eval { 
         my $frozen_request = $self->freeze_data($request);
 
-        my $cmd = [ qw(SAMEPERL -MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
+        my $cmd = [ @{$self->go_perl}, qw(-MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
         my $info = $self->start_pipe_command($cmd);
 
         my $wfh = delete $info->{wfh};
