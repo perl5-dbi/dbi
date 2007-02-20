@@ -3257,11 +3257,11 @@ The parse_trace_flag() method was added in DBI 1.42.
 
 =item C<private_attribute_info>
 
-  $array_ref = $h->private_attribute_info();
+  $hash_ref = $h->private_attribute_info();
 
-Returns a reference to an array containing the names of driver-private
-attributes available for that kind of handle (driver, database, statement),
-or else undef.
+Returns a reference to a hash whose keys are the names of driver-private
+attributes available for that kind of handle (driver, database, statement).
+(The values should be undef. Meanings may be assigned to particular values in future.)
 
 =item C<swap_inner_handle>
 

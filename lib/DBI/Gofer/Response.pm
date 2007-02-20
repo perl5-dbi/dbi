@@ -27,6 +27,7 @@ __PACKAGE__->mk_accessors(qw(
 sub new {
     my ($self, $args) = @_;
     $args->{version} ||= $VERSION;
+    chomp $args->{errstr} if $args->{errstr};
     return $self->SUPER::new($args);
 }   
 

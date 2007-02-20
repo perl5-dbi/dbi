@@ -48,6 +48,7 @@ my @sth_std_attr = qw(
 
 my %extra_attr = (
     # what driver-specific attributes should be returned for the driver being used?
+    # Only referenced if the driver doesn't support private_attribute_info method.
     # keyed by $dbh->{Driver}{Name}
     # XXX for dbh attr only need to be returned on first access by client
     # the client should then cache them. So need a way to indicate that.
@@ -232,12 +233,7 @@ sub execute_dbh_request {
         my @req_attr_names = @$dbh_attributes;
         if ($req_attr_names[0] eq '*') { # auto include std + private
             shift @req_attr_names;
-            # add ChopBlanks LongReadLen LongTruncOk because drivers may have different defaults
-            # plus Name so the client gets the real Name of the connection
-            push @req_attr_names, qw(ChopBlanks LongReadLen LongTruncOk Name);
-            my $pai = $dbh->private_attribute_info
-                   || $extra_attr{ $dbh->{Driver}{Name} }{dbh} || [];
-            push @req_attr_names, @$pai;
+            push @req_attr_names, @{ $self->_get_std_attributes($dbh) };
         }
         my %dbh_attr_values;
         $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
@@ -261,6 +257,27 @@ sub execute_dbh_request {
     $self->reset_dbh($dbh);
 
     return $response;
+}
+
+
+sub _get_std_attributes {
+    my ($self, $h) = @_;
+    $h = tied(%$h) || $h; # switch to inner handle
+    my $attr_names = $h->{private_gofer_std_attr_names};
+    return $attr_names if $attr_names;
+    # add ChopBlanks LongReadLen LongTruncOk because drivers may have different defaults
+    # plus Name so the client gets the real Name of the connection
+    my @attr_names = qw(ChopBlanks LongReadLen LongTruncOk Name);
+    if (my $pai = $h->private_attribute_info) {
+        push @attr_names, keys %$pai;
+    }
+    elsif (my $drh = $h->{Driver}) { # is a dbh
+        push @attr_names, @{ $extra_attr{ $drh->{Name} }{dbh} || []};
+    }
+    elsif ($drh = $h->{Driver}{Database}) { # is an sth
+        push @attr_names, @{ $extra_attr{ $drh->{Name} }{sth} || []};
+    }
+    return $h->{private_gofer_std_attr_names} = \@attr_names;
 }
 
 

@@ -18,7 +18,6 @@ use base qw(DBD::Gofer::Transport::pipeone);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
-    go_perl
     go_persist
 )); 
 
@@ -27,19 +26,6 @@ my %persist;
 
 sub nonblock;
 
-
-sub new {
-    my ($self, $args) = @_;
-    if ($args->{go_perl} and not ref $args->{go_perl}) {
-        # user can override the perl to be used, either with an array ref
-        # containing the command name and args to use, or with a string
-        # (ie via the DSN) in which case, to enable args to be passed,
-        # we split on two or more consecutive spaces (otherwise the path
-        # to perl couldn't contain a space itself).
-        $args->{go_perl} = [ split /\s{2,}/, $args->{go_perl} ];
-    }
-    return $self->SUPER::new($args);
-}
 
 
 sub _connection_key {
@@ -98,7 +84,7 @@ sub _make_connection {
     my ($self) = @_;
 
     my $cmd = [qw(SAMEPERL -MDBI::Gofer::Transport::stream -e run_stdio_hex)];
-    if (my $perl = $self->go_perl) {
+    if (0 and my $perl = $self->go_perl) {
         splice @$cmd, 0, 1, @$perl;
     }
 

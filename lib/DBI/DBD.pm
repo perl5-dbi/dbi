@@ -3017,7 +3017,7 @@ sub dbd_edit_mm_attribs {
 			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
 	    },
 	    xgp => {	name => "PurePerl & Gofer",
-			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null'} ],
+			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
 	    },
 	#   mx => {	name => "DBD::Multiplex",
 	#               add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],

@@ -274,6 +274,9 @@
 	return $h->SUPER::parse_trace_flag($name);
     }
 
+    sub private_attribute_info {
+        return { example_driver_path => undef };
+    }
 }
 
 

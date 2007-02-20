@@ -120,10 +120,10 @@
             $policy_class = "DBD::Gofer::Policy::$policy_class"
                 unless $policy_class =~ /::/;
             _load_class($policy_class)
-                or return $drh->set_err(1, "Error loading $policy_class: $@");
+                or return $drh->set_err(1, "Can't load $policy_class: $@");
             # replace policy name in %go_attr with policy object
             $go_attr{go_policy} = eval { $policy_class->new(\%go_attr) }
-                or return $drh->set_err(1, "Error instanciating $policy_class: $@");
+                or return $drh->set_err(1, "Can't instanciate $policy_class: $@");
         }
         # policy object is left in $go_attr{go_policy} so transport can see it
         my $go_policy = $go_attr{go_policy};
@@ -133,9 +133,9 @@
         $transport_class = "DBD::Gofer::Transport::$transport_class"
             unless $transport_class =~ /::/;
         _load_class($transport_class)
-            or return $drh->set_err(1, "Error loading $transport_class: $@");
+            or return $drh->set_err(1, "Can't load $transport_class: $@");
         my $go_trans = eval { $transport_class->new(\%go_attr) }
-            or return $drh->set_err(1, "Error instanciating $transport_class: $@");
+            or return $drh->set_err(1, "Can't instanciate $transport_class: $@");
 
         my $request_class = "DBI::Gofer::Request";
         my $go_request = eval {
@@ -150,7 +150,7 @@
             $request_class->new({
                 connect_args => [ $remote_dsn, $go_attr ]
             })
-        } or return $drh->set_err(1, "Error instanciating $request_class $@");
+        } or return $drh->set_err(1, "Can't instanciate $request_class $@");
 
         my ($dbh, $dbh_inner) = DBI::_new_dbh($drh, {
             'Name' => $dsn,
@@ -394,7 +394,7 @@
             }
         }
 
-        my $dbh = $sth->{Database} or die 42; # XXX
+        my $dbh = $sth->{Database} or die "panic";
         ++$dbh->{go_request_count};
 
         my $request = $sth->{go_request};
@@ -677,7 +677,7 @@ This constraint might be removed in future.
 
 =head2 You can't call driver-private sth methods
 
-But few people need to do that.
+But that's rarely needed anyway.
 
 =head2 Array Methods are not supported
 
@@ -690,17 +690,17 @@ A few things to keep in mind when using DBD::Gofer:
 
 =head2 Driver-private Database Handle Attributes
 
-Some driver-private dbh attributes may not be available, currently.
-In future it will be possible to indicate which attributes you'd like to be
-able to read.
+Driver-private drh attributes can be set in the connect() call.
+
+Some driver-private dbh attributes may not be available if the driver does not
+implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head2 Driver-private Statement Handle Attributes
 
 Driver-private sth attributes can be set in the prepare() call. TODO
 
-Some driver-private sth attributes may not be available, currently.
-In future it will be possible to indicate which attributes you'd like to be
-able to read.
+Some driver-private dbh attributes may not be available if the driver does not
+implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head1 Multiple Resultsets
 
@@ -736,9 +736,14 @@ driver to use and one for the remote 'server' end. They have very similar names:
     DBD::Gofer::Transport::<foo>
     DBI::Gofer::Transport::<foo>
 
+Sometimes the transports on the DBD and DBI sides may have different names. For
+example DBD::Gofer::Transport::http is typically used with DBI::Gofer::Transport::mod_perl
+
+=head2 Bundled Transports
+
 Several transport modules are provided with DBD::Gofer:
 
-=head2 null
+=head3 null
 
 The null transport is the simplest of them all. It doesn't actually transport the request anywhere.
 It just serializes (freezes) the request into a string, then thaws it back into
@@ -751,7 +756,7 @@ Just set the DBI_AUTOPROXY environment variable to "C<dbi:Gofer:transport=null>"
 
 It doesn't take any parameters.
 
-=head2 pipeone
+=head3 pipeone
 
 The pipeone transport launches a subprocess for each request. It passes in the
 request and reads the response. The fact that a new subprocess is started for
@@ -761,7 +766,7 @@ as a base class for the stream driver.
 
 It doesn't take any parameters.
 
-=head2 stream
+=head3 stream
 
 The stream driver also launches a subprocess and writes requests and reads
 responses, like the pipeone transport.  In this case, however, the subprocess
@@ -772,14 +777,24 @@ subprocess on a remote machine using ssh. This means you can now use DBD::Gofer
 to easily access any databases that's accessible from any system you can login to.
 You also get all the benefits of ssh, including encryption and optional compression.
 
+It's also likely that this transport will support safe timeouts in future.
+
 See L</DBI_AUTOPROXY> below for an example.
 
-=head2 http
+=head3 http
 
 The http driver uses the http protocol to send Gofer requests and receive replies.
 
 The DBI::Gofer::Transport::mod_perl module implements the corresponding server-side
 transport.
+
+=head2 Other Transports
+
+I know Ask Bjørn Hansen has implemented a transport for the gearman distributed
+job system. (Not yet on CPAN.)
+
+Implementing a transport is very simple, and more transports are very welcome.
+Just take a look at any existing transports that are similar to your needs.
 
 =head1 CONNECTING
 
@@ -842,9 +857,11 @@ Random brain dump...
 
 Document policy mechanism
 
-Add mecahism for transports to list config params and for Gofer to apply any that match (and warn if any left over?)
+Add mechanism for transports to list config params and for Gofer to apply any that match (and warn if any left over?)
 
 Driver-private sth attributes - set via prepare() - change DBI spec
+
+Timeout for stream and http drivers.
 
 Caching of get_info values
 

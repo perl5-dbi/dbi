@@ -47,13 +47,14 @@ local $ENV{PERL5LIB} = join ":", @INC;
 my $getcwd = getcwd();
 my $username = eval { getpwuid($>) } || ''; # fails on windows
 my $can_ssh = ($username && $username eq 'timbo' && -d '.svn');
+my $perl = "SAMEPERL  -Mblib=$getcwd/blib"; # ensure sameperl and our blib (note two spaces)
 
 my %trials = (
     null       => {},
-    pipeone    => {},
-    stream     => {},
+    pipeone    => { perl=>$perl },
+    stream     => { perl=>$perl },
     stream_ssh => ($can_ssh)
-                ? { url => "ssh:$username\@localhost", perl=>"SAMEPERL  -Mblib=$getcwd/blib" }
+                ? { perl=>$perl, url => "ssh:$username\@localhost" }
                 : undef,
     http       => { url => "http://localhost:8001/gofer" },
 );
@@ -61,10 +62,13 @@ my %trials = (
 # too dependant on local config to make a standard test
 delete $trials{http} unless $username eq 'timbo' && -d '.svn';
 
-for my $trial (keys %trials) {
+for my $trial (sort keys %trials) {
     (my $transport = $trial) =~ s/_.*//;
     my $trans_attr = $trials{$trial}
         or next;
+
+    # XXX temporary restriction, hopefully
+    next if $transport eq 'stream' and $^O eq 'MSWin32'; # need Fcntl macro F_GETFL for non-blocking
 
     for my $policy_name (qw(pedantic classic rush)) {
 
@@ -109,7 +113,7 @@ sub run_tests {
     print " $dsn\n";
 
     my $dbh = DBI->connect($dsn, undef, undef, { } );
-    ok $dbh, 'should connect';
+    ok $dbh, sprintf "should connect to %s (%s)", $dsn, $DBI::errstr||'';
     die "$test_run_tag aborted\n" unless $dbh;
 
     is $dbh->{Name}, ($policy->skip_connect_check or $policy->dbh_attribute_update eq 'none')

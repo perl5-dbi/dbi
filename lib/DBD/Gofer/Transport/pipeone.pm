@@ -21,6 +21,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 __PACKAGE__->mk_accessors(qw(
     connection_info
     response_info
+    go_perl
 )); 
 
 
@@ -29,13 +30,32 @@ $this_perl .= $Config{_exe}
     if $^O ne 'VMS' && $this_perl !~ m/$Config{_exe}$/i;
 
 
+sub new {
+    my ($self, $args) = @_;
+    if ($args->{go_perl} and not ref $args->{go_perl}) {
+        # user can override the perl to be used, either with an array ref
+        # containing the command name and args to use, or with a string
+        # (ie via the DSN) in which case, to enable args to be passed,
+        # we split on two or more consecutive spaces (otherwise the path
+        # to perl couldn't contain a space itself).
+        $args->{go_perl} = [ split /\s{2,}/, $args->{go_perl} ];
+    }
+    return $self->SUPER::new($args);
+}
+
+
 sub start_pipe_command {
     my ($self, $cmd) = @_;
     $cmd = [ $cmd ] unless ref $cmd eq 'ARRAY';
 
     # translate any SAMEPERL in cmd to $this_perl
-    $_ eq 'SAMEPERL' and $_ = $this_perl
-        for @$cmd;
+    my $perl = $self->go_perl || [ $this_perl ];
+    for (my $i=0; $i < @$cmd; $i++) {
+        next unless $cmd->[$i] eq 'SAMEPERL';
+        splice @$cmd, $i, 1, @$perl;
+        $i += @$perl - 1;
+    }
+    $_ eq 'SAMEPERL' and $_ = $this_perl for @$cmd;
 
     # if it's important that the subprocess uses the same
     # (versions of) modules as us then the caller should
