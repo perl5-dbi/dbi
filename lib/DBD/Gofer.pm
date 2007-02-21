@@ -637,12 +637,12 @@ The 'dbi execute' web server leverages all the functionality of web
 infrastructure in terms of load balancing, high-availability, firewalls, access
 management, proxying, caching.
 
-At it's most basic level you get a configurable pool of persistent database connections.
+At its most basic level you get a configurable pool of persistent database connections.
 
 =head3 Simple Scaling
 
 Got thousands of processes all trying to connect to the database? You can use
-DBD::Gofer to connect them to your pool of 'dbi execute' web servers instead.
+DBD::Gofer to connect them to your smaller pool of 'dbi execute' web servers instead.
 
 =head3 Caching
 
@@ -658,7 +658,7 @@ You no longer need drivers for your database on every system.  DBD::Gofer is pur
 
 =head1 CONSTRAINTS
 
-There are naturally a some constraints imposed by DBD::Gofer. But not many:
+There are naturally some constraints imposed by DBD::Gofer. But not many:
 
 =head2 You can't change database handle attributes after connect()
 
@@ -703,14 +703,14 @@ A few things to keep in mind when using DBD::Gofer:
 
 =head2 Driver-private Database Handle Attributes
 
-Some driver-private dbh attributes may not be available if the driver does not
+Some driver-private dbh attributes may not be available if the driver has not
 implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head2 Driver-private Statement Handle Attributes
 
 Driver-private sth attributes can be set in the prepare() call. TODO
 
-Some driver-private dbh attributes may not be available if the driver does not
+Some driver-private dbh attributes may not be available if the driver has not
 implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head1 Multiple Resultsets
@@ -771,7 +771,7 @@ It doesn't take any parameters.
 
 The pipeone transport launches a subprocess for each request. It passes in the
 request and reads the response. The fact that a new subprocess is started for
-each request proves that the server side is truely stateless. It also makes
+each request proves that the server side is truly stateless. It also makes
 this transport very slow. It's useful, however, both as a proof of concept and
 as a base class for the stream driver.
 
@@ -895,7 +895,7 @@ add hooks into transport base class for checking & updating a result set cache
 Also caching instructions could be passed through the httpd transport layer
 in such a way that appropriate http cache headers are added to the results
 so that web caches (squid etc) could be used to implement the caching.
-(May require the use of GET rather than POST requests.)
+(MUST require the use of GET rather than POST requests.)
 
 Neat way for $h->trace to enable transport tracing.
 
