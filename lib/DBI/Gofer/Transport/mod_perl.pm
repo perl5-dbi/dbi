@@ -4,8 +4,20 @@ use strict;
 use warnings;
 
 use DBI::Gofer::Execute;
+use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
-use Apache::Constants qw(OK);
+BEGIN {
+  if (MP2) {
+    require Apache2::RequestIO;
+    require Apache2::RequestRec;
+    require Apache2::RequestUtil;
+    require Apache2::Const;
+    Apache2::Const->import(-compile => qw(OK));
+  } else {
+    require Apache::Constants;
+    Apache::Constants->import(qw(OK));
+  }
+}
 
 use base qw(DBI::Gofer::Transport::Base);
 
@@ -17,13 +29,13 @@ my %executor_configs = ( default => { } );
 my %executor_cache;
 
 
-sub handler ($$) {
+sub handler : method {
     my $self = shift;
     my $r = shift;
 
     my $executor = $executor_cache{ $r->uri } ||= $self->executor_for_uri($r);
 
-    $r->read(my $frozen_request, $r->header_in('Content-length'));
+    $r->read(my $frozen_request, $r->headers_in->{'Content-length'});
     my $request = $transport->thaw_data($frozen_request);
 
     my $response = $executor->execute_request( $request );
@@ -31,7 +43,7 @@ sub handler ($$) {
     my $frozen_response = $transport->freeze_data($response);
     print $frozen_response;
 
-    return Apache::Constants::OK;
+    return MP2 ? Apache2::Const::OK : Apache::Constants::OK;
 }
 
 
