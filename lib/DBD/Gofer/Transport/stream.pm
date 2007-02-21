@@ -110,48 +110,34 @@ sub _make_connection {
 }
 
 
-sub transmit_request {
+sub transmit_request_by_transport {
     my ($self, $request) = @_;
 
-    eval { 
-        my $connection = $self->connection_info || do {
-            my $con = $self->_connection_get;
-            $self->connection_info( $con );
-            #warn ''.$self->cmd_as_string;
-            $con;
-        };
-
-        my $frozen_request = unpack("H*", $self->freeze_data($request));
-        $frozen_request .= "\n";
-
-        my $wfh = $connection->{wfh};
-        # send frozen request
-        print $wfh $frozen_request # autoflush enabled
-            or do {
-                # XXX should make new connection and retry
-                $self->_connection_kill;
-                die "Error sending request: $!";
-            };
-        $self->trace_msg("Request: $frozen_request\n",0) if $self->trace >= 4;
+    my $connection = $self->connection_info || do {
+        my $con = $self->_connection_get;
+        $self->connection_info( $con );
+        $con;
     };
-    if ($@) {
-        my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
-        $self->response_info($response);
-        # return undef ?
-    }
-    else {
-        $self->response_info(undef);
-    }
 
-    return 1;
+    my $frozen_request = unpack("H*", $self->freeze_data($request));
+    $frozen_request .= "\n";
+
+    my $wfh = $connection->{wfh};
+    # send frozen request
+    print $wfh $frozen_request # autoflush enabled
+        or do {
+            # XXX should make new connection and retry
+            $self->_connection_kill;
+            die "Error sending request: $!";
+        };
+    $self->trace_msg("Request: $frozen_request\n",0) if $self->trace >= 4;
+
+    return;
 }
 
 
-sub receive_response {
+sub receive_response_by_transport {
     my $self = shift;
-
-    my $response = $self->response_info;
-    return $response if $response; # failed while starting
 
     my $connection = $self->connection_info || die;
     my ($pid, $rfh, $efh) = @{$connection}{qw(pid rfh efh)};
@@ -167,24 +153,24 @@ sub receive_response {
     my $stderr_msg = do { local $/; <$efh> }; # nonblocking
 
     # if we got no output on stdout at all then the command has
-    # proably exited, possibly with an error to stderr.
+    # probably exited, possibly with an error to stderr.
     # Turn this situation into a reasonably useful DBI error.
     if (not $frozen_response or !chomp $frozen_response) {
         chomp $stderr_msg if $stderr_msg;
         my $msg = sprintf("Error reading from %s (pid %d%s): ",
             $self->cmd_as_string, $pid, (kill 0, $pid) ? "" : ", exited");
         $msg .= $stderr_msg || $frozen_response_errno;
-        return DBI::Gofer::Response->new({ err => 1, errstr => $msg }); 
+        die "$msg\n";
     }
 
-    $self->trace_msg("Response: $frozen_response\n",0) if $self->trace >= 4;
+    $self->trace_msg("Response: $frozen_response\n",0)
+        if $self->trace >= 4;
 
-    #warn DBI::neat($frozen_response);
     $self->trace_msg("Gofer stream stderr message: $stderr_msg\n",0)
         if $stderr_msg && $self->trace;
 
     # XXX need to be able to detect and deal with corruption
-    $response = $self->thaw_data(pack("H*",$frozen_response));
+    my $response = $self->thaw_data(pack("H*",$frozen_response));
 
     # add any stderr messages as a warning (ie PrintWarn)
     $response->add_err(0, $stderr_msg, undef, $self->trace)
@@ -192,6 +178,7 @@ sub receive_response {
 
     return $response;
 }
+
 
 
 # nonblock($fh) puts filehandle into nonblocking mode

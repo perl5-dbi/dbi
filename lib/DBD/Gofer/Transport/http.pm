@@ -21,7 +21,6 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     connection_info
-    response_info
 )); 
 
 my $encoding = "binary";
@@ -58,23 +57,13 @@ sub transmit_request {
         my $res = $ua->request($req);
         $self->connection_info( $res );
     };
-    if ($@) {
-        my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
-        $self->response_info($response);
-    }
-    else {
-        $self->response_info(undef);
-    }
-
+    return DBI::Gofer::Response->new({ err => 1, errstr => $@ }) if $@;
     return 1;
 }
 
 
 sub receive_response {
     my $self = shift;
-
-    my $response = $self->response_info;
-    return $response if $response; # failed while starting
 
     my $res = $self->connection_info || die;
 

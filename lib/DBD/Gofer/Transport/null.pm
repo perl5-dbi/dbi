@@ -45,7 +45,7 @@ sub transmit_request {
     # put response 'on the shelf' ready for receive_response()
     $self->pending_response( $response );
 
-    return 1;
+    return undef;
 }
 
 

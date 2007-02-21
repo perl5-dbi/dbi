@@ -18,10 +18,49 @@ __PACKAGE__->mk_accessors(qw(
     trace
     go_dsn
     go_url
+    go_timeout
 ));
 
 
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
+
+sub transmit_request {
+    my ($self, $request) = @_;
+
+    my $to = $self->go_timeout;
+    local $SIG{ALRM} = sub { die "transmit_request timed-out after $to seconds" }
+        if $to;
+
+    my $info = eval {
+        alarm($to) if $to;
+        $self->transmit_request_by_transport($request);
+    };
+    alarm(0) if $to;
+    return DBI::Gofer::Response->new({ err => 1, errstr => $@ }) if $@;
+    return undef;
+}
+
+
+sub receive_response {
+    my $self = shift;
+
+    my $to = $self->go_timeout;
+    local $SIG{ALRM} = sub { die "receive_response timed-out after $to seconds" }
+        if $to;
+
+    my $response = eval {
+        alarm($to) if $to;
+        $self->receive_response_by_transport();
+    };
+    alarm(0) if $to;
+
+    return DBI::Gofer::Response->new({ err => 1, errstr => $@ })
+        if $@;
+
+    return $response;
+}
+
+
 
 1;
 

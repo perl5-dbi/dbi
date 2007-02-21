@@ -220,10 +220,8 @@
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
 
-        eval { $transport->transmit_request($request) }
-            or return $dbh->set_err(1, "transmit_request failed: $@");
-
-        my $response = $transport->receive_response;
+        my $response = $transport->transmit_request($request);
+        $response ||= $transport->receive_response;
         $dbh->{go_response} = $response;
 
         if (my $dbh_attributes = $response->dbh_attributes) {
@@ -412,13 +410,12 @@
 
         my $transport = $sth->{go_trans}
             or return $sth->set_err(1, "Not connected (no transport)");
-        eval { $transport->transmit_request($request) }
-            or return $sth->set_err(1, "transmit_request failed: $@");
+
+        my $response = $transport->transmit_request($request);
+        $response ||= $transport->receive_response;
+        $sth->{go_response} = $response;
 
         delete $sth->{go_method_calls};
-
-        my $response = $transport->receive_response;
-        $sth->{go_response} = $response;
 
         if (my $dbh_attributes = $response->dbh_attributes) {
             # XXX we don't STORE here, we just stuff the value into the attribute cache

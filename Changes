@@ -15,7 +15,8 @@ Policy for dbh attr FETCH (ie example_driver_path)
     or piggyback on skip_connect_check
     could also remember which attr have been returned to us
     so not bother FETCHing them (unless pedantic)
-
+Refactor http transport like the others re timeout
+Call method on transport timeout so transport can cleanup/reset it it wants
 
 =head2 Changes in DBI 1.54 (svn rev 9140),  19th February 2007
 

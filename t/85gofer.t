@@ -31,6 +31,7 @@ my %durations;
 my $dbm = $ARGV[0] || "SDBM_File";
 my $remote_driver_dsn = "dbm_type=$dbm;lockfile=0";
 my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
+my $timeout = 10;
 
 if ($ENV{DBI_AUTOPROXY}) {
     # this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
@@ -51,10 +52,10 @@ my $perl = "$^X  -Mblib=$getcwd/blib"; # ensure sameperl and our blib (note two 
 
 my %trials = (
     null       => {},
-    pipeone    => { perl=>$perl },
-    stream     => { perl=>$perl },
+    pipeone    => { perl=>$perl, timeout=>$timeout },
+    stream     => { perl=>$perl, timeout=>$timeout },
     stream_ssh => ($can_ssh)
-                ? { perl=>$perl, url => "ssh:$username\@localhost" }
+                ? { perl=>$perl, timeout=>$timeout, url => "ssh:$username\@localhost" }
                 : undef,
     #http       => { url => "http://localhost:8001/gofer" },
 );

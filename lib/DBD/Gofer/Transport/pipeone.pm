@@ -19,7 +19,6 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     connection_info
-    response_info
     go_perl
 )); 
 
@@ -74,63 +73,43 @@ sub cmd_as_string {
 }
 
 
-sub transmit_request {
+sub transmit_request_by_transport {
     my ($self, $request) = @_;
 
-    my $info = eval { 
-        my $frozen_request = $self->freeze_data($request);
+    my $frozen_request = $self->freeze_data($request);
 
-        my $cmd = [ @{$self->go_perl}, qw(-MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
-        my $info = $self->start_pipe_command($cmd);
+    my $cmd = [ @{$self->go_perl}, qw(-MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
+    my $info = $self->start_pipe_command($cmd);
 
-        my $wfh = delete $info->{wfh};
-        # send frozen request
-        print $wfh $frozen_request;
-        # indicate that there's no more
-        close $wfh
-            or die "error writing to @$cmd: $!\n";
+    my $wfh = delete $info->{wfh};
+    # send frozen request
+    print $wfh $frozen_request;
+    # indicate that there's no more
+    close $wfh
+        or die "error writing to @$cmd: $!\n";
 
-        $info; # so far so good. return the state info
-    };
-    if ($@) {
-        my $response = DBI::Gofer::Response->new({ err => 1, errstr => $@ }); 
-        $self->response_info($response);
-    }
-    else {
-        $self->response_info(undef);
-    }
-
-    # record what we need to get a response, ready for receive_response()
     $self->connection_info( $info );
-
-    return 1;
+    return;
 }
 
 
-sub receive_response {
+sub receive_response_by_transport {
     my $self = shift;
-
-    my $response = $self->response_info;
-    return $response if $response; # failed while starting
 
     my $info = $self->connection_info || die;
     my ($pid, $rfh, $efh, $cmd) = @{$info}{qw(pid rfh efh cmd)};
 
-    waitpid $info->{pid}, 0
-        or warn "waitpid: $!"; # XXX do something more useful?
-
     my $frozen_response = do { local $/; <$rfh> };
     my $stderr_msg      = do { local $/; <$efh> };
 
-    if (not $frozen_response) { # no output on stdout at all
-        return DBI::Gofer::Response->new({
-            err    => 1,
-            errstr => ref($self)." command (@$cmd) failed: $stderr_msg",
-        }); 
-    }
+    waitpid $info->{pid}, 0
+        or warn "waitpid: $!"; # XXX do something more useful?
+
+    die ref($self)." command (@$cmd) failed: $stderr_msg"
+        if not $frozen_response; # no output on stdout at all
 
     # XXX need to be able to detect and deal with corruption
-    $response = $self->thaw_data($frozen_response);
+    my $response = $self->thaw_data($frozen_response);
 
     if ($stderr_msg) {
         warn "STDERR message from @$cmd: $stderr_msg"; # XXX remove later
