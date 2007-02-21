@@ -7520,9 +7520,10 @@ You can use I<perldoc> to read it by executing the C<perldoc DBI::FAQ> command.
 
 =head1 AUTHORS
 
-DBI by Tim Bunce.  This pod text by Tim Bunce, J. Douglas Dunlop,
-Jonathan Leffler and others.  Perl by Larry Wall and the
-C<perl5-porters>.
+DBI by Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+
+This pod text by Tim Bunce, J. Douglas Dunlop, Jonathan Leffler and others.
+Perl by Larry Wall and the C<perl5-porters>.
 
 =head1 COPYRIGHT
 
@@ -7696,28 +7697,6 @@ References to DBI related training resources. No recommendation implied.
 (If you offer professional DBI related training services,
 please send me your details so I can add them here.)
 
-=head1 FREQUENTLY ASKED QUESTIONS
-
-See the DBI FAQ for a more comprehensive list of FAQs. Use the
-C<perldoc DBI::FAQ> command to read it.
-
-=head2 Why doesn't my CGI script work right?
-
-Read the information in the references below.  Please do I<not> post
-CGI related questions to the I<dbi-users> mailing list (or to me).
-
- http://www.perl.com/cgi-bin/pace/pub/doc/FAQs/cgi/perl-cgi-faq.html
- http://www3.pair.com/webthing/docs/cgi/faqs/cgifaq.shtml
- http://www-genome.wi.mit.edu/WWW/faqs/www-security-faq.html
- http://www.boutell.com/faq/
- http://www.perl.com/perl/faq/
-
-=head2 How can I maintain a WWW connection to a database?
-
-For information on the Apache httpd server and the C<mod_perl> module see
-
-  http://perl.apache.org/
-
 =head1 OTHER RELATED WORK AND PERL MODULES
 
 =over 4
@@ -7728,19 +7707,6 @@ To be used with the Apache daemon together with an embedded Perl
 interpreter like C<mod_perl>. Establishes a database connection which
 remains open for the lifetime of the HTTP daemon. This way the CGI
 connect and disconnect for every database access becomes superfluous.
-
-=item JDBC Server by Stuart 'Zen' Bishop zen@bf.rmit.edu.au
-
-The server is written in Perl. The client classes that talk to it are
-of course in Java. Thus, a Java applet or application will be able to
-comunicate via the JDBC API with any database that has a DBI driver installed.
-The URL used is in the form C<jdbc:dbi://host.domain.etc:999/Driver/DBName>.
-It seems to be very similar to some commercial products, such as jdbcKona.
-
-=item Remote Proxy DBD support
-
-As of DBI 1.02, a complete implementation of a DBD::Proxy driver and the
-DBI::ProxyServer are part of the DBI distribution.
 
 =item SQL Parser
 

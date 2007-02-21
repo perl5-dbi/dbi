@@ -183,9 +183,9 @@ ok($csr_a->execute( $dir ), $DBI::errstr);
 ok(@row_a);
 
 # check bind_columns
-ok($row_a[0] eq $col0) or print "$row_a[0] ne $col0\n";
-ok($row_a[1] eq $col1) or print "$row_a[1] ne $col1\n";
-ok($row_a[2] eq $col2) or print "$row_a[2] ne $col2\n";
+is($row_a[0], $col0);
+is($row_a[1], $col1);
+is($row_a[2], $col2);
 #$csr_a->trace(0);
 
 ok( ! $csr_a->bind_columns(undef, \($col0, $col1)) );

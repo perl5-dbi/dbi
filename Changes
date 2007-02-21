@@ -18,6 +18,8 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Refactor http transport like the others re timeout
 Call method on transport timeout so transport can cleanup/reset it it wants
 
+XXX quote and quote_info policy control
+
 =head2 Changes in DBI 1.54 (svn rev 9140),  19th February 2007
 
   NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.

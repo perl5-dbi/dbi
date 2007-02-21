@@ -223,7 +223,7 @@ sub execute_dbh_request {
             ?        $dbh->$meth(@$args)
             : scalar $dbh->$meth(@$args);
         \@rv;
-    };
+    } || [];
     my $response = $self->new_response_with_err($rv_ref, $@);
 
     return $response if not $dbh;

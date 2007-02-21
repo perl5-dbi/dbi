@@ -1303,7 +1303,8 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
 	    imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh; /* works for DRH also */
 	    if (DBIc_CACHED_KIDS(imp_dbh)) {
-		warn("DBI handle 0x%lx cleared whilst still holding %d cached kids",
+		warn("DBI %s handle 0x%lx cleared whilst still holding %d cached kids",
+                        dbih_htype_name(DBIc_TYPE(imp_xxh)),
 			(unsigned long)DBIc_MY_H(imp_xxh), (int)HvKEYS(DBIc_CACHED_KIDS(imp_dbh)) );
 		SvREFCNT_dec(DBIc_CACHED_KIDS(imp_dbh)); /* may recurse */
 		DBIc_CACHED_KIDS(imp_dbh) = Nullhv;
@@ -1315,19 +1316,22 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
             if (DBIc_TYPE(imp_xxh) >= DBIt_ST
             || (DBIc_ACTIVE_KIDS(imp_xxh) || !DBIc_has(imp_xxh, DBIcf_AutoCommit))
             ) {
-                warn("DBI handle 0x%lx cleared whilst still active", (unsigned long)DBIc_MY_H(imp_xxh));
+                warn("DBI %s handle 0x%lx cleared whilst still active",
+                        dbih_htype_name(DBIc_TYPE(imp_xxh)), (unsigned long)DBIc_MY_H(imp_xxh));
                 dump = TRUE;
             }
 	}
 
 	/* check that the implementor has done its own housekeeping	*/
 	if (DBIc_IMPSET(imp_xxh)) {
-	    warn("DBI handle 0x%lx has uncleared implementors data", (unsigned long)DBIc_MY_H(imp_xxh));
+	    warn("DBI %s handle 0x%lx has uncleared implementors data",
+                    dbih_htype_name(DBIc_TYPE(imp_xxh)), (unsigned long)DBIc_MY_H(imp_xxh));
 	    dump = TRUE;
 	}
 
 	if (DBIc_KIDS(imp_xxh)) {
-	    warn("DBI handle 0x%lx has %d uncleared child handles",
+	    warn("DBI %s handle 0x%lx has %d uncleared child handles",
+                    dbih_htype_name(DBIc_TYPE(imp_xxh)),
 		    (unsigned long)DBIc_MY_H(imp_xxh), (int)DBIc_KIDS(imp_xxh));
 	    dump = TRUE;
 	}
@@ -1718,15 +1722,15 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 	if (DBIc_NUM_FIELDS(imp_sth) > 0	/* don't change NUM_FIELDS! */
         &&  DBIc_ACTIVE(imp_sth)                /* if sth is Active */
         ) {
-	    croak("Can't change NUM_OF_FIELDS (already set to %d)", DBIc_NUM_FIELDS(imp_sth));
+	    croak("Can't change NUM_OF_FIELDS of Active handle (already set to %d)", DBIc_NUM_FIELDS(imp_sth));
         }
         if (DBIc_NUM_FIELDS(imp_sth) > 0
         && SvIV(valuesv) != DBIc_NUM_FIELDS(imp_sth)
         && DBIc_TRACE_LEVEL(imp_sth)
         && DBIc_FIELDS_AV(imp_sth)
         ) {
-            PerlIO_printf(DBILOGFP,"Warning: changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated",
-                    (int)SvIV(valuesv), DBIc_NUM_FIELDS(imp_sth));
+            PerlIO_printf(DBILOGFP,"Changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated\n",
+                    DBIc_NUM_FIELDS(imp_sth), (int)SvIV(valuesv));
         }
 	DBIc_NUM_FIELDS(imp_sth) = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
 	cacheit = 1;
@@ -3246,7 +3250,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		break;
 	    default:
 		if (DBIc_WARN(imp_xxh)) {
-		    PerlIO_printf(DBILOGFP,"Don't know how to taint contents of returned %s (type %d)",
+		    PerlIO_printf(DBILOGFP,"Don't know how to taint contents of returned %s (type %d)\n",
 			neatsvpv(agg,0), (int)SvTYPE(agg));
 		}
 	    }

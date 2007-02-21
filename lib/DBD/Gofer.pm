@@ -263,6 +263,16 @@
         *$method = sub { return shift->go_dbh_method(undef, $method, @_) }
     }
 
+    # Methods that should be forwarded if policy says so
+    for my $method (qw(
+        quote
+        quote_identifier
+    )) {
+        no strict 'refs';
+        # XXX add policy checks
+        *$method = sub { return shift->go_dbh_method(undef, $method, @_) }
+    }
+
     # Methods that should always fail
     for my $method (qw(
         begin_work commit rollback
@@ -360,6 +370,7 @@
             go_trans => $dbh->{go_trans},
             go_policy => $policy,
         });
+        $sth->STORE(Active => 0);
 
         my $skip_prepare_check = $policy->skip_prepare_check($attr, $dbh, $statement, $attr, $sth);
         if (not $skip_prepare_check) {
@@ -480,6 +491,7 @@
         # copy meta attributes into attribute cache
         my $NUM_OF_FIELDS = delete $meta->{NUM_OF_FIELDS};
         $sth->STORE('NUM_OF_FIELDS', $NUM_OF_FIELDS);
+        # XXX need to use STORE for some?
         $sth->{$_} = $meta->{$_} for keys %$meta;
 
         if (($NUM_OF_FIELDS||0) > 0) {
@@ -496,8 +508,12 @@
 
     sub fetchrow_arrayref {
 	my ($sth) = @_;
-	my $resultset = $sth->{go_current_rowset}
-            or return $sth->set_err( @{ $sth->{go_current_rowset_err} } );
+	my $resultset = $sth->{go_current_rowset} || do {
+            # should only happen if fetch called after execute failed
+            my $rowset_err = $sth->{go_current_rowset_err}
+                || [ 1, 'no result set (did execute fail)' ];
+            return $sth->set_err( @$rowset_err );
+        };
         return $sth->_set_fbav(shift @$resultset) if @$resultset;
 	$sth->finish;     # no more data so finish
 	return undef;
@@ -644,13 +660,17 @@ You no longer need drivers for your database on every system.  DBD::Gofer is pur
 
 There are naturally a some constraints imposed by DBD::Gofer. But not many:
 
-=head2 You can't change database handle attributes
+=head2 You can't change database handle attributes after connect()
 
 You can't change database handle attributes after you've connected.
 Use the connect() call to specify all the attribute settings you want.
 
 This is because it's critical that when a request is complete the database
 handle is left in the same state it was when first connected.
+
+=head2 You can't change statement handle attributes after prepare()
+
+You can't change statment handle attributes after prepare.
 
 =head2 You can't use transactions.
 
@@ -682,8 +702,6 @@ are not currently supported. Patches welcome, of course.
 A few things to keep in mind when using DBD::Gofer:
 
 =head2 Driver-private Database Handle Attributes
-
-Driver-private drh attributes can be set in the connect() call.
 
 Some driver-private dbh attributes may not be available if the driver does not
 implemented the private_attribute_info() method (added in DBI 1.54).
@@ -757,7 +775,8 @@ each request proves that the server side is truely stateless. It also makes
 this transport very slow. It's useful, however, both as a proof of concept and
 as a base class for the stream driver.
 
-It doesn't take any parameters.
+This transport supports a timeout parameter in the dsn which specifies
+the maximum time it can take to send a requestor receive a response.
 
 =head3 stream
 
@@ -770,13 +789,16 @@ subprocess on a remote machine using ssh. This means you can now use DBD::Gofer
 to easily access any databases that's accessible from any system you can login to.
 You also get all the benefits of ssh, including encryption and optional compression.
 
-It's also likely that this transport will support safe timeouts in future.
+This transport supports a timeout parameter in the dsn which specifies the
+maximum time it can take to send a requestor receive a response.
 
 See L</DBI_AUTOPROXY> below for an example.
 
 =head3 http
 
 The http driver uses the http protocol to send Gofer requests and receive replies.
+
+It's also very likely that this transport will support safe timeouts in future. XXX
 
 The DBI::Gofer::Transport::mod_perl module implements the corresponding server-side
 transport.
