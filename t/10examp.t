@@ -12,7 +12,7 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 206;
+use Test::More tests => 204;
 
 # "globals"
 my ($r, $dbh);
@@ -22,12 +22,10 @@ sub trace_to_file {
 
 	my $trace_file = "dbitrace.log";
 
-	SKIP: {
-		skip "no trace file to clean up", 2 unless (-e $trace_file);
-	
-		is(unlink( $trace_file ), 1, "Remove trace file: $trace_file" );
-		ok( !-e $trace_file, "Trace file actually gone" );
-	}
+        if (-e $trace_file) {
+            1 while unlink $trace_file;
+            die "Can't unlink existing $trace_file: $!" if -e $trace_file;
+        }
 
 	my $orig_trace_level = DBI->trace;
 	DBI->trace(3, $trace_file);		# enable trace before first driver load

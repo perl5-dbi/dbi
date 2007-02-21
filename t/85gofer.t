@@ -68,8 +68,12 @@ for my $trial (sort keys %trials) {
     my $trans_attr = $trials{$trial}
         or next;
 
-    # XXX temporary restriction, hopefully
-    next if $transport eq 'stream' and $^O eq 'MSWin32'; # need Fcntl macro F_GETFL for non-blocking
+    # XXX temporary restrictions, hopefully
+    if ($^O eq 'MSWin32') {
+       # stream needs Fcntl macro F_GETFL for non-blocking
+       # and pipe seems to hang on some windows systems
+        next if $transport eq 'stream' or $transport eq 'pipeone';
+    }
 
     for my $policy_name (qw(pedantic classic rush)) {
 
