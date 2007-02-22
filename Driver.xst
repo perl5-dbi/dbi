@@ -320,6 +320,7 @@ void
 DESTROY(dbh)
     SV *	dbh
     PPCODE:
+    /* keep in sync with default DESTROY in DBI.xs */
     D_imp_dbh(dbh);
     ST(0) = &sv_yes;
     if (!DBIc_IMPSET(imp_dbh)) {	/* was never fully set up	*/
@@ -718,6 +719,7 @@ void
 DESTROY(sth)
     SV *	sth
     PPCODE:
+    /* keep in sync with default DESTROY in DBI.xs */
     D_imp_sth(sth);
     ST(0) = &sv_yes;
     if (!DBIc_IMPSET(imp_sth)) {	/* was never fully set up	*/

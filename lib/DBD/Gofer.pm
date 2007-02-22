@@ -176,9 +176,6 @@
         return $dbh;
     }
 
-    sub DESTROY { undef }
-
-
     sub _load_class { # return true or false+$@
         my $class = shift;
         (my $pm = $class) =~ s{::}{/}g;

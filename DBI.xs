@@ -4550,6 +4550,36 @@ finish(sth)
     (void)cv;
 
 
+void
+DESTROY(sth)
+    SV *        sth
+    PPCODE:
+    /* keep in sync with DESTROY in Driver.xst */
+    D_imp_sth(sth);
+    ST(0) = &sv_yes;
+    /* we don't test IMPSET here because this code applies to pure-perl drivers */
+    if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
+        DBIc_ACTIVE_off(imp_sth);
+        if (DBIc_DBISTATE(imp_sth)->debug)
+                PerlIO_printf(DBIc_LOGPIO(imp_sth), "         DESTROY %s skipped due to InactiveDestroy\n", SvPV_nolen(sth));
+    }
+    if (DBIc_ACTIVE(imp_sth)) {
+        D_imp_dbh_from_sth;
+        if (!dirty && DBIc_ACTIVE(imp_dbh)) {
+            dSP;
+            PUSHMARK(sp);
+            XPUSHs(sth);
+            PUTBACK;
+            perl_call_method("finish", G_SCALAR);
+            SPAGAIN;
+            PUTBACK;
+        }
+        else {
+            DBIc_ACTIVE_off(imp_sth);
+        }
+    }
+
+
 MODULE = DBI   PACKAGE = DBD::_::common
 
 

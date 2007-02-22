@@ -74,7 +74,6 @@
 	return ("dbi:ExampleP:dir=.");	# possibly usefully meaningless
     }
 
-    sub DESTROY { undef }
 }
 
 
@@ -413,11 +412,6 @@
 	return $sth->{$attrib} = $value
 	    if $attrib eq 'NAME' or $attrib eq 'NULLABLE' or $attrib eq 'SCALE' or $attrib eq 'PRECISION';
 	return $sth->SUPER::STORE($attrib, $value);
-    }
-
-    sub DESTROY {
-	my $sth = shift;
-        #$sth->finish if $sth->SUPER::FETCH('Active');
     }
 
     *parse_trace_flag = \&DBD::ExampleP::db::parse_trace_flag;
