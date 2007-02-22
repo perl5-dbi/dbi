@@ -1197,6 +1197,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
     dTHX;
     dPERINTERP;
     SV *flags = sv_2mortal(newSVpv("",0));
+    SV *inner;
     STRLEN lna;
     static const char pad[] = "      ";
     if (!msg)
@@ -1248,16 +1249,27 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 	PerlIO_printf(DBILOGFP,"%s NUM_OF_FIELDS %d\n", pad, DBIc_NUM_FIELDS(imp_sth));
 	PerlIO_printf(DBILOGFP,"%s NUM_OF_PARAMS %d\n", pad, DBIc_NUM_PARAMS(imp_sth));
     }
+    inner = dbih_inner((SV*)DBIc_MY_H(imp_xxh), msg);
+    if (!inner || !SvROK(inner))
+        return 1;
     if (level > 0) {
         SV* value;
 	char *key;
 	I32   keylen;
-	SV *inner;
 	PerlIO_printf(DBILOGFP,"%s cached attributes:\n", pad);
-	inner = dbih_inner((SV*)DBIc_MY_H(imp_xxh), msg);
 	while ( (value = hv_iternextsv((HV*)SvRV(inner), &key, &keylen)) ) {
 	    PerlIO_printf(DBILOGFP,"%s   '%s' => %s\n", pad, key, neatsvpv(value,0));
 	}
+    }
+    else if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
+        SV **svp = hv_fetch((HV*)SvRV(inner), "Name", 4, 0);
+        if (svp && SvOK(*svp))
+            PerlIO_printf(DBILOGFP,"%s Name %s\n", pad, neatsvpv(*svp,0));
+    }
+    else if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
+        SV **svp = hv_fetch((HV*)SvRV(inner), "Statement", 9, 0);
+        if (svp && SvOK(*svp))
+            PerlIO_printf(DBILOGFP,"%s Statement %s\n", pad, neatsvpv(*svp,0));
     }
     return 1;
 }
@@ -1274,7 +1286,6 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     int debug = DBIS_TRACE_LEVEL;
     int auto_dump = (debug >= 6);
     imp_xxh_t * const parent_xxh = DBIc_PARENT_COM(imp_xxh);
-
     /* Note that we're very much on our own here. DBIc_MY_H(imp_xxh) almost	*/
     /* certainly points to memory which has been freed. Don't use it!		*/
 
@@ -1382,31 +1393,43 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 static AV *
 dbih_setup_fbav(imp_sth_t *imp_sth)
 {
+    /*  Usually called to setup the row buffer for new sth.
+     *  Also called if the value of NUM_OF_FIELDS is altered,
+     *  in which case it adjusts the row buffer to match NUM_OF_FIELDS.
+     */
     dTHX;
     dPERINTERP;
-    int i;
-    AV *av;
+    int i = DBIc_NUM_FIELDS(imp_sth);
+    AV *av = DBIc_FIELDS_AV(imp_sth);
 
-   if (DBIc_FIELDS_AV(imp_sth))
-	return DBIc_FIELDS_AV(imp_sth);
+    if (i < 0)
+        i = 0;
 
-    i = DBIc_NUM_FIELDS(imp_sth);
-    if (i <= 0 || i > 32000)	/* trap obvious mistakes */
-	croak("dbih_setup_fbav: invalid number of fields: %d%s",
-		i, ", NUM_OF_FIELDS attribute probably not set right");
-    av = newAV();
-    if (DBIS_TRACE_LEVEL >= 3)
-	PerlIO_printf(DBILOGFP,"    dbih_setup_fbav for %d fields => 0x%lx\n",
-		    i, (long)av);
+    if (av) {
+        if (av_len(av)+1 == i)  /* is existing array the right size? */
+            return av;
+        /* we need to adjust the size of the array */
+        if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %d to %d fields\n", av_len(av)+1, i);
+        SvREADONLY_off(av);
+    }
+    else {
+        if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %d fields\n", i);
+        av = newAV();
+        DBIc_FIELDS_AV(imp_sth) = av;
+    }
+
     /* load array with writeable SV's. Do this backwards so	*/
     /* the array only gets extended once.			*/
     while(i--)			/* field 1 stored at index 0	*/
 	av_store(av, i, newSV(0));
+    if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
+        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %d fields\n", av_len(av)+1);
     SvREADONLY_on(av);		/* protect against shift @$row etc */
     /* row_count will need to be manually reset by the driver if the	*/
     /* sth is re-executed (since this code won't get rerun)		*/
     DBIc_ROW_COUNT(imp_sth) = 0;
-    DBIc_FIELDS_AV(imp_sth) = av;
     return av;
 }
 
@@ -1423,12 +1446,14 @@ dbih_get_fbav(imp_sth_t *imp_sth)
 	dTHX;
 	int i = av_len(av) + 1;
         if (i != DBIc_NUM_FIELDS(imp_sth)) {
-            SV *sth = dbih_inner((SV*)DBIc_MY_H(imp_sth), "_get_fbav");
+            /*SV *sth = dbih_inner((SV*)DBIc_MY_H(imp_sth), "_get_fbav");*/
             /* warn via PrintWarn */
             set_err_char(SvRV(DBIc_MY_H(imp_sth)), (imp_xxh_t*)imp_sth,
-                    "0", 0, "Number of row fields inconsistent with NUM_OF_FIELDS, NUM_OF_FIELDS updated", "", "_get_fbav");
+                    "0", 0, "Number of row fields inconsistent with NUM_OF_FIELDS (driver bug)", "", "_get_fbav");
+            /*
             DBIc_NUM_FIELDS(imp_sth) = i;
             hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+            */
         }
 	/* don't let SvUTF8 flag persist from one row to the next   */
 	/* (only affects drivers that use sv_setpv, but most XS do) */
@@ -1719,20 +1744,16 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     }
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_FIELDS")) {
 	D_imp_sth(h);
+        int new_num_fields = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
+
 	if (DBIc_NUM_FIELDS(imp_sth) > 0	/* don't change NUM_FIELDS! */
         &&  DBIc_ACTIVE(imp_sth)                /* if sth is Active */
         ) {
 	    croak("Can't change NUM_OF_FIELDS of Active handle (already set to %d)", DBIc_NUM_FIELDS(imp_sth));
         }
-        if (DBIc_NUM_FIELDS(imp_sth) > 0
-        && SvIV(valuesv) != DBIc_NUM_FIELDS(imp_sth)
-        && DBIc_TRACE_LEVEL(imp_sth)
-        && DBIc_FIELDS_AV(imp_sth)
-        ) {
-            PerlIO_printf(DBILOGFP,"Changing NUM_OF_FIELDS (from %d to %d) after row buffer already allocated\n",
-                    DBIc_NUM_FIELDS(imp_sth), (int)SvIV(valuesv));
-        }
-	DBIc_NUM_FIELDS(imp_sth) = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
+	DBIc_NUM_FIELDS(imp_sth) = new_num_fields;
+        if (DBIc_FIELDS_AV(imp_sth)) /* modify existing fbav */
+            dbih_setup_fbav(imp_sth);
 	cacheit = 1;
     }
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_PARAMS")) {

@@ -56,10 +56,18 @@ my %extra_attr = (
     # which would reduce processing/traffic for non-select statements
     mysql  => {
         dbh => [qw(
+            mysql_errno mysql_error mysql_hostinfo mysql_info mysql_insertid
+            mysql_protoinfo mysql_serverinfo mysql_stat mysql_thread_id
         )],
         sth => [qw(
             mysql_is_blob mysql_is_key mysql_is_num mysql_is_pri_key mysql_is_auto_increment
-            mysql_length mysql_max_length mysql_table mysql_type mysql_type_name
+            mysql_length mysql_max_length mysql_table mysql_type mysql_type_name mysql_insertid
+        )],
+        # XXX this dbh_after_sth stuff is a temporary, but important, hack.
+        # should be done via hash instead of arrays where the hash value contains
+        # flags that can indicate which attributes need to be handled in this way
+        dbh_after_sth => [qw(
+            mysql_insertid
         )],
     },
     Pg  => {
@@ -311,15 +319,24 @@ sub execute_sth_request {
     };
     my $response = $self->new_response_with_err($rv, $@);
 
-    $response->last_insert_id( $last_insert_id ) if defined $last_insert_id;
-
-    # even if the eval failed we still want to try to gather attribute values
-    $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) ) if $sth;
+    $response->last_insert_id( $last_insert_id )
+        if defined $last_insert_id;
 
     # XXX would be nice to be able to support streaming of results
+    # even if the eval failed we still want to try to gather attribute values
+    $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) )
+        if $sth;
+
+    if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
+        my %dbh_attr_values;
+        $dbh_attr_values{$_} = $dbh->FETCH($_) for @$dbh_attr;
+        $response->dbh_attributes(\%dbh_attr_values);
+    }
+
     # which would reduce memory usage and latency for large results
 
-    $self->reset_dbh($dbh) if $dbh;
+    $self->reset_dbh($dbh)
+        if $dbh;
 
     return $response;
 }

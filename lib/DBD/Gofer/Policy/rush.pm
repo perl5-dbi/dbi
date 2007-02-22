@@ -17,8 +17,8 @@ use base qw(DBD::Gofer::Policy::Base);
 __PACKAGE__->create_default_policy_subs({
 
     # Skipping the connect check is fast, but it also skips
-    # setting dbh attributes! Make sure that your application doesn't
-    # need changing dbh attributes between requests
+    # fetching the remote dbh attributes!
+    # Make sure that your application doesn't need access to dbh attributes.
     skip_connect_check => 1,
 
     # most code doesn't rely on sth attributes being set after prepare

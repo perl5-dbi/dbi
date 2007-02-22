@@ -51,8 +51,13 @@ XXX quote and quote_info policy control
   Changed handle factory methods, like connect, prepare, and table_info,
     to copy any error/warn/info state of the handle being returned
     up into the handle the method was called on.
+  Changed row buffer handling to not alter NUM_OF_FIELDS if it's
+    inconsistent with number of elements in row buffer array.
+  Updated DBI::DBD docs re handling multiple result sets.
   Updated DBI::DBD docs for driver authors thanks to Ammon Riley
     and Dean Arnold.
+  Updated column_info docs to note that if a table doesn't exist
+    you get an sth for an empty result set and not an error.
 
   Added new DBD::Gofer 'stateless proxy' driver and framework,
     and the DBI test suite is now also executed via DBD::Gofer,

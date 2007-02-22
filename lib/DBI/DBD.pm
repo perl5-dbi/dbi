@@ -1237,6 +1237,53 @@ Alternatively you could delete that method and so fallback
 to the B<DBI>'s own method which does the right thing based
 on the number of calls to C<_set_fbav()>.
 
+=head4 The more_results method
+
+If your driver doesn't support multiple result sets, then don't even implement this method.
+
+Otherwise, this method needs to get the statement handle ready to fetch results
+from the next result set, if there is one. Typically you'd start with:
+
+    $sth->finish;
+
+then you should delete all the attributes from the attribute cache that may no
+longer be relevant for the new result set:
+
+    delete $sth->{$_}
+        for qw(NAME TYPE PRECISION SCALE ...);
+
+for drivers written in C use:
+
+    hv_delete((HV*)SvRV(sth), "NAME", 4, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "NULLABLE", 8, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "PRECISION", 9, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "SCALE", 5, G_DISCARD);
+    hv_delete((HV*)SvRV(sth), "TYPE", 4, G_DISCARD);
+
+Don't forget to also delete, or update, any driver-private attributes that may
+not be correct for the next resultset.
+
+The NUM_OF_FIELDS attribute is a special case. It should be set using STORE:
+
+    $sth->STORE(NUM_OF_FIELDS => 0); /* for DBI <= 1.53 */
+    $sth->STORE(NUM_OF_FIELDS => $new_value);
+
+for drivers written in C use this incantation:
+
+    /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
+    DBIc_NUM_FIELDS(imp_sth) = 0; /* for DBI <= 1.53 */
+    DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+        sv_2mortal(newSViv(mysql_num_fields(imp_sth->result)))
+    );
+
+For DBI versions prior to 1.54 you'll also need to explicitly adjust the
+number of elements in the row buffer array (C<DBIc_FIELDS_AV(imp_sth)>)
+to match the new result set. Fill any new values with newSV(0) not &sv_undef.
+Alternatively you could free DBIc_FIELDS_AV(imp_sth) and set it to null,
+but that would mean bind_columns() woudn't work across result sets.
+
+
 =head4 Statement attributes
 
 The main difference between I<dbh> and I<sth> attributes is, that you
@@ -1245,7 +1292,7 @@ the B<DBI>, such as I<NAME>, I<NULLABLE>, I<TYPE>, etc. See
 L<DBI/Statement Handle Attributes> for a complete list.
 
 Pay attention to attributes which are marked as read only, such as
-I<NUM_OF_FIELDS>. These attributes can only be set the first time
+I<NUM_OF_PARAMS>. These attributes can only be set the first time
 a statement is executed. If a statement is prepared, then executed
 multiple times, warnings may be generated.
 
@@ -1253,9 +1300,9 @@ You can protect against these warnings, and prevent the recalculation
 of attributes which might be expensive to calculate (such as the
 I<NAME> and I<NAME_*> attributes):
 
-    my $storedNumFields = $sth->FETCH('NUM_OF_FIELDS');
-    if (!defined $storedNumFields or $storedNumFields < 0) {
-        $sth->STORE('NUM_OF_FIELDS') = $numFields;
+    my $storedNumParams = $sth->FETCH('NUM_OF_PARAMS');
+    if (!defined $storedNumParams or $storedNumFields < 0) {
+        $sth->STORE('NUM_OF_PARAMS') = $numParams;
 
         # Set other useful attributes that only need to be set once
         # for a statement, like $sth->{NAME} and $sth->{TYPE}
@@ -2117,9 +2164,9 @@ must be set correctly by C<dbd_st_prepare()>:
 
   DBIc_NUM_PARAMS(imp_sth) = ...
 
-If you can, you should also setup attributes like I<NUM_OF_FIELDS>,
-I<NAME>, ... here, but B<DBI> doesn't require that. However, if you do,
-document it.
+If you can, you should also setup attributes like I<NUM_OF_FIELDS>, I<NAME>,
+etc. here, but B<DBI> doesn't require that - they can be deferred until
+execute() is called. However, if you do, document it.
 
 In any case you should set the I<IMPSET> flag, as you did in
 C<dbd_db_connect()> above:
@@ -2175,8 +2222,8 @@ function will typically ends with:
   }
 
 It is important that the I<ACTIVE> flag only be set for C<SELECT>
-statements (or any other statements that can return multiple sets
-of values from the database using a cursor-like mechanism). See
+statements (or any other statements that can return many
+values from the database using a cursor-like mechanism). See
 C<dbd_db_connect()> above for more explanations.
 
 There plans for a preparse function to be provided by B<DBI>, but this has

@@ -45,3 +45,5 @@ sub check_quote_identifier {
 }
 
 check_quote_identifier();
+
+1;

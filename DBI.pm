@@ -4439,6 +4439,8 @@ of information types to ensure the DBI itself works properly:
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
   $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
 
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
+
 Returns an active statement handle that can be used to fetch
 information about tables and views that exist in the database.
 
@@ -4515,6 +4517,8 @@ L</"Standards Reference Information">.
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
+
 Returns an active statement handle that can be used to fetch
 information about columns in specified tables.
 
@@ -4524,6 +4528,9 @@ according to the database/driver, for example: $table = '%FOO%';
 Note: The support for the selection criteria is driver specific. If the
 driver doesn't support one or more of them then you may get back more
 than you asked for and can do the filtering yourself.
+
+If the arguments don't match any tables then you'll still get a statement
+handle, it'll just return no rows.
 
 The statement handle returned has at least the following fields in the
 order shown below. Other fields, after these, may also be present.
@@ -4627,14 +4634,11 @@ See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
   $sth = $dbh->primary_key_info( $catalog, $schema, $table );
 
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
+
 Returns an active statement handle that can be used to fetch information
 about columns that make up the primary key for a table.
 The arguments don't accept search patterns (unlike table_info()).
-
-For example:
-
-  $sth = $dbh->primary_key_info( undef, $user, 'foo' );
-  $data = $sth->fetchall_arrayref;
 
 The statement handle will return one row per column, ordered by
 TABLE_CAT, TABLE_SCHEM, TABLE_NAME, and KEY_SEQ.
@@ -4686,6 +4690,8 @@ If there is no primary key then an empty list is returned.
                                , $fk_catalog, $fk_schema, $fk_table
                                , \%attr );
 
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
+
 Returns an active statement handle that can be used to fetch information
 about foreign keys in and/or referencing the specified table(s).
 The arguments don't accept search patterns (unlike table_info()).
@@ -4712,6 +4718,8 @@ For example:
   $sth = $dbh->foreign_key_info( undef, $user, 'master');
   $sth = $dbh->foreign_key_info( undef, undef,   undef , undef, $user, 'detail');
   $sth = $dbh->foreign_key_info( undef, $user, 'master', undef, $user, 'detail');
+
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
 
 Note: The support for the selection criteria, such as C<$catalog>, is
 driver specific.  If the driver doesn't support catalogs and/or
@@ -4801,6 +4809,8 @@ B<Warning:> This method is experimental and may change.
 
   $sth = $dbh->statistics_info( $catalog, $schema, $table, $unique_only, $quick );
 
+  # then $sth->fetchall_arrayref or $sth->fetchall_hashref etc
+
 Returns an active statement handle that can be used to fetch statistical
 information about a table and its indexes.
 
@@ -4813,11 +4823,6 @@ If the boolean argument $quick is set, the actual statistical information
 columns (CARDINALITY and PAGES) will only be returned if they are readily
 available from the server, and might not be current.  Some databases may
 return stale statistics or no statistics at all with this flag set.
-
-For example:
-
-  $sth = $dbh->statistics_info( undef, $user, 'foo', 1, 1 );
-  $data = $sth->fetchall_arrayref;
 
 The statement handle will return at most one row per column name per index,
 plus at most one row for the entire table itself, ordered by NON_UNIQUE, TYPE,

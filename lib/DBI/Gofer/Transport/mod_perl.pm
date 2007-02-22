@@ -43,7 +43,7 @@ sub handler : method {
     my $frozen_response = $transport->freeze_data($response);
     print $frozen_response;
 
-    return MP2 ? Apache2::Const::OK : Apache::Constants::OK;
+    return OK;
 }
 
 

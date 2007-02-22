@@ -266,7 +266,6 @@
     # Methods that should be forwarded if policy says so
     for my $method (qw(
         quote
-        quote_identifier
     )) {
         no strict 'refs';
         # XXX add policy checks
@@ -440,6 +439,7 @@
             $sth->more_results;
         }
         else {
+            $sth->STORE(Active => 0);
             $sth->{go_rows} = $response->rv;
         }
         # set error/warn/info (after more_results as that'll clear err)
@@ -483,6 +483,7 @@
 
         my $meta = shift @$resultset_list
             or return undef; # no more result sets
+        #warn "more_results: ".Data::Dumper::Dumper($meta);
 
         # pull out the special non-atributes first
         my ($rowset, $err, $errstr, $state)
@@ -713,11 +714,11 @@ Driver-private sth attributes can be set in the prepare() call. TODO
 Some driver-private dbh attributes may not be available if the driver has not
 implemented the private_attribute_info() method (added in DBI 1.54).
 
-=head1 Multiple Resultsets
+=head2 Multiple Resultsets
 
 Multiple resultsets are supported if the driver supports the more_results() method.
 
-=head1 Use of last_insert_id requires a minor code change
+=head2 Use of last_insert_id requires a minor code change
 
 To enable use of last_insert_id you need to indicate to DBD::Gofer that you'd
 like to use it.  You do that my adding a C<go_last_insert_id_args> attribute to
@@ -735,6 +736,18 @@ last_insert_id() method.
 XXX needs testing
 
 XXX allow $dbh->{go_last_insert_id_args} = [] to enable it by default?
+
+=head2 Statement activity that also updates dbh attributes
+
+Some drivers may update one or more dbh attributes after performing activity on
+a child sth.  For example, DBD::mysql provides $dbh->{mysql_insertid} in addition to
+$sth->{mysql_insertid}. Currently this isn't supported, but probably needs to be.
+
+=head2 Methods that report an error always return undef
+
+With DBD::Gofer a method that sets an error always return an undef or empty list.
+That shouldn't be a problem in practice because the DBI doesn't define any
+methods that do return meaningful values while also reporting an error.
 
 =head1 TRANSPORTS
 
