@@ -20,7 +20,7 @@ Call method on transport timeout so transport can cleanup/reset it it wants
 XXX quote policy control
 prepare(...,{ Err=>\my $isolated_err, ...})
 
-=head2 Changes in DBI 1.54 (svn rev 9153),  22nd February 2007
+=head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 
   NOTE: This release includes the 'next big thing': DBD::Gofer.
   Take a look!
