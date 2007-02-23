@@ -88,6 +88,13 @@ my %extra_attr = (
             syb_types syb_result_type syb_proc_status
         )],
     },
+    SQLite => {
+        dbh => [qw(
+            sqlite_version
+        )],
+        sth => [qw(
+        )],
+    },
 );
 
 

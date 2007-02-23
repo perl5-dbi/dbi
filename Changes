@@ -18,10 +18,11 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Refactor http transport like the others re timeout
 Call method on transport timeout so transport can cleanup/reset it it wants
 XXX quote policy control
+prepare(...,{ Err=>\my $isolated_err, ...})
 
-=head2 Changes in DBI 1.54 (svn rev 9153),  19th February 2007
+=head2 Changes in DBI 1.54 (svn rev 9153),  22nd February 2007
 
-  NOTE: This release includes the 'next big thing' for DBI: DBD::Gofer.
+  NOTE: This release includes the 'next big thing': DBD::Gofer.
   Take a look!
 
   WARNING: This version has some subtle changes in DBI internals.

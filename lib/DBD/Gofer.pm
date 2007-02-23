@@ -214,6 +214,9 @@
             if $dbh_attribute_update eq 'every'
             or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
 
+        $request->dbh_last_insert_id_args($meta->{go_last_insert_id_args})
+            if $meta->{go_last_insert_id_args};
+
         my $transport = $dbh->{go_trans}
             or return $dbh->set_err(1, "Not connected (no transport)");
 
@@ -281,10 +284,11 @@
     # for quote_identifier we rely on the default method + get_info
 
     sub do {
-        my $dbh = shift;
+        my ($dbh, $sql, $attr, @args) = @_;
         delete $dbh->{Statement}; # avoid "Modification of non-creatable hash value attempted"
-        $dbh->{Statement} = $_[0]; # for profiling and ShowErrorStatement
-        return $dbh->go_dbh_method(undef, 'do', @_);
+        $dbh->{Statement} = $sql; # for profiling and ShowErrorStatement
+        my $meta = { go_last_insert_id_args => $attr->{go_last_insert_id_args} };
+        return $dbh->go_dbh_method($meta, 'do', $sql, $attr, @args);
     }
 
     sub ping {
@@ -365,6 +369,7 @@
             go_request => $dbh->{go_request},
             go_trans => $dbh->{go_trans},
             go_policy => $policy,
+            go_last_insert_id_args => $attr->{go_last_insert_id_args},
         });
         $sth->STORE(Active => 0);
 
@@ -386,7 +391,7 @@
     my %sth_local_store_attrib = (%DBD::Gofer::xxh_local_store_attrib, NUM_OF_FIELDS => 1);
 
     sub go_sth_method {
-        my ($sth) = @_;
+        my ($sth, $meta) = @_;
 
         if (my $ParamValues = $sth->{ParamValues}) {
             my $ParamAttr = $sth->{ParamAttr};
@@ -406,8 +411,8 @@
             if $sth->{go_method_calls};
         $request->sth_result_attr({}); # (currently) also indicates this is an sth request
 
-        $request->last_insert_id_args($sth->{go_last_insert_id_args})
-            if $sth->{go_last_insert_id_args};
+        $request->dbh_last_insert_id_args($meta->{go_last_insert_id_args})
+            if $meta->{go_last_insert_id_args};
 
         my $go_policy = $sth->{go_policy};
         my $dbh_attribute_update = $go_policy->dbh_attribute_update();
@@ -421,6 +426,7 @@
         my $response = $transport->transmit_request($request);
         $response ||= $transport->receive_response;
         $sth->{go_response} = $response;
+        $dbh->{go_response} = $response; # mainly for last_insert_id
 
         delete $sth->{go_method_calls};
 
@@ -466,7 +472,8 @@
 	my $sth = shift;
         $sth->bind_param($_, $_[$_-1]) for (1..@_);
         push @{ $sth->{go_method_calls} }, [ 'execute' ];
-        return $sth->go_sth_method;
+        my $meta = { go_last_insert_id_args => $sth->{go_last_insert_id_args} };
+        return $sth->go_sth_method($meta);
     }
 
 
