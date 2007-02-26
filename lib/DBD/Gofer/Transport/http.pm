@@ -69,14 +69,14 @@ sub receive_response {
 
     if (not $res->is_success) {
         return DBI::Gofer::Response->new({
-            err    => 1, # or 100_000 + $res->status_code?
+            err    => 1, # or 100_000 + $res->status_code? DBI registry codes?
             errstr => $res->status_line,
         }); 
     }
 
     my $frozen_response = $res->content;
 
-    $response = $self->thaw_data($frozen_response);
+    my $response = $self->thaw_data($frozen_response);
 
     return $response;
 }

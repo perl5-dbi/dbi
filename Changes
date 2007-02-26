@@ -20,6 +20,12 @@ Call method on transport timeout so transport can cleanup/reset it it wants
 XXX quote policy control
 prepare(...,{ Err=>\my $isolated_err, ...})
 
+=head2 Changes in DBI 1.55 (svn rev XXX),  XXX
+
+  Fixed set_err so HandleSetErr hook is executed reliably, if set.
+  Fixed accuracy of profiling when perl configured to use long doubles.
+  Fixed compile error in DBD::Gofer::Transport::http.
+
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 
   NOTE: This release includes the 'next big thing': DBD::Gofer.

@@ -362,7 +362,6 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
     }
 
     if (SvNIOK(sv)) {	  /* is a numeric value - so no surrounding quotes	*/
-	char buf[48];
 	if (SvPOK(sv)) {  /* already has string version of the value, so use it	*/
 	    v = SvPV(sv,len);
 	    if (len == 0) { v="''"; len=2; } /* catch &sv_no style special case	*/
@@ -373,9 +372,8 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 	}
 	/* we don't use SvPV here since we don't want to alter sv in _any_ way	*/
 	if (SvIOK(sv))
-	     sprintf(buf, "%ld", (long)SvIVX(sv));
-	else sprintf(buf, "%g",  (double)SvNVX(sv));
-	nsv = sv_2mortal(newSVpv(buf, 0));
+	     nsv = newSVpvf("%"IVdf, SvIVX(sv));
+	else nsv = newSVpvf("%"NVgf, SvNVX(sv));
 	if (infosv)
 	    sv_catsv(nsv, infosv);
 	return SvPVX(nsv);
@@ -467,7 +465,8 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 
     if (    DBIc_has(imp_xxh, DBIcf_HandleSetErr)
 	&& (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetErr",12,0))
-	&&  hook_svp && SvOK(*hook_svp)
+	&&  hook_svp
+	&&  (SvGMAGICAL(*hook_svp) && mg_get(*hook_svp), SvOK(*hook_svp))
     ) {
 	dSP;
 	IV items;
@@ -2024,7 +2023,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 
           case 'L':
             if (keylen==11 && strEQ(key, "LongReadLen")) {
-                valuesv = newSVnv((double)DBIc_LongReadLen(imp_xxh));
+                valuesv = newSVnv((NV)DBIc_LongReadLen(imp_xxh));
             }
             else if (keylen==11 && strEQ(key, "LongTruncOk")) {
                 valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_LongTruncOk));
@@ -2275,7 +2274,7 @@ clear_cached_kids(SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_le
     }
 }
 
-static double
+static NV
 dbi_time() {
 # ifdef HAS_GETTIMEOFDAY
 #   ifdef PERL_IMPLICIT_SYS
@@ -2322,7 +2321,7 @@ _profile_next_node(SV *node, const char *name)
 
 
 static void
-dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, double t2)
+dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t2)
 {
 #define DBIprof_MAX_PATH_ELEM	100
 #define DBIprof_COUNT		0
@@ -2334,7 +2333,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, double t1, 
 #define DBIprof_LAST_CALLED	6
 #define DBIprof_max_index	6
     dTHX;
-    double ti = t2 - t1;
+    NV ti = t2 - t1;
     int src_idx = 0;
     HV *dbh_outer_hv = NULL;
     HV *dbh_inner_hv = NULL;
@@ -2560,7 +2559,7 @@ dbi_profile_merge(SV *dest, SV *increment)
     dTHX;
     AV *d_av, *i_av;
     SV *tmp;
-    double i_nv;
+    NV i_nv;
     int i_is_earlier;
 
     if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
@@ -2655,7 +2654,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     UV  ErrCount = UV_MAX;
     int i, outitems;
     int call_depth;
-    double profile_t1 = 0.0;
+    NV profile_t1 = 0.0;
 
     const char	*meth_name = GvNAME(CvGV(cv));
     const dbi_ima_t	*ima = (dbi_ima_t*)CvXSUBANY(cv).any_ptr;
@@ -4077,7 +4076,7 @@ _svdump(sv)
     }
 
 
-double
+NV
 dbi_time()
 
 
@@ -4086,8 +4085,8 @@ dbi_profile(h, statement, method, t1, t2)
     SV *h
     SV *statement
     SV *method
-    double t1
-    double t2
+    NV t1
+    NV t2
     CODE:
     D_imp_xxh(h);
     (void)cv;
@@ -4137,7 +4136,7 @@ FETCH(sv)
     char type = *meth++;		/* is this a $ or & style	*/
     imp_xxh_t *imp_xxh = (DBI_LAST_HANDLE_OK) ? DBIh_COM(DBI_LAST_HANDLE) : NULL;
     int trace = 0;
-    double profile_t1 = 0.0;
+    NV profile_t1 = 0.0;
 
     if (imp_xxh && DBIc_has(imp_xxh,DBIcf_Profile))
 	profile_t1 = dbi_time();
