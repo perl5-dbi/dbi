@@ -84,8 +84,9 @@ my %extra_attr = (
         dbh => [qw(
             syb_dynamic_supported syb_oc_version syb_server_version syb_server_version_string
         )],
+        # we don't include syb_result_type as that's a *per row* attribute
         sth => [qw(
-            syb_types syb_result_type syb_proc_status
+            syb_types syb_proc_status
         )],
     },
     SQLite => {
@@ -252,6 +253,10 @@ sub execute_dbh_request {
         }
         my %dbh_attr_values;
         $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
+
+        # XXX piggyback installed_methods onto dbh_attributes for now
+        $dbh_attr_values{dbi_installed_methods} = { DBI->installed_methods };
+        
         $response->dbh_attributes(\%dbh_attr_values);
     }
 
@@ -326,13 +331,18 @@ sub execute_sth_request {
     };
     my $response = $self->new_response_with_err($rv, $@);
 
+    return $response if not $dbh;
+
     $response->last_insert_id( $last_insert_id )
         if defined $last_insert_id;
 
-    # XXX would be nice to be able to support streaming of results
     # even if the eval failed we still want to try to gather attribute values
-    $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) )
-        if $sth;
+    # (XXX would be nice to be able to support streaming of results.
+    # which would reduce memory usage and latency for large results)
+    if ($sth) {
+        $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) );
+        $sth->finish;
+    }
 
     if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
         my %dbh_attr_values;
@@ -340,10 +350,7 @@ sub execute_sth_request {
         $response->dbh_attributes(\%dbh_attr_values);
     }
 
-    # which would reduce memory usage and latency for large results
-
-    $self->reset_dbh($dbh)
-        if $dbh;
+    $self->reset_dbh($dbh);
 
     return $response;
 }

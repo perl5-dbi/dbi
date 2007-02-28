@@ -75,14 +75,41 @@
     }
 
 
-    sub set_err_from_response {
+    sub set_err_from_response { # set error/warn/info and propagate warnings
         my ($h, $response) = @_;
-        # set error/warn/info
-        my $warnings = $response->warnings || [];
-        warn $_ for @$warnings;
+        if (my $warnings = $response->warnings) {
+            warn $_ for @$warnings;
+        }
         return $h->set_err($response->err, $response->errstr, $response->state);
     }
 
+
+    sub install_methods_proxy {
+        my ($installed_methods) = @_;
+        while ( my ($full_method, $attr) = each %$installed_methods ) {
+            # need to install both a DBI dispatch stub and a proxy stub
+            # (the dispatch stub may be already here due to local driver use)
+
+            DBI->_install_method($full_method, "", $attr||{})
+                unless defined &{$full_method};
+
+            # now install proxy stubs on the driver side
+            $full_method =~ m/^DBI::(\w\w)::(\w+)$/
+                or die "Invalid method name '$full_method' for install_method";
+            my ($type, $method) = ($1, $2);
+            my $driver_method = "DBD::Gofer::${type}::${method}";
+            next if defined &{$driver_method};
+            my $sub;
+            if ($type eq 'db') {
+                $sub = sub { return shift->go_dbh_method(undef, $method, @_) };
+            }
+            else {
+                $sub = sub { return shift->set_err(1, "Can't call \$${type}h->$method when using DBD::Gofer") };
+            }
+            no strict 'refs';
+            *$driver_method = $sub;
+        }
+    }
 }
 
 
@@ -225,6 +252,13 @@
         $dbh->{go_response} = $response;
 
         if (my $dbh_attributes = $response->dbh_attributes) {
+
+            # XXX installed_methods piggbacks on dbh_attributes for now
+            if (my $installed_methods = delete $dbh_attributes->{dbi_installed_methods}) {
+                DBD::Gofer::install_methods_proxy($installed_methods)
+                    if $dbh->{go_request_count}==1;
+            }
+
             # XXX we don't STORE here, we just stuff the value into the attribute cache
             $dbh->{$_} = $dbh_attributes->{$_}
                 for keys %$dbh_attributes;
@@ -342,8 +376,8 @@
             };
 
         # dbh attributes are set at connect-time - see connect()
-        carp("Can't alter \$dbh->{$attrib}") if $dbh->FETCH('Warn');
-        return $dbh->set_err(1, "Can't alter \$dbh->{$attrib}");
+        carp("Can't alter \$dbh->{$attrib} after handle created with DBD::Gofer") if $dbh->FETCH('Warn');
+        return $dbh->set_err(1, "Can't alter \$dbh->{$attrib} after handle created with DBD::Gofer");
     }
 
     sub disconnect {
@@ -395,10 +429,13 @@
 
         if (my $ParamValues = $sth->{ParamValues}) {
             my $ParamAttr = $sth->{ParamAttr};
-            while ( my ($p, $v) = each %$ParamValues) {
+            # XXX the sort here is a hack to work around a DBD::Sybase bug
+            # but only works properly for params 1..9
+            # (reverse because of the unshift)
+            for my $p (reverse sort keys %$ParamValues) {
                 # unshift to put binds before execute call
                 unshift @{ $sth->{go_method_calls} },
-                    [ 'bind_param', $p, $v, $ParamAttr->{$p} ];
+                    [ 'bind_param', $p, $ParamValues->{$p}, $ParamAttr->{$p} ];
             }
         }
 
@@ -681,6 +718,12 @@ You can't change statment handle attributes after prepare.
 
 AutoCommit only. Transactions aren't supported.
 
+=head2 You can't use temporary tables or other per-connection persistent state
+
+Because the transport or server-side may execute your request via a different
+database connection, you can't rely on any per-connection persistent state,
+such as temporary tables, being available from one request to the next.
+
 =head2 You need to use func() to call driver-private dbh methods
 
 So instead of the new-style:
@@ -787,10 +830,15 @@ It doesn't take any parameters.
 =head3 pipeone
 
 The pipeone transport launches a subprocess for each request. It passes in the
-request and reads the response. The fact that a new subprocess is started for
-each request proves that the server side is truly stateless. It also makes
-this transport very slow. It's useful, however, both as a proof of concept and
-as a base class for the stream driver.
+request and reads the response.
+
+The fact that a new subprocess is started for each request ensures that the
+server side is truly stateless. While this does make the transport very slow it
+is useful as a way to test that your application doesn't depend on
+per-connection state, such as temporary tables, persisting between requests.
+
+It's also useful both as a proof of concept and as a base class for the stream
+driver.
 
 This transport supports a timeout parameter in the dsn which specifies
 the maximum time it can take to send a requestor receive a response.
@@ -915,5 +963,10 @@ so that web caches (squid etc) could be used to implement the caching.
 (MUST require the use of GET rather than POST requests.)
 
 Neat way for $h->trace to enable transport tracing.
+
+Rework handling of installed_methods.
+
+Perhaps support transactions for transports where it's possible (ie null and stream)?
+Would make stream transport (ie ssh) more useful to more people.
 
 =cut

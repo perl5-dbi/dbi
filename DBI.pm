@@ -288,6 +288,8 @@ my $HAS_WEAKEN = eval {
 
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
 sub installed_drivers { %DBI::installed_drh }
+%DBI::installed_methods = (); # XXX undocumented, may change
+sub installed_methods { %DBI::installed_methods }
 
 # Setup special DBI dynamic variables. See DBI::var::FETCH for details.
 # These are dynamically associated with the last handle used.
@@ -1357,9 +1359,13 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $prefix = $1;
 	my $reg_info = $dbd_prefix_registry->{$prefix};
 	Carp::carp("method name prefix '$prefix' is not associated with a registered driver") unless $reg_info;
-	my %attr = %{$attr||{}}; # copy so we can edit
+
+	my $full_method = "DBI::${subtype}::$method";
+	$DBI::installed_methods{$full_method} = $attr;
+
+	my (undef, $filename, $line) = caller;
 	# XXX reformat $attr as needed for _install_method
-	my ($caller_pkg, $filename, $line) = caller;
+	my %attr = %{$attr||{}}; # copy so we can edit
 	DBI->_install_method("DBI::${subtype}::$method", "$filename at line $line", \%attr);
     }
 

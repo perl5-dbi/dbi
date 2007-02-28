@@ -4355,16 +4355,33 @@ _set_fbav(sth, src_rv)
     int i;
     AV *src_av;
     AV *dst_av = dbih_get_fbav(imp_sth);
-    const int num_fields = AvFILL(dst_av)+1;
+    int dst_fields = AvFILL(dst_av)+1;
+    int src_fields;
     (void)cv;
 
     if (!SvROK(src_rv) || SvTYPE(SvRV(src_rv)) != SVt_PVAV)
 	croak("_set_fbav(%s): not an array ref", neatsvpv(src_rv,0));
     src_av = (AV*)SvRV(src_rv);
-    if (AvFILL(src_av)+1 != num_fields)
-	croak("_set_fbav(%s): array has %d elements, the statement handle expects %d",
-		neatsvpv(src_rv,0), (int)AvFILL(src_av)+1, num_fields);
-    for(i=0; i < num_fields; ++i) {	/* copy over the row	*/
+    src_fields = AvFILL(src_av)+1;
+    if (src_fields != dst_fields) {
+	warn("_set_fbav(%s): array has %d elements, the statement handle row buffer has %d (and NUM_OF_FIELDS is %d)",
+		neatsvpv(src_rv,0), src_fields, dst_fields, DBIc_NUM_FIELDS(imp_sth));
+        SvREADONLY_off(dst_av);
+        if (src_fields < dst_fields) {
+            /* shrink the array - sadly this looses column bindings for the lost columns */
+            av_fill(dst_av, src_fields-1);
+            dst_fields = src_fields;
+        }
+        else {
+            av_fill(dst_av, src_fields-1);
+            /* av_fill pads with immutable undefs which we need to change */
+            for(i=dst_fields-1; i < src_fields; ++i) {
+                sv_setsv(AvARRAY(dst_av)[i], newSV(0));
+            }
+        }
+        SvREADONLY_on(dst_av);
+    }
+    for(i=0; i < dst_fields; ++i) {	/* copy over the row	*/
         /* If we're given the values, then taint them if required */
         if (DBIc_is(imp_sth, DBIcf_TaintOut))
             SvTAINT(AvARRAY(src_av)[i]);

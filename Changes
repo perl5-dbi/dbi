@@ -26,6 +26,12 @@ prepare(...,{ Err=>\my $isolated_err, ...})
   Fixed accuracy of profiling when perl configured to use long doubles.
   Fixed compile error in DBD::Gofer::Transport::http.
 
+  Changed DBD::Gofer to work around a DBD::Sybase bind_param bug.
+  Changed _set_fbav to not croak when given a wrongly sized array,
+    it now warns and adjusts the row buffer to match.
+
+  Added support for install_methods to DBD::Gofer.
+
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 
   NOTE: This release includes the 'next big thing': DBD::Gofer.
