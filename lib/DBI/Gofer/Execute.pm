@@ -391,8 +391,12 @@ sub fetch_result_set {
     while ( my ($attr,$use) = each %$extra_sth_attr ) {
         next unless $use;
         my $v = eval { $sth->FETCH($attr) };
-        warn $@ if $@;
-        $meta{ $attr } = $v if defined $v;
+        if (defined $v) {
+            $meta{ $attr } = $v;
+        }
+        else {
+            warn $@ if $@;
+        }
     }
     my $NUM_OF_FIELDS = $meta{NUM_OF_FIELDS};
     $NUM_OF_FIELDS = $sth->FETCH('NUM_OF_FIELDS') unless defined $NUM_OF_FIELDS;

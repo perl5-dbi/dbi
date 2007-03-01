@@ -10,7 +10,7 @@ package DBI::Gofer::Transport::Base;
 use strict;
 use warnings;
 
-use Storable qw(freeze thaw);
+use Storable qw(nfreeze thaw);
 
 use base qw(DBI::Util::_accessor);
 
@@ -41,7 +41,7 @@ sub freeze_data {
     $self->_dump("freezing ".ref($data), $data)
         if !$skip_trace and $self->trace;
     local $Storable::forgive_me = 1; # for CODE refs etc
-    my $frozen = eval { freeze($data) };
+    my $frozen = eval { nfreeze($data) };
     if ($@) {
         die "Error freezing ".ref($data)." object: $@";
     }

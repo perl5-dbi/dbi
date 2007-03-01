@@ -981,4 +981,12 @@ Rework handling of installed_methods to not piggback on dbh_attributes?
 Perhaps support transactions for transports where it's possible (ie null and stream)?
 Would make stream transport (ie ssh) more useful to more people.
 
+Make sth_result_attr more like dbh_attributes (using '*' etc)
+
+Add @val = FETCH_many(@names) to DBI in C and use in Gofer/Execute
+
+Add ($err, $errstr, $state) = $h->get_err
+
+Implement DBI::st::TIEHASH etc in C.
+
 =cut

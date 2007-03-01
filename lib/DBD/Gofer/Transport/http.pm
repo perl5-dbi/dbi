@@ -55,6 +55,8 @@ sub transmit_request {
 
         # Pass request to the user agent and get a response back
         my $res = $ua->request($req);
+
+        # stash the response for use by receive_response
         $self->connection_info( $res );
     };
     return DBI::Gofer::Response->new({ err => 1, errstr => $@ }) if $@;
@@ -65,7 +67,7 @@ sub transmit_request {
 sub receive_response {
     my $self = shift;
 
-    my $res = $self->connection_info || die;
+    my $res = $self->connection_info || die "no connection_info";
 
     if (not $res->is_success) {
         return DBI::Gofer::Response->new({
