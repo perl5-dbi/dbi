@@ -117,7 +117,7 @@ sub run_tests {
     $dsn = $remote_dsn if $transport eq 'no';
     print " $dsn\n";
 
-    my $dbh = DBI->connect($dsn, undef, undef, { } );
+    my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1, PrintError => 0 } );
     ok $dbh, sprintf "should connect to %s (%s)", $dsn, $DBI::errstr||'';
     die "$test_run_tag aborted\n" unless $dbh;
 
@@ -130,7 +130,7 @@ sub run_tests {
     die "$test_run_tag aborted\n" if $DBI::err;
 
     my $sth = do {
-        local $dbh->{PrintError} = 0;
+        local $dbh->{RaiseError} = 0;
         $dbh->prepare("complete non-sql gibberish");
     };
     ($policy->skip_prepare_check)

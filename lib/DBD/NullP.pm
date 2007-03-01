@@ -56,13 +56,13 @@
     use Carp qw(croak);
 
     sub prepare {
-	my($dbh, $statement)= @_;
+	my ($dbh, $statement)= @_;
 
-	my($outer, $sth) = DBI::_new_sth($dbh, {
+	my ($outer, $sth) = DBI::_new_sth($dbh, {
 	    'Statement'     => $statement,
-	    }, [ qw'example implementors private data']);
+        });
 
-	$outer;
+	return $outer;
     }
 
     sub FETCH {
@@ -73,7 +73,7 @@
 	return 1 if $attrib eq 'AutoCommit';
 	# else pass up to DBI to handle
 	return $dbh->SUPER::FETCH($attrib);
-	}
+    }
 
     sub STORE {
 	my ($dbh, $attrib, $value) = @_;
@@ -99,23 +99,38 @@
     $imp_data_size = 0;
     use strict;
 
+    sub bind_param {
+        my ($sth, $param, $value, $attr) = @_;
+        $sth->{ParamValues}{$param} = $value;
+        $sth->{ParamAttr}{$param}   = $attr
+            if defined $attr; # attr is sticky if not explicitly set
+        return 1;
+    }       
+
     sub execute {
-	my($sth, $data) = @_;
-	$sth->{dbd_nullp_data} = $data if $data;
-	$sth->{NAME} = [ "fieldname" ];
+	my $sth = shift;
+        $sth->bind_param($_, $_[$_-1]) for (1..@_);
+        if ($sth->{Statement} =~ m/^ \s* SELECT \s+/xmsi) {
+            $sth->STORE(NUM_OF_FIELDS => 1); 
+            $sth->{NAME} = [ "fieldname" ];
+            # just for the sake of returning something, we return the params
+            my $params = $sth->{ParamValues} || {};
+            $sth->{dbd_nullp_data} = [ @{$params}{ sort keys %$params } ];
+            $sth->STORE(Active => 1); 
+        }
 	1;
     }
 
-    sub fetch {
-	my($sth) = @_;
+    sub fetchrow_arrayref {
+	my $sth = shift;
 	my $data = $sth->{dbd_nullp_data};
-        if ($data) {
-	    $sth->{dbd_nullp_data} = undef;
-	    return [ $data ];
+        if (!$data || !@$data) {
+            $sth->finish;     # no more data so finish
+            return undef;
 	}
-	$sth->finish;     # no more data so finish
-	return undef;
+        return $sth->_set_fbav(shift @$data);
     }
+    *fetch = \&fetchrow_arrayref; # alias
 
     sub FETCH {
 	my ($sth, $attrib) = @_;

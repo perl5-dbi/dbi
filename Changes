@@ -29,8 +29,11 @@ prepare(...,{ Err=>\my $isolated_err, ...})
   Changed DBD::Gofer to work around a DBD::Sybase bind_param bug.
   Changed _set_fbav to not croak when given a wrongly sized array,
     it now warns and adjusts the row buffer to match.
+  Changed DBD::NullP to be vaguely useful for testing.
+  Assorted Gofer bug fixes, enhancements and docs.
 
   Added support for install_methods to DBD::Gofer.
+  Added goferperf.pl utility (doesn't get installed).
 
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 

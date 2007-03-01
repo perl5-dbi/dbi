@@ -268,8 +268,8 @@ sub execute_dbh_request {
     if ($rv_ref and UNIVERSAL::isa($rv_ref->[0],'DBI::st')) {
         # dbh_method_call was probably a metadata method like table_info
         # that returns a statement handle, so turn the $sth into resultset
-        my $rv = $rv_ref->[0];
-        $response->sth_resultsets( $self->gather_sth_resultsets($rv, $request) );
+        my $sth = $rv_ref->[0];
+        $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request, $response) );
         $response->rv("(sth)"); # don't try to return actual sth
     }
 
@@ -340,7 +340,7 @@ sub execute_sth_request {
     # (XXX would be nice to be able to support streaming of results.
     # which would reduce memory usage and latency for large results)
     if ($sth) {
-        $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request) );
+        $response->sth_resultsets( $self->gather_sth_resultsets($sth, $request, $response) );
         $sth->finish;
     }
 
@@ -357,8 +357,8 @@ sub execute_sth_request {
 
 
 sub gather_sth_resultsets {
-    my ($self, $sth, $request) = @_;
-    return eval {
+    my ($self, $sth, $request, $response) = @_;
+    my $resultsets = eval {
         my $driver_name = $sth->{Database}{Driver}{Name};
         my $extra_sth_attr = $extra_attr{$driver_name}{sth} || [];
 
@@ -380,6 +380,8 @@ sub gather_sth_resultsets {
 
         $rs_list;
     };
+    $response->add_err(1, $@) if $@;
+    return $resultsets;
 }
 
 

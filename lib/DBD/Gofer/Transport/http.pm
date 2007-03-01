@@ -58,7 +58,7 @@ sub transmit_request {
         $self->connection_info( $res );
     };
     return DBI::Gofer::Response->new({ err => 1, errstr => $@ }) if $@;
-    return 1;
+    return undef;
 }
 
 

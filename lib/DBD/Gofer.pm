@@ -104,7 +104,7 @@
                 $sub = sub { return shift->go_dbh_method(undef, $method, @_) };
             }
             else {
-                $sub = sub { return shift->set_err(1, "Can't call \$${type}h->$method when using DBD::Gofer") };
+                $sub = sub { shift->set_err(1, "Can't call \$${type}h->$method when using DBD::Gofer"); return; };
             }
             no strict 'refs';
             *$driver_method = $sub;
@@ -177,7 +177,7 @@
             $request_class->new({
                 connect_args => [ $remote_dsn, $go_attr ]
             })
-        } or return $drh->set_err(1, "Can't instanciate $request_class $@");
+        } or return $drh->set_err(1, "Can't instanciate $request_class: $@");
 
         my ($dbh, $dbh_inner) = DBI::_new_dbh($drh, {
             'Name' => $dsn,
@@ -249,7 +249,8 @@
 
         my $response = $transport->transmit_request($request);
         $response ||= $transport->receive_response;
-        $dbh->{go_response} = $response;
+        $dbh->{go_response} = $response
+            or die "No response object returned by $transport";
 
         if (my $dbh_attributes = $response->dbh_attributes) {
 
@@ -462,7 +463,8 @@
 
         my $response = $transport->transmit_request($request);
         $response ||= $transport->receive_response;
-        $sth->{go_response} = $response;
+        $sth->{go_response} = $response
+            or die "No response object returned by $transport";
         $dbh->{go_response} = $response; # mainly for last_insert_id
 
         delete $sth->{go_method_calls};
@@ -500,7 +502,8 @@
     sub bind_param {
         my ($sth, $param, $value, $attr) = @_;
         $sth->{ParamValues}{$param} = $value;
-        $sth->{ParamAttr}{$param} = $attr;
+        $sth->{ParamAttr}{$param}   = $attr
+            if defined $attr; # attr is sticky if not explicitly set
         return 1;
     }
 
@@ -515,11 +518,17 @@
 
 
     sub more_results {
-	my ($sth) = @_;
+	my $sth = shift;
 
-	$sth->finish if $sth->FETCH('Active');
+	$sth->finish;
 
-	my $resultset_list = $sth->{go_response}->sth_resultsets
+	my $response = $sth->{go_response} or do {
+            # e.g., we haven't sent a request yet (ie prepare then more_results)
+            $sth->trace_msg("    No response object present", 3);
+            return;
+        };
+
+	my $resultset_list = $response->sth_resultsets
             or return $sth->set_err(1, "No sth_resultsets");
 
         my $meta = shift @$resultset_list
@@ -565,12 +574,16 @@
 
     sub fetchall_arrayref {
         my ($sth, $slice, $max_rows) = @_;
+	my $resultset = $sth->{go_current_rowset} || do {
+            # should only happen if fetch called after execute failed
+            my $rowset_err = $sth->{go_current_rowset_err}
+                || [ 1, 'no result set (did execute fail)' ];
+            return $sth->set_err( @$rowset_err );
+        };
         my $mode = ref($slice) || 'ARRAY';
         return $sth->SUPER::fetchall_arrayref($slice, $max_rows)
             if ref($slice) or defined $max_rows;
-	my $resultset = $sth->{go_current_rowset}
-            or return $sth->set_err( @{ $sth->{go_current_rowset_err} } );
-	$sth->finish;     # no more data so finish
+	$sth->finish;     # no more data after this so finish
         return $resultset;
     }
 
@@ -700,7 +713,8 @@ You no longer need drivers for your database on every system.  DBD::Gofer is pur
 
 =head1 CONSTRAINTS
 
-There are naturally some constraints imposed by DBD::Gofer. But not many:
+There are some natural constraints imposed by the DBD::Gofer 'stateless' approach.
+But not too many:
 
 =head2 You can't change database handle attributes after connect()
 
@@ -714,40 +728,38 @@ handle is left in the same state it was when first connected.
 
 You can't change statment handle attributes after prepare.
 
-=head2 You can't use transactions.
+=head2 You can't use transactions
 
 AutoCommit only. Transactions aren't supported.
-
-=head2 You can't use temporary tables or other per-connection persistent state
-
-Because the transport or server-side may execute your request via a different
-database connection, you can't rely on any per-connection persistent state,
-such as temporary tables, being available from one request to the next.
-
-=head2 You need to use func() to call driver-private dbh methods
-
-So instead of the new-style:
-
-    $dbh->foo_method_name(...)
-
-you need to use the old-style:
-
-    $dbh->func(..., 'foo_method_name');
-
-This constraint might be removed in future.
 
 =head2 You can't call driver-private sth methods
 
 But that's rarely needed anyway.
 
-=head2 Array Methods are not supported
+=head2 Per-row driver-private sth attributes aren't supported
+
+Some drivers provide sth attributes that relate to the row that was just
+fetched (e.g., Sybase and syb_result_type). These aren't supported.
+
+=head2 Array Methods are currently not supported
 
 The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
 are not currently supported. Patches welcome, of course.
 
 =head1 CAVEATS
 
-A few things to keep in mind when using DBD::Gofer:
+A few important things to keep in mind when using DBD::Gofer:
+
+=head2 You shouldn't use temporary tables, locks, or other per-connection persistent state
+
+Because the server-side may execute your requests via a different
+database connections, you can't rely on any per-connection persistent state,
+such as temporary tables, being available from one request to the next.
+
+This is an easy trap to fall into and a difficult one to debug.
+The pipeone transport may help as it forces a new connection for each request.
+(It is very slow though, so I plan to add a way for the stream driver to use
+connect instead of connect cache to achive the same effect much more efficiently.)
 
 =head2 Driver-private Database Handle Attributes
 
@@ -763,7 +775,8 @@ implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head2 Multiple Resultsets
 
-Multiple resultsets are supported if the driver supports the more_results() method.
+Multiple resultsets are supported only if the driver supports the more_results() method
+(an exception is made for DBD::Sybase).
 
 =head2 Use of last_insert_id requires a minor code change
 
@@ -780,21 +793,20 @@ or
 The array reference should contains the args that you want passed to the
 last_insert_id() method.
 
-XXX needs testing
-
 XXX allow $dbh->{go_last_insert_id_args} = [] to enable it by default?
 
 =head2 Statement activity that also updates dbh attributes
 
 Some drivers may update one or more dbh attributes after performing activity on
 a child sth.  For example, DBD::mysql provides $dbh->{mysql_insertid} in addition to
-$sth->{mysql_insertid}. Currently this isn't supported, but probably needs to be.
+$sth->{mysql_insertid}. Currently mysql_insertid is supported via a hack but a
+more general mechanism is needed for other drivers to use.
 
 =head2 Methods that report an error always return undef
 
 With DBD::Gofer a method that sets an error always return an undef or empty list.
 That shouldn't be a problem in practice because the DBI doesn't define any
-methods that do return meaningful values while also reporting an error.
+methods that return meaningful values while also reporting an error.
 
 =head1 TRANSPORTS
 
@@ -931,9 +943,15 @@ L<DBI::Gofer::Transport::Base>, L<DBD::Gofer::Policy::Base>.
 
 L<DBI>
 
+=head1 Caveats for specific drivers
+
+This section aims to record issues to be aware of when using Gofer with specific drivers.
+It usually only documents issues that are not natural consequences of the limitations
+of the Gofer approach - as documented avove.
+
 =head1 TODO
 
-Random brain dump...
+This is just a random brain dump...
 
 Document policy mechanism
 
@@ -941,15 +959,9 @@ Add mechanism for transports to list config params and for Gofer to apply any th
 
 Driver-private sth attributes - set via prepare() - change DBI spec
 
-Timeout for stream and http drivers.
-
 Caching of get_info values
 
 prepare vs prepare_cached
-
-Driver-private sth methods via func? Can't be sure of state?
-
-track installed_methods and install proxies on client side after connect?
 
 add hooks into transport base class for checking & updating a result set cache
    ie via a standard cache interface such as:
@@ -964,7 +976,7 @@ so that web caches (squid etc) could be used to implement the caching.
 
 Neat way for $h->trace to enable transport tracing.
 
-Rework handling of installed_methods.
+Rework handling of installed_methods to not piggback on dbh_attributes?
 
 Perhaps support transactions for transports where it's possible (ie null and stream)?
 Would make stream transport (ie ssh) more useful to more people.
