@@ -43,6 +43,7 @@ sub freeze_data {
     local $Storable::forgive_me = 1; # for CODE refs etc
     my $frozen = eval { nfreeze($data) };
     if ($@) {
+        chomp $@;
         die "Error freezing ".ref($data)." object: $@";
     }
     return $frozen;
@@ -52,7 +53,7 @@ sub thaw_data {
     my ($self, $frozen_data, $skip_trace) = @_;
     my $data = eval { thaw($frozen_data) };
     if ($@) {
-        my $err = $@;
+        chomp(my $err = $@);
         $self->_dump("bad data",$frozen_data);
         die "Error thawing object: $err";
     }

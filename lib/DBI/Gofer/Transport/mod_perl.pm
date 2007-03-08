@@ -3,19 +3,20 @@ package DBI::Gofer::Transport::mod_perl;
 use strict;
 use warnings;
 
+use Sys::Hostname qw(hostname);
 use DBI::Gofer::Execute;
-use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 
+use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 BEGIN {
   if (MP2) {
     require Apache2::RequestIO;
     require Apache2::RequestRec;
     require Apache2::RequestUtil;
     require Apache2::Const;
-    Apache2::Const->import(-compile => qw(OK));
+    Apache2::Const->import(-compile => qw(OK SERVER_ERROR));
   } else {
     require Apache::Constants;
-    Apache::Constants->import(qw(OK));
+    Apache::Constants->import(qw(OK SERVER_ERROR));
   }
 }
 
@@ -23,6 +24,7 @@ use base qw(DBI::Gofer::Transport::Base);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
+my $hostname = hostname();
 my $transport = __PACKAGE__->new();
 
 my %executor_configs = ( default => { } );
@@ -33,15 +35,22 @@ sub handler : method {
     my $self = shift;
     my $r = shift;
 
-    my $executor = $executor_cache{ $r->uri } ||= $self->executor_for_uri($r);
+    eval {
+        my $executor = $executor_cache{ $r->uri } ||= $self->executor_for_uri($r);
 
-    $r->read(my $frozen_request, $r->headers_in->{'Content-length'});
-    my $request = $transport->thaw_data($frozen_request);
+        $r->read(my $frozen_request, $r->headers_in->{'Content-length'});
+        my $request = $transport->thaw_data($frozen_request);
 
-    my $response = $executor->execute_request( $request );
+        my $response = $executor->execute_request( $request );
 
-    my $frozen_response = $transport->freeze_data($response);
-    print $frozen_response;
+        my $frozen_response = $transport->freeze_data($response);
+        print $frozen_response;
+    };
+    if ($@) {
+        chomp $@;
+        $r->custom_response(SERVER_ERROR, "$@ version $VERSION (DBI $DBI::VERSION) on $hostname");
+        return SERVER_ERROR;
+    }
 
     return OK;
 }

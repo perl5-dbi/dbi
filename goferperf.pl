@@ -70,7 +70,7 @@ while ( my ($activity, $stats_hash) = each %durations ) {
         printf "  %6s %-16s: %.6fsec (%5d/sec)",
             $activity, $perf_tag, $dur/$opt_count, $opt_count/$dur;
         my $baseline_dur = $stats_hash->{'~baseline~'};
-        printf " %+5.1fms", (($dur-$baseline_dur)/$opt_count)*1000
+        printf " %+6.2fms", (($dur-$baseline_dur)/$opt_count)*1000
             unless $perf_tag eq '~baseline~';
         print "\n";
     }
