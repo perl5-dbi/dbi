@@ -24,6 +24,7 @@
         Active
         CachedKids
         Callbacks
+        DbTypeSubclass
         ErrCount Executed
         FetchHashKeyName
         HandleError HandleSetErr
@@ -174,6 +175,8 @@
             }
             # delete any attributes we can't serialize (or don't want to)
             delete @{$go_attr}{qw(Profile HandleError HandleSetErr Callbacks)};
+            # delete any attributes that should only apply to the client-side
+            delete @{$go_attr}{qw(RootClass DbTypeSubclass)};
             $request_class->new({
                 connect_args => [ $remote_dsn, $go_attr ]
             })
@@ -363,7 +366,9 @@
 	return $dbh->SUPER::STORE($attrib => $value)
             # we handle this attribute locally
             if $dbh_local_store_attrib{$attrib}
-            # not yet connected (and being called by connect())
+            # or it's a private_ (application) attribute
+            or $attrib =~ /^private_/
+            # or not yet connected (and being called by connect())
             or not $dbh->FETCH('Active');
 
 	return $dbh->SUPER::STORE($attrib => $value)
@@ -597,7 +602,9 @@
 	my ($sth, $attrib, $value) = @_;
 
 	return $sth->SUPER::STORE($attrib => $value)
-            if $sth_local_store_attrib{$attrib}; # handle locally
+            if $sth_local_store_attrib{$attrib} # handle locally
+            # or it's a private_ (application) attribute
+            or $attrib =~ /^private_/;
 
         # otherwise warn but do it anyway
         # this will probably need refining later
@@ -612,6 +619,7 @@
         # next execution?
         # Could just always use go_method_calls I guess.
 
+        # do the store locally anyway, just in case
 	$sth->SUPER::STORE($attrib => $value);
 
         return $sth->set_err(1, $msg);
@@ -724,9 +732,15 @@ Use the connect() call to specify all the attribute settings you want.
 This is because it's critical that when a request is complete the database
 handle is left in the same state it was when first connected.
 
+An exception is made for attributes with names starting "C<private_>":
+They can be set after connect() but the change is only applied locally.
+
 =head2 You can't change statement handle attributes after prepare()
 
 You can't change statment handle attributes after prepare.
+
+An exception is made for attributes with names starting "C<private_>":
+They can be set after prepare() but the change is only applied locally.
 
 =head2 You can't use transactions
 
@@ -807,6 +821,10 @@ more general mechanism is needed for other drivers to use.
 With DBD::Gofer a method that sets an error always return an undef or empty list.
 That shouldn't be a problem in practice because the DBI doesn't define any
 methods that return meaningful values while also reporting an error.
+
+=head2 Subclassing only applies to client-side
+
+The RootClass and DbTypeSubclass attributes are not passed to the Gofer server.
 
 =head1 TRANSPORTS
 

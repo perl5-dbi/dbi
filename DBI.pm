@@ -3853,7 +3853,8 @@ you should use a two step approach like this:
   my $foo = $dbh->{private_yourmodname_foo};
   $foo ||= $dbh->{private_yourmodname_foo} = { ... };
 
-This attribute is primarily of interest to people sub-classing DBI.
+This attribute is primarily of interest to people sub-classing DBI,
+or for applications to piggy-back extra information onto DBI handles.
 
 =back
 
