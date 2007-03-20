@@ -9,6 +9,7 @@ use DBI::Gofer::Execute;
 use constant MP2 => ( exists $ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} >= 2 );
 BEGIN {
   if (MP2) {
+      warn "NOT RECENTLY TESTED";
     require Apache2::RequestIO;
     require Apache2::RequestRec;
     require Apache2::RequestUtil;
@@ -20,6 +21,8 @@ BEGIN {
   }
 }
 
+use Apache::Util qw(escape_html);
+
 use base qw(DBI::Gofer::Transport::Base);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
@@ -29,6 +32,18 @@ my $transport = __PACKAGE__->new();
 
 my %executor_configs = ( default => { } );
 my %executor_cache;
+
+
+if (MP2) {
+    if (Apache2::Module::loaded('Apache2::Status')) {
+        Apache2::Status->menu_item('DBI_Gofer' => 'DBI Gofer connections', \&gofer_status_function);
+    }
+}
+elsif ($INC{'Apache.pm'}                       # is Apache.pm loaded?
+       and Apache->can('module')               # really?
+       and Apache->module('Apache::Status')) { # Apache::Status too?
+       Apache::Status->menu_item('DBI_Gofer' => 'DBI Gofer connections', \&gofer_status_function);
+}
 
 
 sub handler : method {
@@ -111,6 +126,57 @@ sub configuration {           # one-time setup from httpd.conf
             if @bad;
     }
     %executor_configs = %$configs;
+}
+
+
+# prepare menu item for Apache::Status
+sub gofer_status_function {
+    my($r, $q) = @_;
+    my @s = ("<pre>",
+        "<b>DBI $VERSION Drivers, Connections and Statements</b><p>\n",
+
+    );
+    
+    my %drivers = DBI->installed_drivers();
+    push @s, sprintf("%d drivers loaded: %s<p>", scalar keys %drivers, join(", ", keys %drivers));
+
+    while ( my ($driver, $h) = each %drivers) {
+        my $version = do { no strict; ${"DBD::${driver}::VERSION"} || 'undef' };
+        my @children = grep { defined } @{$h->{ChildHandles}};
+
+        push @s, sprintf "<hr><b>DBD::$driver</b>  <font size=-2 color=grey>version $version,  %d dbh (%d cached, %d active)  $h</font>\n\n",
+            scalar @children, scalar keys %{$h->{CachedKids}||{}}, $h->{ActiveKids};
+
+        @children = sort { ($a->{Name}||"$a") cmp ($b->{Name}||"$b") } @children;
+        push @s, show_dbi_handle($_, 0) for @children;
+    }
+
+    push @s, "</pre>";
+    return \@s;
+}
+
+sub show_dbi_handle {
+    my ($h, $level) = @_;
+    $level ||= 0;
+    my @s;
+    my $type = $h->{Type};
+    my @children = grep { defined } @{$h->{ChildHandles}};
+    if ($type eq 'db') {
+        push @s, sprintf "DSN \"%s\"  <font size=-2 color=grey>$h</font>\n", $h->{Name};
+        push @s, sprintf "    Error: %s %s\n",
+            $h->err, escape_html($h->errstr) if $h->err;
+        my $sql = escape_html($h->{Statement} || ''); $sql =~ s/\n/ /g;
+        push @s, sprintf "    Statement: $sql\n" if $sql;
+        push @s, sprintf "    sth: %d (%d cached, %d active)\n",
+            scalar @children, scalar keys %{$h->{CachedKids}||{}}, $h->{ActiveKids};
+        push @s, "\n";
+        @children = sort { ($a->{Statement}||"$a") cmp ($b->{Statement}||"$b") } @children;
+    }
+    else {
+        push @s, sprintf "%sh %s %s\n", $h->{Type}, "\t" x $level, $h;
+    }
+    push @s, show_dbi_handle($_, $level + 1) for @children;
+    return @s;
 }
 
 1;

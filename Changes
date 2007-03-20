@@ -6,6 +6,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+Extract http transport into new distribution.
+
+Add trace modules that just records the last N trace messages into an array
+and prepends them to any error message.
+
+Ping via policy!
+
 Add attr-passthru to prepare()?
 Terminology for client and server ends
 I could make the short transport/policy name do a lookup in both DBD::Gofer::Transport and DBIx::Gofer::Transport.

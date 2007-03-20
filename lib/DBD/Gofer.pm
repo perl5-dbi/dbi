@@ -438,7 +438,14 @@
             # XXX the sort here is a hack to work around a DBD::Sybase bug
             # but only works properly for params 1..9
             # (reverse because of the unshift)
-            for my $p (reverse sort keys %$ParamValues) {
+            my @params = reverse sort keys %$ParamValues;
+            if (@params > 9 && $sth->{Database}{go_dsn} =~ /dbi:Sybase/) {
+                # if more than 9 then we need to do a proper numeric sort
+                # also warn to alert user of this issue
+                warn "Sybase param binding order hack in use";
+                @params = sort { $b <=> $a } @params;
+            }
+            for my $p (@params) {
                 # unshift to put binds before execute call
                 unshift @{ $sth->{go_method_calls} },
                     [ 'bind_param', $p, $ParamValues->{$p}, $ParamAttr->{$p} ];
