@@ -20,6 +20,8 @@ my %policy_defaults = (
     skip_ping => 0,
     dbh_attribute_update => 'every',
     dbh_attribute_list => ['*'],
+    locally_quote => 0,
+    locally_quote_identifier => 0,
 );
 
 my $base_policy_file = $INC{"DBD/Gofer/Policy/Base.pm"};
@@ -46,6 +48,9 @@ sub create_default_policy_subs {
 
 sub AUTOLOAD {
     carp "Unknown policy name $AUTOLOAD used";
+    # only warn once
+    no strict 'refs';
+    *$AUTOLOAD = sub { undef };
     return undef;
 }
 

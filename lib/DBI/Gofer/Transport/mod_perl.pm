@@ -246,7 +246,7 @@ That's equivalent to:
 The DBI::Gofer::Transport::mod_perl->configuration({...}) call defines named configurations.
 The C<PerlSetVar GoferConfig> clause specifies the configuration to be used for that location.
 
-XXX add detail inclusing specific examples
+XXX add detail including specific examples
 
 A single location can specify multiple configurations using C<PerlAddVar>:
 

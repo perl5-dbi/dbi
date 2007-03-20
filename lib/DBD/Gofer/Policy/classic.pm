@@ -27,6 +27,9 @@ __PACKAGE__->create_default_policy_subs({
     # ping is almost meaningless for DBD::Gofer and most transports anyway
     skip_ping => 1,
 
+    # we'd like to set locally_* but can't because drivers differ
+
+    # XXX we could set some cache_* though
 });
 
 

@@ -82,19 +82,27 @@ sub add_err {
 sub summary_as_text {
     my $self = shift;
     my ($rv, $err, $errstr, $state) = ($self->{rv}, $self->{err}, $self->{errstr}, $self->{state});
-    my @s = sprintf("rv=%s", (ref $rv) ? "[".neat_list($rv)."]" : $rv);
-    $s[-1] .= sprintf(" err=%s errstr=%s", $err, neat($errstr)) if defined $err;
+    my @s = sprintf("rv=%s", (ref $rv) ? "[".neat_list($rv)."]" : neat($rv));
+    $s[-1] .= sprintf(" err=%s, errstr=%s", $err, neat($errstr))
+        if defined $err;
+    push @s, "last_insert_id=%s", $self->last_insert_id
+        if defined $self->last_insert_id;
     for my $rs (@{$self->sth_resultsets || []}) {
         my ($rowset, $err, $errstr, $state)
             = @{$rs}{qw(rowset err errstr state)};
         my $summary = "rowset: ";
-        if ($rowset || $rs->{NUM_OF_FIELDS} > 0) {
-            $summary .= sprintf "%d rows, %d columns", scalar @{$rowset||[]}, $rs->{NUM_OF_FIELDS}
+        my $NUM_OF_FIELDS = $rs->{NUM_OF_FIELDS} || 0;
+        if ($rowset || $NUM_OF_FIELDS > 0) {
+            $summary .= sprintf "%d rows, %d columns", scalar @{$rowset||[]}, $NUM_OF_FIELDS
         }
         if (defined $err) {
             $summary .= sprintf(", err=%s errstr=%s", $err, neat($errstr))
         }
         push @s, $summary;
+    }
+    for my $w (@{$self->warnings || []}) {
+        chomp $w;
+        push @s, "warning: $w";
     }
     return join("\n\t", @s). "\n";
 }

@@ -46,11 +46,11 @@
         dbi_connect_method
     );
 
-    our $drh = undef;	# holds driver handle once initialised
+    our $drh = undef;    # holds driver handle once initialised
     our $methods_already_installed;
 
     sub driver{
-	return $drh if $drh;
+        return $drh if $drh;
 
         DBI->setup_driver('DBD::Gofer');
 
@@ -59,15 +59,15 @@
             DBD::Gofer::st->install_method('go_sth_method', { O=> 0x0004 }); # IMA_KEEP_ERR
         }
 
-	my($class, $attr) = @_;
-	$class .= "::dr";
-	($drh) = DBI::_new_drh($class, {
-	    'Name' => 'Gofer',
-	    'Version' => $VERSION,
-	    'Attribution' => 'DBD Gofer by Tim Bunce',
+        my($class, $attr) = @_;
+        $class .= "::dr";
+        ($drh) = DBI::_new_drh($class, {
+            'Name' => 'Gofer',
+            'Version' => $VERSION,
+            'Attribution' => 'DBD Gofer by Tim Bunce',
         });
 
-	$drh;
+        $drh;
     }
 
 
@@ -288,27 +288,50 @@
         return (wantarray) ? @$rv : $rv->[0];
     }
 
-    # Methods that should be forwarded
-    # XXX get_info? special sub to lazy-cache individual values
+
+    # Methods that should be forwarded but can be cached
     for my $method (qw(
-        data_sources
-        table_info column_info primary_key_info foreign_key_info statistics_info
-        type_info_all get_info
+        tables table_info column_info primary_key_info foreign_key_info statistics_info
+        data_sources type_info_all get_info
         parse_trace_flags parse_trace_flag
         func
     )) {
+        my $policy_name = "cache_$method";
+        my $sub = sub {
+            my $dbh = shift;
+            # XXX add local (in-handle) cache logic
+            my @rv = (wantarray)
+                ?       ($dbh->go_dbh_method(undef, $method, @_))
+                : scalar $dbh->go_dbh_method(undef, $method, @_);
+            return (wantarray) ? @rv : $rv[0];
+        };
         no strict 'refs';
-        *$method = sub { return shift->go_dbh_method(undef, $method, @_) }
+        *$method = $sub;
     }
 
-    # Methods that should be forwarded if policy says so
+
+    # Methods that can use the DBI defaults for some situations/drivers
     for my $method (qw(
-        quote
-    )) {
+        quote quote_identifier
+    )) {    # XXX keep DBD::Gofer::Policy::Base in sync
+        my $policy_name = "locally_$method";
+        my $super_name  = "SUPER::$method";
+        my $sub = sub {
+            my $dbh = shift;
+            # false:    use remote gofer
+            # 1:        use local DBI default method
+            # code ref: use the code ref
+            my $locally = $dbh->{go_policy}->$policy_name($dbh, @_);
+            if ($locally) {
+                return $locally->($dbh, @_) if ref $locally eq 'CODE';
+                return $dbh->$super_name(@_);
+            }
+            return $dbh->go_dbh_method(undef, $method, @_);
+        };
         no strict 'refs';
-        # XXX add policy checks
-        *$method = sub { return shift->go_dbh_method(undef, $method, @_) }
+        *$method = $sub;
     }
+
 
     # Methods that should always fail
     for my $method (qw(
@@ -318,8 +341,6 @@
         *$method = sub { return shift->set_err(1, "$method not available with DBD::Gofer") }
     }
 
-    # for quote we rely on the default method + type_info_all
-    # for quote_identifier we rely on the default method + get_info
 
     sub do {
         my ($dbh, $sql, $attr, @args) = @_;
@@ -344,7 +365,7 @@
     }
 
     sub FETCH {
-	my ($dbh, $attrib) = @_;
+        my ($dbh, $attrib) = @_;
 
         # forward driver-private attributes
         if ($attrib =~ m/^[a-z]/) { # XXX policy? precache on connect?
@@ -353,17 +374,17 @@
             return $value;
         }
 
-	# else pass up to DBI to handle
-	return $dbh->SUPER::FETCH($attrib);
+        # else pass up to DBI to handle
+        return $dbh->SUPER::FETCH($attrib);
     }
 
     sub STORE {
-	my ($dbh, $attrib, $value) = @_;
+        my ($dbh, $attrib, $value) = @_;
         if ($attrib eq 'AutoCommit') {
             return $dbh->SUPER::STORE($attrib => -901) if $value;
             croak "Can't enable transactions when using DBD::Gofer";
         }
-	return $dbh->SUPER::STORE($attrib => $value)
+        return $dbh->SUPER::STORE($attrib => $value)
             # we handle this attribute locally
             if $dbh_local_store_attrib{$attrib}
             # or it's a private_ (application) attribute
@@ -371,7 +392,7 @@
             # or not yet connected (and being called by connect())
             or not $dbh->FETCH('Active');
 
-	return $dbh->SUPER::STORE($attrib => $value)
+        return $dbh->SUPER::STORE($attrib => $value)
             if $DBD::Gofer::xxh_local_store_attrib_if_same_value{$attrib}
             && do { # return true if values are the same
                 my $crnt = $dbh->FETCH($attrib);
@@ -387,23 +408,21 @@
     }
 
     sub disconnect {
-	my $dbh = shift;
+        my $dbh = shift;
         $dbh->{go_trans} = undef;
-	$dbh->STORE(Active => 0);
+        $dbh->STORE(Active => 0);
     }
 
-    # XXX + prepare_cached ?
-    #
     sub prepare {
-	my ($dbh, $statement, $attr)= @_;
+        my ($dbh, $statement, $attr)= @_;
 
         return $dbh->set_err(1, "Can't prepare when disconnected")
             unless $dbh->FETCH('Active');
 
         my $policy = $attr->{go_policy} || $dbh->{go_policy};
 
-	my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
-	    Statement => $statement,
+        my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
+            Statement => $statement,
             go_prepare_call => [ 'prepare', $statement, $attr ],
             # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
@@ -418,7 +437,15 @@
             $sth->go_sth_method() or return undef;
         }
 
-	return $sth;
+        return $sth;
+    }
+
+    sub prepare_cached {
+        my ($dbh, @args)= @_;
+        my $sth = $dbh->SUPER::prepare_cached(@args)
+            or return undef;
+        $sth->{go_prepare_call}->[0] = 'prepare_cached';
+        return $sth;
     }
 
 }
@@ -519,7 +546,7 @@
 
 
     sub execute {
-	my $sth = shift;
+        my $sth = shift;
         $sth->bind_param($_, $_[$_-1]) for (1..@_);
         push @{ $sth->{go_method_calls} }, [ 'execute' ];
         my $meta = { go_last_insert_id_args => $sth->{go_last_insert_id_args} };
@@ -528,17 +555,17 @@
 
 
     sub more_results {
-	my $sth = shift;
+        my $sth = shift;
 
-	$sth->finish;
+        $sth->finish;
 
-	my $response = $sth->{go_response} or do {
+        my $response = $sth->{go_response} or do {
             # e.g., we haven't sent a request yet (ie prepare then more_results)
             $sth->trace_msg("    No response object present", 3);
             return;
         };
 
-	my $resultset_list = $response->sth_resultsets
+        my $resultset_list = $response->sth_resultsets
             or return $sth->set_err(1, "No sth_resultsets");
 
         my $meta = shift @$resultset_list
@@ -563,28 +590,28 @@
             $sth->STORE(Active => 1) if $rowset;
         }
 
-	return $sth;
+        return $sth;
     }
 
 
     sub fetchrow_arrayref {
-	my ($sth) = @_;
-	my $resultset = $sth->{go_current_rowset} || do {
+        my ($sth) = @_;
+        my $resultset = $sth->{go_current_rowset} || do {
             # should only happen if fetch called after execute failed
             my $rowset_err = $sth->{go_current_rowset_err}
                 || [ 1, 'no result set (did execute fail)' ];
             return $sth->set_err( @$rowset_err );
         };
         return $sth->_set_fbav(shift @$resultset) if @$resultset;
-	$sth->finish;     # no more data so finish
-	return undef;
+        $sth->finish;     # no more data so finish
+        return undef;
     }
     *fetch = \&fetchrow_arrayref; # alias
 
 
     sub fetchall_arrayref {
         my ($sth, $slice, $max_rows) = @_;
-	my $resultset = $sth->{go_current_rowset} || do {
+        my $resultset = $sth->{go_current_rowset} || do {
             # should only happen if fetch called after execute failed
             my $rowset_err = $sth->{go_current_rowset_err}
                 || [ 1, 'no result set (did execute fail)' ];
@@ -593,7 +620,7 @@
         my $mode = ref($slice) || 'ARRAY';
         return $sth->SUPER::fetchall_arrayref($slice, $max_rows)
             if ref($slice) or defined $max_rows;
-	$sth->finish;     # no more data after this so finish
+        $sth->finish;     # no more data after this so finish
         return $resultset;
     }
 
@@ -604,9 +631,9 @@
 
 
     sub STORE {
-	my ($sth, $attrib, $value) = @_;
+        my ($sth, $attrib, $value) = @_;
 
-	return $sth->SUPER::STORE($attrib => $value)
+        return $sth->SUPER::STORE($attrib => $value)
             if $sth_local_store_attrib{$attrib} # handle locally
             # or it's a private_ (application) attribute
             or $attrib =~ /^private_/;
@@ -625,7 +652,7 @@
         # Could just always use go_method_calls I guess.
 
         # do the store locally anyway, just in case
-	$sth->SUPER::STORE($attrib => $value);
+        $sth->SUPER::STORE($attrib => $value);
 
         return $sth->set_err(1, $msg);
     }

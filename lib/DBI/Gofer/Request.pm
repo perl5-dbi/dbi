@@ -57,10 +57,14 @@ sub summary_as_text {
     my @s = '';
 
     my ($dsn, $attr) = @{ $self->connect_args };
-    push @s, "dbh= connect('$dsn', , , { %{$attr||{}} ]} })";
+    push @s, sprintf "dbh= connect('%s', , , { %s })", $dsn, neat_list([ %{$attr||{}} ]);
 
     my ($meth, @args) = @{ $self->dbh_method_call };
     push @s, sprintf "dbh->%s(%s)", $meth, neat_list(\@args);
+
+    if (my $lii_args = $self->dbh_last_insert_id_args) {
+        push @s, sprintf "dbh->last_insert_id(%s)", neat_list($lii_args);
+    }
 
     for my $call (@{ $self->sth_method_calls || [] }) {
         my ($meth, @args) = @$call;

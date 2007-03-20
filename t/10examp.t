@@ -548,15 +548,18 @@ for (my $i = 0;  $i < 300;  $i += 100) {
 }
 
 
-print "Testing \$dbh->func().\n";
-my %tables;
-unless ($dbh->{mx_handle_list}) {
-	%tables = map { $_ =~ /lib/ ? ($_, 1) : () } $dbh->tables();
-	foreach my $t ($dbh->func('lib', 'examplep_tables')) {
-		defined(delete $tables{$t}) or print "Unexpected table: $t\n";
-	}
+SKIP: {
+    skip "test not tested with Multiplex", 1
+        if $dbh->{mx_handle_list};
+    print "Testing \$dbh->func().\n";
+    my %tables;
+    %tables = map { $_ =~ /lib/ ? ($_, 1) : () } $dbh->tables();
+    my @func_tables = $dbh->func('lib', 'examplep_tables');
+    foreach my $t (@func_tables) {
+        defined(delete $tables{$t}) or print "Unexpected table: $t\n";
+    }
+    is(keys(%tables), 0);
 }
-ok((%tables == 0));
 
 $dbh->disconnect;
 ok(!$dbh->{Active});
