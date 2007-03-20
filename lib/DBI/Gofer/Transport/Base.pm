@@ -66,15 +66,22 @@ sub thaw_data {
 
 sub _dump {
     my ($self, $label, $data) = @_;
-    require Data::Dumper;
-    local $Data::Dumper::Indent    = 1;
-    local $Data::Dumper::Terse     = 1;
-    local $Data::Dumper::Useqq     = 1;
-    local $Data::Dumper::Sortkeys  = 1;
-    local $Data::Dumper::Quotekeys = 0;
-    local $Data::Dumper::Deparse   = 0;
-    local $Data::Dumper::Purity    = 0;
-    $self->trace_msg("$label=".Data::Dumper::Dumper($data));
+    if ($self->trace >= 2) {
+        require Data::Dumper;
+        local $Data::Dumper::Indent    = 1;
+        local $Data::Dumper::Terse     = 1;
+        local $Data::Dumper::Useqq     = 1;
+        local $Data::Dumper::Sortkeys  = 1;
+        local $Data::Dumper::Quotekeys = 0;
+        local $Data::Dumper::Deparse   = 0;
+        local $Data::Dumper::Purity    = 0;
+        $self->trace_msg("$label: ".Data::Dumper::Dumper($data));
+        return;
+    }
+    else {
+        my $summary = eval { $data->summary_as_text } || $@ || "no summary available\n";
+        $self->trace_msg("$label: $summary");
+    }
 }
 
 

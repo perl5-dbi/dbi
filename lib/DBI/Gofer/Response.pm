@@ -7,6 +7,10 @@ package DBI::Gofer::Response;
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
+use strict;
+
+use DBI qw(neat neat_list);
+
 use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
@@ -72,6 +76,27 @@ sub add_err {
     ($self->{err}, $self->{errstr}, $self->{state}) = ($r_err, $r_errstr, $r_state);
 
     return undef;
+}
+
+
+sub summary_as_text {
+    my $self = shift;
+    my ($rv, $err, $errstr, $state) = ($self->{rv}, $self->{err}, $self->{errstr}, $self->{state});
+    my @s = sprintf("rv=%s", (ref $rv) ? "[".neat_list($rv)."]" : $rv);
+    $s[-1] .= sprintf(" err=%s errstr=%s", $err, neat($errstr)) if defined $err;
+    for my $rs (@{$self->sth_resultsets || []}) {
+        my ($rowset, $err, $errstr, $state)
+            = @{$rs}{qw(rowset err errstr state)};
+        my $summary = "rowset: ";
+        if ($rowset || $rs->{NUM_OF_FIELDS} > 0) {
+            $summary .= sprintf "%d rows, %d columns", scalar @{$rowset||[]}, $rs->{NUM_OF_FIELDS}
+        }
+        if (defined $err) {
+            $summary .= sprintf(", err=%s errstr=%s", $err, neat($errstr))
+        }
+        push @s, $summary;
+    }
+    return join("\n\t", @s). "\n";
 }
 
 

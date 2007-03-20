@@ -7,6 +7,10 @@ package DBI::Gofer::Request;
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
+use strict;
+
+use DBI qw(neat neat_list);
+
 use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
@@ -46,6 +50,24 @@ sub init_request {
     $self->reset;
     $self->dbh_method_call($method_and_args);
     $self->dbh_wantarray($wantarray);
+}
+
+sub summary_as_text {
+    my $self = shift;
+    my @s = '';
+
+    my ($dsn, $attr) = @{ $self->connect_args };
+    push @s, "dbh= connect('$dsn', , , { %{$attr||{}} ]} })";
+
+    my ($meth, @args) = @{ $self->dbh_method_call };
+    push @s, sprintf "dbh->%s(%s)", $meth, neat_list(\@args);
+
+    for my $call (@{ $self->sth_method_calls || [] }) {
+        my ($meth, @args) = @$call;
+        push @s, sprintf "sth->%s(%s)", $meth, neat_list(\@args);
+    }
+
+    return join("\n\t", @s) . "\n";
 }
 
 1;

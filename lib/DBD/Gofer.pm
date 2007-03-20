@@ -457,7 +457,7 @@
 
         my $request = $sth->{go_request};
         $request->init_request($sth->{go_prepare_call}, undef);
-        $request->sth_method_calls($sth->{go_method_calls})
+        $request->sth_method_calls(delete $sth->{go_method_calls})
             if $sth->{go_method_calls};
         $request->sth_result_attr({}); # (currently) also indicates this is an sth request
 
@@ -478,8 +478,6 @@
         $sth->{go_response} = $response
             or die "No response object returned by $transport";
         $dbh->{go_response} = $response; # mainly for last_insert_id
-
-        delete $sth->{go_method_calls};
 
         if (my $dbh_attributes = $response->dbh_attributes) {
             # XXX we don't STORE here, we just stuff the value into the attribute cache
