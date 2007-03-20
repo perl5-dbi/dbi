@@ -527,14 +527,6 @@
         return $response->rv;
     }
 
-    # sth methods that should always fail, at least for now
-    for my $method (qw(
-        bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch
-    )) {
-        no strict 'refs';
-        *$method = sub { return shift->set_err(1, "$method not available with DBD::Gofer, yet (patches welcome)") }
-    }
-
 
     sub bind_param {
         my ($sth, $param, $value, $attr) = @_;
@@ -787,11 +779,6 @@ But that's rarely needed anyway.
 Some drivers provide sth attributes that relate to the row that was just
 fetched (e.g., Sybase and syb_result_type). These aren't supported.
 
-=head2 Array Methods are currently not supported
-
-The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
-are not currently supported. Patches welcome, of course.
-
 =head1 CAVEATS
 
 A few important things to keep in mind when using DBD::Gofer:
@@ -857,6 +844,12 @@ methods that return meaningful values while also reporting an error.
 =head2 Subclassing only applies to client-side
 
 The RootClass and DbTypeSubclass attributes are not passed to the Gofer server.
+
+=head2 Array methods are not fully supported
+
+The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
+use the DBI's default fallback behaviour which simply executes the statement once for each tuple.
+So they work, but offer no speed up.
 
 =head1 TRANSPORTS
 
