@@ -423,7 +423,10 @@
 
         my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
             Statement => $statement,
-            go_prepare_call => [ 'prepare', $statement, $attr ],
+            go_prepare_call => [
+                $attr->{go_prepare} || $dbh->{go_prepare} || 'prepare',
+                $statement, $attr
+            ],
             # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
             go_trans => $dbh->{go_trans},
@@ -441,11 +444,11 @@
     }
 
     sub prepare_cached {
-        my ($dbh, @args)= @_;
-        my $sth = $dbh->SUPER::prepare_cached(@args)
-            or return undef;
-        $sth->{go_prepare_call}->[0] = 'prepare_cached';
-        return $sth;
+        my ($dbh, $sql, $attr, $if_active)= @_;
+        return $dbh->SUPER::prepare_cached($sql, {
+            ($attr ? %$attr : ()),
+            go_prepare => 'prepare_cached',
+        }, $if_active);
     }
 
 }
@@ -649,6 +652,18 @@
         return $sth->set_err(1, $msg);
     }
 
+    # sub bind_param_array
+    # we use DBI's default, which sets $sth->{ParamArrays}{$param} = $value
+    # and calls bind_param($param, undef, $attr) if $attr.
+
+    sub execute_array {
+        my $sth = shift;
+        my $attr = shift;
+        $sth->bind_param_array($_, $_[$_-1]) for (1..@_);
+        push @{ $sth->{go_method_calls} }, [ 'execute_array', $attr ];
+        return $sth->go_sth_method($attr);
+    }
+
 }
 
 1;
@@ -737,7 +752,7 @@ Not yet implemented, but the single request-response architecture lends itself t
 
 =head3 Fewer Network Round-trips
 
-DBD::Gofer sends as few requests as possible.
+DBD::Gofer sends as few requests as possible (dependent on the policy being used).
 
 =head3 Thin Clients / Unsupported Platforms
 
@@ -779,7 +794,7 @@ But that's rarely needed anyway.
 Some drivers provide sth attributes that relate to the row that was just
 fetched (e.g., Sybase and syb_result_type). These aren't supported.
 
-=head1 CAVEATS
+=head1 GENERAL CAVEATS
 
 A few important things to keep in mind when using DBD::Gofer:
 
@@ -792,7 +807,7 @@ such as temporary tables, being available from one request to the next.
 This is an easy trap to fall into and a difficult one to debug.
 The pipeone transport may help as it forces a new connection for each request.
 (It is very slow though, so I plan to add a way for the stream driver to use
-connect instead of connect cache to achive the same effect much more efficiently.)
+connect instead of connect_cache to achive the same effect much more efficiently.)
 
 =head2 Driver-private Database Handle Attributes
 
@@ -811,23 +826,6 @@ implemented the private_attribute_info() method (added in DBI 1.54).
 Multiple resultsets are supported only if the driver supports the more_results() method
 (an exception is made for DBD::Sybase).
 
-=head2 Use of last_insert_id requires a minor code change
-
-To enable use of last_insert_id you need to indicate to DBD::Gofer that you'd
-like to use it.  You do that my adding a C<go_last_insert_id_args> attribute to
-the do() or prepare() method calls. For example:
-
-    $dbh->do($sql, { go_last_insert_id_args => [...] });
-
-or
-
-    $sth = $dbh->prepare($sql, { go_last_insert_id_args => [...] });
-
-The array reference should contains the args that you want passed to the
-last_insert_id() method.
-
-XXX allow $dbh->{go_last_insert_id_args} = [] to enable it by default?
-
 =head2 Statement activity that also updates dbh attributes
 
 Some drivers may update one or more dbh attributes after performing activity on
@@ -845,11 +843,32 @@ methods that return meaningful values while also reporting an error.
 
 The RootClass and DbTypeSubclass attributes are not passed to the Gofer server.
 
-=head2 Array methods are not fully supported
+=head1 CAVEATS FOR SPECIFIC METHODS
 
-The array methods (bind_param_inout bind_param_array bind_param_inout_array execute_array execute_for_fetch)
-use the DBI's default fallback behaviour which simply executes the statement once for each tuple.
-So they work, but offer no speed up.
+=head2 last_insert_id
+
+To enable use of last_insert_id you need to indicate to DBD::Gofer that you'd
+like to use it.  You do that my adding a C<go_last_insert_id_args> attribute to
+the do() or prepare() method calls. For example:
+
+    $dbh->do($sql, { go_last_insert_id_args => [...] });
+
+or
+
+    $sth = $dbh->prepare($sql, { go_last_insert_id_args => [...] });
+
+The array reference should contains the args that you want passed to the
+last_insert_id() method.
+
+=head2 execute_for_fetch
+
+The array methods bind_param_array() and execute_array() are supported.
+When execute_array() is called the data is serialized and executed in a single
+round-trip to the Gofer server.
+
+The execute_for_fetch() method currently isn't optimised, it uses the DBI
+fallback behaviour of executing each tuple individually.
+(It could be implemented as a wrapper for execute_array() - patches welcome.)
 
 =head1 TRANSPORTS
 
@@ -994,7 +1013,7 @@ of the Gofer approach - as documented avove.
 
 =head1 TODO
 
-This is just a random brain dump...
+This is just a random brain dump... (There's more in Changes)
 
 Document policy mechanism
 
@@ -1003,8 +1022,6 @@ Add mechanism for transports to list config params and for Gofer to apply any th
 Driver-private sth attributes - set via prepare() - change DBI spec
 
 Caching of get_info values
-
-prepare vs prepare_cached
 
 add hooks into transport base class for checking & updating a result set cache
    ie via a standard cache interface such as:
@@ -1026,9 +1043,7 @@ Would make stream transport (ie ssh) more useful to more people.
 
 Make sth_result_attr more like dbh_attributes (using '*' etc)
 
-Add @val = FETCH_many(@names) to DBI in C and use in Gofer/Execute
-
-Add ($err, $errstr, $state) = $h->get_err
+Add @val = FETCH_many(@names) to DBI in C and use in Gofer/Execute?
 
 Implement DBI::st::TIEHASH etc in C.
 

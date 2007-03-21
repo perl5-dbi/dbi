@@ -113,7 +113,7 @@ sub _connect {
 
     # just a quick hack for now
     my $stats = $self->{stats};
-    if (++$stats->{requests_served} % 1000 == 0) { # XXX config
+    if (++$stats->{_requests_served} % 1000 == 0) { # XXX config
         # discard CachedKids from time to time
         my %drivers = DBI->installed_drivers();
         while ( my ($driver, $drh) = each %drivers ) {
@@ -209,9 +209,11 @@ sub new_response_with_err {
 sub execute_request {
     my ($self, $request) = @_;
     # should never throw an exception
+
+    DBI->trace_msg("-----> execute_request\n");
+
     my @warnings;
     local $SIG{__WARN__} = sub { push @warnings, @_; warn @_ if $local_log };
-    DBI->trace_msg("-----> execute_request\n");
 
     my $response = eval {
 
@@ -223,8 +225,7 @@ sub execute_request {
             ? $self->execute_sth_request($request)
             : $self->execute_dbh_request($request);
     };
-    $response = $self->new_response_with_err(undef, $@)
-        if $@;
+    $response ||= $self->new_response_with_err(undef, $@);
 
     $response->warnings(\@warnings) if @warnings;
     DBI->trace_msg("<----- execute_request\n");
@@ -423,6 +424,11 @@ sub fetch_result_set {
 
 
 1;
+__END__
+
+TODO
+
+Pruning of cached dbh and sth
 
 =head1 AUTHOR AND COPYRIGHT
 

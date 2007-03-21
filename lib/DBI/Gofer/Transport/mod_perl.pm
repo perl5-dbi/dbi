@@ -316,6 +316,11 @@ configurations overriding those in earlier ones. In this way a small number of
 configurations can be mix-n-matched to create specific configurations for
 specific location urls.
 
+=head1 Apache::Status
+
+DBI::Gofer::Transport::mod_perl installs extra menu items into the Apache::Status
+menu, so long as the Apache::Status is loaded first.
+
 =head1 AUTHOR AND COPYRIGHT
 
 The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
