@@ -716,7 +716,7 @@ sub FETCH {
 sub STORE {
     my ($h,$key,$value) = @_;
     if ($key eq 'AutoCommit') {
-	croak("DBD driver has not implemented the AutoCommit attribute")
+        Carp::croak("DBD driver has not implemented the AutoCommit attribute")
 	    unless $value == -900 || $value == -901;
 	$value = ($value == -901);
     }
