@@ -242,7 +242,7 @@ sub execute_dbh_request {
         $dbh = $self->_connect($request);
         my $args = $request->dbh_method_call; # [ 'method_name', @args ]
         my $meth = shift @$args;
-        $stats->{dbh_method_calls}->{$meth}++;
+        $stats->{method_calls_dbh}->{$meth}++;
         my @rv = ($request->dbh_wantarray)
             ?        $dbh->$meth(@$args)
             : scalar $dbh->$meth(@$args);
@@ -269,7 +269,7 @@ sub execute_dbh_request {
     }
 
     if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
-        $stats->{dbh_method_calls}->{last_insert_id}++;
+        $stats->{method_calls_dbh}->{last_insert_id}++;
         my $id = $dbh->last_insert_id( @$lid_args );
         $response->last_insert_id( $id );
     }
@@ -322,7 +322,7 @@ sub execute_sth_request {
 
         my $args = $request->dbh_method_call; # [ 'method_name', @args ]
         my $meth = shift @$args;
-        $stats->{sth_method_calls}->{$meth}++;
+        $stats->{method_calls_sth}->{$meth}++;
         $sth = $dbh->$meth(@$args);
         my $last = '(sth)'; # a true value (don't try to return actual sth)
 
@@ -330,13 +330,13 @@ sub execute_sth_request {
         if (my $calls = $request->sth_method_calls) {
             for my $meth_call (@$calls) {
                 my $method = shift @$meth_call;
-                $stats->{sth_method_calls}->{$method}++;
+                $stats->{method_calls_sth}->{$method}++;
                 $last = $sth->$method(@$meth_call);
             }
         }
 
         if (my $lid_args = $request->dbh_last_insert_id_args) {
-            $stats->{sth_method_calls}->{last_insert_id}++;
+            $stats->{method_calls_sth}->{last_insert_id}++;
             $last_insert_id = $dbh->last_insert_id( @$lid_args );
         }
 
@@ -384,12 +384,21 @@ sub gather_sth_resultsets {
                 for keys %$sth_result_attr;
         }
 
+        my $row_count = 0;
         my $rs_list = [];
         do {
             my $rs = $self->fetch_result_set($sth, $sth_attr);
             push @$rs_list, $rs;
+            if (my $rows = $rs->{rowset}) {
+                $row_count += @$rows;
+            }
         } while $sth->more_results
              || $sth->{syb_more_results};
+
+        my $stats = $self->{stats};
+        $stats->{rows_returned_total} += $row_count;
+        $stats->{rows_returned_max} = $row_count
+            if $row_count > ($stats->{rows_returned_max}||0);
 
         $rs_list;
     };

@@ -67,11 +67,17 @@ sub handler : method {
 
         my $frozen_response = $transport->freeze_data($response);
         print $frozen_response;
+
+        my $stats = $executor->{stats};
+        $stats->{frozen_request_max_bytes} = length($frozen_request)
+            if length($frozen_request) > ($stats->{frozen_request_max_bytes}||0);
+        $stats->{frozen_response_max_bytes} = length($frozen_response)
+            if length($frozen_response) > ($stats->{frozen_response_max_bytes}||0);
     };
     if ($@) {
         chomp $@;
         warn $@;
-        $r->custom_response(SERVER_ERROR, "$@ version $VERSION (DBI $DBI::VERSION) on $hostname");
+        $r->custom_response(SERVER_ERROR, "$@, version $VERSION (DBI $DBI::VERSION) on $hostname");
         return SERVER_ERROR;
     }
 
