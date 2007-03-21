@@ -70,6 +70,7 @@ sub handler : method {
     };
     if ($@) {
         chomp $@;
+        warn $@;
         $r->custom_response(SERVER_ERROR, "$@ version $VERSION (DBI $DBI::VERSION) on $hostname");
         return SERVER_ERROR;
     }

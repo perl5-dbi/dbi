@@ -18,6 +18,8 @@ use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
+our $local_log = $ENV{DBI_GOFER_TRACE} || $ENV{DBI_GOFER_LOCAL_LOG};
+
 __PACKAGE__->mk_accessors(qw(
     check_connect
     default_connect_dsn
@@ -153,8 +155,8 @@ sub _connect {
         %$attr,
 
         # force some attributes the way we'd like them
-        PrintWarn  => 0,
-        PrintError => 0,
+        PrintWarn  => $local_log,
+        PrintError => $local_log,
 
         # the configured default attributes, if any
         %{ $self->forced_connect_attributes },
@@ -166,6 +168,7 @@ sub _connect {
         # because that causes subtle issues if in the same process (ie transport=null)
         dbi_go_execute_unique => __PACKAGE__,
     });
+    $dbh->{ShowErrorStatement} = 1 if $local_log;
     #$dbh->trace(0);
     return $dbh;
 }
@@ -207,7 +210,7 @@ sub execute_request {
     my ($self, $request) = @_;
     # should never throw an exception
     my @warnings;
-    local $SIG{__WARN__} = sub { push @warnings, @_ };
+    local $SIG{__WARN__} = sub { push @warnings, @_; warn @_ if $local_log };
     DBI->trace_msg("-----> execute_request\n");
 
     my $response = eval {
