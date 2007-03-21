@@ -3,7 +3,7 @@ use strict;
 use Carp;
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
 
-# heavily cut-down (but compatible) version of Class::Accessor::Fast to avoid the dependency
+# based (ever more loosly) on Class::Accessor::Fast
 
 sub new {
     my($proto, $fields) = @_;
@@ -32,9 +32,14 @@ sub _mk_accessors {
     no strict 'refs';
     foreach my $field (@fields) {
         my $accessor = $self->$maker($field);
-        *{$class."\:\:$field"}  = $accessor
+        *{$class."\:\:$field"} = $accessor
             unless defined &{$class."\:\:$field"};
     }
+    #my $hash_ref = \%{$class."\:\:_accessors_hash};
+    #$hash_ref->{$_}++ for @fields;
+    # XXX also copy down _accessors_hash of base class(es)
+    # so one in this class is complete
+    return;
 }
 
 sub make_accessor {

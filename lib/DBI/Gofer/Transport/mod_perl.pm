@@ -33,16 +33,23 @@ my $transport = __PACKAGE__->new();
 my %executor_configs = ( default => { } );
 my %executor_cache;
 
-
+my %apache_status_menu_items = (
+    DBI_handles => [ 'DBI Handles', \&apache_status_dbi_handles ],
+    DBI_gofer   => [ 'DBI Gofer',   \&apache_status_dbi_gofer ],
+);
+my $apache_status_class;
 if (MP2) {
-    if (Apache2::Module::loaded('Apache2::Status')) {
-        Apache2::Status->menu_item('DBI_Gofer' => 'DBI Gofer connections', \&gofer_status_function);
-    }
+    $apache_status_class = "Apache2::Status" if Apache2::Module::loaded('Apache2::Status');
 }
 elsif ($INC{'Apache.pm'}                       # is Apache.pm loaded?
        and Apache->can('module')               # really?
        and Apache->module('Apache::Status')) { # Apache::Status too?
-       Apache::Status->menu_item('DBI_Gofer' => 'DBI Gofer connections', \&gofer_status_function);
+       $apache_status_class = "Apache::Status";
+}
+if ($apache_status_class) {
+    while ( my ($url, $menu_item) = each %apache_status_menu_items ) {
+        $apache_status_class->menu_item($url => @$menu_item);
+    }
 }
 
 
@@ -129,9 +136,10 @@ sub configuration {           # one-time setup from httpd.conf
 }
 
 
+# --------------------------------------------------------------------------------
 # XXX --- these should be moved into a separate module (Apache::Status::DBI?)
 # menu item for Apache::Status
-sub gofer_status_function {
+sub apache_status_dbi_handles {
     my($r, $q) = @_;
     my @s = ("<pre>",
         "<b>DBI $DBI::VERSION - Drivers, Connections and Statements</b><p>\n",
@@ -148,14 +156,14 @@ sub gofer_status_function {
             scalar @children, scalar keys %{$h->{CachedKids}||{}}, $h->{ActiveKids};
 
         @children = sort { ($a->{Name}||"$a") cmp ($b->{Name}||"$b") } @children;
-        push @s, show_dbi_handle($_, 1) for @children;
+        push @s, _apache_status_dbi_handle($_, 1) for @children;
     }
 
     push @s, "<hr></pre>";
     return \@s;
 }
 
-sub show_dbi_handle {
+sub _apache_status_dbi_handle {
     my ($h, $level) = @_;
     my $pad = "    " x $level;
     my $type = $h->{Type};
@@ -205,16 +213,33 @@ sub show_dbi_handle {
         if @children;
     push @s, "\n";
 
-    push @s, map { show_dbi_handle($_, $level + 1) } @children;
+    push @s, map { _apache_status_dbi_handle($_, $level + 1) } @children;
 
     return @s;
+}
+# --------------------------------------------------------------------------------
+
+
+sub apache_status_dbi_gofer {
+    my($r, $q) = @_;
+    my @s = ("<pre>",
+        "<b>DBI::Gofer::Transport::mod_perl $VERSION</b><p>\n",
+    );
+    require Data::Dumper;
+    local $Data::Dumper::Indent    = 1;
+    local $Data::Dumper::Terse     = 1;
+    local $Data::Dumper::Useqq     = 1;
+    local $Data::Dumper::Sortkeys  = 1;
+    local $Data::Dumper::Quotekeys = 0;
+    local $Data::Dumper::Deparse   = 0;
+    local $Data::Dumper::Purity    = 0;
+    push @s, escape_html( Data::Dumper::Dumper(\%executor_cache) );
+    return \@s;
 }
 
 1;
 
 __END__
-
-also need a CGI/FastCGI transport
 
 =head1 NAME
     

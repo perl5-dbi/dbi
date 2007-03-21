@@ -24,7 +24,7 @@ __PACKAGE__->mk_accessors(qw(
     forced_connect_dsn
     default_connect_attributes
     forced_connect_attributes
-    requests_served_count
+    stats
 )); 
 
 
@@ -32,6 +32,7 @@ sub new {
     my ($self, $args) = @_;
     $args->{default_connect_attributes} ||= {};
     $args->{forced_connect_attributes}  ||= {};
+    $args->{stats} ||= {};
     return $self->SUPER::new($args);
 }
 
@@ -109,7 +110,8 @@ sub _connect {
     my ($self, $request) = @_;
 
     # just a quick hack for now
-    if (++$self->{request_count} % 1000 == 0) { # XXX config
+    my $stats = $self->{stats};
+    if (++$stats->{requests_served} % 1000 == 0) { # XXX config
         # discard CachedKids from time to time
         my %drivers = DBI->installed_drivers();
         while ( my ($driver, $drh) = each %drivers ) {
@@ -229,12 +231,14 @@ sub execute_request {
 
 sub execute_dbh_request {
     my ($self, $request) = @_;
+    my $stats = $self->{stats};
 
     my $dbh;
     my $rv_ref = eval {
         $dbh = $self->_connect($request);
         my $args = $request->dbh_method_call; # [ 'method_name', @args ]
         my $meth = shift @$args;
+        $stats->{dbh_method_calls}->{$meth}++;
         my @rv = ($request->dbh_wantarray)
             ?        $dbh->$meth(@$args)
             : scalar $dbh->$meth(@$args);
@@ -261,6 +265,7 @@ sub execute_dbh_request {
     }
 
     if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
+        $stats->{dbh_method_calls}->{last_insert_id}++;
         my $id = $dbh->last_insert_id( @$lid_args );
         $response->last_insert_id( $id );
     }
@@ -306,12 +311,14 @@ sub execute_sth_request {
     my $dbh;
     my $sth;
     my $last_insert_id;
+    my $stats = $self->{stats};
 
     my $rv = eval {
         $dbh = $self->_connect($request);
 
         my $args = $request->dbh_method_call; # [ 'method_name', @args ]
         my $meth = shift @$args;
+        $stats->{sth_method_calls}->{$meth}++;
         $sth = $dbh->$meth(@$args);
         my $last = '(sth)'; # a true value (don't try to return actual sth)
 
@@ -319,11 +326,13 @@ sub execute_sth_request {
         if (my $calls = $request->sth_method_calls) {
             for my $meth_call (@$calls) {
                 my $method = shift @$meth_call;
+                $stats->{sth_method_calls}->{$method}++;
                 $last = $sth->$method(@$meth_call);
             }
         }
 
         if (my $lid_args = $request->dbh_last_insert_id_args) {
+            $stats->{sth_method_calls}->{last_insert_id}++;
             $last_insert_id = $dbh->last_insert_id( @$lid_args );
         }
 
