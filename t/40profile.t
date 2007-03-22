@@ -183,15 +183,17 @@ ok($1 >= $count);
 
 # -----------------------------------------------------------------------------------
 
-# try statement and method name path
+# try statement and method name and reference-to-scalar path
+my $by_reference = 'foo';
 $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', {
     RaiseError => 1,
-    Profile => { Path => [ '{Username}', '!Statement', 'foo', '!MethodName' ] }
+    Profile => { Path => [ '{Username}', '!Statement', \$by_reference, '!MethodName' ] }
 });
 $sql = "select name from .";
 $sth = $dbh->prepare($sql);
 $sth->execute();
 $sth->fetchrow_hashref;
+$by_reference = 'bar';
 $sth->finish;
 undef $sth; # DESTROY
 
@@ -199,8 +201,9 @@ $tmp = sanitize_tree($dbh->{Profile});
 ok $tmp->{Data}{usrnam}{""}{foo}{STORE};
 $tmp->{Data}{usrnam}{""}{foo} = {};
 # make test insentitive to number of local files
+#warn Dumper($tmp);
 is_deeply $tmp, bless {
-    'Path' => [ '{Username}', '!Statement', 'foo', '!MethodName' ],
+    'Path' => [ '{Username}', '!Statement', \$by_reference, '!MethodName' ],
     'Data' => {
         '' => { # because Profile was enabled by DBI just before Username was set
             '' => {
@@ -217,14 +220,17 @@ is_deeply $tmp, bless {
 		    'foo' => {
 			'execute' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
+		    },
+		    'bar' => {
+			'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
 			'finish' => [ 1, 0, 0, 0, 0, 0, 0 ],
 		    },
 	    },
 	},
     },
 } => 'DBI::Profile';
+
 
 $dbh->{Profile}->{Path} = [ '!File', '!File2', '!Caller', '!Caller2' ];
 $dbh->{Profile}->{Data} = undef;

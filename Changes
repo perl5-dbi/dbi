@@ -39,6 +39,8 @@ and prepends them to any error message.
 
   Added support for install_methods to DBD::Gofer.
   Added goferperf.pl utility (doesn't get installed).
+  Added support for DBI Profile Path to contain refs to scalars
+    which will be de-ref'd for each profile sample.
 
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 

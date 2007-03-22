@@ -97,7 +97,7 @@ For example a value of 'C<!MethodName>' in the Path causes the corresponding
 entry in the Data to be the name of the method that was called.
 For example, if the Path was:
 
-  [ 'foo', '!MethodName', 'selectall_arrayref' ]
+  [ 'foo', '!MethodName', 'bar' ]
 
 and the selectall_arrayref() method was called, then the profile sample data
 for that call will be merged into the tree at:
@@ -312,6 +312,12 @@ doesn't use placeholders. See L<DBI::ProfileSubs> for more information.
 A string enclosed in braces, such as 'C<{Username}>', specifies that the current
 value of the corresponding database handle attribute should be used at that
 point in the Path.
+
+=item Reference to a Scalar
+
+Specifies that the current value of the referenced scalar be used at that point
+in the Path.  This provides an efficient way to get 'contextual' values into
+your profile.
 
 =item Other Values
 

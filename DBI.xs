@@ -2426,6 +2426,11 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 if (items == -2) /* this profile data was vetoed */
                     return;
 	    }
+            else if (SvROK(pathsv)) {
+                /* only meant for refs to scalars currently */
+                const char *p = SvPV_nolen(SvRV(pathsv));
+                dest_node = _profile_next_node(dest_node, p);
+            }
 	    else if (SvOK(pathsv)) {
 		STRLEN len;
                 const char *p = SvPV(pathsv,len);
