@@ -931,6 +931,8 @@ driver to use and one for the remote 'server' end. They have very similar names:
 
 Sometimes the transports on the DBD and DBI sides may have different names. For
 example DBD::Gofer::Transport::http is typically used with DBI::Gofer::Transport::mod_perl
+(DBD::Gofer::Transport::http and DBI::Gofer::Transport::mod_perl modules are
+part of the GoferTransport-http distribution).
 
 =head2 Bundled Transports
 
@@ -981,16 +983,13 @@ maximum time it can take to send a requestor receive a response.
 
 See L</DBI_AUTOPROXY> below for an example.
 
+=head2 Other Transports
+
 =head3 http
 
-The http driver uses the http protocol to send Gofer requests and receive replies.
+See the GoferTransport-http distribution on CPAN.
 
-It's also very likely that this transport will support safe timeouts in future. XXX
-
-The DBI::Gofer::Transport::mod_perl module implements the corresponding server-side
-transport.
-
-=head2 Other Transports
+=head3 Gearman
 
 I know Ask Bjørn Hansen has implemented a transport for the gearman distributed
 job system. (Not yet on CPAN.)
