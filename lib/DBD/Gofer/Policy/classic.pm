@@ -14,7 +14,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 use base qw(DBD::Gofer::Policy::Base);
 
-__PACKAGE__->create_default_policy_subs({
+__PACKAGE__->create_policy_subs({
 
     # don't skip the connect check since that also sets dbh attributes
     # although this makes connect more expensive, that's partly offset
@@ -24,12 +24,13 @@ __PACKAGE__->create_default_policy_subs({
     # most code doesn't rely on sth attributes being set after prepare
     skip_prepare_check => 1,
 
-    # ping is almost meaningless for DBD::Gofer and most transports anyway
+    # ping is not important for DBD::Gofer and most transports
     skip_ping => 1,
 
     # we'd like to set locally_* but can't because drivers differ
 
-    # XXX we could set some cache_* though
+    # get_info results usually don't change
+    cache_get_info => 1,
 });
 
 

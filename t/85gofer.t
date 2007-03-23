@@ -165,7 +165,31 @@ sub run_tests {
         $durations{insert}{"$transport+$policy_name"} = time() - $start;
     }
 
+    print "Testing go_request_count and caching of simple values\n";
+    my $go_request_count = $dbh->{go_request_count};
+    ok $go_request_count;
+
     ok $dbh->do("DROP TABLE fruit");
+    is $go_request_count + 1, $dbh->{go_request_count};
+
+    $dbh->data_sources({ foo_bar => $go_request_count });
+    is $go_request_count + 2, $dbh->{go_request_count};
+    $dbh->data_sources({ foo_bar => $go_request_count }); # should use cache
+    is $go_request_count + 2, $dbh->{go_request_count};
+    @_=$dbh->data_sources({ foo_bar => $go_request_count }); # no cached yet due to wantarray
+    is $go_request_count + 3, $dbh->{go_request_count};
+
+SKIP: {
+    skip "caching of metadata methods returning sth not yet implemented", 2;
+    print "Testing go_request_count and caching of sth\n";
+    $go_request_count = $dbh->{go_request_count};
+    my $sth_ti1 = $dbh->table_info("%", "%", "%", "TABLE", { foo_bar => $go_request_count });
+    is $go_request_count + 1, $dbh->{go_request_count};
+
+    my $sth_ti2 = $dbh->table_info("%", "%", "%", "TABLE", { foo_bar => $go_request_count }); # should use cache
+    is $go_request_count + 1, $dbh->{go_request_count};
+}
+
     ok $dbh->disconnect;
 }
 

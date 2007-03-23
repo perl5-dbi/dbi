@@ -22,13 +22,25 @@ my %policy_defaults = (
     dbh_attribute_list => ['*'],
     locally_quote => 0,
     locally_quote_identifier => 0,
+    cache_parse_trace_flags => 1,
+    cache_parse_trace_flag => 1,
+    cache_data_sources => 1,
+    cache_type_info_all => 1,
+    cache_tables => 0,
+    cache_table_info => 0,
+    cache_column_info => 0,
+    cache_primary_key_info => 0,
+    cache_foreign_key_info => 0,
+    cache_statistics_info => 0,
+    cache_get_info => 0,
+    cache_func => 0,
 );
 
 my $base_policy_file = $INC{"DBD/Gofer/Policy/Base.pm"};
 
-__PACKAGE__->create_default_policy_subs(\%policy_defaults);
+__PACKAGE__->create_policy_subs(\%policy_defaults);
 
-sub create_default_policy_subs {
+sub create_policy_subs {
     my ($class, $policy_defaults) = @_;
 
     while ( my ($policy_name, $policy_default) = each %$policy_defaults) { 

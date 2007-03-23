@@ -57,6 +57,7 @@
         unless ($methods_already_installed++) {
             DBD::Gofer::db->install_method('go_dbh_method', { O=> 0x0004 }); # IMA_KEEP_ERR
             DBD::Gofer::st->install_method('go_sth_method', { O=> 0x0004 }); # IMA_KEEP_ERR
+            DBD::Gofer::st->install_method('go_clone_sth',  { O=> 0x0004 }); # IMA_KEEP_ERR
         }
 
         my($class, $attr) = @_;
@@ -162,7 +163,7 @@
             unless $transport_class =~ /::/;
         _load_class($transport_class)
             or return $drh->set_err(1, "Can't load $transport_class: $@");
-        my $go_trans = eval { $transport_class->new(\%go_attr) }
+        my $go_transport = eval { $transport_class->new(\%go_attr) }
             or return $drh->set_err(1, "Can't instanciate $transport_class: $@");
 
         my $request_class = "DBI::Gofer::Request";
@@ -185,7 +186,7 @@
         my ($dbh, $dbh_inner) = DBI::_new_dbh($drh, {
             'Name' => $dsn,
             'USER' => $user,
-            go_trans => $go_trans,
+            go_transport => $go_transport,
             go_request => $go_request,
             go_policy => $go_policy,
         });
@@ -247,7 +248,7 @@
         $request->dbh_last_insert_id_args($meta->{go_last_insert_id_args})
             if $meta->{go_last_insert_id_args};
 
-        my $transport = $dbh->{go_trans}
+        my $transport = $dbh->{go_transport}
             or return $dbh->set_err(1, "Not connected (no transport)");
 
         my $response = $transport->transmit_request($request);
@@ -299,11 +300,44 @@
         my $policy_name = "cache_$method";
         my $sub = sub {
             my $dbh = shift;
-            # XXX add local (in-handle) cache logic
-            my @rv = (wantarray)
+            my $rv;
+
+            my $cache;
+            my $cache_key;
+            if (my $cache_it = $dbh->{go_policy}->$policy_name(undef, $dbh, @_)) {
+                $cache = $dbh->{go_cache} ||= {};
+                $cache_key = sprintf "%s_wa%d(%s)", $policy_name, wantarray||0,
+                    join(",\t", map { # XXX basic but sufficient for now
+                         !ref($_)            ? DBI::neat($_,1e6)
+                        : ref($_) eq 'ARRAY' ? DBI::neat_list($_,1e6,",\001")
+                        : ref($_) eq 'HASH'  ? do { my @k = sort keys %$_; DBI::neat_list([@k,@{$_}{@k}],1e6,",\002") }
+                        : do { warn "unhandled argument type ($_)"; $_ }
+                    } @_);
+                if ($rv = $cache->{$cache_key}) {
+                    $dbh->trace_msg("$method(@_) returning previously cached value ($cache_key)\n",4);
+                    my @cache_rv = @$rv;
+                    # if it's an sth we have to clone it
+                    $cache_rv[0] = $cache_rv[0]->go_clone_sth if UNIVERSAL::isa($cache_rv[0],'DBI::st');
+                    return (wantarray) ? @cache_rv : $cache_rv[0];
+                }
+            }
+
+            $rv = [ (wantarray)
                 ?       ($dbh->go_dbh_method(undef, $method, @_))
-                : scalar $dbh->go_dbh_method(undef, $method, @_);
-            return (wantarray) ? @rv : $rv[0];
+                : scalar $dbh->go_dbh_method(undef, $method, @_)
+            ];
+
+            if ($cache) {
+                $dbh->trace_msg("$method(@_) caching return value ($cache_key)\n",4);
+                my @cache_rv = @$rv;
+                # if it's an sth we have to clone it
+                #$cache_rv[0] = $cache_rv[0]->go_clone_sth
+                #   if UNIVERSAL::isa($cache_rv[0],'DBI::st');
+                $cache->{$cache_key} = \@cache_rv
+                    unless UNIVERSAL::isa($cache_rv[0],'DBI::st'); # XXX cloning sth not yet done
+            }
+
+            return (wantarray) ? @$rv : $rv->[0];
         };
         no strict 'refs';
         *$method = $sub;
@@ -326,7 +360,7 @@
                 return $locally->($dbh, @_) if ref $locally eq 'CODE';
                 return $dbh->$super_name(@_);
             }
-            return $dbh->go_dbh_method(undef, $method, @_);
+            return $dbh->go_dbh_method(undef, $method, @_); # propagate context
         };
         no strict 'refs';
         *$method = $sub;
@@ -367,8 +401,9 @@
     sub FETCH {
         my ($dbh, $attrib) = @_;
 
-        # forward driver-private attributes
-        if ($attrib =~ m/^[a-z]/) { # XXX policy? precache on connect?
+        # forward driver-private attributes (except ours)
+        # XXX policy? precache on connect?
+        if ($attrib =~ m/^[a-z]/ && $attrib !~ /^go_/) {
             my $value = $dbh->go_dbh_method(undef, 'FETCH', $attrib);
             $dbh->{$attrib} = $value;
             return $value;
@@ -381,8 +416,8 @@
     sub STORE {
         my ($dbh, $attrib, $value) = @_;
         if ($attrib eq 'AutoCommit') {
-            return $dbh->SUPER::STORE($attrib => -901) if $value;
-            croak "Can't enable transactions when using DBD::Gofer";
+            croak "Can't enable transactions when using DBD::Gofer" if !$value;
+            return $dbh->SUPER::STORE($attrib => ($value) ? -901 : -900);
         }
         return $dbh->SUPER::STORE($attrib => $value)
             # we handle this attribute locally
@@ -409,7 +444,7 @@
 
     sub disconnect {
         my $dbh = shift;
-        $dbh->{go_trans} = undef;
+        $dbh->{go_transport} = undef;
         $dbh->STORE(Active => 0);
     }
 
@@ -429,7 +464,7 @@
             ],
             # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
-            go_trans => $dbh->{go_trans},
+            go_transport => $dbh->{go_transport},
             go_policy => $policy,
             go_last_insert_id_args => $attr->{go_last_insert_id_args},
         });
@@ -500,7 +535,7 @@
             if $dbh_attribute_update eq 'every'
             or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
 
-        my $transport = $sth->{go_trans}
+        my $transport = $sth->{go_transport}
             or return $sth->set_err(1, "Not connected (no transport)");
 
         my $response = $transport->transmit_request($request);
@@ -586,6 +621,19 @@
         }
 
         return $sth;
+    }
+
+
+    sub go_clone_sth {
+        my ($sth1) = @_;
+        # clone an (un-fetched-from) sth - effectively undoes the initial more_results
+        # not 100% so just for use in caching returned sth e.g. table_info
+        my $sth2 = $sth1->{Database}->prepare($sth1->{Statement}, { go_skip_prepare_check => 1 });
+        $sth2->STORE($_, $sth1->{$_}) for qw(NUM_OF_FIELDS Active);
+        my $sth2_inner = tied %$sth2;
+        $sth2_inner->{$_} = $sth1->{$_} for qw(NUM_OF_PARAMS FetchHashKeyName);
+        die "not fully implemented yet";
+        return $sth2;
     }
 
 

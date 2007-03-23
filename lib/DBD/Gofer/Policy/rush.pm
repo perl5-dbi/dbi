@@ -14,7 +14,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 use base qw(DBD::Gofer::Policy::Base);
 
-__PACKAGE__->create_default_policy_subs({
+__PACKAGE__->create_policy_subs({
 
     # Skipping the connect check is fast, but it also skips
     # fetching the remote dbh attributes!
@@ -31,6 +31,16 @@ __PACKAGE__->create_default_policy_subs({
     dbh_attribute_update => 'none',
     dbh_attribute_list => undef,
 
+    # we'd like to set locally_* but can't because drivers differ
+
+    # in a rush assume metadata doesn't change
+    cache_tables => 1,
+    cache_table_info => 1,
+    cache_column_info => 1,
+    cache_primary_key_info => 1,
+    cache_foreign_key_info => 1,
+    cache_statistics_info => 1,
+    cache_get_info => 1,
 });
 
 
