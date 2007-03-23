@@ -34,7 +34,6 @@ my %executor_configs = ( default => { } );
 my %executor_cache;
 
 my %apache_status_menu_items = (
-    DBI_handles => [ 'DBI Handles', \&apache_status_dbi_handles ],
     DBI_gofer   => [ 'DBI Gofer',   \&apache_status_dbi_gofer ],
 );
 my $apache_status_class;
@@ -143,87 +142,6 @@ sub configuration {           # one-time setup from httpd.conf
 }
 
 
-# --------------------------------------------------------------------------------
-# XXX --- these should be moved into a separate module (Apache::Status::DBI?)
-# menu item for Apache::Status
-sub apache_status_dbi_handles {
-    my($r, $q) = @_;
-    my @s = ("<pre>",
-        "<b>DBI $DBI::VERSION - Drivers, Connections and Statements</b><p>\n",
-    );
-    
-    my %drivers = DBI->installed_drivers();
-    push @s, sprintf("%d drivers loaded: %s<p>", scalar keys %drivers, join(", ", keys %drivers));
-
-    while ( my ($driver, $h) = each %drivers) {
-        my $version = do { no strict; ${"DBD::${driver}::VERSION"} || 'undef' };
-        my @children = grep { defined } @{$h->{ChildHandles}};
-
-        push @s, sprintf "<hr><b>DBD::$driver</b>  <font size=-2 color=grey>version $version,  %d dbh (%d cached, %d active)  $h</font>\n\n",
-            scalar @children, scalar keys %{$h->{CachedKids}||{}}, $h->{ActiveKids};
-
-        @children = sort { ($a->{Name}||"$a") cmp ($b->{Name}||"$b") } @children;
-        push @s, _apache_status_dbi_handle($_, 1) for @children;
-    }
-
-    push @s, "<hr></pre>";
-    return \@s;
-}
-
-sub _apache_status_dbi_handle {
-    my ($h, $level) = @_;
-    my $pad = "    " x $level;
-    my $type = $h->{Type};
-    my @children = grep { defined } @{$h->{ChildHandles}};
-    my @boolean_attr = qw(
-        Active Executed RaiseError PrintError ShowErrorStatement PrintWarn
-        CompatMode InactiveDestroy HandleError HandleSetErr
-        ChopBlanks LongTruncOk TaintIn TaintOut Profile);
-    my @scalar_attr = qw(
-        ErrCount TraceLevel FetchHashKeyName LongReadLen
-    );
-    my @scalar_attr2 = qw();
-
-    my @s;
-    if ($type eq 'db') {
-        push @s, sprintf "DSN \"<b>%s</b>\"  <font size=-2 color=grey>%s</font>\n", $h->{Name}, $h;
-        @children = sort { ($a->{Statement}||"$a") cmp ($b->{Statement}||"$b") } @children;
-        push @boolean_attr, qw(AutoCommit);
-        push @scalar_attr,  qw(Username);
-    }
-    else {
-        push @s, sprintf "    sth  <font size=-2 color=grey>%s</font>\n", $h;
-        push @scalar_attr2, qw(NUM_OF_PARAMS NUM_OF_FIELDS CursorName);
-    }
-
-    push @s, sprintf "%sAttributes: %s\n", $pad,
-        join ", ", grep { $h->{$_} } @boolean_attr;
-    push @s, sprintf "%sAttributes: %s\n", $pad,
-        join ", ", map { "$_=".DBI::neat($h->{$_}) } @scalar_attr;
-    if (my $sql = escape_html($h->{Statement} || '')) {
-        $sql =~ s/\n/ /g;
-        push @s, sprintf "%sStatement: <b>%s</b>\n", $pad, $sql;
-        my $ParamValues = $type eq 'st' && $h->{ParamValues};
-        push @s, sprintf "%sParamValues: %s\n", $pad,
-                join ", ", map { "$_=".DBI::neat($ParamValues->{$_}) } sort keys %$ParamValues
-            if $ParamValues && %$ParamValues;
-    }
-    push @s, sprintf "%sAttributes: %s\n", $pad,
-        join ", ", map { "$_=".DBI::neat($h->{$_}) } @scalar_attr2
-        if @scalar_attr2;
-    push @s, sprintf "%sRows: %s\n", $pad, $h->rows
-        if $type eq 'st' || $h->rows != -1;
-    push @s, sprintf "%sError: %s %s\n", $pad,
-        $h->err, escape_html($h->errstr) if $h->err;
-    push @s, sprintf "    sth: %d (%d cached, %d active)\n",
-        scalar @children, scalar keys %{$h->{CachedKids}||{}}, $h->{ActiveKids}
-        if @children;
-    push @s, "\n";
-
-    push @s, map { _apache_status_dbi_handle($_, $level + 1) } @children;
-
-    return @s;
-}
 # --------------------------------------------------------------------------------
 
 
