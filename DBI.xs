@@ -1398,7 +1398,7 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
      */
     dTHX;
     dPERINTERP;
-    int i = DBIc_NUM_FIELDS(imp_sth);
+    I32 i = DBIc_NUM_FIELDS(imp_sth);
     AV *av = DBIc_FIELDS_AV(imp_sth);
 
     if (i < 0)
@@ -1409,12 +1409,12 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
             return av;
         /* we need to adjust the size of the array */
         if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %d to %d fields\n", av_len(av)+1, i);
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %ld to %ld fields\n", av_len(av)+1, i);
         SvREADONLY_off(av);
     }
     else {
         if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %d fields\n", i);
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %ld fields\n", i);
         av = newAV();
         DBIc_FIELDS_AV(imp_sth) = av;
     }
@@ -1424,7 +1424,7 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
     while(i--)			/* field 1 stored at index 0	*/
 	av_store(av, i, newSV(0));
     if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
-        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %d fields\n", av_len(av)+1);
+        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %ld fields\n", av_len(av)+1);
     SvREADONLY_on(av);		/* protect against shift @$row etc */
     /* row_count will need to be manually reset by the driver if the	*/
     /* sth is re-executed (since this code won't get rerun)		*/
