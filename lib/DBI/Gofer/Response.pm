@@ -9,6 +9,7 @@ package DBI::Gofer::Response;
 
 use strict;
 
+use Carp;
 use DBI qw(neat neat_list);
 
 use base qw(DBI::Util::_accessor);
@@ -44,7 +45,8 @@ sub add_err {
 
     chomp $errstr if $errstr;
     $state ||= '';
-    warn "add_err($err, $errstr, $state)" if $trace and $errstr || $err;
+    carp ref($self)."->add_err($err, $errstr, $state)"
+        if $trace and defined($err) || $errstr;
 
     my ($r_err, $r_errstr, $r_state) = ($self->{err}, $self->{errstr}, $self->{state});
 

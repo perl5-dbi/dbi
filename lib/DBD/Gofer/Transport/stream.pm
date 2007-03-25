@@ -140,7 +140,7 @@ sub receive_response_by_transport {
     my $self = shift;
 
     my $connection = $self->connection_info || die;
-    my ($pid, $rfh, $efh) = @{$connection}{qw(pid rfh efh)};
+    my ($pid, $rfh, $efh, $cmd) = @{$connection}{qw(pid rfh efh cmd)};
 
     # blocks till a newline has been read
     $! = 0;
@@ -172,9 +172,12 @@ sub receive_response_by_transport {
     # XXX need to be able to detect and deal with corruption
     my $response = $self->thaw_data(pack("H*",$frozen_response));
 
-    # add any stderr messages as a warning (ie PrintWarn)
-    $response->add_err(0, $stderr_msg, undef, $self->trace)
-        if $stderr_msg;
+    if ($stderr_msg) {
+        # add stderr messages as warnings (for PrintWarn)
+        $response->add_err(0, $stderr_msg, undef, $self->trace)
+            # but ignore warning from old version of blib
+            unless $stderr_msg =~ /^Using .*blib at / && "@$cmd" =~ /-Mblib/;
+    }   
 
     return $response;
 }

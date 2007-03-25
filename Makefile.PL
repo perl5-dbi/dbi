@@ -120,7 +120,12 @@ my %opts = (
     AUTHOR => 'Tim Bunce (dbi-users@perl.org)',
     VERSION_FROM  => 'DBI.pm',
     ABSTRACT_FROM => 'DBI.pm',
-    PREREQ_PM => { "Test::Simple" => 0.40, Storable => 1, "File::Spec" => 1 },
+    PREREQ_PM => {
+        "Test::Simple" => 0.40,
+        "Storable" => 1,
+        "File::Spec" => 0,
+        "Scalar::Util" => 0,
+    },
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },

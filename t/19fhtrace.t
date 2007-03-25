@@ -3,7 +3,6 @@
 
 use strict;
 
-# 21 tests originally
 use Test::More tests => 21;
 
 ## ----------------------------------------------------------------------------
@@ -206,7 +205,7 @@ $dbh->trace(0);	# disable trace
 
 SKIP: {
 	eval { require 5.008; };
-	skip "Layered I/O not available in Perl $^V"
+	skip "Layered I/O not available in Perl $^V", 13
 		if $@;
 ## ----------------------------------------------------------------------------
 # Then use layered filehandle

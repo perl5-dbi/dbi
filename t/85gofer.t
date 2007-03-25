@@ -6,11 +6,10 @@ use strict;
 use warnings;
 
 use Cwd;
-use Time::HiRes qw(time);
 use Data::Dumper;
 use Test::More;
 
-use DBI;
+use DBI qw(dbi_time);
 
 if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
     plan skip_all => "transport+policy tests skipped with non-gofer DBI_AUTOPROXY"
@@ -153,16 +152,16 @@ sub run_tests {
     is_deeply($rowset, { '1' => { dKey=>1, dVal=>'apples' }, 2 => { dKey=>2, dVal=>'apples' } });
 
     if ($perf_count and $transport ne 'pipeone') {
-        my $start = time();
+        my $start = dbi_time();
         $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit")
             for (1000..1000+$perf_count);
-        $durations{select}{"$transport+$policy_name"} = time() - $start;
+        $durations{select}{"$transport+$policy_name"} = dbi_time() - $start;
 
         # some rows in to get a (*very* rough) idea of overheads
-        $start = time();
+        $start = dbi_time();
         $ins_sth->execute($_, 'speed')
             for (1000..1000+$perf_count);
-        $durations{insert}{"$transport+$policy_name"} = time() - $start;
+        $durations{insert}{"$transport+$policy_name"} = dbi_time() - $start;
     }
 
     print "Testing go_request_count and caching of simple values\n";

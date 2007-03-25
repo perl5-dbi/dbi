@@ -112,8 +112,10 @@ sub receive_response_by_transport {
     my $response = $self->thaw_data($frozen_response);
 
     if ($stderr_msg) {
-        warn "STDERR message from @$cmd: $stderr_msg"; # XXX remove later
-        $response->add_err(0, $stderr_msg);
+        # add stderr messages as warnings (for PrintWarn)
+        $response->add_err(0, $stderr_msg, undef, $self->trace)
+            # but ignore warning from old version of blib
+            unless $stderr_msg =~ /^Using .*blib at / && "@$cmd" =~ /-Mblib/;
     }
 
     return $response;
