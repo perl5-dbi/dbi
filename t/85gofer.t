@@ -169,14 +169,16 @@ sub run_tests {
     ok $go_request_count;
 
     ok $dbh->do("DROP TABLE fruit");
-    is $go_request_count + 1, $dbh->{go_request_count};
+    is ++$go_request_count, $dbh->{go_request_count};
 
+    my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
+    warn "use_remote=$use_remote (policy=$policy_name, transport=$transport) $dbh->{dbi_default_methods}\n";
     $dbh->data_sources({ foo_bar => $go_request_count });
-    is $go_request_count + 2, $dbh->{go_request_count};
+    is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     $dbh->data_sources({ foo_bar => $go_request_count }); # should use cache
-    is $go_request_count + 2, $dbh->{go_request_count};
+    is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     @_=$dbh->data_sources({ foo_bar => $go_request_count }); # no cached yet due to wantarray
-    is $go_request_count + 3, $dbh->{go_request_count};
+    is $dbh->{go_request_count}, $go_request_count + 2*$use_remote;
 
 SKIP: {
     skip "caching of metadata methods returning sth not yet implemented", 2;

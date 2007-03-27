@@ -24,6 +24,9 @@ __PACKAGE__->create_policy_subs({
     # most code doesn't rely on sth attributes being set after prepare
     skip_prepare_check => 1,
 
+    # we're happy to use local method if that's the same as the remote
+    skip_default_methods => 1,
+
     # ping is almost meaningless for DBD::Gofer and most transports anyway
     skip_ping => 1,
 

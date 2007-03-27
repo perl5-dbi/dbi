@@ -19,6 +19,8 @@ use base qw(DBI::Util::_accessor);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our $local_log = $ENV{DBI_GOFER_TRACE} || $ENV{DBI_GOFER_LOCAL_LOG};
+our @all_dbh_methods = sort map { keys %$_ } $DBI::DBI_methods{db}, $DBI::DBI_methods{common};
+our %all_dbh_methods = map { $_ => DBD::_::db->can($_) } @all_dbh_methods;
 
 __PACKAGE__->mk_accessors(qw(
     check_connect
@@ -265,6 +267,9 @@ sub execute_dbh_request {
         # XXX piggyback installed_methods onto dbh_attributes for now
         $dbh_attr_values{dbi_installed_methods} = { DBI->installed_methods };
         
+        # XXX piggyback default_methods onto dbh_attributes for now
+        $dbh_attr_values{dbi_default_methods} = _get_default_methods($dbh);
+        
         $response->dbh_attributes(\%dbh_attr_values);
     }
 
@@ -431,6 +436,22 @@ sub fetch_result_set {
     return \%meta;
 }
 
+
+sub _get_default_methods {
+    my ($dbh) = @_;
+    # returns a ref to a hash of dbh method names for methods which the driver
+    # hasn't overridden i.e., quote(). These don't need to be forwarded via gofer.
+    my $ImplementorClass = $dbh->{ImplementorClass} or die;
+    my %default_methods;
+    for my $method (@all_dbh_methods) {
+        my $dbi_sub = $all_dbh_methods{$method}       || 42;
+        my $imp_sub = $ImplementorClass->can($method) || 42;
+        next if $imp_sub != $dbi_sub;
+        #warn("default $method\n");
+        $default_methods{$method} = 1;
+    }
+    return \%default_methods;
+}
 
 1;
 __END__

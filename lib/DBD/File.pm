@@ -381,6 +381,7 @@ sub list_tables ($) {
 
 sub quote ($$;$) {
     my($self, $str, $type) = @_;
+    if (!defined($str)) { return "NULL" }
     if (defined($type)  &&
 	($type == DBI::SQL_NUMERIC()   ||
 	 $type == DBI::SQL_DECIMAL()   ||
@@ -392,7 +393,6 @@ sub quote ($$;$) {
 	 $type == DBI::SQL_TINYINT())) {
 	return $str;
     }
-    if (!defined($str)) { return "NULL" }
     $str =~ s/\\/\\\\/sg;
     $str =~ s/\0/\\0/sg;
     $str =~ s/\'/\\\'/sg;

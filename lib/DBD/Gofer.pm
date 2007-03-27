@@ -298,9 +298,18 @@
         func
     )) {
         my $policy_name = "cache_$method";
+        my $super_name  = "SUPER::$method";
         my $sub = sub {
             my $dbh = shift;
             my $rv;
+
+            # if we know the remote side doesn't override the DBI's default method
+            # then we might as well just call the DBI's default method on the client
+            # (which may, in turn, call other methods that are forwarded, like get_info)
+            if ($dbh->{dbi_default_methods}{$method} && $dbh->{go_policy}->skip_default_methods()) {
+                $dbh->trace_msg("    !! $method: using local default as remote method is also default\n");
+                return $dbh->$super_name(@_);
+            }
 
             my $cache;
             my $cache_key;
@@ -352,6 +361,15 @@
         my $super_name  = "SUPER::$method";
         my $sub = sub {
             my $dbh = shift;
+
+            # if we know the remote side doesn't override the DBI's default method
+            # then we might as well just call the DBI's default method on the client
+            # (which may, in turn, call other methods that are forwarded, like get_info)
+            if ($dbh->{dbi_default_methods}{$method} && $dbh->{go_policy}->skip_default_methods()) {
+                $dbh->trace_msg("    !! $method: using local default as remote method is also default\n");
+                return $dbh->$super_name(@_);
+            }
+
             # false:    use remote gofer
             # 1:        use local DBI default method
             # code ref: use the code ref
