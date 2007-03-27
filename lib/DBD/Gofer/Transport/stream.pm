@@ -176,7 +176,7 @@ sub receive_response_by_transport {
         # add stderr messages as warnings (for PrintWarn)
         $response->add_err(0, $stderr_msg, undef, $self->trace)
             # but ignore warning from old version of blib
-            unless $stderr_msg =~ /^Using .*blib at / && "@$cmd" =~ /-Mblib/;
+            unless $stderr_msg =~ /^Using .*blib/ && "@$cmd" =~ /-Mblib/;
     }   
 
     return $response;
