@@ -321,7 +321,10 @@ sub  _install_method {
     } if IMA_END_WORK & $bitmask;
 
     push @post_call_frag, q{
-        if ( ref $ret[0] and defined( (my $h_new = $ret[0])->{err} ) ) {
+        if ( ref $ret[0] and
+            UNIVERSAL::isa($ret[0], 'DBI::_::common') and
+            defined( (my $h_new = tied(%{$ret[0]})||$ret[0])->{err} )
+        ) {
             # copy up info/warn to drh so PrintWarn on connect is triggered
             $h->set_err($h_new->{err}, $h_new->{errstr}, $h_new->{state})
         }
@@ -389,7 +392,7 @@ sub  _install_method {
 	$h = $h_inner if $h_inner;
 
         my $imp;
-	if ($method_name eq 'DESTROY') {
+	if ($method_name eq 'DESTROY') { # XXX move this into pre_call_frag
 	    # during global destruction, $h->{...} can trigger "Can't call FETCH on an undef value"
 	    # implying that tied() above lied to us, so we need to use eval
 	    local $@;	 # protect $@
@@ -426,13 +429,13 @@ sub  _install_method {
       }
     ];
     no strict qw(refs);
-    my $code_ref = eval qq{#line 1 "$method"\n$method_code};
+    my $code_ref = eval qq{#line 1 "DBI::PurePerl $method"\n$method_code};
     warn "$@\n$method_code\n" if $@;
     die "$@\n$method_code\n" if $@;
     *$method = $code_ref;
-    if (0 && $method =~ /do/) { # debuging tool
+    if (0 && $method =~ /\b(connect|FETCH)\b/) { # debuging tool
 	my $l=0; # show line-numbered code for method
-	warn "*$method = ".join("\n", map { ++$l.": $_" } split/\n/,$method_code);
+	warn "*$method code:\n".join("\n", map { ++$l.": $_" } split/\n/,$method_code);
     }
 }
 
@@ -794,7 +797,7 @@ sub set_err {
 }
 sub trace_msg {
     my ($h, $msg, $minlevel)=@_;
-    $minlevel = 1 unless $minlevel;
+    $minlevel = 1 unless defined $minlevel;
     return unless $minlevel <= ($DBI::dbi_debug & 0xF);
     print $DBI::tfh $msg;
     return 1;

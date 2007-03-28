@@ -182,6 +182,11 @@ sub receive_response_by_transport {
     return $response;
 }
 
+sub transport_timedout {
+    my $self = shift;
+    $self->_connection_kill;
+    return $self->SUPER::transport_timedout(@_);
+}
 
 
 # nonblock($fh) puts filehandle into nonblocking mode

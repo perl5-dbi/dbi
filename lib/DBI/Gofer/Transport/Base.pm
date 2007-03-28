@@ -79,6 +79,7 @@ sub _dump {
         return;
     }
     else {
+        Carp::cluck("$label from");
         my $summary = eval { $data->summary_as_text } || $@ || "no summary available\n";
         $self->trace_msg("$label: $summary");
     }

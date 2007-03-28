@@ -12,7 +12,6 @@ BEGIN { $ENV{DBI_PROFILE} = 6 }	# prior to use DBI
 
 use DBI;
 use DBI::Profile;
-use File::Spec;
 use Config;
 use Data::Dumper;
 

@@ -28,15 +28,20 @@ sub transmit_request {
     my ($self, $request) = @_;
 
     my $to = $self->go_timeout;
-    local $SIG{ALRM} = sub { die "transmit_request timed-out after $to seconds" }
-        if $to;
+    local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
 
     my $info = eval {
         alarm($to) if $to;
         $self->transmit_request_by_transport($request);
     };
     alarm(0) if $to;
-    return DBI::Gofer::Response->new({ err => 1, errstr => $@ }) if $@;
+
+    if ($@) {
+        return $self->transport_timedout("transmit_request", $to)
+            if $@ eq "TIMEOUT\n";
+        return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
+    }
+
     return undef;
 }
 
@@ -45,8 +50,7 @@ sub receive_response {
     my $self = shift;
 
     my $to = $self->go_timeout;
-    local $SIG{ALRM} = sub { die "receive_response timed-out after $to seconds" }
-        if $to;
+    local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
 
     my $response = eval {
         alarm($to) if $to;
@@ -54,12 +58,21 @@ sub receive_response {
     };
     alarm(0) if $to;
 
-    return DBI::Gofer::Response->new({ err => 1, errstr => $@ })
-        if $@;
+    if ($@) {
+        return $self->transport_timedout("receive_response", $to)
+            if $@ eq "TIMEOUT\n";
+        return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
+    }
 
     return $response;
 }
 
+
+sub transport_timedout {
+    my ($self, $method, $timeout) = @_;
+    $timeout ||= $self->go_timeout;
+    return DBI::Gofer::Response->new({ err => 1, errstr => "DBD::Gofer $method timed-out after $timeout seconds" });
+}
 
 
 1;

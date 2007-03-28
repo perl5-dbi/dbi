@@ -243,7 +243,7 @@
         my $dbh_attribute_update = $go_policy->dbh_attribute_update();
         $request->dbh_attributes( $go_policy->dbh_attribute_list() )
             if $dbh_attribute_update eq 'every'
-            or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
+            or $dbh->{go_request_count}==1;
 
         $request->dbh_last_insert_id_args($meta->{go_last_insert_id_args})
             if $meta->{go_last_insert_id_args};
@@ -551,7 +551,7 @@
         my $dbh_attribute_update = $go_policy->dbh_attribute_update();
         $request->dbh_attributes( $go_policy->dbh_attribute_list() )
             if $dbh_attribute_update eq 'every'
-            or $dbh_attribute_update eq 'first' && $dbh->{go_request_count}==1;
+            or $dbh->{go_request_count}==1;
 
         my $transport = $sth->{go_transport}
             or return $sth->set_err(1, "Not connected (no transport)");

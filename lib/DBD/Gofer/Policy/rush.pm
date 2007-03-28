@@ -31,8 +31,10 @@ __PACKAGE__->create_policy_subs({
     skip_ping => 1,
 
     # don't update dbh attributes at all
-    dbh_attribute_update => 'none',
-    dbh_attribute_list => undef,
+    # XXX actually we currently need dbh_attribute_update for skip_default_methods to work
+    # and skip_default_methods is more valuable to us than the cost of dbh_attribute_update
+    dbh_attribute_update => 'none', # actually means 'first' currently
+    #dbh_attribute_list => undef,
 
     # we'd like to set locally_* but can't because drivers differ
 

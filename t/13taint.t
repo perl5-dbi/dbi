@@ -10,7 +10,6 @@ use strict;
 $^W = 1;
 $| = 1;
 
-my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
 use Test::More;

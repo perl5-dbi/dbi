@@ -117,10 +117,10 @@ sub run_tests {
     print " $dsn\n";
 
     my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1, PrintError => 0 } );
-    ok $dbh, sprintf "should connect to %s (%s)", $dsn, $DBI::errstr||'';
-    die "$test_run_tag aborted\n" unless $dbh;
+    die "$test_run_tag aborted: $DBI::errstr\n" unless $dbh; # no point continuing
+    ok $dbh, sprintf "should connect to %s", $dsn;
 
-    is $dbh->{Name}, ($policy->skip_connect_check or $policy->dbh_attribute_update eq 'none')
+    is $dbh->{Name}, ($policy->skip_connect_check)
         ? $driver_dsn
         : $remote_driver_dsn;
 
@@ -171,14 +171,20 @@ sub run_tests {
     ok $dbh->do("DROP TABLE fruit");
     is ++$go_request_count, $dbh->{go_request_count};
 
+    # actuall tests go_request_count, caching, and skip_default_methods policy
     my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
-    warn "use_remote=$use_remote (policy=$policy_name, transport=$transport) $dbh->{dbi_default_methods}\n";
+    print "use_remote=$use_remote (policy=$policy_name, transport=$transport) $dbh->{dbi_default_methods}\n";
+
+SKIP: {
+    skip "skip_default_methods checking doesn't work with Gofer over Gofer", 3
+        if $ENV{DBI_AUTOPROXY};
     $dbh->data_sources({ foo_bar => $go_request_count });
     is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     $dbh->data_sources({ foo_bar => $go_request_count }); # should use cache
     is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     @_=$dbh->data_sources({ foo_bar => $go_request_count }); # no cached yet due to wantarray
     is $dbh->{go_request_count}, $go_request_count + 2*$use_remote;
+}
 
 SKIP: {
     skip "caching of metadata methods returning sth not yet implemented", 2;
