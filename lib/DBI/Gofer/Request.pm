@@ -54,10 +54,21 @@ sub init_request {
 
 sub summary_as_text {
     my $self = shift;
+    my ($context) = @_;
     my @s = '';
+
+    if ($context && %$context) {
+        my @keys = sort keys %$context;
+        push @s, join(", ", map { "$_=>".$context->{$_} } @keys);
+    }
 
     my ($dsn, $attr) = @{ $self->connect_args };
     push @s, sprintf "dbh= connect('%s', , , { %s })", $dsn, neat_list([ %{$attr||{}} ]);
+
+    if (my $dbh_attr = $self->dbh_attributes) {
+        push @s, sprintf "dbh->FETCH: %s", @$dbh_attr
+            if @$dbh_attr;
+    }
 
     my ($meth, @args) = @{ $self->dbh_method_call };
     push @s, sprintf "dbh->%s(%s)", $meth, neat_list(\@args);
@@ -69,6 +80,11 @@ sub summary_as_text {
     for my $call (@{ $self->sth_method_calls || [] }) {
         my ($meth, @args) = @$call;
         push @s, sprintf "sth->%s(%s)", $meth, neat_list(\@args);
+    }
+
+    if (my $sth_attr = $self->sth_result_attr) {
+        push @s, sprintf "sth->FETCH: %s", %$sth_attr
+            if %$sth_attr;
     }
 
     return join("\n\t", @s) . "\n";

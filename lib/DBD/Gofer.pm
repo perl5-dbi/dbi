@@ -256,6 +256,9 @@
         $dbh->{go_response} = $response
             or die "No response object returned by $transport";
 
+        die "response '$response' returned by $transport is not a response object"
+            unless UNIVERSAL::isa($response,"DBI::Gofer::Response");
+
         if (my $dbh_attributes = $response->dbh_attributes) {
 
             # XXX installed_methods piggbacks on dbh_attributes for now
@@ -419,12 +422,15 @@
     sub FETCH {
         my ($dbh, $attrib) = @_;
 
+        # FETCH is effectively already cached because the DBI checks the
+        # attribute cache in the handle before calling FETCH
+        # and this FETCH copies the value into the attribute cache
+
         # forward driver-private attributes (except ours)
-        # XXX policy? precache on connect?
         if ($attrib =~ m/^[a-z]/ && $attrib !~ /^go_/) {
             my $value = $dbh->go_dbh_method(undef, 'FETCH', $attrib);
-            $dbh->{$attrib} = $value;
-            return $value;
+            $dbh->{$attrib} = $value; # XXX forces caching by DBI
+            return $dbh->{$attrib} = $value;
         }
 
         # else pass up to DBI to handle
@@ -442,12 +448,12 @@
             if $dbh_local_store_attrib{$attrib}
             # or it's a private_ (application) attribute
             or $attrib =~ /^private_/
-            # or not yet connected (and being called by connect())
+            # or not yet connected (ie being called by DBI->connect)
             or not $dbh->FETCH('Active');
 
         return $dbh->SUPER::STORE($attrib => $value)
             if $DBD::Gofer::xxh_local_store_attrib_if_same_value{$attrib}
-            && do { # return true if values are the same
+            && do { # values are the same
                 my $crnt = $dbh->FETCH($attrib);
                 local $^W;
                 (defined($value) ^ defined($crnt))
@@ -566,6 +572,9 @@
             # XXX we don't STORE here, we just stuff the value into the attribute cache
             $dbh->{$_} = $dbh_attributes->{$_}
                 for keys %$dbh_attributes;
+            # record the values returned, so we know that we have fetched
+            # values are which we have fetched (see dbh->FETCH method)
+            $dbh->{go_dbh_attributes_fetched} = $dbh_attributes;
         }
 
         my $rv = $response->rv;

@@ -28,6 +28,7 @@ __PACKAGE__->mk_accessors(qw(
     forced_connect_dsn
     default_connect_attributes
     forced_connect_attributes
+    track_recent
     stats
 )); 
 
@@ -256,21 +257,7 @@ sub execute_dbh_request {
 
     # does this request also want any dbh attributes returned?
     if (my $dbh_attributes = $request->dbh_attributes) {
-        my @req_attr_names = @$dbh_attributes;
-        if ($req_attr_names[0] eq '*') { # auto include std + private
-            shift @req_attr_names;
-            push @req_attr_names, @{ $self->_get_std_attributes($dbh) };
-        }
-        my %dbh_attr_values;
-        $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
-
-        # XXX piggyback installed_methods onto dbh_attributes for now
-        $dbh_attr_values{dbi_installed_methods} = { DBI->installed_methods };
-        
-        # XXX piggyback default_methods onto dbh_attributes for now
-        $dbh_attr_values{dbi_default_methods} = _get_default_methods($dbh);
-        
-        $response->dbh_attributes(\%dbh_attr_values);
+        $response->dbh_attributes( $self->gather_dbh_attributes($dbh, $dbh_attributes) );
     }
 
     if ($rv_ref and my $lid_args = $request->dbh_last_insert_id_args) {
@@ -291,6 +278,26 @@ sub execute_dbh_request {
     $self->reset_dbh($dbh);
 
     return $response;
+}
+
+
+sub gather_dbh_attributes {
+    my ($self, $dbh, $dbh_attributes) = @_;
+    my @req_attr_names = @$dbh_attributes;
+    if ($req_attr_names[0] eq '*') { # auto include std + private
+        shift @req_attr_names;
+        push @req_attr_names, @{ $self->_get_std_attributes($dbh) };
+    }
+    my %dbh_attr_values;
+    $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
+
+    # XXX piggyback installed_methods onto dbh_attributes for now
+    $dbh_attr_values{dbi_installed_methods} = { DBI->installed_methods };
+    
+    # XXX piggyback default_methods onto dbh_attributes for now
+    $dbh_attr_values{dbi_default_methods} = _get_default_methods($dbh);
+    
+    return \%dbh_attr_values;
 }
 
 
@@ -362,11 +369,15 @@ sub execute_sth_request {
         $sth->finish;
     }
 
-    if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
-        my %dbh_attr_values;
-        $dbh_attr_values{$_} = $dbh->FETCH($_) for @$dbh_attr;
-        $response->dbh_attributes(\%dbh_attr_values);
+    # does this request also want any dbh attributes returned?
+    my $dbh_attr_set;
+    if (my $dbh_attributes = $request->dbh_attributes) {
+        $dbh_attr_set = $self->gather_dbh_attributes($dbh, $dbh_attributes);
     }
+    if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
+        $dbh_attr_set->{$_} = $dbh->FETCH($_) for @$dbh_attr;
+    }
+    $response->dbh_attributes($dbh_attr_set) if $dbh_attr_set && %$dbh_attr_set;
 
     $self->reset_dbh($dbh);
 
