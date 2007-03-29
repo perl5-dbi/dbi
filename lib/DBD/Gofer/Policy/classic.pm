@@ -30,6 +30,9 @@ __PACKAGE__->create_policy_subs({
     # ping is not important for DBD::Gofer and most transports
     skip_ping => 1,
 
+    # only update dbh attributes on first contact with server
+    dbh_attribute_update => 'first',
+
     # we'd like to set locally_* but can't because drivers differ
 
     # get_info results usually don't change
