@@ -54,8 +54,10 @@ sub thaw_data {
     my $data = eval { thaw($frozen_data) };
     if ($@) {
         chomp(my $err = $@);
-        $self->_dump("bad data",$frozen_data);
-        die "Error thawing object: $err";
+        my $msg = "Error thawing object: $err";
+        Carp::cluck("$msg - stack trace:"); # XXX disable later
+        $self->_dump("thaw failed for", $frozen_data);
+        die $msg;
     }
     $self->_dump("thawing ".ref($data), $data)
         if !$skip_trace and $self->trace;
@@ -79,7 +81,6 @@ sub _dump {
         return;
     }
     else {
-        Carp::cluck("$label from");
         my $summary = eval { $data->summary_as_text } || $@ || "no summary available\n";
         $self->trace_msg("$label: $summary");
     }

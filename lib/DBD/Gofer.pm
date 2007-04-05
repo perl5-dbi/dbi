@@ -478,19 +478,21 @@
         return $dbh->set_err(1, "Can't prepare when disconnected")
             unless $dbh->FETCH('Active');
 
-        my $policy = $attr->{go_policy} || $dbh->{go_policy};
+        $attr = { %$attr } if $attr; # copy so we can edit
+
+        my $policy     = delete($attr->{go_policy}) || $dbh->{go_policy};
+        my $lii_args   = delete $attr->{go_last_insert_id_args};
+        my $go_prepare = delete($attr->{go_prepare}) || $dbh->{go_prepare} || 'prepare';
+        $attr = undef if $attr and not %$attr;
 
         my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
             Statement => $statement,
-            go_prepare_call => [
-                $attr->{go_prepare} || $dbh->{go_prepare} || 'prepare',
-                $statement, $attr
-            ],
+            go_prepare_call => [ $go_prepare, $statement, $attr ],
             # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
             go_transport => $dbh->{go_transport},
             go_policy => $policy,
-            go_last_insert_id_args => $attr->{go_last_insert_id_args},
+            go_last_insert_id_args => $lii_args,
         });
         $sth->STORE(Active => 0);
 

@@ -63,7 +63,9 @@ sub summary_as_text {
     }
 
     my ($dsn, $attr) = @{ $self->connect_args };
-    push @s, sprintf "dbh= connect('%s', , , { %s })", $dsn, neat_list([ %{$attr||{}} ]);
+    my $tmp = { %{$attr||{}} }; # copy so we can edit
+    $tmp->{Password} = '***' if exists $tmp->{Password};
+    push @s, sprintf "dbh= connect('%s', , , { %s })", $dsn, neat_list([ %$tmp ]);
 
     if (my $dbh_attr = $self->dbh_attributes) {
         push @s, sprintf "dbh->FETCH: %s", @$dbh_attr
@@ -71,7 +73,9 @@ sub summary_as_text {
     }
 
     my ($meth, @args) = @{ $self->dbh_method_call };
-    push @s, sprintf "dbh->%s(%s)", $meth, neat_list(\@args);
+    my $args = neat_list(\@args);
+    $args =~ s/\n+/ /g;
+    push @s, sprintf "dbh->%s(%s)", $meth, $args;
 
     if (my $lii_args = $self->dbh_last_insert_id_args) {
         push @s, sprintf "dbh->last_insert_id(%s)", neat_list($lii_args);
@@ -79,7 +83,8 @@ sub summary_as_text {
 
     for my $call (@{ $self->sth_method_calls || [] }) {
         my ($meth, @args) = @$call;
-        push @s, sprintf "sth->%s(%s)", $meth, neat_list(\@args);
+        ($args = neat_list(\@args)) =~ s/\n+/ /g;
+        push @s, sprintf "sth->%s(%s)", $meth, $args;
     }
 
     if (my $sth_attr = $self->sth_result_attr) {
