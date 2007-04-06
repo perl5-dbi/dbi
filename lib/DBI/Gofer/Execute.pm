@@ -169,7 +169,8 @@ sub _connect {
 
         # ensure this connect_cached doesn't have the same args as the client
         # because that causes subtle issues if in the same process (ie transport=null)
-        dbi_go_execute_unique => __PACKAGE__,
+	# include pid to avoid problems with forking (ie null transport in mod_perl)
+        dbi_go_execute_unique => __PACKAGE__."$$",
     });
     $dbh->{ShowErrorStatement} = 1 if $local_log;
     #$dbh->trace(0);
