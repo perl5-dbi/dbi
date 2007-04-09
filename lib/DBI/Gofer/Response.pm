@@ -110,11 +110,16 @@ sub summary_as_text {
             $summary .= sprintf "%d rows, %d columns", $rows, $NUM_OF_FIELDS;
         }
         $summary .= sprintf ", err=%s, errstr=%s", $err, neat($errstr) if defined $err;
-        $summary .= sprintf " [%s]", neat_list($rowset->[0], 30) if $rows;
-        $summary .= sprintf "{%s}",  neat_list($rs->{NAME}, 30);
-        $summary .= ",..." if $rows > 1;
-        # we can be a little more helpful for Sybase/MSSQL users
-        $summary .= " syb_result_type=$rs->{syb_result_type}" if $rs->{syb_result_type};
+        if ($rows) {
+            my $NAME = $rs->{NAME};
+            # generate 
+            my @colinfo = map { "$NAME->[$_]=".neat($rowset->[0][$_], 30) } 0..@{$NAME}-1;
+            $summary .= sprintf " [%s]", join ", ", @colinfo;
+            $summary .= ",..." if $rows > 1;
+            # we can be a little more helpful for Sybase/MSSQL user
+            $summary .= " syb_result_type=$rs->{syb_result_type}"
+                if $rs->{syb_result_type} and $rs->{syb_result_type} != 4040;
+        }
         push @s, $summary;
     }
     for my $w (@{$self->warnings || []}) {
