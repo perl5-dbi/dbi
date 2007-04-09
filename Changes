@@ -8,6 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
 http://buildd.debian.org/fetch.cgi?&pkg=libdbi-perl&ver=1.54-1&arch=m68k&stamp=1174636818&file=log
 
+Pedantic policy should force a fresh connect each time - add new policy item
 Allow connect via subclass to support DBIx::HA
 prepare(...,{ Err=>\my $isolated_err, ...})
 Add attr-passthru to prepare()? ie for gofer cache control
@@ -36,6 +37,7 @@ and prepends them to any error message.
     it now warns and adjusts the row buffer to match.
   Changed DBD::NullP to be vaguely useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
+  Changed tests to work with other DBMs thanks to ZMAN.
   Assorted Gofer bug fixes, enhancements and docs.
 
   Added support for install_methods to DBD::Gofer.

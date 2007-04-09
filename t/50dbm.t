@@ -27,12 +27,13 @@ BEGIN {
         push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
     }
 
+    # Potential DBM modules in preference order (SDBM_File first)
+    # skip NDBM and ODBM as they don't support EXISTS
+    my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB);
+
     if ("@ARGV" eq "all") {
 	# test with as many of the major DBM types as are available
-        # skip NDBM and ODBM as they don't support EXISTS
-	for (qw( SDBM_File GDBM_File DB_File BerkeleyDB )) {
-	    push @dbm_types, $_ if eval { local $^W; require "$_.pm" };
-	}
+        @dbm_types = grep { eval { local $^W; require "$_.pm" } } @dbms;
     }
     elsif (@ARGV) {
 	@dbm_types = @ARGV;
@@ -41,7 +42,13 @@ BEGIN {
 	# we only test SDBM_File by default to avoid tripping up
 	# on any broken DBM's that may be installed in odd places.
 	# It's only DBD::DBM we're trying to test here.
-        @dbm_types = ("SDBM_File");
+        # (However, if SDBM_File is not available, then use another.)
+        for my $dbm (@dbms) {
+            if (eval { local $^W; require "$dbm.pm" }) {
+                @dbm_types = ($dbm);
+                last;
+            }
+        }
     }
 
     print "Using DBM modules: @dbm_types\n";

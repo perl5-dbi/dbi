@@ -17,7 +17,6 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
     plan skip_all => "transport+policy tests skipped with non-pedantic policy in DBI_AUTOPROXY"
         if $ap !~ /policy=pedantic\b/i;
 }
-plan 'no_plan';
 
 # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
 # next line forces use of Nano rather than default behaviour
@@ -27,10 +26,22 @@ my $perf_count = (@ARGV && $ARGV[0] =~ s/^-c=//) ? shift : (-t STDOUT) ? 100 : 0
 my %durations;
 
 # so users can try others from the command line
-my $dbm = $ARGV[0] || "SDBM_File";
+my $dbm = $ARGV[0];
+if (!$dbm) {
+    # pick first available, starting with SDBM_File
+    for (qw( SDBM_File GDBM_File DB_File BerkeleyDB )) {
+        if (eval { local $^W; require "$_.pm" }) {
+            $dbm = ($_);
+            last;
+        }
+    }
+    plan skip_all => 'No DBM modules available' if !$dbm;
+}
 my $remote_driver_dsn = "dbm_type=$dbm;lockfile=0";
 my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
 my $timeout = 10;
+
+plan 'no_plan';
 
 if ($ENV{DBI_AUTOPROXY}) {
     # this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
@@ -141,7 +152,7 @@ sub run_tests {
     ok $ins_sth->execute(2, 'oranges');
 
     my $rowset;
-    ok $rowset = $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit");
+    ok $rowset = $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit ORDER BY dKey");
     is_deeply($rowset, [ [ '1', 'oranges' ], [ '2', 'oranges' ] ]);
 
     ok $dbh->do("UPDATE fruit SET dVal='apples' WHERE dVal='oranges'");
