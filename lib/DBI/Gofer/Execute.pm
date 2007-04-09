@@ -90,9 +90,8 @@ my %extra_attr = (
         dbh => [qw(
             syb_dynamic_supported syb_oc_version syb_server_version syb_server_version_string
         )],
-        # we don't include syb_result_type as that's a *per row* attribute
         sth => [qw(
-            syb_types syb_proc_status
+            syb_types syb_proc_status syb_result_type
         )],
     },
     SQLite => {

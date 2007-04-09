@@ -111,7 +111,10 @@ sub summary_as_text {
         }
         $summary .= sprintf ", err=%s, errstr=%s", $err, neat($errstr) if defined $err;
         $summary .= sprintf " [%s]", neat_list($rowset->[0], 30) if $rows;
+        $summary .= sprintf "{%s}",  neat_list($rs->{NAME}, 30);
         $summary .= ",..." if $rows > 1;
+        # we can be a little more helpful for Sybase/MSSQL users
+        $summary .= " syb_result_type=$rs->{syb_result_type}" if $rs->{syb_result_type};
         push @s, $summary;
     }
     for my $w (@{$self->warnings || []}) {
