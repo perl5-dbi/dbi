@@ -18,7 +18,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     version
-    connect_args
+    dbh_connect_call
     dbh_method_call
     dbh_wantarray
     dbh_attributes
@@ -38,7 +38,7 @@ sub new {
 sub reset {
     my $self = shift;
     # remove everything except connect and version
-    %$self = ( version => $self->{version}, connect_args => $self->{connect_args} );
+    %$self = ( version => $self->{version}, dbh_connect_call => $self->{dbh_connect_call} );
 }
 
 sub is_sth_request {
@@ -62,10 +62,16 @@ sub summary_as_text {
         push @s, join(", ", map { "$_=>".$context->{$_} } @keys);
     }
 
-    my ($dsn, $attr) = @{ $self->connect_args };
-    my $tmp = { %{$attr||{}} }; # copy so we can edit
-    $tmp->{Password} = '***' if exists $tmp->{Password};
-    push @s, sprintf "dbh= connect('%s', , , { %s })", $dsn, neat_list([ %$tmp ]);
+    my ($method, $dsn, $user, $pass, $attr) = @{ $self->dbh_connect_call };
+    $method ||= 'connect_cached';
+    $pass = '***' if defined $pass;
+    my $tmp = '';
+    if ($attr) { 
+        $tmp = { %{$attr||{}} }; # copy so we can edit
+        $tmp->{Password} = '***' if exists $tmp->{Password};
+        $tmp = "{ ".neat_list([ %$tmp ])." }";
+    }
+    push @s, sprintf "dbh= $method(%s, %s)", neat_list([$dsn, $user, $pass]), $tmp;
 
     if (my $dbh_attr = $self->dbh_attributes) {
         push @s, sprintf "dbh->FETCH: %s", @$dbh_attr

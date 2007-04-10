@@ -120,6 +120,16 @@
     $imp_data_size = 0;
     use strict;
 
+    sub connect_cached {
+        my ($drh, $dsn, $user, $auth, $attr)= @_;
+        $attr ||= {};
+        return $drh->SUPER::connect_cached($dsn, $user, $auth, {
+            (%$attr),
+            go_connect_method => $attr->{go_connect_method} || 'connect_cached',
+        });
+    }
+
+
     sub connect {
         my($drh, $dsn, $user, $auth, $attr)= @_;
         my $orig_dsn = $dsn;
@@ -157,6 +167,9 @@
         # policy object is left in $go_attr{go_policy} so transport can see it
         my $go_policy = $go_attr{go_policy};
 
+        # but delete any other attributes that don't appy to transport
+        my $go_connect_method = delete $go_attr{go_connect_method};
+
         my $transport_class = delete $go_attr{go_transport}
             or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$transport_class"
@@ -178,8 +191,10 @@
             delete @{$go_attr}{qw(Profile HandleError HandleSetErr Callbacks)};
             # delete any attributes that should only apply to the client-side
             delete @{$go_attr}{qw(RootClass DbTypeSubclass)};
+
+            $go_connect_method ||= $go_policy->connect_method($remote_dsn, $go_attr) || 'connect';
             $request_class->new({
-                connect_args => [ $remote_dsn, $go_attr ]
+                dbh_connect_call => [ $go_connect_method, $remote_dsn, $user, $auth, $go_attr ],
             })
         } or return $drh->set_err(1, "Can't instanciate $request_class: $@");
 
@@ -482,7 +497,11 @@
 
         my $policy     = delete($attr->{go_policy}) || $dbh->{go_policy};
         my $lii_args   = delete $attr->{go_last_insert_id_args};
-        my $go_prepare = delete($attr->{go_prepare}) || $dbh->{go_prepare} || 'prepare';
+        my $go_prepare = delete($attr->{go_prepare_method})
+                      || $dbh->{go_prepare_method}
+                      || $policy->prepare_method($dbh, $statement, $attr)
+                      || 'prepare'; # e.g. for code not using placeholders
+        # set to undef if there are no attributes left for the actual prepare call
         $attr = undef if $attr and not %$attr;
 
         my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
@@ -506,9 +525,10 @@
 
     sub prepare_cached {
         my ($dbh, $sql, $attr, $if_active)= @_;
+        $attr ||= {};
         return $dbh->SUPER::prepare_cached($sql, {
-            ($attr ? %$attr : ()),
-            go_prepare => 'prepare_cached',
+            %$attr,
+            go_prepare_method => $attr->{go_prepare_method} || 'prepare_cached',
         }, $if_active);
     }
 

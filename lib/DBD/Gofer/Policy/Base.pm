@@ -15,6 +15,12 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 our $AUTOLOAD;
 
 my %policy_defaults = (
+    # force connect method (unless overridden by go_connect_method=>'...' attribute)
+    # if false: call same method on client as on server
+    connect_method => 'connect',
+    # force prepare method (unless overridden by go_prepare_method=>'...' attribute)
+    # if false: call same method on client as on server
+    prepare_method => 'prepare',
     skip_connect_check => 0,
     skip_default_methods => 0,
     skip_prepare_check => 0,
@@ -50,7 +56,7 @@ sub create_policy_subs {
             # $policy->foo($attr, ...)
             #carp "$policy_name($_[1],...)";
             # return the policy default value unless an attribute overrides it
-            return ($_[1] && exists $_[1]->{$policy_attr_name})
+            return (ref $_[1] && exists $_[1]->{$policy_attr_name})
                 ? $_[1]->{$policy_attr_name}
                 : $policy_default;
         };

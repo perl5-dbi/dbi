@@ -16,6 +16,13 @@ use base qw(DBD::Gofer::Policy::Base);
 
 __PACKAGE__->create_policy_subs({
 
+    # always use connect_cached on server
+    connect_method => 'connect_cached',
+
+    # use same methods on server as is called on client
+    # (because code not using placeholders would bloat the sth cache)
+    prepare_method => '',
+
     # Skipping the connect check is fast, but it also skips
     # fetching the remote dbh attributes!
     # Make sure that your application doesn't need access to dbh attributes.

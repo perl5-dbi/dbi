@@ -133,14 +133,16 @@ sub _connect {
         }
     }
 
-    my ($dsn, $attr) = @{ $request->connect_args };
+    my ($connect_method, $dsn, $username, $password, $attr) = @{ $request->dbh_connect_call };
+    $connect_method ||= 'connect_cached';
+
     # delete attributes we don't want to affect the server-side
     # (Could just do this on client-side and trust the client. DoS?)
     delete @{$attr}{qw(Profile InactiveDestroy HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
-    my $connect_method = 'connect_cached';
 
-    my $check_connect = $self->check_connect;
-    $check_connect->($dsn, $attr, $connect_method, $request) if $check_connect;
+    if (my $check_connect = $self->check_connect) {
+        $check_connect->($dsn, $attr, $connect_method, $request);
+    }
 
     $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
         or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";

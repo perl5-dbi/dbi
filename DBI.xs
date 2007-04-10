@@ -792,8 +792,8 @@ dbih_inner(SV *orv, const char *what)
 	if (!what)
 	    return NULL;
 	sv_dump(orv);
-	croak("panic: %s inner handle %s is not a hash ref",
-		what, neatsvpv(hrv,0));
+	croak("panic: %s inner handle %s is not a hash ref (isref=%d, type=%d)",
+		what, neatsvpv(hrv,0), SvROK(hrv), (SvROK(hrv))?SvTYPE(SvRV(hrv)):-1);
     }
     return hrv;
 }
