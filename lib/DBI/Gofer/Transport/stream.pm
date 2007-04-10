@@ -28,13 +28,14 @@ sub run_stdio_hex {
     #warn "STARTED $$";
 
     while ( my $frozen_request = <STDIN> ) {
+        $frozen_request =~ s/\015?\012$//;
 
         my $request = $self->thaw_data( pack "H*", $frozen_request );
         my $response = $executor->execute_request( $request );
 
         my $frozen_response = unpack "H*", $self->freeze_data($response);
 
-        print $frozen_response, "\n"; # autoflushed due to $|=1
+        print $frozen_response, "\015\012"; # autoflushed due to $|=1
     }
 }
 

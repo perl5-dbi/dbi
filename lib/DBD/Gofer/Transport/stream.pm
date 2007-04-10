@@ -120,7 +120,7 @@ sub transmit_request_by_transport {
     };
 
     my $frozen_request = unpack("H*", $self->freeze_data($request));
-    $frozen_request .= "\n";
+    $frozen_request .= "\015\012";
 
     my $wfh = $connection->{wfh};
     # send frozen request
@@ -144,22 +144,32 @@ sub receive_response_by_transport {
 
     # blocks till a newline has been read
     $! = 0;
-    my $frozen_response = <$rfh>; # always one line
-    my $frozen_response_errno = $!;
 
-    # must read any stderr output _afterwards_
-    # warnings during execution are caught and returned as part
-    # of the response object. So stderr should be silent.
-    my $stderr_msg = do { local $/; <$efh> }; # nonblocking
+    my $errno;
+    my $frozen_response;
+    my $stderr_msg;
+
+    $self->read_response_from_fh( {
+        $efh => {
+            error => sub { warn "error reading response stderr: $!"; $errno||=$!; 1 },
+            eof   => sub { warn "eof on stderr" if 0; 1 },
+            read  => sub { $stderr_msg .= $_; 0 },
+        },
+        $rfh => {
+            error => sub { warn "error reading response: $!"; $errno||=$!; 1 },
+            eof   => sub { warn "eof on stdout" if 0; 1 },
+            read  => sub { $frozen_response .= $_; ($frozen_response=~s/\015\012$//) ? 1 : 0 },
+        },
+    });
 
     # if we got no output on stdout at all then the command has
     # probably exited, possibly with an error to stderr.
     # Turn this situation into a reasonably useful DBI error.
-    if (not $frozen_response or !chomp $frozen_response) {
+    if (not $frozen_response) {
         chomp $stderr_msg if $stderr_msg;
         my $msg = sprintf("Error reading from %s (pid %d%s): ",
             $self->cmd_as_string, $pid, (kill 0, $pid) ? "" : ", exited");
-        $msg .= $stderr_msg || $frozen_response_errno;
+        $msg .= $stderr_msg || $errno || "(no error message)";
         die "$msg\n";
     }
 
