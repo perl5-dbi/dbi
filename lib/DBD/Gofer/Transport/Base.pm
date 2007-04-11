@@ -31,6 +31,10 @@ sub transmit_request {
     local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
 
     my $info = eval {
+        local $SIG{PIPE} = sub {
+            my $extra = ($! eq "Broken pipe") ? "" : " ($!)";
+            die "Unable to send request: Broken pipe$extra\n";
+        };
         alarm($to) if $to;
         $self->transmit_request_by_transport($request);
     };

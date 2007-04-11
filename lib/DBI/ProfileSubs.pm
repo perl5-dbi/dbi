@@ -22,9 +22,10 @@ use strict;
 use warnings;
 
 
-# would be good to refactor these regex into separate subs or find some other
-# way to compose them in various combinations into multiple subs
-# The final subs always been to be vert fast.
+# would be good to refactor these regex into separate subs and find some
+# way to compose them in various combinations into multiple subs.
+# Perhaps via AUTOLOAD where \&auto_X_Y_Z creates a sub that does X, Y, and Z.
+# The final subs always need to be very fast.
 # 
 
 sub norm_std_n3 {

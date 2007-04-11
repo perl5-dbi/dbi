@@ -192,7 +192,7 @@ sub flush_to_disk {
 
     $self->write_data($fh, $self->{Data}, 1);
 
-    close($fh) or croak("Unable to close '$self->{File}': $!");
+    close($fh) or croak("Error closing '$self->{File}': $!");
 
     $self->empty();
 }

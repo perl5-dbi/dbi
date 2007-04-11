@@ -23,24 +23,16 @@ __PACKAGE__->mk_accessors(qw(
 my $executor = DBI::Gofer::Execute->new();
 
 
-sub transmit_request {
+sub transmit_request_by_transport {
     my ($self, $request) = @_;
 
-    my $frozen_request = $self->freeze_data($request);
+    my $frozen_request = $self->freeze_request($request);
 
     # ...
     # the request is magically transported over to ... ourselves
     # ...
 
-    # since we're in the same process, we don't want to show the DBI trace
-    # enabled for the 'client' because it gets very hard to follow.
-    # So control the Gofer 'server' side independently
-    # but similar logic as used for DBI_TRACE parsing.
-    #my $prev_trace_level = DBI->trace( ($ENV{DBD_GOFER_NULL_TRACE}) ? (split /=/, $ENV{DBD_GOFER_NULL_TRACE}) : (0));
-
-    my $response = $executor->execute_request( $self->thaw_data($frozen_request,1) );
-
-    #DBI->trace($prev_trace_level);
+    my $response = $executor->execute_request( $self->thaw_request($frozen_request,1) );
 
     # put response 'on the shelf' ready for receive_response()
     $self->pending_response( $response );
@@ -49,18 +41,18 @@ sub transmit_request {
 }
 
 
-sub receive_response {
+sub receive_response_by_transport {
     my $self = shift;
 
     my $response = $self->pending_response;
 
-    my $frozen_response = $self->freeze_data($response,1);
+    my $frozen_response = $self->freeze_response($response,1);
 
     # ...
     # the response is magically transported back to ... ourselves
     # ...
 
-    return $self->thaw_data($frozen_response);
+    return $self->thaw_response($frozen_response);
 }
 
 

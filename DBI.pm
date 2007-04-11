@@ -497,7 +497,7 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
 END {
     return unless defined &DBI::trace_msg; # return unless bootstrap'd ok
     local ($!,$?);
-    DBI->trace_msg("    -- DBI::END\n", 2);
+    DBI->trace_msg(sprintf("    -- DBI::END (\$\@: %s, \$!: %s)\n", $@||'', $!||''), 2);
     # Let drivers know why we are calling disconnect_all:
     $DBI::PERL_ENDING = $DBI::PERL_ENDING = 1;	# avoid typo warning
     DBI->disconnect_all() if %DBI::installed_drh;

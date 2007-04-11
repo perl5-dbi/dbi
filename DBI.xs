@@ -695,7 +695,7 @@ parse_trace_flags(SV *h, SV *level_sv, IV old_level)
 	level = old_level;		/* undef: no change	*/
     else
     if (SvTRUE(level_sv)) {
-	if (looks_like_number(level_sv) && SvIV(level_sv)>=0)
+	if (looks_like_number(level_sv))
 	    level = SvIV(level_sv);	/* number: number	*/
 	else {				/* string: parse it	*/
 	    dSP;
@@ -751,7 +751,7 @@ dbih_inner(SV *orv, const char *what)
     dPERINTERP;
     MAGIC *mg;
     SV *ohv;		/* outer HV after derefing the RV	*/
-    SV *hrv;		/* dni inner handle RV-to-HV		*/
+    SV *hrv;		/* dbi inner handle RV-to-HV		*/
 
     /* enable a raw HV (not ref-to-HV) to be passed in, eg DBIc_MY_H */
     ohv = SvROK(orv) ? SvRV(orv) : orv;
@@ -787,14 +787,6 @@ dbih_inner(SV *orv, const char *what)
 	hrv = mg->mg_obj;  /* inner hash of tie */
     }
 
-    /* extra checks if being paranoid */
-    if (DBIS_TRACE_LEVEL && (!SvROK(hrv) || SvTYPE(SvRV(hrv)) != SVt_PVHV)) {
-	if (!what)
-	    return NULL;
-	sv_dump(orv);
-	croak("panic: %s inner handle %s is not a hash ref (isref=%d, type=%d)",
-		what, neatsvpv(hrv,0), SvROK(hrv), (SvROK(hrv))?SvTYPE(SvRV(hrv)):-1);
-    }
     return hrv;
 }
 
@@ -2711,7 +2703,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 #endif
 	    if (imp_xxh && DBIc_TYPE(imp_xxh) <= DBIt_DB && DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh))
 		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, trace_level);
-	    if (trace_level >= 3)
+	    if (trace_level >= 3) {
                 /* XXX might be better to move this down to after call_depth has been
                  * incremented and then also SvREFCNT_dec(mg->mg_obj) to force an immediate
                  * DESTROY of the inner handle if there are no other refs to it.
@@ -2723,6 +2715,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    (dirty?'!':' '), neatsvpv(h,0), neatsvpv(mg->mg_obj,0),
 		    (long)SvREFCNT(SvRV(mg->mg_obj))
 		);
+            }
 	    /* for now we ignore it since it'll be followed soon by	*/
 	    /* a destroy of the inner hash and that'll do the real work	*/
 
@@ -2730,7 +2723,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    /* pointing (without a refcnt inc) to the scalar that is    */
 	    /* being destroyed, so it'll contain random values later.	*/
 	    if (imp_xxh)
-		DBIc_MY_H(imp_xxh) = (void*)SvRV(mg->mg_obj); /* inner (untied) HV */
+		DBIc_MY_H(imp_xxh) = (HV*)SvRV(mg->mg_obj); /* inner (untied) HV */
 
 	    XSRETURN(0);
 	}

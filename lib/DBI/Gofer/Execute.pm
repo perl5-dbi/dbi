@@ -18,9 +18,16 @@ use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
-our $local_log = $ENV{DBI_GOFER_TRACE} || $ENV{DBI_GOFER_LOCAL_LOG};
 our @all_dbh_methods = sort map { keys %$_ } $DBI::DBI_methods{db}, $DBI::DBI_methods{common};
 our %all_dbh_methods = map { $_ => DBD::_::db->can($_) } @all_dbh_methods;
+
+our $local_log = $ENV{DBI_GOFER_LOCAL_LOG}; # do extra logging to stderr
+
+# set trace for server-side gofer
+# Could use DBI_TRACE env var when it's an unrelated separate process
+# but using DBI_GOFER_TRACE makes testing easier for subprocesses (eg stream)
+DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
+
 
 __PACKAGE__->mk_accessors(qw(
     check_connect
@@ -102,12 +109,6 @@ my %extra_attr = (
         )],
     },
 );
-
-
-# set trace for server-side gofer
-# Could use DBI_TRACE env var when it's a separate process
-# but using DBI_GOFER_TRACE makes testing easier (e.g., with null transport)
-DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 
 
 sub _connect {

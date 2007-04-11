@@ -70,7 +70,7 @@ sub start_pipe_command {
     my $pid = open3($wfh, $rfh, $efh, @$cmd)
         or die "error starting @$cmd: $!\n";
     if ($self->trace) {
-        $self->trace_msg(sprintf("Started pid $pid: @$cmd {fd: w%d, r%d, e%d}\n", fileno $wfh, fileno $rfh, fileno $efh),0);
+        $self->trace_msg(sprintf("Started pid $pid: @$cmd {fd: w%d r%d e%d, ppid=$$}\n", fileno $wfh, fileno $rfh, fileno $efh),0);
     }
     nonblock($rfh);
     nonblock($efh);
@@ -90,20 +90,21 @@ sub cmd_as_string {
     # XXX meant to return a properly shell-escaped string suitable for system
     # but its only for debugging so that can wait
     my $connection_info = $self->connection_info;
-    return join " ", map { "'$_'" } @{$connection_info->{cmd}};
+    return join " ", map { (m/^[-:\w]*$/) ? $_ : "'$_'" } @{$connection_info->{cmd}};
 }
 
 
 sub transmit_request_by_transport {
     my ($self, $request) = @_;
 
-    my $frozen_request = $self->freeze_data($request);
+    my $frozen_request = $self->freeze_request($request);
 
     my $cmd = [ @{$self->go_perl}, qw(-MDBI::Gofer::Transport::pipeone -e run_one_stdio)];
     my $info = $self->start_pipe_command($cmd);
 
     my $wfh = delete $info->{wfh};
     # send frozen request
+    local $\;
     print $wfh $frozen_request
         or warn "error writing to @$cmd: $!\n";
     # indicate that there's no more
@@ -117,6 +118,7 @@ sub transmit_request_by_transport {
 
 sub read_response_from_fh {
     my ($self, $fh_actions) = @_;
+    my $trace = $self->trace;
 
     my $info = $self->connection_info || die;
     my ($ios) = @{$info}{qw(ios)};
@@ -134,15 +136,20 @@ sub read_response_from_fh {
             unless ($rv) {              # error (undef) or end of file (0)
                 my $action;
                 unless (defined $rv) {  # was an error
+                    $self->trace_msg("error on handle $fh: $!") if $trace >= 4;
                     $action = $actions->{error} || $actions->{eof};
                     ++$errors;
-                    # XXX an error may be a permenant condition of the handle
+                    # XXX an error may be a permenent condition of the handle
                     # if so we'll loop here - not good
                 }
                 else {
                     $action = $actions->{eof};
+                    $self->trace_msg("eof on handle $fh") if $trace >= 4;
                 }
-                $action->($fh) && $ios->remove($fh);
+                if ($action->($fh)) {
+                    $self->trace_msg("removing $fh from handle set") if $trace >= 4;
+                    $ios->remove($fh);
+                }
                 next;
             }
             # action returns true if the response is now complete
@@ -184,7 +191,7 @@ sub receive_response_by_transport {
         if not $frozen_response; # no output on stdout at all
 
     # XXX need to be able to detect and deal with corruption
-    my $response = $self->thaw_data($frozen_response);
+    my $response = $self->thaw_response($frozen_response);
 
     if ($stderr_msg) {
         # add stderr messages as warnings (for PrintWarn)

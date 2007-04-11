@@ -22,21 +22,24 @@ my $executor = DBI::Gofer::Execute->new();
 
 sub run_stdio_hex {
 
-    my $self = DBI::Gofer::Transport::stream->new();
+    my $transport = DBI::Gofer::Transport::stream->new();
     local $| = 1;
 
-    #warn "STARTED $$";
+    DBI->trace_msg("$0 started (pid $$)\n");
 
-    while ( my $frozen_request = <STDIN> ) {
-        $frozen_request =~ s/\015?\012$//;
+    local $/;
+    local $\ = "\012";
+    while ( defined( my $encoded_request = <STDIN> ) ) {
+        $encoded_request =~ s/\015?\012$//;
 
-        my $request = $self->thaw_data( pack "H*", $frozen_request );
+        my $request = $transport->thaw_request( pack "H*", $encoded_request );
         my $response = $executor->execute_request( $request );
 
-        my $frozen_response = unpack "H*", $self->freeze_data($response);
+        my $encoded_response = unpack "H*", $transport->freeze_response($response);
 
-        print $frozen_response, "\015\012"; # autoflushed due to $|=1
+        print $encoded_response, "\015\012"; # autoflushed due to $|=1
     }
+    DBI->trace_msg("$0 ending (pid $$)\n");
 }
 
 1;

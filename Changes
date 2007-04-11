@@ -14,9 +14,13 @@ Policy principle:
     on the basis that if you can alter the code to add go_* attributes
     then you can also put your required logic at that place
 
+Move post-request cleanup into separate method and enable hooks so
+    it can be done after the response has been sent
+
 Gofer request flags:
     return current executor stats as an attribute - handy for tests
     only fetch one result set - handy for Sybase/MSSQL users
+    will accept streamed resultsets
 Pedantic policy should force a fresh connect each time - add new policy item
 Add attr-passthru to prepare()? ie for gofer cache control
 Terminology for client and server ends

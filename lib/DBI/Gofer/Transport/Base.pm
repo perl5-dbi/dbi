@@ -23,7 +23,8 @@ __PACKAGE__->mk_accessors(qw(
 ));
 
 
-sub _init_trace { $ENV{DBI_GOFER_TRACE} || 0 }
+# see also $ENV{DBI_GOFER_TRACE} in DBI::Gofer::Execute
+sub _init_trace { (split(/=/,$ENV{DBI_GOFER_TRACE}||0))[0] }
 
 
 sub new {
@@ -31,14 +32,20 @@ sub new {
     $args->{trace} ||= $class->_init_trace;
     my $self = bless {}, $class;
     $self->$_( $args->{$_} ) for keys %$args;
+    $self->trace_msg("$class->new({ @{[ %$args ]} })\n") if $self->trace;
     return $self;
 }
 
 
 
-sub freeze_data {
-    my ($self, $data, $skip_trace) = @_;
-    $self->_dump("freezing ".ref($data), $data)
+sub freeze_request  { return shift->_freeze_data("request",  @_) }
+sub freeze_response { return shift->_freeze_data("response", @_) }
+sub thaw_request    { return shift->_thaw_data("request",  @_)   }
+sub thaw_response   { return shift->_thaw_data("response", @_)   }
+
+sub _freeze_data {
+    my ($self, $what, $data, $skip_trace) = @_;
+    $self->_dump("freezing $self->{trace} ".ref($data), $data)
         if !$skip_trace and $self->trace;
     local $Storable::forgive_me = 1; # for CODE refs etc
     my $frozen = eval { nfreeze($data) };
@@ -49,17 +56,18 @@ sub freeze_data {
     return $frozen;
 }   
 
-sub thaw_data {
-    my ($self, $frozen_data, $skip_trace) = @_;
+sub _thaw_data {
+    my ($self, $what, $frozen_data, $skip_trace) = @_;
     my $data = eval { thaw($frozen_data) };
     if ($@) {
         chomp(my $err = $@);
-        my $msg = "Error thawing object: $err";
-        Carp::cluck("$msg - stack trace:"); # XXX disable later
-        $self->_dump("thaw failed for", $frozen_data);
+        # remove extra noise from Storable
+        $err =~ s{ at \S+?/Storable.pm \(autosplit into \S+?/Storable/thaw.al\) line \d+(, \S+ line \d+)?}{};
+        my $msg = sprintf "Error thawing $what: %s (data=%s)", $err, DBI::neat($frozen_data,50);
+        Carp::cluck("$msg, pid $$ stack trace follows:"); # XXX if $self->trace;
         die $msg;
     }
-    $self->_dump("thawing ".ref($data), $data)
+    $self->_dump("thawing $self->{trace} ".ref($data), $data)
         if !$skip_trace and $self->trace;
     return $data;
 }
