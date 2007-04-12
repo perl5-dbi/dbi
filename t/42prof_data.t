@@ -12,7 +12,7 @@ BEGIN {
 		plan skip_all => 'profiling not supported for DBI::PurePerl';
 	}
 	else {
-		plan tests => 33;
+		plan tests => 30;
 	}
 }
 
@@ -27,12 +27,11 @@ my $dbh = DBI->connect("dbi:ExampleP:", '', '',
                        { RaiseError=>1, Profile=>"6/DBI::ProfileDumper" });
 isa_ok( $dbh, 'DBI::db', 'Created connection' );
 
-# do a little work
-foreach (1,2,3) {
+# do a little work, but enough to ensure we don't get 0's on systems with low res timers
+foreach (1..6) {
   $dbh->do("set dummy=$_");
   my $sth = $dbh->prepare($sql);
-  isa_ok( $sth, 'DBI::st', 'Created handle' );
-  for my $loop (1..20) {  
+  for my $loop (1..50) {  
     $sth->execute(".");
     $sth->fetchrow_hashref;
     $sth->finish;

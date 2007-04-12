@@ -43,15 +43,17 @@ and prepends them to any error message.
 
   Fixed set_err so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
-  Fixed compile error in DBD::Gofer::Transport::http.
+  Fixed 42prof_data.t on fast systems with poor timers thanks to Malcolm Nooning.
+  Fixed gofer pipeone & stream transports to avoid risk of hanging.
 
-  Changed DBD::Gofer to work around a DBD::Sybase bind_param bug.
+  Changed DBD::Gofer to work around a DBD::Sybase bind_param bug
+    (which is now fixed in DBD::Sybase 1.07)
   Changed _set_fbav to not croak when given a wrongly sized array,
     it now warns and adjusts the row buffer to match.
-  Changed DBD::NullP to be vaguely useful for testing.
+  Changed DBD::NullP to be slightly more useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
-  Assorted Gofer bug fixes, enhancements and docs.
+  Many assorted Gofer related bug fixes, enhancements and docs.
 
   Added support for install_methods to DBD::Gofer.
   Added goferperf.pl utility (doesn't get installed).
