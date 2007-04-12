@@ -16,9 +16,6 @@ package		# hide from PAUSE
 #
 ########################################################################
 
-# TODO:
-#	recheck code against DBI
-
 use strict;
 use Carp;
 require Symbol;
@@ -634,6 +631,10 @@ sub neat {
     return "$quote$v$quote";
 }
 
+sub dbi_time {
+    return time();
+}
+
 package
 	DBI::var;
 
@@ -729,6 +730,14 @@ sub STORE {
     }
     elsif ($key eq 'TraceLevel') {
 	$h->trace($value);
+	return 1;
+    }
+    elsif ($key eq 'NUM_OF_FIELDS') {
+        $h->{$key} = $value;
+        if ($value) {
+            my $fbav = DBD::_::st::dbih_setup_fbav($h);
+            @$fbav = (undef) x $value if @$fbav != $value;
+        }
 	return 1;
     }
     elsif (!$is_valid_attribute{$key} && $key =~ /^[A-Z]/ && !exists $h->{$key}) {

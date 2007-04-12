@@ -27,8 +27,8 @@ sub run_stdio_hex {
 
     DBI->trace_msg("$0 started (pid $$)\n");
 
-    local $/;
-    local $\ = "\012";
+    local $\; # OUTPUT_RECORD_SEPARATOR
+    local $/ = "\012"; # INPUT_RECORD_SEPARATOR
     while ( defined( my $encoded_request = <STDIN> ) ) {
         $encoded_request =~ s/\015?\012$//;
 

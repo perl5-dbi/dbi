@@ -100,8 +100,8 @@ while ( my ($activity, $stats_hash) = each %durations ) {
     print "\n";
     $stats_hash->{'~baseline~'} = delete $stats_hash->{"no+pedantic"};
     for my $perf_tag (reverse sort keys %$stats_hash) {
-        my $dur = $stats_hash->{$perf_tag};
-        printf "  %6s %-13s: %.6fsec (%5d/sec)",
+        my $dur = $stats_hash->{$perf_tag} || 0.0000001;
+        printf "  %6s %-16s: %.6fsec (%5d/sec)",
             $activity, $perf_tag, $dur/$perf_count, $perf_count/$dur;
         my $baseline_dur = $stats_hash->{'~baseline~'};
         printf " %+5.1fms", (($dur-$baseline_dur)/$perf_count)*1000
@@ -163,6 +163,7 @@ sub run_tests {
     is_deeply($rowset, { '1' => { dKey=>1, dVal=>'apples' }, 2 => { dKey=>2, dVal=>'apples' } });
 
     if ($perf_count and $transport ne 'pipeone') {
+        print "performance check - $perf_count selects and inserts\n";
         my $start = dbi_time();
         $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit")
             for (1000..1000+$perf_count);
@@ -175,20 +176,25 @@ sub run_tests {
         $durations{insert}{"$transport+$policy_name"} = dbi_time() - $start;
     }
 
+    my $skip_go_request_count_check = ($transport eq 'no');
+
     print "Testing go_request_count and caching of simple values\n";
     my $go_request_count = $dbh->{go_request_count};
-    ok $go_request_count;
+    ok $go_request_count
+        unless $skip_go_request_count_check && pass();
 
     ok $dbh->do("DROP TABLE fruit");
-    is ++$go_request_count, $dbh->{go_request_count};
+    is ++$go_request_count, $dbh->{go_request_count}
+        unless $skip_go_request_count_check && pass();
 
-    # actuall tests go_request_count, caching, and skip_default_methods policy
+    # tests go_request_count, caching, and skip_default_methods policy
     my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
-    print "use_remote=$use_remote (policy=$policy_name, transport=$transport) $dbh->{dbi_default_methods}\n";
+    printf "use_remote=%s (policy=%s, transport=%s) %s\n",
+        $use_remote, $policy_name, $transport, $dbh->{dbi_default_methods}||'';
 
 SKIP: {
     skip "skip_default_methods checking doesn't work with Gofer over Gofer", 3
-        if $ENV{DBI_AUTOPROXY};
+        if $ENV{DBI_AUTOPROXY} or $skip_go_request_count_check;
     $dbh->data_sources({ foo_bar => $go_request_count });
     is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     $dbh->data_sources({ foo_bar => $go_request_count }); # should use cache

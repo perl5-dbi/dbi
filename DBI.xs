@@ -1403,24 +1403,27 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
         if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
             PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %ld to %ld fields\n", av_len(av)+1, i);
         SvREADONLY_off(av);
+        if (i < av_len(av)+1) /* trim to size if too big */
+            av_fill(av, i-1);
     }
     else {
         if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
             PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %ld fields\n", i);
         av = newAV();
         DBIc_FIELDS_AV(imp_sth) = av;
+
+        /* row_count will need to be manually reset by the driver if the	*/
+        /* sth is re-executed (since this code won't get rerun)		*/
+        DBIc_ROW_COUNT(imp_sth) = 0;
     }
 
     /* load array with writeable SV's. Do this backwards so	*/
     /* the array only gets extended once.			*/
     while(i--)			/* field 1 stored at index 0	*/
 	av_store(av, i, newSV(0));
-    if (DBIc_TRACE_LEVEL(imp_sth) >= 3)
+    if (DBIc_TRACE_LEVEL(imp_sth) >= 6)
         PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %ld fields\n", av_len(av)+1);
     SvREADONLY_on(av);		/* protect against shift @$row etc */
-    /* row_count will need to be manually reset by the driver if the	*/
-    /* sth is re-executed (since this code won't get rerun)		*/
-    DBIc_ROW_COUNT(imp_sth) = 0;
     return av;
 }
 
@@ -1736,15 +1739,10 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_FIELDS")) {
 	D_imp_sth(h);
         int new_num_fields = (SvOK(valuesv)) ? SvIV(valuesv) : -1;
-
-	if (DBIc_NUM_FIELDS(imp_sth) > 0	/* don't change NUM_FIELDS! */
-        &&  DBIc_ACTIVE(imp_sth)                /* if sth is Active */
-        ) {
-	    croak("Can't change NUM_OF_FIELDS of Active handle (already set to %d)", DBIc_NUM_FIELDS(imp_sth));
-        }
 	DBIc_NUM_FIELDS(imp_sth) = new_num_fields;
-        if (DBIc_FIELDS_AV(imp_sth)) /* modify existing fbav */
+        if (DBIc_FIELDS_AV(imp_sth)) { /* modify existing fbav */
             dbih_setup_fbav(imp_sth);
+        }
 	cacheit = 1;
     }
     else if (htype==DBIt_ST && strEQ(key, "NUM_OF_PARAMS")) {
