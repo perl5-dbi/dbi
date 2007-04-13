@@ -30,11 +30,14 @@ DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 
 
 __PACKAGE__->mk_accessors(qw(
-    check_connect
+    check_request
     default_connect_dsn
     forced_connect_dsn
     default_connect_attributes
     forced_connect_attributes
+    forced_single_resultset
+    max_cached_dbh_per_drh
+    max_cached_sth_per_dbh
     track_recent
     stats
 )); 
@@ -44,6 +47,7 @@ sub new {
     my ($self, $args) = @_;
     $args->{default_connect_attributes} ||= {};
     $args->{forced_connect_attributes}  ||= {};
+    $args->{max_cached_sth_per_dbh}     ||= 1000;
     $args->{stats} ||= {};
     return $self->SUPER::new($args);
 }
@@ -60,11 +64,9 @@ my @sth_std_attr = qw(
 );
 
 my %extra_attr = (
-    # what driver-specific attributes should be returned for the driver being used?
     # Only referenced if the driver doesn't support private_attribute_info method.
+    # what driver-specific attributes should be returned for the driver being used?
     # keyed by $dbh->{Driver}{Name}
-    # XXX for dbh attr only need to be returned on first access by client
-    # the client should then cache them. So need a way to indicate that.
     # XXX for sth should split into attr specific to resultsets (where NUM_OF_FIELDS > 0) and others
     # which would reduce processing/traffic for non-select statements
     mysql  => {
@@ -114,25 +116,25 @@ my %extra_attr = (
 sub _connect {
     my ($self, $request) = @_;
 
-    # just a quick hack for now
     my $stats = $self->{stats};
-    if (++$stats->{_requests_served} % 1000 == 0) { # XXX config
-        # discard CachedKids from time to time
+
+    # discard CachedKids from time to time
+    if (++$stats->{_requests_served} % 1000 == 0 # XXX config?
+        and my $max_cached_dbh_per_drh = $self->{max_cached_dbh_per_drh}
+    ) {
         my %drivers = DBI->installed_drivers();
         while ( my ($driver, $drh) = each %drivers ) {
-            next if $driver eq 'Gofer'; # ie transport=null when testing
             next unless my $CK = $drh->{CachedKids};
-            # XXX currently we discard all regardless
-            # because that avoids the need to also handle
-            # limiting the prepared statement cache
-            my $cached_dbh_count = keys %$CK;
-            #next unless $cached_dbh_count > 20; # XXX config
-
-            DBI->trace_msg("Clearing $cached_dbh_count cached dbh from $driver");
+            next unless keys %$CK > $max_cached_dbh_per_drh;
+            next if $driver eq 'Gofer'; # ie transport=null when testing
+            DBI->trace_msg(sprintf "Clearing %d cached dbh from $driver",
+                scalar keys %$CK, $self->{max_cached_dbh_per_drh});
             $_->{Active} && $_->disconnect for values %$CK;
             %$CK = ();
         }
     }
+
+    local $ENV{DBI_AUTOPROXY}; # limit the insanity
 
     my ($connect_method, $dsn, $username, $password, $attr) = @{ $request->dbh_connect_call };
     $connect_method ||= 'connect_cached';
@@ -141,16 +143,10 @@ sub _connect {
     # (Could just do this on client-side and trust the client. DoS?)
     delete @{$attr}{qw(Profile InactiveDestroy HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
 
-    if (my $check_connect = $self->check_connect) {
-        $check_connect->($dsn, $attr, $connect_method, $request);
-    }
-
     $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
         or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";
 
-    local $ENV{DBI_AUTOPROXY}; # limit the insanity
-
-    # XXX implement our own private connect_cached method?
+    # XXX implement our own private connect_cached method? (with rate-limited ping)
     my $dbh = DBI->$connect_method($dsn, undef, undef, {
 
         # the configured default attributes, if any
@@ -175,6 +171,12 @@ sub _connect {
         dbi_go_execute_unique => __PACKAGE__."$$",
     });
     $dbh->{ShowErrorStatement} = 1 if $local_log;
+
+    my $CK = $dbh->{CachedKids};
+    if ($CK && keys %$CK > $self->{max_cached_sth_per_dbh}) {
+        %$CK = (); #  clear all statement handles
+    }
+
     #$dbh->trace(0);
     return $dbh;
 }
@@ -222,6 +224,11 @@ sub execute_request {
     local $SIG{__WARN__} = sub { push @warnings, @_; warn @_ if $local_log };
 
     my $response = eval {
+
+        if (my $check_request = $self->check_request) {
+            $request = $check_request->($request)
+                or die "check_request failed";
+        }
 
         my $version = $request->version || 0;
         die ref($request)." version $version is not supported"
@@ -411,6 +418,7 @@ sub gather_sth_resultsets {
             if (my $rows = $rs->{rowset}) {
                 $row_count += @$rows;
             }
+            last if $self->{forced_single_resultset};
         } while $sth->more_results
              || $sth->{syb_more_results};
 
@@ -470,9 +478,80 @@ sub _get_default_methods {
 1;
 __END__
 
-TODO
+=head1 NAME
 
-Pruning of cached dbh and sth
+DBI::Gofer::Execute - Executes Gofer requests and returns Gofer responses
+
+=head1 SYNOPSIS
+
+  $executor = DBI::Gofer::Execute->new( { ...config... });
+
+  $response = $executor->execute_request( $request );
+
+=head1 DESCRIPTION
+
+Accepts a DBI::Gofer::Request object, executes the requested DBI method calls,
+and returns a DBI::Gofer::Response object.
+
+Any error, including any internal 'fatal' errors are caught and converted into
+a DBI::Gofer::Response object.
+
+=head1 CONFIGURATION
+
+=head2 check_request
+
+If defined, it must be a reference to a subroutine that will 'check' the request.
+
+The subroutine can either return the original request object or die with a
+suitable error message (which will be turned into a Gofer response).
+
+It can also construct and return a new request that should be executed instead
+of the original request.
+
+=head2 forced_connect_dsn
+
+If set, this DSN is always used instead of the one in the request.
+
+=head2 default_connect_dsn
+
+If set, this DSN is used if C<forced_connect_dsn> is not set and the request does not contain a DSN.
+
+=head2 forced_connect_attributes
+
+A reference to a hash of connect() attributes. Individual attributes in
+C<forced_connect_attributes> will take precedence over corresponding attributes
+in the request.
+
+=head2 default_connect_attributes
+
+A reference to a hash of connect() attributes. Individual attributes in the
+request take precedence over corresponding attributes in C<default_connect_attributes>.
+
+=head2 max_cached_dbh_per_drh
+
+If set, the loaded drivers will be checked to ensure they don't have more than
+this number of cached connections. There is no default value. This limit is not
+enforced for every request.
+
+=head2 max_cached_sth_per_dbh
+
+If set, all the cached statement handles will be cleared once the number of
+cached statement handles rises above this limit. The default is 1000.
+
+=head2 forced_single_resultset
+
+If true, then only a single result set will be fetched and returned in the response.
+
+=head2 track_recent
+
+If set, specifies the number of recent requests and responses that (the
+transport) should keep for diagnostics. See L<DBI::Gofer::Transport::mod_perl>
+Note that this setting can significantly increase memory use.
+
+=head1 TO DO
+
+Currently every 1000 requests all the cached dbh are disconnected cleared to avoid
+the connection and statement handle caches growing too large. A smarter system is needed.
 
 =head1 AUTHOR AND COPYRIGHT
 
