@@ -41,7 +41,7 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
         my $O = $info->{O}||0;
         my @ima_flags = map { ($O & $_) ? $bit2hex{$_} : () } @bit2hex_bitkeys;
 
-        printf "\$h->$fullmeth($proto)  @ima_flags # 0x%04x\n", $O;
+        printf "\$h->%s(%s)  %s # 0x%04x\n", $fullmeth, $proto, "@ima_flags", $O;
     }
 }   
 

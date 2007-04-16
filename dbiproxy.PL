@@ -1,6 +1,6 @@
 # -*- perl -*-
 
-my $file = 'dbiproxy';
+my $file = $ARGV[0] || 'dbiproxy';
 
 my $script = <<'SCRIPT';
 ~startperl~
@@ -187,6 +187,7 @@ the DBI.
 
 L<DBI::ProxyServer(3)>, L<DBD::Proxy(3)>, L<DBI(3)>
 
+=cut
 SCRIPT
 
 
@@ -200,4 +201,5 @@ if (!(open(FILE, ">$file"))  ||
     !(close(FILE))) {
     die "Error while writing $file: $!\n";
 }
+chmod 0755, $file;
 print "Extracted $file from ",__FILE__," with variable substitutions.\n";

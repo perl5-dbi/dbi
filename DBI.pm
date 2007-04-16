@@ -778,6 +778,7 @@ sub install_driver {		# croaks on failure
     $drh = eval { $driver_class->driver($attr || {}) };
     unless ($drh && ref $drh && !$@) {
 	my $advice = "";
+        $@ ||= "$driver_class->driver didn't return a handle";
 	# catch people on case in-sensitive systems using the wrong case
 	$advice = "\nPerhaps the capitalisation of DBD '$driver' isn't right."
 		if $@ =~ /locate object method/;
@@ -1136,13 +1137,14 @@ sub connect_test_perf {
     my $loops ||= $attr->{dbi_loops} || 5;
     my $par   ||= $attr->{dbi_par}   || 1;	# parallelism
     my $verb  ||= $attr->{dbi_verb}  || 1;
+    my $meth  ||= $attr->{dbi_meth}  || 'connect';
     print "$dsn: testing $loops sets of $par connections:\n";
-    require Benchmark;
     require "FileHandle.pm";	# don't let toke.c create empty FileHandle package
-    $| = 1;
-    my $t0 = new Benchmark;		# not currently used
+    local $| = 1;
     my $drh = $class->install_driver($dsn) or Carp::croak("Can't install $dsn driver\n");
-    my $t1 = new Benchmark;
+    # test the connection and warm up caches etc
+    $drh->connect($dsn,$dbuser,$dbpass) or Carp::croak("connect failed: $DBI::errstr");
+    my $t1 = dbi_time();
     my $loop;
     for $loop (1..$loops) {
 	my @cons;
@@ -1150,58 +1152,30 @@ sub connect_test_perf {
 	for (1..$par) {
 	    print "$_ ";
 	    push @cons, ($drh->connect($dsn,$dbuser,$dbpass)
-		    or Carp::croak("Can't connect # $_: $DBI::errstr\n"));
+		    or Carp::croak("connect failed: $DBI::errstr\n"));
 	}
 	print "\nDisconnecting...\n" if $verb;
 	for (@cons) {
-	    $_->disconnect or warn "bad disconnect $DBI::errstr"
+	    $_->disconnect or warn "disconnect failed: $DBI::errstr"
 	}
     }
-    my $t2 = new Benchmark;
-    my $td = Benchmark::timediff($t2, $t1);
-    printf "Made %2d connections in %s\n", $loops*$par, Benchmark::timestr($td);
-	print "\n";
+    my $t2 = dbi_time();
+    my $td = $t2 - $t1;
+    printf "$meth %d and disconnect them, %d times: %.4fs / %d = %.4fs\n",
+        $par, $loops, $td, $loops*$par, $td/($loops*$par);
     return $td;
 }
 
 
 # Help people doing DBI->errstr, might even document it one day
-# XXX probably best moved to cheaper XS code
+# XXX probably best moved to cheaper XS code if this gets documented
 sub err    { $DBI::err    }
 sub errstr { $DBI::errstr }
 
 
 # --- Private Internal Function for Creating New DBI Handles
 
-sub _new_handle {
-    my ($class, $parent, $attr, $imp_data, $imp_class) = @_;
-
-    Carp::croak('Usage: DBI::_new_handle'
-	    .'($class_name, parent_handle, \%attr, $imp_data)'."\n"
-	    .'got: ('.join(", ",$class, $parent, $attr, $imp_data).")\n")
-	unless (@_ == 5	and (!$parent or ref $parent)
-			and ref $attr eq 'HASH'
-			and $imp_class);
-
-    $attr->{ImplementorClass} = $imp_class
-	or Carp::croak("_new_handle($class): 'ImplementorClass' attribute not given");
-
-    DBI->trace_msg("    New $class (for $imp_class, parent=$parent, id=".($imp_data||'').")\n")
-	if $DBI::dbi_debug >= 3;
-
-    # This is how we create a DBI style Object:
-    my (%hash, $i, $h);
-    $i = tie    %hash, $class, $attr;  # ref to inner hash (for driver)
-    $h = bless \%hash, $class;         # ref to outer hash (for application)
-    # The above tie and bless may migrate down into _setup_handle()...
-    # Now add magic so DBI method dispatch works
-    DBI::_setup_handle($h, $imp_class, $parent, $imp_data);
-
-    return $h unless wantarray;
-    ($h, $i);
-}
-# XXX minimum constructors for the tie's (alias to XS version)
-sub DBI::st::TIEHASH { bless $_[1] => $_[0] };
+# XXX move to PurePerl?
 *DBI::dr::TIEHASH = \&DBI::st::TIEHASH;
 *DBI::db::TIEHASH = \&DBI::st::TIEHASH;
 
@@ -7228,16 +7202,21 @@ truncated if longer than C<$DBI::neat_maxlen>. See L</neat> for more details.
 
 =head2 Tracing Tips
 
-You can add tracing to your own application code using the
-L</trace_msg> method.
+You can add tracing to your own application code using the L</trace_msg> method.
 
-It can sometimes be handy to compare trace files from two different
-runs of the same script. However using a tool like C<diff> doesn't work
-well because the trace file is full of object addresses that may
-differ each run. Here's a handy little command to strip those out:
+It can sometimes be handy to compare trace files from two different runs of the
+same script. However using a tool like C<diff> on the original log output
+doesn't work well because the trace file is full of object addresses that may
+differ on each run.
 
-  perl -pe 's/\b0x[\da-f]{6,}/0xNNNN/gi; s/\b[\da-f]{6,}/<long number>/gi'
+The DBI includes a handy utility called dbilogstrip that can be used to
+'normalize' the log content. It can be used as a filter like this:
 
+    DBI_TRACE=2 perl yourscript.pl ...args1... 2>&1 | dbilogstrip > dbitrace1.log
+    DBI_TRACE=2 perl yourscript.pl ...args2... 2>&1 | dbilogstrip > dbitrace2.log
+    diff -u dbitrace1.log dbitrace2.log
+
+See L<dbilogstrip> for more information.
 
 =head1 DBI ENVIRONMENT VARIABLES
 

@@ -53,9 +53,12 @@ and prepends them to any error message.
   Changed DBD::NullP to be slightly more useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
+  Changed some handle creation code from perl to C code,
+    so handle creation cost reduced by ~20%.
   Many assorted Gofer related bug fixes, enhancements and docs.
 
   Added goferperf.pl utility (doesn't get installed).
+  Added dbilogstrip utility (gets installed)
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.
 

@@ -1150,7 +1150,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     /* Use DBI magic on inner handle to carry handle attributes 	*/
     sv_magic(SvRV(h), dbih_imp_sv, DBI_MAGIC, Nullch, 0);
     SvREFCNT_dec(dbih_imp_sv);	/* since sv_magic() incremented it	*/
-    SvRMAGICAL_on(SvRV(h));	/* so magic gets sv_clear'd ok		*/
+    SvRMAGICAL_on(SvRV(h));	/* so DBI magic gets sv_clear'd ok	*/
 
     DBI_SET_LAST_HANDLE(h);
 
@@ -1179,6 +1179,10 @@ static void
 dbih_dumphandle(SV *h, const char *msg, int level)
 {
     D_imp_xxh(h);
+    if (level >= 9) {
+        dTHX;
+        sv_dump(h);
+    }
     dbih_dumpcom(imp_xxh, msg, level);
 }
 
@@ -3872,6 +3876,58 @@ _clone_dbis()
 
 
 void
+_new_handle(class, parent, attr_ref, imp_datasv, imp_class)
+    SV *	class
+    SV *	parent
+    SV *	attr_ref
+    SV *	imp_datasv
+    SV *	imp_class
+    PPCODE:
+    dTHX;
+    dPERINTERP;
+    HV *outer;
+    SV *outer_ref;
+    GV *class_stash = gv_stashsv(class, GV_ADDWARN);
+    (void)cv;
+
+    if (DBIS_TRACE_LEVEL >= 3) {
+        PerlIO_printf(DBILOGFP, "    New %s (for %s, parent=%s, id=%s)\n",
+            neatsvpv(class,0), SvPV_nolen(imp_class), neatsvpv(parent,0), neatsvpv(imp_datasv,0));
+    }
+
+    hv_store(SvRV(attr_ref), "ImplementorClass", 16, SvREFCNT_inc(imp_class), 0);
+
+    /* make attr into inner handle by blessing it into class */
+    sv_bless(attr_ref, class_stash);
+    /* tie new outer hash to inner handle */
+    outer = newHV(); /* create new hash to be outer handle */
+    outer_ref = newRV_noinc((SV*)outer);
+    /* make outer hash into a handle by blessing it into class */
+    sv_bless(outer_ref, class_stash);
+    /* tie outer handle to inner handle */
+    sv_magic((SV*)outer, attr_ref, PERL_MAGIC_tied, Nullch, 0);
+    /*SvREFCNT_dec(attr_ref);  /* because sv_magic() incremented it */
+
+    /*
+        my (%outer, $i, $h);
+        $i = tie    %outer, $class, $attr;  # ref to inner hash (for driver)
+        $h = bless \%outer, $class;         # ref to outer hash (for application)
+        DBI::_setup_handle($h, $imp_class, $parent, $imp_data);
+        return $h unless wantarray;
+        return ($h, $i);
+    */
+    dbih_setup_handle(outer_ref, SvPV_nolen(imp_class), parent, SvOK(imp_datasv) ? imp_datasv : Nullsv);
+
+    /* return outer handle, plus inner handle if not in scalar context */
+    sv_2mortal(outer_ref);
+    EXTEND(SP, 2);
+    PUSHs(outer_ref);
+    if (GIMME != G_SCALAR) {
+        PUSHs(attr_ref);
+    }
+
+
+void
 _setup_handle(sv, imp_class, parent, imp_datasv)
     SV *	sv
     char *	imp_class
@@ -4591,6 +4647,17 @@ DESTROY(sth)
         }
     }
 
+
+MODULE = DBI   PACKAGE = DBI::st
+
+void
+TIEHASH(class, inner_ref)
+    SV * class
+    SV * inner_ref
+    CODE:
+    HV *stash = gv_stashsv(class, GV_ADDWARN); /* a new hash is supplied to us, we just need to bless and apply tie magic */
+    sv_bless(inner_ref, stash);
+    ST(0) = inner_ref;
 
 MODULE = DBI   PACKAGE = DBD::_::common
 

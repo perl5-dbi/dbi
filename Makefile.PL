@@ -126,11 +126,11 @@ my %opts = (
         "File::Spec" => 0,
         "Scalar::Util" => 0,
     },
-    EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl" ],
+    EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
     clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zv*_*.t"
-			." dbiproxy$ext_pl dbiprof$ext_pl dbitrace.log dbi.prof ndtest.prt" },
+                ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbitrace.log dbi.prof ndtest.prt" },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',
@@ -310,7 +310,7 @@ $(roadmap_pm): Roadmap.pod
 	$(CP) Roadmap.pod $(roadmap_pm)
 
 checkkeywords:
-	$(RM_F) blib
+	$(RM_RF) blib
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
             -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 };

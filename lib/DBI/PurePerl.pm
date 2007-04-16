@@ -436,6 +436,28 @@ sub  _install_method {
     }
 }
 
+
+sub _new_handle {
+    my ($class, $parent, $attr, $imp_data, $imp_class) = @_;
+
+    DBI->trace_msg("    New $class (for $imp_class, parent=$parent, id=".($imp_data||'').")\n")
+        if $DBI::dbi_debug >= 3;
+
+    $attr->{ImplementorClass} = $imp_class
+        or Carp::croak("_new_handle($class): 'ImplementorClass' attribute not given");
+
+    # This is how we create a DBI style Object:
+    # %outer gets tied to %$attr (which becomes the 'inner' handle)
+    my (%outer, $i, $h);
+    $i = tie    %outer, $class, $attr;  # ref to inner hash (for driver)
+    $h = bless \%outer, $class;         # ref to outer hash (for application)
+    # The above tie and bless may migrate down into _setup_handle()...
+    # Now add magic so DBI method dispatch works
+    DBI::_setup_handle($h, $imp_class, $parent, $imp_data);
+    return $h unless wantarray;
+    return ($h, $i);
+}
+
 sub _setup_handle {
     my($h, $imp_class, $parent, $imp_data) = @_;
     my $h_inner = tied(%$h) || $h;
@@ -634,6 +656,8 @@ sub neat {
 sub dbi_time {
     return time();
 }
+
+sub DBI::st::TIEHASH { bless $_[1] => $_[0] };
 
 package
 	DBI::var;

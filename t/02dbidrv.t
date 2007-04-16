@@ -198,7 +198,8 @@ do {
 SKIP: {
     skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
     
-    cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids');
+    cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids')
+        or $drh->dump_handle("bad Kids",3);
 }
 
 # copied up to drh from dbh when dbh was DESTROYd

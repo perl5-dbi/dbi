@@ -94,14 +94,14 @@ else {
     
     # new experimental connect_test_perf method
     DBI->connect_test_perf("dbi:$driver:", '', '', {
-	dbi_loops=>5, dbi_par=>20, dbi_verb=>1
+	dbi_loops=>3, dbi_par=>20, dbi_verb=>1
     });
 
     require Benchmark;
     print "Testing handle creation speed...\n";
     my $null_dbh = DBI->connect('dbi:NullP:','','');
     my $null_sth = $null_dbh->prepare('');	# create one to warm up
-    $count = 10_000;
+    $count = 20_000;
     my $i = $count;
     my $t1 = new Benchmark;
     $null_dbh->prepare('') while $i--;

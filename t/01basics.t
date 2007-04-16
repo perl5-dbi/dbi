@@ -148,20 +148,6 @@ is(neat_list([ 1 + 1, "2", undef, "foobarbaz"]), "2, '2', undef, 'foobarbaz'", '
 ## ----------------------------------------------------------------------------
 ## testing DBI functions
 
-## testing dbi_debug
-
-cmp_ok($DBI::dbi_debug, '==',  0, "... DBI::dbi_debug's initial state is 0");
-
-SKIP: {
-    my $null = File::Spec->devnull();
-    skip "cannot find : $null", 2 unless ($^O eq "MSWin32" || -e $null);
-
-    DBI->trace(15,$null);
-    cmp_ok($DBI::dbi_debug, '==', 15, "... DBI::dbi_debug is 15");
-    DBI->trace(0, undef);
-    cmp_ok($DBI::dbi_debug, '==',  0, "... DBI::dbi_debug is 0");
-}
-
 ## test DBI->internal
 
 my $switch = DBI->internal;
@@ -315,6 +301,20 @@ SKIP: {
 
 	cmp_ok(scalar(@installed_drivers), '>=', 1, '... make sure we got at least one');
 	like("@installed_drivers", qr/Sponge/, '... make sure at least one of them is DBI::Spounge');
+}
+
+## testing dbi_debug
+
+cmp_ok($DBI::dbi_debug, '==',  0, "... DBI::dbi_debug's initial state is 0");
+
+SKIP: {
+    my $null = File::Spec->devnull();
+    skip "cannot find : $null", 2 unless ($^O eq "MSWin32" || -e $null);
+
+    DBI->trace(15,$null);
+    cmp_ok($DBI::dbi_debug, '==', 15, "... DBI::dbi_debug is 15");
+    DBI->trace(0, undef);
+    cmp_ok($DBI::dbi_debug, '==',  0, "... DBI::dbi_debug is 0");
 }
 
 1;
