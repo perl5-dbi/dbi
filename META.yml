@@ -5,7 +5,8 @@ version:      1.55
 version_from: DBI.pm
 installdirs:  site
 requires:
-    File::Spec:                    1
+    File::Spec:                    0
+    Scalar::Util:                  0
     Storable:                      1
     Test::Simple:                  0.4
 

@@ -55,7 +55,6 @@ and prepends them to any error message.
   Changed tests to work with other DBMs thanks to ZMAN.
   Many assorted Gofer related bug fixes, enhancements and docs.
 
-  Added support for install_methods to DBD::Gofer.
   Added goferperf.pl utility (doesn't get installed).
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.

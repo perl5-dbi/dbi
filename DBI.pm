@@ -612,8 +612,9 @@ sub connect {
 	or die "panic: $class->install_driver($driver) failed";
 
     # attributes in DSN take precedence over \%attr connect parameter
-    $user =        $attr->{Username} if defined $attr->{Username};
-    $pass = delete $attr->{Password} if defined $attr->{Password};
+    $user = $attr->{Username} if defined $attr->{Username};
+    $pass = $attr->{Password} if defined $attr->{Password};
+    delete $attr->{Password}; # always delete Password as closure stores it securely
     if ( !(defined $user && defined $pass) ) {
         ($user, $pass) = $drh->default_user($user, $pass, $attr);
     }
