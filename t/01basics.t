@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 132;
+use Test::More tests => 131;
 use File::Spec;
 
 $|=1;
@@ -176,11 +176,11 @@ is($switch->{'Version'}, $DBI::VERSION, '... the version should match DBI versio
 cmp_ok(($switch->{private_test1} = 1), '==', 1, '... this should work and return 1');
 cmp_ok($switch->{private_test1},       '==', 1, '... this should equal 1');
 
-ok(!defined $switch->{CachedKids},     '... CachedKids shouldnt be defined');
-ok(($switch->{CachedKids} = { }),      '... assigned empty hash to CachedKids');
 is(ref($switch->{CachedKids}), 'HASH', '... CachedKids should be a HASH reference');
-
-cmp_ok(scalar(keys(%{$switch->{CachedKids}})), '==', 0, '... CachedKids should be an empty HASH reference');
+ok(!keys %{ $switch->{CachedKids} },   '... CachedKids should be empty');
+my $cache = {};
+$switch->{CachedKids} = $cache;
+is($switch->{CachedKids}, $cache,      '... CachedKids should be our ref');
 
 cmp_ok($switch->{Kids},       '==', 0, '... this should be zero');
 cmp_ok($switch->{ActiveKids}, '==', 0, '... this should be zero');

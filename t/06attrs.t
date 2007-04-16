@@ -61,7 +61,7 @@ SKIP: {
     cmp_ok($dbh->{ActiveKids}, '==', 0, '... checking ActiveKids attribute for dbh');;
 }
 
-ok(!defined $dbh->{CachedKids},   '... checking CachedKids attribute for dbh');
+is(ref $dbh->{CachedKids},'HASH', '... checking CachedKids attribute for dbh');
 ok(!defined $dbh->{HandleError},  '... checking HandleError attribute for dbh');
 ok(!defined $dbh->{Profile},      '... checking Profile attribute for dbh');
 ok(!defined $dbh->{Statement},    '... checking Statement attribute for dbh');
@@ -128,7 +128,7 @@ SKIP: {
     cmp_ok($drh->{ActiveKids}, '==', 1, '... checking ActiveKids attribute for drh');
 }
 
-ok(!defined $drh->{CachedKids},  '... checking CachedKids attribute for drh');
+is(ref $drh->{CachedKids},'HASH','... checking CachedKids attribute for drh');
 ok(!defined $drh->{HandleError}, '... checking HandleError attribute for drh');
 ok(!defined $drh->{Profile},     '... checking Profile attribute for drh');
 

@@ -1410,14 +1410,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 
     sub connect_cached {
-	my $drh = shift;
-	my ($dsn, $user, $auth, $attr)= @_;
+        my $drh = shift;
+	my ($dsn, $user, $auth, $attr) = @_;
 
-	# Needs support at dbh level to clear cache before complaining about
-	# active children. The XS template code does this. Drivers not using
-	# the template must handle clearing the cache themselves.
-	my $cache = $drh->FETCH('CachedKids');
-	$drh->STORE('CachedKids', $cache = {}) unless $cache;
+	my $cache = $drh->{CachedKids} ||= {};
 
 	my @attr_keys = $attr ? sort keys %$attr : ();
 	my $key = do { local $^W; # silence undef warnings
@@ -1627,8 +1623,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# Needs support at dbh level to clear cache before complaining about
 	# active children. The XS template code does this. Drivers not using
 	# the template must handle clearing the cache themselves.
-	my $cache = $dbh->FETCH('CachedKids');
-	$dbh->STORE('CachedKids', $cache = {}) unless $cache;
+	my $cache = $dbh->{CachedKids} ||= {};
 	my @attr_keys = ($attr) ? sort keys %$attr : ();
 	my $key = ($attr) ? join("~~", $statement, @attr_keys, @{$attr}{@attr_keys}) : $statement;
 	my $sth = $cache->{$key};

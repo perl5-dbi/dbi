@@ -484,6 +484,7 @@ sub _setup_handle {
 	}
 	elsif (ref($parent) =~ /::dr$/){
 	    $h_inner->{Driver} = $parent;
+            $h_inner->{CachedKids} ||= {};
 	}
 	$h_inner->{_parent} = $parent;
 
@@ -508,6 +509,7 @@ sub _setup_handle {
 	$h_inner->{FetchHashKeyName}	||= 'NAME';
 	$h_inner->{LongReadLen}		||= 80;
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
+	$h_inner->{CachedKids}          ||= {};
 	$h_inner->{Type}                ||= 'dr';
     }
     $h_inner->{"_call_depth"} = 0;
