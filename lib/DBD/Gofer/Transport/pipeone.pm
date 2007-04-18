@@ -136,7 +136,7 @@ sub read_response_from_fh {
             unless ($rv) {              # error (undef) or end of file (0)
                 my $action;
                 unless (defined $rv) {  # was an error
-                    $self->trace_msg("error on handle $fh: $!") if $trace >= 4;
+                    $self->trace_msg("error on handle $fh: $!\n") if $trace >= 4;
                     $action = $actions->{error} || $actions->{eof};
                     ++$errors;
                     # XXX an error may be a permenent condition of the handle
@@ -144,10 +144,10 @@ sub read_response_from_fh {
                 }
                 else {
                     $action = $actions->{eof};
-                    $self->trace_msg("eof on handle $fh") if $trace >= 4;
+                    $self->trace_msg("eof on handle $fh\n") if $trace >= 4;
                 }
                 if ($action->($fh)) {
-                    $self->trace_msg("removing $fh from handle set") if $trace >= 4;
+                    $self->trace_msg("removing $fh from handle set\n") if $trace >= 4;
                     $ios->remove($fh);
                 }
                 next;

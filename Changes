@@ -34,15 +34,23 @@ Refactor http transport like the others re timeout
 Call method on transport failure so transport can cleanup/reset it it wants
 
 prepare(...,{ Err=>\my $isolated_err, ...})
+Move _new_sth to DBI::db::_new_sth (leave alias) and implement in C
+Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
 =head2 Changes in DBI 1.55 (svn rev XXX),  XXX
 
+XXX DBIc_CACHED_KIDS needs to be an lvalue for Drivers using Driver.xst
+Perl.xs: In function 'XS_DBD__Perl__db_disconnect':
+Perl.xs:277: warning: target of assignment not really an lvalue; this will be a hard error in the future
+Perl.xs: In function 'XS_DBD__Perl__db_DESTROY':
+Perl.xs:337: warning: target of assignment not really an lvalue; this will be a hard error in the future
+
+
   Fixed set_err so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
   Fixed 42prof_data.t on fast systems with poor timers thanks to Malcolm Nooning.
-  Fixed gofer pipeone & stream transports to avoid risk of hanging.
 
   Changed some handle creation code from perl to C code,
     to reduce handle creation cost by ~20%.
@@ -53,14 +61,19 @@ and prepends them to any error message.
   Changed DBD::NullP to be slightly more useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
-  Changed DBD::Gofer to work around a DBD::Sybase bind_param bug
-    (which is now fixed in DBD::Sybase 1.07)
-  Many other assorted Gofer related bug fixes, enhancements and docs.
 
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.
-  Added goferperf.pl utility (doesn't get installed).
-  Added dbilogstrip utility (gets installed)
+  Added dbilogstrip utility to edit DBI logs for diff'ing (gets installed)
+
+  Gofer related changes:
+    Fixed gofer pipeone & stream transports to avoid risk of hanging.
+    Changed DBD::Gofer to work around a DBD::Sybase bind_param bug
+      (which is now fixed in DBD::Sybase 1.07)
+    Added goferperf.pl utility (doesn't get installed).
+    Many other assorted Gofer related bug fixes, enhancements and docs.
+    Both client and server sides will need upgrading in sync,
+      that shouldn't be needed in future.
 
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 

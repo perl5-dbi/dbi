@@ -1183,7 +1183,7 @@ sub errstr { $DBI::errstr }
 # These three special constructors are called by the drivers
 # The way they are called is likely to change.
 
-my $profile;
+our $shared_profile;
 
 sub _new_drh {	# called by DBD::<drivername>::driver()
     my ($class, $initial_attr, $imp_data) = @_;
@@ -1208,12 +1208,12 @@ sub _new_drh {	# called by DBD::<drivername>::driver()
 	# The profile object created here when the first driver is loaded
 	# is shared by all drivers so we end up with just one set of profile
 	# data and thus the 'total time in DBI' is really the true total.
-	if (!$profile) {	# first time
+	if (!$shared_profile) {	# first time
 	    $h->{Profile} = $ENV{DBI_PROFILE};
-	    $profile = $h->{Profile};
+	    $shared_profile = $h->{Profile};
 	}
 	else {
-	    $h->{Profile} = $profile;
+	    $h->{Profile} = $shared_profile;
 	}
     }
     return $h unless wantarray;
