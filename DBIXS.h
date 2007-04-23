@@ -133,13 +133,13 @@ struct imp_xxh_st { struct dbih_com_st com; };
 typedef struct {		/* -- DRIVER --				*/
     dbih_com_std_t	std;
     dbih_com_attr_t	attr;
-    SV          **cached_kids_svp;      /* \($h->{CachedKids}) */
+    HV          *_old_cached_kids; /* not used, here for binary compat */
 } dbih_drc_t;
 
 typedef struct {		/* -- DATABASE --			*/
     dbih_com_std_t	std;	/* \__ standard structure		*/
     dbih_com_attr_t	attr;	/* /   plus... (nothing else right now)	*/
-    SV          **cached_kids_svp;	/* \($h->{CachedKids}) */
+    HV          *_old_cached_kids; /* not used, here for binary compat */
 } dbih_dbc_t;
 
 typedef struct {		/* -- STATEMENT --			*/
@@ -232,8 +232,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 
 /* handle sub-type specific fields						*/
 /*	dbh & drh	*/
-#define DBIc_CACHED_KIDS_SVP(imp) _imp2com(imp, cached_kids_svp)
-#define DBIc_CACHED_KIDS(imp)  	((HV*)SvRV( *DBIc_CACHED_KIDS_SVP(imp) ))
+#define DBIc_CACHED_KIDS(imp)  	Nullhv /* no longer used, here for src compat */
 /*	sth	*/
 #define DBIc_NUM_FIELDS(imp)  	_imp2com(imp, num_fields)
 #define DBIc_NUM_PARAMS(imp)  	_imp2com(imp, num_params)

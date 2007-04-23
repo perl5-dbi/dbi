@@ -128,6 +128,7 @@ use constant IMA_EXECUTE	=> 0x1000; #/* do/execute: DBIcf_Executed   */
 use constant IMA_SHOW_ERR_STMT  => 0x2000; #/* dbh meth relates to Statement*/
 use constant IMA_HIDE_ERR_PARAMVALUES => 0x4000; #/* ParamValues are not relevant */
 use constant IMA_IS_FACTORY     => 0x8000; #/* new h ie connect & prepare */
+use constant IMA_CLEAR_CACHED_KIDS    => 0x10000; #/* clear CachedKids before call */
 
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active
@@ -247,6 +248,10 @@ sub  _install_method {
 	$h->{Executed} = 1;
 	$parent_dbh->{Executed} = 1 if $parent_dbh;
     } if IMA_EXECUTE & $bitmask;
+
+    push @pre_call_frag, q{
+	%{ $h->{CachedKids} } = () if $h->{CachedKids};
+    } if IMA_CLEAR_CACHED_KIDS & $bitmask;
 
     if (IMA_KEEP_ERR & $bitmask) {
 	push @pre_call_frag, q{
@@ -484,7 +489,6 @@ sub _setup_handle {
 	}
 	elsif (ref($parent) =~ /::dr$/){
 	    $h_inner->{Driver} = $parent;
-            $h_inner->{CachedKids} ||= {};
 	}
 	$h_inner->{_parent} = $parent;
 
@@ -509,7 +513,6 @@ sub _setup_handle {
 	$h_inner->{FetchHashKeyName}	||= 'NAME';
 	$h_inner->{LongReadLen}		||= 80;
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
-	$h_inner->{CachedKids}          ||= {};
 	$h_inner->{Type}                ||= 'dr';
     }
     $h_inner->{"_call_depth"} = 0;

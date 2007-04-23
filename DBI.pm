@@ -369,7 +369,7 @@ my $keeperr = { O=>0x0004 };
 %DBI::DBI_methods = ( # Define the DBI interface methods per class:
 
     common => {		# Interface methods common to all DBI handle classes
-	'DESTROY'	=> $keeperr,
+	'DESTROY'	=> { O=>0x004|0x10000 },
 	'CLEAR'  	=> $keeperr,
 	'EXISTS' 	=> $keeperr,
 	'FETCH'		=> { O=>0x0404 },
@@ -402,7 +402,7 @@ my $keeperr = { O=>0x0004 };
     },
     db => {		# Database Session Class Interface
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
-	take_imp_data	=> { U =>[1,1], },
+	take_imp_data	=> { U =>[1,1], O=>0x10000 },
 	clone   	=> { U =>[1,2,'[\%attr]'] },
 	connected   	=> { U =>[1,0], O => 0x0004 },
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
@@ -420,7 +420,7 @@ my $keeperr = { O=>0x0004 };
 	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
-	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800 },
+	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000 },
 	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
 	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
 	rows       	=> $keeperr,

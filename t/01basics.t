@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 131;
+use Test::More tests => 130;
 use File::Spec;
 
 $|=1;
@@ -176,8 +176,7 @@ is($switch->{'Version'}, $DBI::VERSION, '... the version should match DBI versio
 cmp_ok(($switch->{private_test1} = 1), '==', 1, '... this should work and return 1');
 cmp_ok($switch->{private_test1},       '==', 1, '... this should equal 1');
 
-is(ref($switch->{CachedKids}), 'HASH', '... CachedKids should be a HASH reference');
-ok(!keys %{ $switch->{CachedKids} },   '... CachedKids should be empty');
+is($switch->{CachedKids}, undef, '... CachedKids should be undef initially');
 my $cache = {};
 $switch->{CachedKids} = $cache;
 is($switch->{CachedKids}, $cache,      '... CachedKids should be our ref');

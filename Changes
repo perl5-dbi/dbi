@@ -41,21 +41,16 @@ and prepends them to any error message.
 
 =head2 Changes in DBI 1.55 (svn rev XXX),  XXX
 
-XXX DBIc_CACHED_KIDS needs to be an lvalue for Drivers using Driver.xst
-Perl.xs: In function 'XS_DBD__Perl__db_disconnect':
-Perl.xs:277: warning: target of assignment not really an lvalue; this will be a hard error in the future
-Perl.xs: In function 'XS_DBD__Perl__db_DESTROY':
-Perl.xs:337: warning: target of assignment not really an lvalue; this will be a hard error in the future
-
-
-  Fixed set_err so HandleSetErr hook is executed reliably, if set.
+  Fixed set_err() so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
   Fixed 42prof_data.t on fast systems with poor timers thanks to Malcolm Nooning.
 
   Changed some handle creation code from perl to C code,
     to reduce handle creation cost by ~20%.
-  Changed connect_cached and prepare_cached to avoid a method call which
-    reduced cost by ~5% for connect_cached and ~30% for prepare_cached.
+  Changed internal implementation of the CachedKids attribute
+    so it's a normal handle attribute (and initially undef).
+  Changed connect_cached and prepare_cached to avoid a FETCH method call,
+    and thereby reduced cost by ~5% and ~30% respectively.
   Changed _set_fbav to not croak when given a wrongly sized array,
     it now warns and adjusts the row buffer to match.
   Changed DBD::NullP to be slightly more useful for testing.

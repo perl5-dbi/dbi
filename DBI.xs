@@ -120,6 +120,7 @@ typedef struct dbi_ima_st {
 #define IMA_SHOW_ERR_STMT   	0x2000	/* dbh meth relates to Statement*/
 #define IMA_HIDE_ERR_PARAMVALUES 0x4000	/* ParamValues are not relevant */
 #define IMA_IS_FACTORY          0x8000	/* new h ie connect and prepare */
+#define IMA_CLEAR_CACHED_KIDS  0x10000	/* clear CachedKids before call	*/
 
 #define DBIc_STATE_adjust(imp_xxh, state)				 \
     (SvOK(state)	/* SQLSTATE is implemented by driver   */	 \
@@ -1147,16 +1148,6 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	}
     }
 
-    /* setup CachedKids */
-    if (DBIc_TYPE(imp) < DBIt_ST) {
-        SV **tmp_svp = hv_fetch((HV*)SvRV(h), "CachedKids", 10, 1);
-        imp_dbh_t *imp_dbh = (imp_dbh_t*)imp; /* also drh */
-        if (!SvROK(*tmp_svp) || SvTYPE(SvRV(*tmp_svp)) != SVt_PVHV) {
-	    sv_setsv(*tmp_svp, newRV_noinc((SV*)newHV()));
-        }
-        DBIc_CACHED_KIDS_SVP(imp_dbh) = tmp_svp;
-    }
-
     /* Use DBI magic on inner handle to carry handle attributes 	*/
     sv_magic(SvRV(h), dbih_imp_sv, DBI_MAGIC, Nullch, 0);
     SvREFCNT_dec(dbih_imp_sv);	/* since sv_magic() incremented it	*/
@@ -1244,12 +1235,6 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
     if (DBIc_LongReadLen(imp_xxh) != DBIc_LongReadLen_init)
 	PerlIO_printf(DBILOGFP,"%s LongReadLen %ld\n", pad, (long)DBIc_LongReadLen(imp_xxh));
 
-    if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-	const imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh;
-	HV *hv = DBIc_CACHED_KIDS(imp_dbh);
-	if (hv && HvKEYS(hv))
-	    PerlIO_printf(DBILOGFP,"%s CachedKids %d\n", pad, (int)HvKEYS(hv));
-    }
     if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
 	const imp_sth_t *imp_sth = (imp_sth_t*)imp_xxh;
 	PerlIO_printf(DBILOGFP,"%s NUM_OF_FIELDS %d\n", pad, DBIc_NUM_FIELDS(imp_sth));
@@ -1258,6 +1243,13 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
     inner = dbih_inner((SV*)DBIc_MY_H(imp_xxh), msg);
     if (!inner || !SvROK(inner))
         return 1;
+    if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
+        SV **svp = hv_fetch((HV*)SvRV(inner), "CachedKids", 10, 0);
+	if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
+            HV *hv = (HV*)SvRV(*svp);
+	    PerlIO_printf(DBILOGFP,"%s CachedKids %d\n", pad, (int)HvKEYS(hv));
+        }
+    }
     if (level > 0) {
         SV* value;
 	char *key;
@@ -1317,16 +1309,6 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 	dbih_dumpcom(imp_xxh,"DESTROY (dbih_clearcom)", 0);
 
     if (!dirty) {
-	if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-            HV *hv;
-	    imp_dbh_t *imp_dbh = (imp_dbh_t*)imp_xxh; /* works for DRH also */
-	    if ((hv=DBIc_CACHED_KIDS(imp_dbh)) && HvKEYS(hv)>0) {
-		warn("DBI %s handle 0x%lx cleared whilst still holding %d cached kids",
-                        dbih_htype_name(DBIc_TYPE(imp_xxh)),
-			(unsigned long)DBIc_MY_H(imp_xxh), (int)HvKEYS(hv) );
-		hv_clear(hv); /* may recurse */
-	    }
-	}
 
 	if (DBIc_ACTIVE(imp_xxh)) {	/* bad news, potentially	*/
             /* warn for sth, warn for dbh only if it has active sth or isn't AutoCommit */
@@ -2251,28 +2233,29 @@ log_where(SV *buf, int append, char *prefix, char *suffix, int show_line, int sh
 
 
 static void
-clear_cached_kids(SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_level)
+clear_cached_kids(pTHX_ SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_level)
 {
-    HV *hv;
-
-    if (DBIc_TYPE(imp_xxh) > DBIt_DB)
-        return;
-    hv = DBIc_CACHED_KIDS((imp_drh_t*)imp_xxh);
-    if (hv && HvKEYS(hv)) {
-        dTHX;
-        dPERINTERP;
-        if (DBIc_TRACE_LEVEL(imp_xxh) > trace_level)
-            trace_level = DBIc_TRACE_LEVEL(imp_xxh);
-        if (trace_level >= 2) {
-            PerlIO_printf(DBILOGFP,"    >> %s %s clearing %d CachedKids\n",
-                meth_name, neatsvpv(h,0), (int)HvKEYS(hv));
-            PerlIO_flush(DBILOGFP);
+    if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
+        SV **svp = hv_fetch((HV*)SvRV(h), "CachedKids", 10, 0);
+        if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
+            HV *hv = (HV*)SvRV(*svp);
+            if (HvKEYS(hv)) {
+                dPERINTERP;
+                if (DBIc_TRACE_LEVEL(imp_xxh) > trace_level)
+                    trace_level = DBIc_TRACE_LEVEL(imp_xxh);
+                if (trace_level >= 2) {
+                    PerlIO_printf(DBILOGFP,"    >> %s %s clearing %d CachedKids\n",
+                        meth_name, neatsvpv(h,0), (int)HvKEYS(hv));
+                    PerlIO_flush(DBILOGFP);
+                }
+                /* This will probably recurse through dispatch to DESTROY the kids */
+                /* For drh we should probably explicitly do dbh disconnects */
+                hv_clear(hv);
+            }
         }
-        /* This will probably recurse through dispatch to DESTROY the kids */
-        /* For drh we should probably explicitly do dbh disconnects */
-        hv_clear(hv);
     }
 }
+
 
 static NV
 dbi_time() {
@@ -2710,7 +2693,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    }
 #endif
 	    if (imp_xxh && DBIc_TYPE(imp_xxh) <= DBIt_DB)
-		clear_cached_kids(mg->mg_obj, imp_xxh, meth_name, trace_level);
+		clear_cached_kids(aTHX_ mg->mg_obj, imp_xxh, meth_name, trace_level);
 	    if (trace_level >= 3) {
                 /* XXX might be better to move this down to after call_depth has been
                  * incremented and then also SvREFCNT_dec(mg->mg_obj) to force an immediate
@@ -2859,6 +2842,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		XSRETURN(0);
 	    }
 	    if (ima_flags & IMA_FUNC_REDIRECT) {
+                /* XXX this doesn't redispatch, nor consider the IMA of the new method */
 		SV *meth_name_sv = POPs;
 		PUTBACK;
 		--items;
@@ -2882,6 +2866,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		/* don't use SvOK_off: dbh's Statement may be ref to sth's */
 		hv_store((HV*)SvRV(h), "Statement", 9, &sv_undef, 0);
 	    }
+	    if (ima_flags & IMA_CLEAR_CACHED_KIDS)
+                clear_cached_kids(aTHX_ h, imp_xxh, meth_name, trace_flags);
+
 	}
 
 	if (ima_flags & IMA_HAS_USAGE) {
@@ -2936,8 +2923,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		sv_setsv(DBIc_ERRSTR(parent_imp), DBIc_ERRSTR(imp_xxh));
 		sv_setsv(DBIc_STATE(parent_imp),  DBIc_STATE(imp_xxh));
 	    }
-
-            clear_cached_kids(h, imp_xxh, meth_name, trace_flags);
 	}
 
 	if (DBIc_IADESTROY(imp_xxh)) { /* want's ineffective destroy	*/
@@ -4324,8 +4309,6 @@ take_imp_data(h)
      * destroyed they may need to interact with the 'zombie' parent dbh.
      * So we do our best to neautralize them (finish & rebless)
      */
-    if (DBIc_TYPE(imp_xxh) <= DBIt_DB)
-	clear_cached_kids(h, imp_xxh, "take_imp_data", 0);
     if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
 	AV *av = (AV*)SvRV(*tmp_svp);
 	HV *zombie_stash = gv_stashpv("DBI::zombie", GV_ADDWARN);
