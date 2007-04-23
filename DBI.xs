@@ -64,7 +64,7 @@ extern Pid_t getpid (void);
 
 
 static imp_xxh_t *dbih_getcom	   _((SV *h));
-static imp_xxh_t *dbih_getcom2	   _((SV *h, MAGIC **mgp));
+static imp_xxh_t *dbih_getcom2	   _((pTHX_ SV *h, MAGIC **mgp));
 static void       dbih_clearcom	   _((imp_xxh_t *imp_xxh));
 static int	  dbih_logmsg	   _((imp_xxh_t *imp_xxh, const char *fmt, ...));
 static SV	 *dbih_make_com	   _((SV *parent_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_size, STRLEN extra, SV *copy));
@@ -79,8 +79,8 @@ static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV
 static int	set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int	dbi_hash _((const char *string, long i));
-static void	dbih_dumphandle _((SV *h, const char *msg, int level));
-static int 	dbih_dumpcom _((imp_xxh_t *imp_xxh, const char *msg, int level));
+static void	dbih_dumphandle _((pTHX_ SV *h, const char *msg, int level));
+static int 	dbih_dumpcom _((pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level));
 char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
 
@@ -555,9 +555,8 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 
 
 static char *
-mkvname( HV *stash, const char *item, int uplevel)	/* construct a variable name	*/
+mkvname(pTHX_ HV *stash, const char *item, int uplevel)	/* construct a variable name	*/
 {
-    dTHX;
     STRLEN lna;
     SV *sv = sv_newmortal();
     sv_setpv(sv, HvNAME(stash));
@@ -620,9 +619,8 @@ dbih_logmsg(imp_xxh_t *imp_xxh, const char *fmt, ...)
 }
 
 static void
-close_trace_file()
+close_trace_file(pTHX)
 {
-    dTHX;
     dPERINTERP;
     if (DBILOGFP == PerlIO_stderr() || DBILOGFP == PerlIO_stdout())
         return;
@@ -656,7 +654,7 @@ set_trace_file(SV *file)
 	    warn("DBI trace filehandle is not valid");
 	    return 0;
 	}
-	close_trace_file();
+	close_trace_file(aTHX);
 	SvREFCNT_inc(io);
 	DBIS->logfp_ref = io;
     }
@@ -664,12 +662,12 @@ set_trace_file(SV *file)
 	filename = (SvOK(file)) ? SvPV(file, lna) : Nullch;
 	/* undef arg == reset back to stderr */
 	if (!filename || strEQ(filename,"STDERR")) {
-	    close_trace_file();
+	    close_trace_file(aTHX);
 	    DBILOGFP = PerlIO_stderr();
 	    return 1;
 	}
 	if (strEQ(filename,"STDOUT")) {
-	    close_trace_file();
+	    close_trace_file(aTHX);
 	    DBILOGFP = PerlIO_stdout();
 	    return 1;
 	}
@@ -678,7 +676,7 @@ set_trace_file(SV *file)
 	    warn("Can't open trace file %s: %s", filename, Strerror(errno));
 	    return 0;
 	}
-	close_trace_file();
+	close_trace_file(aTHX);
     }
     DBILOGFP = fp;
     /* if this line causes your compiler or linker to choke	*/
@@ -746,9 +744,8 @@ set_trace(SV *h, SV *level_sv, SV *file)
 
 
 static SV *
-dbih_inner(SV *orv, const char *what)
+dbih_inner(pTHX_ SV *orv, const char *what)
 {   /* convert outer to inner handle else croak(what) if what is not null */
-    dTHX;
     dPERINTERP;
     MAGIC *mg;
     SV *ohv;		/* outer HV after derefing the RV	*/
@@ -799,16 +796,16 @@ dbih_inner(SV *orv, const char *what)
 static imp_xxh_t *
 dbih_getcom(SV *hrv) /* used by drivers via DBIS func ptr */
 {
-    imp_xxh_t *imp_xxh = dbih_getcom2(hrv, 0);
+    dTHX;
+    imp_xxh_t *imp_xxh = dbih_getcom2(aTHX_ hrv, 0);
     if (!imp_xxh)	/* eg after take_imp_data */
 	croak("Invalid DBI handle %s, has no dbi_imp_data", neatsvpv(hrv,0));
     return imp_xxh;
 }
 
 static imp_xxh_t *
-dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*/
+dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*/
 {
-    dTHX;
     dPERINTERP;
     imp_xxh_t *imp_xxh;
     MAGIC *mg;
@@ -836,7 +833,7 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
     }
     else {
 	/* Validate handle (convert outer to inner if required)	*/
-	hrv = dbih_inner(hrv, "dbih_getcom");
+	hrv = dbih_inner(aTHX_ hrv, "dbih_getcom");
 	mg  = mg_find(SvRV(hrv), DBI_MAGIC);
     }
     if (mgp)	/* let caller pickup magic struct for this handle */
@@ -854,9 +851,8 @@ dbih_getcom2(SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.	*
 
 
 static SV *
-dbih_setup_attrib(SV *h, imp_xxh_t *imp_xxh, char *attrib, SV *parent, int read_only, int optional)
+dbih_setup_attrib(pTHX_ SV *h, imp_xxh_t *imp_xxh, char *attrib, SV *parent, int read_only, int optional)
 {
-    dTHX;
     dPERINTERP;
     STRLEN len = strlen(attrib);
     SV **asvp;
@@ -938,7 +934,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
     if (imp_size == 0) {
 	/* get size of structure to allocate for common and imp specific data   */
-	const char *imp_size_name = mkvname(imp_stash, "imp_data_size", 0);
+	const char *imp_size_name = mkvname(aTHX_ imp_stash, "imp_data_size", 0);
 	imp_size = SvIV(perl_get_sv(imp_size_name, 0x05));
 	if (imp_size == 0) {
 	    imp_size = sizeof(imp_sth_t);
@@ -1031,9 +1027,8 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
 
 static void
-dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
+dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 {
-    dTHX;
     dPERINTERP;
     SV *h;
     char *errmsg = "Can't setup DBI handle of %s to %s: %s";
@@ -1046,8 +1041,8 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     imp_xxh_t *imp;
     imp_xxh_t *parent_imp;
 
-    h      = dbih_inner(orv, "dbih_setup_handle");
-    parent = dbih_inner(parent, NULL);	/* check parent valid (& inner)	*/
+    h      = dbih_inner(aTHX_ orv, "dbih_setup_handle");
+    parent = dbih_inner(aTHX_ parent, NULL);	/* check parent valid (& inner)	*/
     parent_imp = (parent) ? DBIh_COM(parent) : NULL;
 
     if (DBIS_TRACE_LEVEL >= 3)
@@ -1085,7 +1080,7 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	/* Copy some attributes from parent if not defined locally and	*/
 	/* also take address of attributes for speed of direct access.	*/
 	/* parent is null for drh, in which case h must hold the values	*/
-#define COPY_PARENT(name,ro,opt) SvREFCNT_inc(dbih_setup_attrib(h,imp,(name),parent,ro,opt))
+#define COPY_PARENT(name,ro,opt) SvREFCNT_inc(dbih_setup_attrib(aTHX_ h,imp,(name),parent,ro,opt))
 #define DBIc_ATTR(imp, f) _imp2com(imp, attr.f)
 	/* XXX we should validate that these are the right type (refs etc)	*/
 	DBIc_ATTR(imp, Err)      = COPY_PARENT("Err",1,0);	/* scalar ref	*/
@@ -1095,10 +1090,10 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	DBIc_ATTR(imp, FetchHashKeyName) = COPY_PARENT("FetchHashKeyName",0,0);	/* scalar ref */
 
 	if (parent) {
-	    dbih_setup_attrib(h,imp,"HandleSetErr",parent,0,1);
-	    dbih_setup_attrib(h,imp,"HandleError",parent,0,1);
+	    dbih_setup_attrib(aTHX_ h,imp,"HandleSetErr",parent,0,1);
+	    dbih_setup_attrib(aTHX_ h,imp,"HandleError",parent,0,1);
 	    if (DBIc_has(parent_imp,DBIcf_Profile)) {
-		dbih_setup_attrib(h,imp,"Profile",parent,0,1);
+		dbih_setup_attrib(aTHX_ h,imp,"Profile",parent,0,1);
 	    }
 	    DBIc_LongReadLen(imp) = DBIc_LongReadLen(parent_imp);
 #ifdef sv_rvweaken
@@ -1177,20 +1172,18 @@ dbih_setup_handle(SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
 
 static void
-dbih_dumphandle(SV *h, const char *msg, int level)
+dbih_dumphandle(pTHX_ SV *h, const char *msg, int level)
 {
     D_imp_xxh(h);
     if (level >= 9) {
-        dTHX;
         sv_dump(h);
     }
-    dbih_dumpcom(imp_xxh, msg, level);
+    dbih_dumpcom(aTHX_ imp_xxh, msg, level);
 }
 
 static int
-dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
+dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
 {
-    dTHX;
     dPERINTERP;
     SV *flags = sv_2mortal(newSVpv("",0));
     SV *inner;
@@ -1240,7 +1233,7 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 	PerlIO_printf(DBILOGFP,"%s NUM_OF_FIELDS %d\n", pad, DBIc_NUM_FIELDS(imp_sth));
 	PerlIO_printf(DBILOGFP,"%s NUM_OF_PARAMS %d\n", pad, DBIc_NUM_PARAMS(imp_sth));
     }
-    inner = dbih_inner((SV*)DBIc_MY_H(imp_xxh), msg);
+    inner = dbih_inner(aTHX_ (SV*)DBIc_MY_H(imp_xxh), msg);
     if (!inner || !SvROK(inner))
         return 1;
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
@@ -1276,7 +1269,6 @@ dbih_dumpcom(imp_xxh_t *imp_xxh, const char *msg, int level)
 static void
 dbih_clearcom(imp_xxh_t *imp_xxh)
 {
-
     dTHX;
     dPERINTERP;
     dTHR;
@@ -1301,12 +1293,12 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 #endif
 
     if (!DBIc_COMSET(imp_xxh)) {	/* should never happen	*/
-	dbih_dumpcom(imp_xxh, "dbih_clearcom: DBI handle already cleared", 0);
+	dbih_dumpcom(aTHX_ imp_xxh, "dbih_clearcom: DBI handle already cleared", 0);
 	return;
     }
 
     if (auto_dump)
-	dbih_dumpcom(imp_xxh,"DESTROY (dbih_clearcom)", 0);
+	dbih_dumpcom(aTHX_ imp_xxh,"DESTROY (dbih_clearcom)", 0);
 
     if (!dirty) {
 
@@ -1337,7 +1329,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     }
 
     if (dump && !auto_dump) /* else was already dumped above */
-	dbih_dumpcom(imp_xxh, "dbih_clearcom", 0);
+	dbih_dumpcom(aTHX_ imp_xxh, "dbih_clearcom", 0);
 
     /* --- pre-clearing adjustments --- */
 
@@ -1437,7 +1429,7 @@ dbih_get_fbav(imp_sth_t *imp_sth)
 	dTHX;
 	int i = av_len(av) + 1;
         if (i != DBIc_NUM_FIELDS(imp_sth)) {
-            /*SV *sth = dbih_inner((SV*)DBIc_MY_H(imp_sth), "_get_fbav");*/
+            /*SV *sth = dbih_inner(aTHX_ (SV*)DBIc_MY_H(imp_sth), "_get_fbav");*/
             /* warn via PrintWarn */
             set_err_char(SvRV(DBIc_MY_H(imp_sth)), (imp_xxh_t*)imp_sth,
                     "0", 0, "Number of row fields inconsistent with NUM_OF_FIELDS (driver bug)", "", "_get_fbav");
@@ -2336,7 +2328,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     if (!DBIc_has(imp_xxh, DBIcf_Profile))
 	return;
 
-    h_hv = (HV*)SvRV(dbih_inner(h, "dbi_profile"));
+    h_hv = (HV*)SvRV(dbih_inner(aTHX_ h, "dbi_profile"));
 
     profile = *hv_fetch(h_hv, "Profile", 7, 1);
     if (profile && SvMAGICAL(profile))
@@ -2472,7 +2464,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 			dbh_outer_hv = DBIc_MY_H(imp_dbh);
 			if (SvTYPE(dbh_outer_hv) != SVt_PVHV)
 			    return;	/* presumably global destruction - bail */
-			dbh_inner_hv = (HV*)SvRV(dbih_inner((SV*)dbh_outer_hv, "profile"));
+			dbh_inner_hv = (HV*)SvRV(dbih_inner(aTHX_ (SV*)dbh_outer_hv, "profile"));
 			if (SvTYPE(dbh_inner_hv) != SVt_PVHV)
 			    return;	/* presumably global destruction - bail */
 		    }
@@ -2722,7 +2714,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
         ST(0) = h;      /* switch handle on stack to inner ref		*/
     }
 
-    imp_xxh = dbih_getcom2(h, 0); /* get common Internal Handle Attributes	*/
+    imp_xxh = dbih_getcom2(aTHX_ h, 0); /* get common Internal Handle Attributes	*/
     if (!imp_xxh) {
 	if (strEQ(meth_name, "can")) {	/* ref($h)->can("foo")		*/
 	    const char *can_meth = SvPV(st1,lna);
@@ -3454,7 +3446,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 SV *
 preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 {
-	D_imp_xxh(dbh);
+    dTHX;
+    D_imp_xxh(dbh);
 /*
 	The idea here is that ps_accept defines which constructs to
 	recognize (accept) as valid in the source string (other
@@ -3485,8 +3478,6 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
 	even then, only with reluctance. We may (need to) drop it when
 	we add support for odbc escape sequences.
 */
-
-    dTHX;
     int idx = 1;
 
     char in_quote = '\0';
@@ -3896,7 +3887,7 @@ _new_handle(class, parent, attr_ref, imp_datasv, imp_class)
     /* tie outer handle to inner handle */
     sv_magic((SV*)outer, attr_ref, PERL_MAGIC_tied, Nullch, 0);
 
-    dbih_setup_handle(outer_ref, SvPV_nolen(imp_class), parent, SvOK(imp_datasv) ? imp_datasv : Nullsv);
+    dbih_setup_handle(aTHX_ outer_ref, SvPV_nolen(imp_class), parent, SvOK(imp_datasv) ? imp_datasv : Nullsv);
 
     /* return outer handle, plus inner handle if not in scalar context */
     sv_2mortal(outer_ref);
@@ -3915,7 +3906,7 @@ _setup_handle(sv, imp_class, parent, imp_datasv)
     SV *	imp_datasv
     CODE:
     (void)cv;
-    dbih_setup_handle(sv, imp_class, parent, SvOK(imp_datasv) ? imp_datasv : Nullsv);
+    dbih_setup_handle(aTHX_ sv, imp_class, parent, SvOK(imp_datasv) ? imp_datasv : Nullsv);
     ST(0) = &sv_undef;
 
 
@@ -3934,7 +3925,7 @@ _handles(sv)
     PPCODE:
     /* return the outer and inner handle for any given handle */
     D_imp_xxh(sv);
-    SV *ih = sv_mortalcopy( dbih_inner(sv, "_handles") );
+    SV *ih = sv_mortalcopy( dbih_inner(aTHX_ sv, "_handles") );
     SV *oh = sv_2mortal(newRV((SV*)DBIc_MY_H(imp_xxh))); /* XXX dangerous */
     (void)cv;
     EXTEND(SP, 2);
@@ -4090,7 +4081,7 @@ dump_handle(sv, msg="DBI::dump_handle", level=0)
     int 	level
     CODE:
     (void)cv;
-    dbih_dumphandle(sv, msg, level);
+    dbih_dumphandle(aTHX_ sv, msg, level);
 
 
 
@@ -4198,7 +4189,7 @@ FETCH(sv)
 	ST(0) = DBIc_STATE_adjust(imp_xxh, state);
     }
     else if (type == '$') { /* lookup scalar variable in implementors stash */
-	const char *vname = mkvname(DBIc_IMP_STASH(imp_xxh), meth, 0);
+	const char *vname = mkvname(aTHX_ DBIc_IMP_STASH(imp_xxh), meth, 0);
 	SV *vsv = perl_get_sv(vname, 1);
 	ST(0) = sv_mortalcopy(vsv);
     }
@@ -4343,7 +4334,7 @@ take_imp_data(h)
      */
 
     /* --- perform the surgery */
-    dbih_getcom2(h, &mg);	/* get the MAGIC so we can change it	*/
+    dbih_getcom2(aTHX_ h, &mg);	/* get the MAGIC so we can change it	*/
     imp_xxh_sv = mg->mg_obj;	/* take local copy of the imp_data pointer */
     mg->mg_obj = Nullsv;	/* sever the link from handle to imp_xxh */
     if (DBIc_TRACE_LEVEL(imp_xxh))
@@ -4815,8 +4806,8 @@ swap_inner_handle(rh1, rh2, allow_reparent=0)
     {
     D_impdata(imp_xxh1, imp_xxh_t, rh1);
     D_impdata(imp_xxh2, imp_xxh_t, rh2);
-    SV *h1i = dbih_inner(rh1, "swap_inner_handle");
-    SV *h2i = dbih_inner(rh2, "swap_inner_handle");
+    SV *h1i = dbih_inner(aTHX_ rh1, "swap_inner_handle");
+    SV *h2i = dbih_inner(aTHX_ rh2, "swap_inner_handle");
     SV *h1  = (rh1 == h1i) ? (SV*)DBIc_MY_H(imp_xxh1) : SvRV(rh1);
     SV *h2  = (rh2 == h2i) ? (SV*)DBIc_MY_H(imp_xxh2) : SvRV(rh2);
     (void)cv;

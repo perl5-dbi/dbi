@@ -328,7 +328,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 
 
 #ifdef IN_DBI_XS		/* get Handle Common Data Structure	*/
-#define DBIh_COM(h)         	(dbih_getcom2(h, 0))
+#define DBIh_COM(h)         	(dbih_getcom2(aTHX_ h, 0))
 #else
 #define DBIh_COM(h)         	(DBIS->getcom(h))
 #define neatsvpv(sv,len)       	(DBIS->neat_svpv(sv,len))

@@ -53,6 +53,7 @@ and prepends them to any error message.
     and thereby reduced cost by ~5% and ~30% respectively.
   Changed _set_fbav to not croak when given a wrongly sized array,
     it now warns and adjusts the row buffer to match.
+  Changed some internals to improve performance with threaded perls.
   Changed DBD::NullP to be slightly more useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
