@@ -251,7 +251,7 @@
         # $method and @args left in @_
 
         my $request = $dbh->{go_request};
-        $request->init_request(\@_, wantarray);
+        $request->init_request([ wantarray, @_ ]);
         ++$dbh->{go_request_count};
 
         my $go_policy = $dbh->{go_policy};
@@ -506,7 +506,7 @@
 
         my ($sth, $sth_inner) = DBI::_new_sth($dbh, {
             Statement => $statement,
-            go_prepare_call => [ $go_prepare, $statement, $attr ],
+            go_prepare_call => [ 0, $go_prepare, $statement, $attr ],
             # go_method_calls => [], # autovivs if needed
             go_request => $dbh->{go_request},
             go_transport => $dbh->{go_transport},
@@ -567,7 +567,7 @@
         ++$dbh->{go_request_count};
 
         my $request = $sth->{go_request};
-        $request->init_request($sth->{go_prepare_call}, undef);
+        $request->init_request($sth->{go_prepare_call});
         $request->sth_method_calls(delete $sth->{go_method_calls})
             if $sth->{go_method_calls};
         $request->sth_result_attr({}); # (currently) also indicates this is an sth request

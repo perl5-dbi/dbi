@@ -1273,7 +1273,7 @@ for drivers written in C use this incantation:
 
     /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
     DBIc_NUM_FIELDS(imp_sth) = 0; /* for DBI <= 1.53 */
-    DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+    DBIc_STATE(imp_xxh)->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
         sv_2mortal(newSViv(mysql_num_fields(imp_sth->result)))
     );
 

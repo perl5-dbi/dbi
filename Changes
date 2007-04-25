@@ -6,8 +6,6 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-http://buildd.debian.org/fetch.cgi?&pkg=libdbi-perl&ver=1.54-1&arch=m68k&stamp=1174636818&file=log
-
 Policy principle:
     Designed to influence behaviour of unaltered programs
     ie go_* attributes take precidence over policy

@@ -3082,7 +3082,7 @@ See L</set_err> for more information.
 Returns a state code in the standard SQLSTATE five character format.
 Note that the specific success code C<00000> is translated to any empty string
 (false). If the driver does not support SQLSTATE (and most don't),
-then state will return C<S1000> (General Error) for all errors.
+then state() will return C<S1000> (General Error) for all errors.
 
 The driver is free to return any value via C<state>, e.g., warning
 codes, even if it has not declared an error by returning a true value
@@ -3090,7 +3090,7 @@ via the L</err> method described above.
 
 The state() method should not be used to test for errors, use err()
 for that, because drivers may return a 'success with information' or
-warning state code via errstr() for methods that have not 'failed'.
+warning state code via state() for methods that have not 'failed'.
 
 =item C<set_err>
 

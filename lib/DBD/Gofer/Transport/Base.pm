@@ -26,27 +26,34 @@ sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
 
 sub transmit_request {
     my ($self, $request) = @_;
-
     my $to = $self->go_timeout;
-    local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
 
-    my $info = eval {
-        local $SIG{PIPE} = sub {
-            my $extra = ($! eq "Broken pipe") ? "" : " ($!)";
-            die "Unable to send request: Broken pipe$extra\n";
+    my $transmit_sub = sub {
+        local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
+
+        my $info = eval {
+            local $SIG{PIPE} = sub {
+                my $extra = ($! eq "Broken pipe") ? "" : " ($!)";
+                die "Unable to send request: Broken pipe$extra\n";
+            };
+            alarm($to) if $to;
+            $self->transmit_request_by_transport($request);
         };
-        alarm($to) if $to;
-        $self->transmit_request_by_transport($request);
+        alarm(0) if $to;
+
+        if ($@) {
+            return $self->transport_timedout("transmit_request", $to)
+                if $@ eq "TIMEOUT\n";
+            return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
+        }
+
+        return undef;
     };
-    alarm(0) if $to;
 
-    if ($@) {
-        return $self->transport_timedout("transmit_request", $to)
-            if $@ eq "TIMEOUT\n";
-        return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
-    }
+    my $response = $transmit_sub->();
 
-    return undef;
+    return $response unless wantarray;
+    return ($response, $transmit_sub);
 }
 
 

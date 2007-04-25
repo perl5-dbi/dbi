@@ -132,7 +132,7 @@ sub read_response_from_fh {
         for my $fh (@readable) {
             local $_;
             my $actions = $fh_actions->{$fh} || die "panic: no action for $fh";
-            my $rv = sysread($fh, $_='', 512 * 32);
+            my $rv = sysread($fh, $_='', 1024*31);  # to fit in 32KB slab
             unless ($rv) {              # error (undef) or end of file (0)
                 my $action;
                 unless (defined $rv) {  # was an error

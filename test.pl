@@ -102,6 +102,7 @@ else {
     my $null_dbh = DBI->connect('dbi:NullP:','','');
     my $null_sth = $null_dbh->prepare('');	# create one to warm up
     $count = 20_000;
+    $count /= 10 if $ENV{DBI_AUTOPROXY};
     my $i = $count;
     my $t1 = new Benchmark;
     $null_dbh->prepare('') while $i--;

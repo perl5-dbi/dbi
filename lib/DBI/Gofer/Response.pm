@@ -12,9 +12,14 @@ use strict;
 use Carp;
 use DBI qw(neat neat_list);
 
-use base qw(DBI::Util::_accessor);
+use base qw(DBI::Util::_accessor Exporter);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+
+use constant GOf_RESPONSE_EXECUTED => 0x0001;
+
+our @EXPORT = qw(GOf_RESPONSE_EXECUTED);
+
 
 __PACKAGE__->mk_accessors(qw(
     version
@@ -22,6 +27,7 @@ __PACKAGE__->mk_accessors(qw(
     err
     errstr
     state
+    flags
     last_insert_id
     dbh_attributes
     sth_resultsets
@@ -90,6 +96,8 @@ sub summary_as_text {
     my @s = sprintf("\trv=%s", (ref $rv) ? "[".neat_list($rv)."]" : neat($rv));
     $s[-1] .= sprintf(", err=%s, errstr=%s", $err, neat($errstr))
         if defined $err;
+    $s[-1] .= sprintf(",  flags=0x%x", $self->{flags})
+        if defined $self->{flags};
 
     push @s, "last_insert_id=%s", $self->last_insert_id
         if defined $self->last_insert_id;

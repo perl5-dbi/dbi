@@ -14,7 +14,7 @@ use DBI;
 
 GetOptions(
     'c|count=i' => \(my $opt_count = 100),
-    'dsn=s'     => \(my $opt_dsn   = "dbi:NullP:"),
+    'dsn=s'     => \(my $opt_dsn),
     'timeout=i' => \(my $opt_timeout = 10),
     'p|policy=s' => \(my $opt_policy = "pedantic,classic,rush"),
 ) or exit 1;
@@ -38,6 +38,7 @@ my $perl = "$^X"; # ensure sameperl and our blib (note two spaces)
 
 my %trials = (
     null       => {},
+    null_ha    => { DBI => "DBIx::HA" },
     pipeone    => { perl=>$perl, timeout=>$opt_timeout },
     stream     => { perl=>$perl, timeout=>$opt_timeout },
     stream_ssh => ($can_ssh)
@@ -80,19 +81,23 @@ while ( my ($activity, $stats_hash) = each %durations ) {
 sub run_tests {
     my ($transport, $trans_attr, $policy_name) = @_;
 
-    my $test_run_tag = "Testing $transport transport with $policy_name policy";
+    my $connect_attr = delete $trans_attr->{connect_attr} || {};
+    my $DBI = delete $trans_attr->{DBI} || "DBI";
+    _load_class($DBI) if $DBI ne "DBI";
+
+    my $test_run_tag = "Testing $transport transport with $policy_name policy @{[ %$connect_attr ]}";
     print "\n$test_run_tag\n";
 
-    my $dsn = $opt_dsn;
+    my $dsn = $opt_dsn || $trans_attr->{dsn} || "dbi:NullP:";
     if ($policy_name ne 'no') {
         my $driver_dsn = "transport=$transport;policy=$policy_name";
         $driver_dsn .= join ";", '', map { "$_=$trans_attr->{$_}" } keys %$trans_attr
             if %$trans_attr;
-        $dsn = "dbi:Gofer:$driver_dsn;dsn=$opt_dsn";
+        $dsn = "dbi:Gofer:$driver_dsn;dsn=$dsn";
     }
     print " $dsn\n";
 
-    my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1 } );
+    my $dbh = $DBI->connect($dsn, undef, undef, { %$connect_attr, RaiseError => 1 } );
 
     $dbh->do("DROP TABLE IF EXISTS fruit");
     $dbh->do("CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))");

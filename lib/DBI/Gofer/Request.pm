@@ -20,7 +20,6 @@ __PACKAGE__->mk_accessors(qw(
     version
     dbh_connect_call
     dbh_method_call
-    dbh_wantarray
     dbh_attributes
     dbh_last_insert_id_args
     sth_method_calls
@@ -46,10 +45,9 @@ sub is_sth_request {
 }
 
 sub init_request {
-    my ($self, $method_and_args, $wantarray) = @_;
+    my ($self, $method_and_args) = @_;
     $self->reset;
     $self->dbh_method_call($method_and_args);
-    $self->dbh_wantarray($wantarray);
 }
 
 sub summary_as_text {

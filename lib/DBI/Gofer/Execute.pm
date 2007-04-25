@@ -23,6 +23,9 @@ our %all_dbh_methods = map { $_ => DBD::_::db->can($_) } @all_dbh_methods;
 
 our $local_log = $ENV{DBI_GOFER_LOCAL_LOG}; # do extra logging to stderr
 
+our $current_dbh;   # the dbh we're using for this request
+
+
 # set trace for server-side gofer
 # Could use DBI_TRACE env var when it's an unrelated separate process
 # but using DBI_GOFER_TRACE makes testing easier for subprocesses (eg stream)
@@ -165,6 +168,10 @@ sub _connect {
         # RaiseError must be enabled
         RaiseError => 1,
 
+        # reset Executed flag (of the cached handle) so we can use it to tell
+        # if errors happened before the main part of the request was executed
+        Executed => 0,
+
         # ensure this connect_cached doesn't have the same args as the client
         # because that causes subtle issues if in the same process (ie transport=null)
 	# include pid to avoid problems with forking (ie null transport in mod_perl)
@@ -178,6 +185,7 @@ sub _connect {
     }
 
     #$dbh->trace(0);
+    $current_dbh = $dbh;
     return $dbh;
 }
 
@@ -189,7 +197,7 @@ sub reset_dbh {
 
 
 sub new_response_with_err {
-    my ($self, $rv, $eval_error) = @_;
+    my ($self, $rv, $eval_error, $h) = @_;
     # capture err+errstr etc and merge in $eval_error ($@)
 
     my ($err, $errstr, $state) = ($DBI::err, $DBI::errstr, $DBI::state);
@@ -203,11 +211,15 @@ sub new_response_with_err {
         $errstr = ($errstr) ? "$errstr; $eval_error" : $eval_error;
     }
 
+    my $flags;
+    $flags |= GOf_RESPONSE_EXECUTED if $h && $h->{Executed};
+
     my $response = DBI::Gofer::Response->new({
         rv     => $rv,
         err    => $err,
         errstr => $errstr,
         state  => $state,
+        flags  => $flags,
     });
 
     return $response;
@@ -238,7 +250,8 @@ sub execute_request {
             ? $self->execute_sth_request($request)
             : $self->execute_dbh_request($request);
     };
-    $response ||= $self->new_response_with_err(undef, $@);
+    $response ||= $self->new_response_with_err(undef, $@, $current_dbh);
+    undef $current_dbh;
 
     $response->warnings(\@warnings) if @warnings;
     DBI->trace_msg("<----- execute_request\n");
@@ -254,14 +267,15 @@ sub execute_dbh_request {
     my $rv_ref = eval {
         $dbh = $self->_connect($request);
         my $args = $request->dbh_method_call; # [ 'method_name', @args ]
-        my $meth = shift @$args;
+        my $wantarray = shift @$args;
+        my $meth      = shift @$args;
         $stats->{method_calls_dbh}->{$meth}++;
-        my @rv = ($request->dbh_wantarray)
+        my @rv = ($wantarray)
             ?        $dbh->$meth(@$args)
             : scalar $dbh->$meth(@$args);
         \@rv;
     } || [];
-    my $response = $self->new_response_with_err($rv_ref, $@);
+    my $response = $self->new_response_with_err($rv_ref, $@, $dbh);
 
     return $response if not $dbh;
 
@@ -342,7 +356,8 @@ sub execute_sth_request {
     my $rv = eval {
         $dbh = $self->_connect($request);
 
-        my $args = $request->dbh_method_call; # [ 'method_name', @args ]
+        my $args = $request->dbh_method_call; # [ wantarray, 'method_name', @args ]
+        shift @$args; # discard wantarray
         my $meth = shift @$args;
         $stats->{method_calls_sth}->{$meth}++;
         $sth = $dbh->$meth(@$args);
@@ -364,7 +379,7 @@ sub execute_sth_request {
 
         $last;
     };
-    my $response = $self->new_response_with_err($rv, $@);
+    my $response = $self->new_response_with_err($rv, $@, $dbh);
 
     return $response if not $dbh;
 
