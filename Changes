@@ -6,6 +6,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+Assorted TODO notes:
+
 Policy principle:
     Designed to influence behaviour of unaltered programs
     ie go_* attributes take precidence over policy
@@ -42,6 +44,9 @@ and prepends them to any error message.
   Fixed set_err() so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
   Fixed 42prof_data.t on fast systems with poor timers thanks to Malcolm Nooning.
+  Fixed potential corruption in selectall_arrayref and selectrow_arrayref
+    for compiled drivers, thanks to Rob Davies.
+    Rebuild your compiled drivers after installing DBI.
 
   Changed some handle creation code from perl to C code,
     to reduce handle creation cost by ~20%.

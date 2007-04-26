@@ -111,7 +111,7 @@ selectall_arrayref(...)
 		(DBD_ATTRIB_TRUE(attr,"Slice",5,tmp_svp) || DBD_ATTRIB_TRUE(attr,"Columns",7,tmp_svp))
 	) {
 	    /* fallback to perl implementation */
-	    ST(0) = dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::selectall_arrayref", items);
+	    ST(0) =dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::selectall_arrayref", items);
 	    XSRETURN(1);
 	}
     }
@@ -121,6 +121,7 @@ selectall_arrayref(...)
     }
     else {
 	sth = dbixst_bounce_method("prepare", 3);
+        SPAGAIN; SP -= items; /* because stack might have been realloc'd */
 	if (!SvROK(sth))
 	    XSRETURN_UNDEF;
     }
@@ -157,6 +158,7 @@ selectrow_arrayref(...)
     else {
 	/* --- prepare --- */
 	sth = dbixst_bounce_method("prepare", 3);
+        SPAGAIN; SP -= items; /* because stack might have been realloc'd */
 	if (!SvROK(sth)) {
 	    if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
 	}

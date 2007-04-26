@@ -6,6 +6,12 @@
 #  License or the Artistic License, as specified in the Perl README file.
 */
 
+
+/* This is really just a workaround for SUPER:: not working right for XS code.
+ * It would be better if we setup perl's context so SUPER:: did the right thing
+ * (borrowing the relevant magic from pp_entersub in perl pp_hot.c).
+ * Then we could just use call_method("SUPER::foo") instead.
+ */
 static SV *
 dbixst_bounce_method(char *methname, int params)
 {
