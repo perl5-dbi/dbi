@@ -573,8 +573,10 @@ sub connect {
 
     # Set $driver. Old style driver, if specified, overrides new dsn style.
     $driver = $old_driver || $1 || $ENV{DBI_DRIVER}
-	or Carp::croak("Can't connect to data source $dsn, no database driver specified "
-		."and DBI_DSN env var not set");
+	or Carp::croak("Can't connect to data source '$dsn' "
+            ."because I can't work out what driver to use "
+            ."(it doesn't seem to contain a 'dbi:driver:' prefix "
+            ."and the DBI_DRIVER env var is not set)");
 
     my $proxy;
     if ($ENV{DBI_AUTOPROXY} && $driver ne 'Proxy' && $driver ne 'Sponge' && $driver ne 'Switch') {

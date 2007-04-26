@@ -72,18 +72,24 @@ sub check_connect_cached {
 	# This test checks that connect_cached works
 	# and how it then relates to the CachedKids 
 	# attribute for the driver.
-#DBI->trace(4);
-	my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0});
-	isa_ok($dbh_cached_1, "DBI::db");
 
-	my $dbh_cached_2 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0});
-	isa_ok($dbh_cached_2, "DBI::db");
+	ok my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0, Executed => 0 });
 
-	my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
-	isa_ok($dbh_cached_3, "DBI::db");
-	
+	ok my $dbh_cached_2 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0, Executed => 0 });
+
 	is($dbh_cached_1, $dbh_cached_2, '... these 2 handles are cached, so they are the same');
+
+	ok my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
+	
 	isnt($dbh_cached_3, $dbh_cached_2, '... this handle was created with different parameters, so it is not the same');
+
+        # check that cached_connect applies attributes to handles returned from the cache
+        # (The specific case of Executed is relevant to DBD::Gofer retry-on-error logic)
+        ok $dbh_cached_1->do("select * from ."); # set Executed flag
+        ok $dbh_cached_1->{Executed}, 'Executed should be true';
+	ok my $dbh_cached_4 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0, Executed => 0 });
+        is $dbh_cached_4, $dbh_cached_1, 'should return same handle';
+        ok !$dbh_cached_4->{Executed}, 'Executed should be false because reset by connect attributes';
 
 	my $drh = $dbh->{Driver};
 	isa_ok($drh, "DBI::dr");

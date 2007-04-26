@@ -96,7 +96,7 @@
 		unless $statement =~ m/^\s*set\s+/;
 	    # the SET syntax is just a hack so the ExampleP driver can
 	    # be used to test non-select statements.
-	    # No we have DBI::DBM etc ExampleP should be deprecated
+	    # Now we have DBI::DBM etc., ExampleP should be deprecated
 	}
 
 	my ($outer, $sth) = DBI::_new_sth($dbh, {
