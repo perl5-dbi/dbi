@@ -61,6 +61,10 @@ and prepends them to any error message.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
 
+  Added more functionality to the (undocumented) Callback mechanism.
+    Callbacks can now elect to provide a value to be returned, in which case
+    the method won't be called. A callback for "*" is applied to all methods
+    that don't have their own callback.
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.
   Added dbilogstrip utility to edit DBI logs for diff'ing (gets installed)

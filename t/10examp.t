@@ -12,7 +12,7 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 204;
+use Test::More tests => 209;
 
 # "globals"
 my ($r, $dbh);

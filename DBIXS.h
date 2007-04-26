@@ -481,10 +481,9 @@ struct dbistate_st {
 /* attribs value. One day we may add some extra magic in here.		*/
 #define DBD_ATTRIBS_CHECK(func, h, attribs)	\
     if ((attribs) && SvOK(attribs)) {		\
-	STRLEN lna1=0, lna2=0;			\
 	if (!SvROK(attribs) || SvTYPE(SvRV(attribs))!=SVt_PVHV)		\
 	    croak("%s->%s(...): attribute parameter '%s' is not a hash ref",	\
-		    SvPV(h,lna1), func, SvPV(attribs,lna2));		\
+		    SvPV_nolen(h), func, SvPV_nolen(attribs));		\
     } else (attribs) = Nullsv
 
 #define DBD_ATTRIB_GET_SVP(attribs, key,klen)			\
