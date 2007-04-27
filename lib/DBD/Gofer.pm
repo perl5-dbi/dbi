@@ -266,8 +266,8 @@
         my $transport = $dbh->{go_transport}
             or return $dbh->set_err(1, "Not connected (no transport)");
 
-        my $response = $transport->transmit_request($request);
-        $response ||= $transport->receive_response;
+        my ($response, $retransmit_sub) = $transport->transmit_request($request);
+        $response ||= $transport->receive_response($request, $retransmit_sub);
         $dbh->{go_response} = $response
             or die "No response object returned by $transport";
 
@@ -584,8 +584,8 @@
         my $transport = $sth->{go_transport}
             or return $sth->set_err(1, "Not connected (no transport)");
 
-        my $response = $transport->transmit_request($request);
-        $response ||= $transport->receive_response;
+        my ($response, $retransmit_sub) = $transport->transmit_request($request);
+        $response ||= $transport->receive_response($request, $retransmit_sub);
         $sth->{go_response} = $response
             or die "No response object returned by $transport";
         $dbh->{go_response} = $response; # mainly for last_insert_id

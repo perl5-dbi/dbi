@@ -33,6 +33,9 @@ __PACKAGE__->mk_accessors(qw(
     sth_resultsets
     warnings
 ));
+__PACKAGE__->mk_accessors_with(make_accessor_autoviv_hashref => qw(
+    meta
+));
 
 
 sub new {

@@ -19,10 +19,10 @@ sub new {
 
 sub mk_accessors {
     my($self, @fields) = @_;
-    $self->_mk_accessors('make_accessor', @fields);
+    $self->mk_accessors_with('make_accessor', @fields);
 }
 
-sub _mk_accessors {
+sub mk_accessors_with {
     my($self, $maker, @fields) = @_;
     my $class = ref $self || $self;
 
@@ -47,7 +47,18 @@ sub make_accessor {
     return sub {
         my $self = shift;
         return $self->{$field} unless @_;
-        $self->{$field} = (@_ == 1 ? $_[0] : [@_]);
+        croak "Too many arguments to $field" if @_ > 1;
+        return $self->{$field} = shift;
+    };
+}
+
+sub make_accessor_autoviv_hashref {
+    my($class, $field) = @_;
+    return sub {
+        my $self = shift;
+        return $self->{$field} ||= {} unless @_;
+        croak "Too many arguments to $field" if @_ > 1;
+        return $self->{$field} = shift;
     };
 }
 

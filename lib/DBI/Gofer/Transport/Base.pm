@@ -64,9 +64,10 @@ sub _freeze_data {
         $self->_dump("freezing $self->{trace} ".ref($data), $data)
             if !$skip_trace and $self->trace;
 
-        my $header = $packet_header_text;
+        local $data->{meta}; # don't include _meta in serialization
         my $data = $self->{serializer_obj}->serializer($data);
-        $header.$data;
+
+        $packet_header_text . $data;
     };
     if ($@) {
         chomp $@;

@@ -24,6 +24,9 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
 
 plan 'no_plan';
 
+my $tmp;
+my $fails;
+
 # we'll use the null transport for simplicity and speed
 # and the rush policy to limit the number of interactions with the gofer executor
 
@@ -39,30 +42,55 @@ my $dbh_100 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:Example
 ok $dbh_100;
 
 ok !eval { $dbh_100->do("set foo=1") }, 'do method should fail';
+ok $dbh_100->errstr, 'errstr should be set';
+ok $@, '$@ should be set';
+like $@, '/fake error induced by DBI_GOFER_RANDOM_FAIL/';
 like $dbh_100->errstr, '/DBI_GOFER_RANDOM_FAIL/', 'errstr should contain DBI_GOFER_RANDOM_FAIL';
+
 ok !$dbh_100->{go_response}->executed_flag_set, 'go_response executed flag should be false';
 
 is precentage_exceptions(200, sub { $dbh_100->do("set foo=1") }), 100;
 
-# --- 50% failure rate
+# XXX randomness can't be predicted, so it's just possible these will fail
+
+# --- 50% failure rate, with no retries
 
 $ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
-my $dbh_50 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:ExampleP:", 0, 0, {
-    RaiseError => 1, PrintError => 0,
-});
-ok $dbh_50;
-my $fails = precentage_exceptions(200, sub { $dbh_50->do("set foo=1") });
+ok my $dbh_50r0 = dbi_connect("policy=rush;retry_limit=0");
+$fails = precentage_exceptions(200, sub { $dbh_50r0->do("set foo=1") });
 print "target approx 50% random failures, got $fails%\n";
-# XXX randomness can't be predicted, so it's just possible these will fail
 cmp_ok $fails, '>', 10, 'should fail about 50% of the time, but at least 10%';
 cmp_ok $fails, '<', 90, 'should fail about 50% of the time, but not more than 90%';
 
+# --- 50% failure rate, with many retries (should yield low failure rate)
+
+$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
+ok my $dbh_50r5 = dbi_connect("policy=rush;retry_limit=5");
+$fails = precentage_exceptions(200, sub { $dbh_50r5->do("set foo=1") });
+print "target approx 5% random failures, got $fails%\n";
+cmp_ok $fails, '<', 20, 'should fail < 20%';
+
+# --- 10% failure rate, with many retries (should yield zero failure rate)
+
+$ENV{DBI_GOFER_RANDOM_FAIL} = "10,do";
+ok my $dbh_1r10 = dbi_connect("policy=rush;retry_limit=10");
+$fails = precentage_exceptions(200, sub { $dbh_1r10->do("set foo=1") });
+cmp_ok $fails, '<', 1, 'should fail < 1%';
+
+
 exit 0;
+
+sub dbi_connect {
+    my ($gdsn) = @_;
+    return DBI->connect("dbi:Gofer:transport=null;$gdsn;dsn=dbi:ExampleP:", 0, 0, {
+        RaiseError => 1, PrintError => 0,
+    });
+}
 
 sub precentage_exceptions {
     my ($count, $sub) = @_;
     my $i = $count;
-    my $exceptions;
+    my $exceptions = 0;
     while ($i--) {
         eval { $sub->() };
         if ($@) {
