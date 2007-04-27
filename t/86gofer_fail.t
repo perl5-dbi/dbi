@@ -30,11 +30,34 @@ plan 'no_plan';
 # silence the "DBI_GOFER_RANDOM_FAIL set ..." warning
 $SIG{__WARN__} = sub { warn "@_" unless "@_" =~ /^DBI_GOFER_RANDOM_FAIL set/ };
 
+# --- 100% failure rate
+
 $ENV{DBI_GOFER_RANDOM_FAIL} = "1,do"; # total failure (almost)
 my $dbh_100 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:ExampleP:", 0, 0, {
     RaiseError => 1, PrintError => 0,
 });
 ok $dbh_100;
+
+ok !eval { $dbh_100->do("set foo=1") }, 'do method should fail';
+like $dbh_100->errstr, '/DBI_GOFER_RANDOM_FAIL/', 'errstr should contain DBI_GOFER_RANDOM_FAIL';
+ok !$dbh_100->{go_response}->executed_flag_set, 'go_response executed flag should be false';
+
+is precentage_exceptions(200, sub { $dbh_100->do("set foo=1") }), 100;
+
+# --- 50% failure rate
+
+$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
+my $dbh_50 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:ExampleP:", 0, 0, {
+    RaiseError => 1, PrintError => 0,
+});
+ok $dbh_50;
+my $fails = precentage_exceptions(200, sub { $dbh_50->do("set foo=1") });
+print "target approx 50% random failures, got $fails%\n";
+# XXX randomness can't be predicted, so it's just possible these will fail
+cmp_ok $fails, '>', 10, 'should fail about 50% of the time, but at least 10%';
+cmp_ok $fails, '<', 90, 'should fail about 50% of the time, but not more than 90%';
+
+exit 0;
 
 sub precentage_exceptions {
     my ($count, $sub) = @_;
@@ -49,20 +72,3 @@ sub precentage_exceptions {
     }
     return $exceptions/$count*100;
 }
-
-is precentage_exceptions(200, sub { $dbh_100->do("set foo=1") }), 100;
-
-
-$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
-my $dbh_50 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:ExampleP:", 0, 0, {
-    RaiseError => 1, PrintError => 0,
-});
-ok $dbh_50;
-my $fails = precentage_exceptions(200, sub { $dbh_50->do("set foo=1") });
-print "target approx 50% random failures, got $fails%\n";
-# XXX randomness can't be predicted, so it's just possible these will fail
-cmp_ok $fails, '>', 10, 'should fail about 50% of the time, but at least 10%';
-cmp_ok $fails, '<', 90, 'should fail about 50% of the time, but not more than 90%';
-
-undef $@;
-1;

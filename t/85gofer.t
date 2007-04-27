@@ -156,6 +156,7 @@ sub run_tests {
     is_deeply($rowset, [ [ '1', 'oranges' ], [ '2', 'oranges' ] ]);
 
     ok $dbh->do("UPDATE fruit SET dVal='apples' WHERE dVal='oranges'");
+    ok $dbh->{go_response}->executed_flag_set, 'go_response executed flag should be true';
 
     ok $sth = $dbh->prepare("SELECT dKey, dVal FROM fruit");
     ok $sth->execute;

@@ -9,7 +9,7 @@ use DBI;
 BEGIN {
         plan skip_all => '$h->{Callbacks} attribute not supported for DBI::PurePerl'
                 if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
-        plan tests => 49;
+        plan tests => 53;
 }
 
 $| = 1;
@@ -120,7 +120,7 @@ is join(":", $dbh->data_sources(2)), "11:12";
 local $dbh->{RaiseError} = 1;
 local $dbh->{PrintError} = 0;
 is eval { $dbh->commit }, undef, 'intercepted commit should return undef';
-like $@, '/DBD::ExampleP::db commit failed: faked commit failure/';
+like $@, '/DBD::\w+::db commit failed: faked commit failure/';
 is $DBI::err, 42;
 is $DBI::errstr, "faked commit failure";
 }

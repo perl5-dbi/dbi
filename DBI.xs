@@ -2773,7 +2773,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     /* Check method call against Internal Method Attributes */
     if (ima) {
 
-	if (ima_flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT|IMA_EXECUTE)) {
+	if (ima_flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT)) {
 
 	    if (ima_flags & IMA_STUB) {
 		if (*meth_name == 'c' && strEQ(meth_name,"can")) {
@@ -2806,12 +2806,6 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    croak("%s->%s() invalid redirect method name %s",
 			    neatsvpv(h,0), meth_name, neatsvpv(meth_name_sv,0));
 		meth_name = SvPV_nolen(meth_name_sv);
-	    }
-	    if (ima_flags & IMA_EXECUTE) {
-		imp_xxh_t *parent = DBIc_PARENT_COM(imp_xxh);
-		DBIc_on(imp_xxh, DBIcf_Executed);
-		if (parent)
-		    DBIc_on(parent, DBIcf_Executed);
 	    }
 	    if (ima_flags & IMA_KEEP_ERR)
 		keep_error = TRUE;
@@ -2988,6 +2982,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
                         meth_name, (int)outitems);
             /* POP's and PUTBACK? to clear stack */
         }
+    }
+
+    /* set Executed after Callbacks so it's not set if callback elects to skip the method */
+    if (ima_flags & IMA_EXECUTE) {
+        imp_xxh_t *parent = DBIc_PARENT_COM(imp_xxh);
+        DBIc_on(imp_xxh, DBIcf_Executed);
+        if (parent)
+            DBIc_on(parent, DBIcf_Executed);
     }
 
     /* The "quick_FETCH" logic...					*/

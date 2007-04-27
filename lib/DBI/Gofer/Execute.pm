@@ -203,7 +203,7 @@ sub reset_dbh {
 
 
 sub new_response_with_err {
-    my ($self, $rv, $eval_error, $h) = @_;
+    my ($self, $rv, $eval_error, $dbh) = @_;
     # capture err+errstr etc and merge in $eval_error ($@)
 
     my ($err, $errstr, $state) = ($DBI::err, $DBI::errstr, $DBI::state);
@@ -218,7 +218,9 @@ sub new_response_with_err {
     }
 
     my $flags;
-    $flags |= GOf_RESPONSE_EXECUTED if $h && $h->{Executed};
+    # (XXX if we ever add transaction support then we'll need to take extra
+    # steps because the commit/rollback would reset Executed before we get here)
+    $flags |= GOf_RESPONSE_EXECUTED if $dbh && $dbh->{Executed};
 
     my $response = DBI::Gofer::Response->new({
         rv     => $rv,

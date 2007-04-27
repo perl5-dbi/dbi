@@ -3341,11 +3341,10 @@ When it's set on a handle it is also set on the parent handle at the
 same time. So calling execute() on a $sth also sets the C<Executed>
 attribute on the parent $dbh.
 
-The C<Executed> attribute for a database handle is cleared by the
-commit() and rollback() methods. The C<Executed> attribute of a
-statement handle is not cleared by the DBI under any circumstances
-and so acts as a permanent record of whether the statement handle
-was ever used.
+The C<Executed> attribute for a database handle is cleared by the commit() and
+rollback() methods (even if they fail). The C<Executed> attribute of a
+statement handle is not cleared by the DBI under any circumstances and so acts
+as a permanent record of whether the statement handle was ever used.
 
 The C<Executed> attribute was added in DBI 1.41.
 

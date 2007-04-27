@@ -43,6 +43,14 @@ sub new {
 }   
 
 
+
+sub executed_flag_set {
+    my $flags = shift->flags
+        or return 0;
+    return $flags & GOf_RESPONSE_EXECUTED;
+}
+
+
 sub add_err {
     my ($self, $err, $errstr, $state, $trace) = @_;
 
