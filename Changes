@@ -39,7 +39,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.55 (svn rev XXX),  XXX
+=head2 Changes in DBI 1.55 (svn rev 9465),  27th April 2007
 
   Fixed set_err() so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
@@ -71,12 +71,26 @@ and prepends them to any error message.
 
   Gofer related changes:
     Fixed gofer pipeone & stream transports to avoid risk of hanging.
-    Changed DBD::Gofer to work around a DBD::Sybase bind_param bug
-      (which is now fixed in DBD::Sybase 1.07)
+    Improved error handling and tracing significantly.
+    Added way to generate random 1-in-N failures for methods.
+    Added automatic retry-on-error mechanism to gofer transport base class.
+    Added tests to show automatic retry mechanism works a treat!
+    Added header to request and response packets for sanity checking
+      and to enable version skew between client and server.
+    Added forced_single_resultset, max_cached_sth_per_dbh and max_cached_dbh_per_drh
+      ro gofer executor config.
+    Driver-private methods installed with install_method are now proxied.
+    No longer does a round-trip to the server for methods it knows
+      have not been overridden by the remote driver.
+    Most significant aspects of gofer behaviour are controlled by policy mechanism.
+    Added policy-controlled caching of results for some methods, such as schema metadata.
+    The connect_cached and prepare_cached methods cache on client and server.
+    The bind_param_array and execute_array methods are now supported.
+    Worked around a DBD::Sybase bind_param bug (which is fixed in DBD::Sybase 1.07)
     Added goferperf.pl utility (doesn't get installed).
     Many other assorted Gofer related bug fixes, enhancements and docs.
-    Both client and server sides will need upgrading in sync,
-      that shouldn't be needed in future.
+    The http and mod_perl transports have been remove to their own distribution.
+    Client and server will need upgrading together for this release.
 
 =head2 Changes in DBI 1.54 (svn rev 9157),  23rd February 2007
 
