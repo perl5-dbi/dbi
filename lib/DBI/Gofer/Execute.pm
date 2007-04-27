@@ -177,7 +177,13 @@ sub _connect {
 	# include pid to avoid problems with forking (ie null transport in mod_perl)
         dbi_go_execute_unique => __PACKAGE__."$$",
     });
+
     $dbh->{ShowErrorStatement} = 1 if $local_log;
+
+    # note that this affects previously cached handles because $ENV{DBI_GOFER_RANDOM_FAIL}
+    # isn't included in the cache key. Could add a go_rand_fail=>... attribute.
+    $self->_install_rand_fail_callbacks($dbh, $ENV{DBI_GOFER_RANDOM_FAIL})
+        if $ENV{DBI_GOFER_RANDOM_FAIL};
 
     my $CK = $dbh->{CachedKids};
     if ($CK && keys %$CK > $self->{max_cached_sth_per_dbh}) {
@@ -489,6 +495,42 @@ sub _get_default_methods {
     }
     return \%default_methods;
 }
+
+
+sub _install_rand_fail_callbacks {
+    my ($self, $dbh, $dbi_gofer_random_fail) = @_;
+    my ($rand_fail_freq, @rand_fail_methods) = split /,/, $dbi_gofer_random_fail;
+    @rand_fail_methods = qw(do prepare) if !@rand_fail_methods; # only works for dbh methods
+    if ($rand_fail_freq) {
+        warn "DBI_GOFER_RANDOM_FAIL set to '$ENV{DBI_GOFER_RANDOM_FAIL}' "
+            ."so random failures will be generated! "
+            ."(approx 1-in-$rand_fail_freq calls for methods: @rand_fail_methods)\n";
+        my $callbacks = $dbh->{Callbacks} || {};
+        my $prev      = $dbh->{private_gofer_rand_fail_callbacks} || {};
+        for my $method (@rand_fail_methods) {
+            if ($callbacks->{$method} && $callbacks->{$method} != $prev->{$method}) {
+                warn "Callback for $method method already installed so DBI_GOFER_RANDOM_FAIL callback not installed\n";
+                next;
+            }
+            $callbacks->{$method} = $self->_mk_rand_fail_sub($rand_fail_freq, $method);
+        }
+        $dbh->{Callbacks} = $callbacks;
+        $dbh->{private_gofer_rand_fail_callbacks} = $callbacks;
+    }
+}
+
+sub _mk_rand_fail_sub {
+    my ($self, $rand_fail_freq, $method) = @_;
+    # $method may be "*"
+    return sub {
+        my $rand = rand();
+        #warn sprintf "DBI_GOFER_RANDOM_FAIL($rand_fail_freq) %f - %f\n", $rand, 1/$rand_fail_freq;
+        return if $rand > 1/$rand_fail_freq;
+        undef $_; # tell DBI to not call the method
+        return $_[0]->set_err(1, "fake error induced by DBI_GOFER_RANDOM_FAIL env var");
+    }
+}
+
 
 1;
 __END__

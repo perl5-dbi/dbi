@@ -91,6 +91,7 @@ t/70callbacks.t
 t/72childhandles.t
 t/80proxy.t
 t/85gofer.t
+t/86gofer_fail.t
 t/pod.t
 test.pl			Assorted informal tests, including tests for memory leaks
 typemap

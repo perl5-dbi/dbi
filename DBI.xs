@@ -215,6 +215,7 @@ static int warn1(char *s) { warn(s); return 1; }
 static int dump1(SV *sv)  { dTHX; sv_dump(sv); return 1; }
 */
 
+
 /* --- */
 
 static void
@@ -2629,6 +2630,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     UV  ErrCount = UV_MAX;
     int i, outitems;
     int call_depth;
+    int is_nested_call;
     NV profile_t1 = 0.0;
 
     const char	*meth_name = GvNAME(CvGV(cv));
@@ -2897,6 +2899,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	}
     }
 
+    is_nested_call = (call_depth > 1 || (DBIc_PARENT_COM(imp_xxh) && DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh))) >= 1);
+
+
     /* --- dispatch --- */
 
     if (!keep_error && !(*meth_name=='s' && strEQ(meth_name,"set_err"))) {
@@ -2916,7 +2921,14 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
 	&& (tmp_svp = hv_fetch((HV*)SvRV(h), "Callbacks", 9, 0))
 	&& (   (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), meth_name, strlen(meth_name), 0))
-            || (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0)) ) /* all methods */
+              /* the "*" fallback callback only applies to non-nested calls
+               * and also doesn't apply to the 'set_err' or DESTROY methods.
+               * Nor during global destruction.
+               * Other restrictions may be added over time. */
+          || (!is_nested_call && !dirty && strNE(meth_name, "set_err") && strNE(meth_name, "DESTROY") &&
+               (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0))
+             )
+        )
 	&& SvROK(*hook_svp)
     ) {
         SV *orig_defsv;
@@ -3144,11 +3156,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 
     err_sv = DBIc_ERR(imp_xxh);
 
-    if (trace_level > 1
-	|| (trace_level == 1 /* don't trace nested calls at level 1 */
-	    && call_depth <= 1
-	    && (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1))
-    ) {
+    if (trace_level > 1 || (trace_level == 1 && !is_nested_call) ) {
 	PerlIO *logfp = DBILOGFP;
 	const int is_fetch  = (*meth_name=='f' && DBIc_TYPE(imp_xxh)==DBIt_ST && strnEQ(meth_name,"fetch",5));
 	const int row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
@@ -3300,15 +3308,13 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
     }
 
     if (   !keep_error			/* is a new err/warn/info		*/
-	&& call_depth <= 1		/* skip nested (internal) calls		*/
+	&& !is_nested_call		/* skip nested (internal) calls		*/
 	&& (
 	       /* is an error and has RaiseError|PrintError|HandleError set	*/
 	   (SvTRUE(err_sv) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
 	       /* is a warn (not info) and has PrintWarn set		*/
 	|| (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_PrintWarn))
 	)
-		   /* check that we're not nested inside a call to our parent	*/
-	&& (!DBIc_PARENT_COM(imp_xxh) || DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) < 1)
     ) {
 	SV *msg;
 	SV **statement_svp = NULL;
