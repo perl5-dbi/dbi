@@ -270,21 +270,26 @@ SKIP: {
 # handle take_imp_data test
 
 SKIP: {
-    skip "take_imp_data test not supported under DBI::PurePerl", 19 if $DBI::PurePerl;
     skip "take_imp_data test not supported under DBD::Gofer", 19 if $using_dbd_gofer;
+
+    # XXX because we use Kids, ActiveKids and ChildHandles in the tests
+    # if PurePerl supported those then we'd be able to run these tests
+#    skip "take_imp_data test not supported under DBI::PurePerl", 19 if $DBI::PurePerl;
 
     my $dbh = DBI->connect("dbi:$driver:", '', '');
     isa_ok($dbh, "DBI::db");
     my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_gofer
 
-    cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) here');
+    cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) here')
+        unless $DBI::PurePerl && pass();
 
     $dbh->prepare("select name from ?"); # destroyed at once
     my $sth2 = $dbh->prepare("select name from ?"); # inactive
     my $sth3 = $dbh->prepare("select name from ?"); # active:
     $sth3->execute(".");
     is $sth3->{Active}, 1;
-    is $dbh->{ActiveKids}, 1;
+    is $dbh->{ActiveKids}, 1
+        unless $DBI::PurePerl && pass();
 
     my $ChildHandles = $dbh->{ChildHandles};
     ok $ChildHandles, 'we need weakrefs for take_imp_data to work safely with child handles';
@@ -306,8 +311,8 @@ SKIP: {
     like $@, qr/Can't locate object method/;
 
     {
-        my $warn;
-        local $SIG{__WARN__} = sub { ++$warn if $_[0] =~ /after take_imp_data/ };
+        my @warn;
+        local $SIG{__WARN__} = sub { push @warn, $_[0] if $_[0] =~ /after take_imp_data/; print "warn: @_\n"; };
         
         my $drh = $dbh->{Driver};
         ok(!defined $drh, '... our Driver should be undefined');
@@ -319,14 +324,15 @@ SKIP: {
 
         ok(!defined $dbh->quote(42), '... quote should return undefined');
 
-        cmp_ok($warn, '==', 4, '... we should have gotten 4 warnings');
+        cmp_ok(scalar @warn, '==', 4, '... we should have gotten 4 warnings');
     }
 
     my $dbh2 = DBI->connect("dbi:$driver:", '', '', { dbi_imp_data => $imp_data });
     isa_ok($dbh2, "DBI::db");
     # need a way to test dbi_imp_data has been used
     
-    cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) again');
+    cmp_ok($drh->{Kids}, '==', 1, '... our Driver should have 1 Kid(s) again')
+        unless $DBI::PurePerl && pass();
     
 }
 

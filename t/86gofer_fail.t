@@ -12,8 +12,10 @@ use Test::More;
 # here we test the DBI_GOFER_RANDOM_FAIL mechanism
 # and how gofer deals with failures
 
+plan skip_all => "DBI_GOFER_RANDOM_FAIL not supported with PurePerl" if $DBI::PurePerl;
+
 if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
-    plan skip_all => "non-gofer DBI_AUTOPROXY" if $ap !~ /^dbi:Gofer/i;
+    plan skip_all => "Gofer DBI_AUTOPROXY" if $ap =~ /^dbi:Gofer/i;
 
     # this means we have DBD::Gofer => DBD::Gofer => DBD::whatever
     # rather than disable it we let it run because we're twisted

@@ -159,6 +159,8 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	Database
 	DebugDispatch
 	Driver
+        Err
+        Errstr
 	ErrCount
 	FetchHashKeyName
 	HandleError
@@ -179,6 +181,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	RowCacheSize
 	RowsInCache
 	SCALE
+        State
 	Statement
 	TYPE
         Type
@@ -260,7 +263,7 @@ sub  _install_method {
     }
     else {
 	my $ke_init = (IMA_KEEP_ERR_SUB & $bitmask)
-		? q{= $h->{_parent}->{_call_depth} }
+		? q{= $h->{dbi_pp_parent}->{dbi_pp_call_depth} }
 		: "";
 	push @pre_call_frag, qq{
 	    my \$keep_error $ke_init;
@@ -296,7 +299,7 @@ sub  _install_method {
     } if exists $ENV{DBI_TRACE};	# note use of 'exists'
 
     push @pre_call_frag, q{
-        $h->{'_last_method'} = $method_name;
+        $h->{'dbi_pp_last_method'} = $method_name;
     } unless exists $DBI::last_method_except{$method_name};
 
     # --- post method call code fragments ---
@@ -341,7 +344,7 @@ sub  _install_method {
 
         if ( !$keep_error
 	&& defined(my $err = $h->{err})
-	&& ($call_depth <= 1 && !$h->{_parent}{_call_depth})
+	&& ($call_depth <= 1 && !$h->{dbi_pp_parent}{dbi_pp_call_depth})
 	) {
 
 	    my($pe,$pw,$re,$he) = @{$h}{qw(PrintError PrintWarn RaiseError HandleError)};
@@ -351,7 +354,7 @@ sub  _install_method {
 	    or (!$err && length($err) && $pw)	# warning
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
-		    ? ($h->{'_last_method'}||$method_name) : $method_name;
+		    ? ($h->{'dbi_pp_last_method'}||$method_name) : $method_name;
 		my $errstr = $h->{errstr} || $DBI::errstr || $err || '';
 		my $msg = sprintf "%s %s %s: %s", $imp, $last,
 			($err eq "0") ? "warning" : "failed", $errstr;
@@ -394,20 +397,24 @@ sub  _install_method {
 	$h = $h_inner if $h_inner;
 
         my $imp;
-	if ($method_name eq 'DESTROY') { # XXX move this into pre_call_frag
+	if ($method_name eq 'DESTROY') {
 	    # during global destruction, $h->{...} can trigger "Can't call FETCH on an undef value"
 	    # implying that tied() above lied to us, so we need to use eval
 	    local $@;	 # protect $@
 	    $imp = eval { $h->{"ImplementorClass"} } or return; # probably global destruction
 	}
 	else {
-	    $imp = $h->{"ImplementorClass"} or return; # probably global destruction
+	    $imp = $h->{"ImplementorClass"} or do {
+                warn "Can't call $method_name method on handle $h after take_imp_data()\n"
+                    if not exists $h->{Active};
+                return; # or, more likely, global destruction
+            };
 	}
 
 	] . join("\n", '', @pre_call_frag, '') . q[
 
-	my $call_depth = $h->{'_call_depth'} + 1;
-	local ($h->{'_call_depth'}) = $call_depth;
+	my $call_depth = $h->{'dbi_pp_call_depth'} + 1;
+	local ($h->{'dbi_pp_call_depth'}) = $call_depth;
 
 	my @ret;
         my $sub = $imp->can($method_name);
@@ -490,7 +497,7 @@ sub _setup_handle {
 	elsif (ref($parent) =~ /::dr$/){
 	    $h_inner->{Driver} = $parent;
 	}
-	$h_inner->{_parent} = $parent;
+	$h_inner->{dbi_pp_parent} = $parent;
 
 	# add to the parent's ChildHandles
 	if ($HAS_WEAKEN) {
@@ -515,7 +522,7 @@ sub _setup_handle {
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
 	$h_inner->{Type}                ||= 'dr';
     }
-    $h_inner->{"_call_depth"} = 0;
+    $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{ErrCount} = 0;
     $h_inner->{Active} = 1;
 }
@@ -830,7 +837,7 @@ sub set_err {
 	$p->{state}  = $DBI::state;
     }
 
-    $h->{'_last_method'} = $method;
+    $h->{'dbi_pp_last_method'} = $method;
     return $rv; # usually undef
 }
 sub trace_msg {
@@ -844,7 +851,28 @@ sub private_data {
     warn "private_data @_";
 }
 sub take_imp_data {
-    undef;
+    my $dbh = shift;
+    # A reasonable default implementation based on the one in DBI.xs.
+    # Typically a pure-perl driver would have their own take_imp_data method
+    # that would delete all but the essential items in the hash before einding with:
+    #      return $dbh->SUPER::take_imp_data();
+    # Of course it's useless if the driver doesn't also implement support for
+    # the dbi_imp_data attribute to the connect() method.
+    require Storable;
+    croak("Can't take_imp_data from handle that's not Active")
+        unless $dbh->{Active};
+    for my $sth (@{ $dbh->{ChildHandles} || [] }) {
+        next unless $sth;
+        $sth->finish if $sth->{Active};
+        bless $sth, 'DBI::zombie';
+    }
+    delete $dbh->{$_} for (keys %is_valid_attribute);
+    delete $dbh->{$_} for grep { m/^dbi_/ } keys %$dbh;
+    # warn "@{[ %$dbh ]}";
+    local $Storable::forgive_me = 1; # in case there are some CODE refs
+    my $imp_data = Storable::freeze($dbh);
+    # XXX um, should probably untie here - need to check dispatch behaviour
+    return $imp_data;
 }
 sub rows {
     return -1; # always returns -1 here, see DBD::_::st::rows below

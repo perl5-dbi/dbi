@@ -69,6 +69,7 @@ and prepends them to any error message.
     which will be de-ref'd for each profile sample.
   Added dbilogstrip utility to edit DBI logs for diff'ing (gets installed)
   Added details for SQLite 3.3 to NULL handling docs thanks to Alex Teslik.
+  Added take_imp_data() to DBI::PurePerl.
 
   Gofer related changes:
     Fixed gofer pipeone & stream transports to avoid risk of hanging.
