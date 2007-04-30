@@ -2438,6 +2438,7 @@ work on various database engines:
   MS SQL           N  N  Y  N  Y  ?  Y
   Sybase           Y  N  N  N  N  N  Y
   AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y
+  SQLite 3.3       N  N  N  N  Y  N  N
 
 * Works only because Example 0 works.
 

@@ -68,6 +68,7 @@ and prepends them to any error message.
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.
   Added dbilogstrip utility to edit DBI logs for diff'ing (gets installed)
+  Added details for SQLite 3.3 to NULL handling docs thanks to Alex Teslik.
 
   Gofer related changes:
     Fixed gofer pipeone & stream transports to avoid risk of hanging.
@@ -78,7 +79,7 @@ and prepends them to any error message.
     Added header to request and response packets for sanity checking
       and to enable version skew between client and server.
     Added forced_single_resultset, max_cached_sth_per_dbh and max_cached_dbh_per_drh
-      ro gofer executor config.
+      to gofer executor config.
     Driver-private methods installed with install_method are now proxied.
     No longer does a round-trip to the server for methods it knows
       have not been overridden by the remote driver.
