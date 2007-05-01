@@ -78,6 +78,7 @@ and prepends them to any error message.
     Added way to generate random 1-in-N failures for methods.
     Added automatic retry-on-error mechanism to gofer transport base class.
     Added tests to show automatic retry mechanism works a treat!
+    Added go_retry_hook callback hook so apps can fine-tune retry behaviour.
     Added header to request and response packets for sanity checking
       and to enable version skew between client and server.
     Added forced_single_resultset, max_cached_sth_per_dbh and max_cached_dbh_per_drh

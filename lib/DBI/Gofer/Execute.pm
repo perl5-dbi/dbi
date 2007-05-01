@@ -501,12 +501,12 @@ sub _get_default_methods {
 
 sub _install_rand_fail_callbacks {
     my ($self, $dbh, $dbi_gofer_random_fail) = @_;
-    my ($rand_fail_freq, @rand_fail_methods) = split /,/, $dbi_gofer_random_fail;
+    my ($rand_fail_pct, @rand_fail_methods) = split /,/, $dbi_gofer_random_fail;
     @rand_fail_methods = qw(do prepare) if !@rand_fail_methods; # only works for dbh methods
-    if ($rand_fail_freq) {
+    if ($rand_fail_pct) {
         warn "DBI_GOFER_RANDOM_FAIL set to '$ENV{DBI_GOFER_RANDOM_FAIL}' "
             ."so random failures will be generated! "
-            ."(approx 1-in-$rand_fail_freq calls for methods: @rand_fail_methods)\n";
+            ."(approx $rand_fail_pct% of calls to methods: @rand_fail_methods)\n";
         my $callbacks = $dbh->{Callbacks} || {};
         my $prev      = $dbh->{private_gofer_rand_fail_callbacks} || {};
         for my $method (@rand_fail_methods) {
@@ -514,7 +514,7 @@ sub _install_rand_fail_callbacks {
                 warn "Callback for $method method already installed so DBI_GOFER_RANDOM_FAIL callback not installed\n";
                 next;
             }
-            $callbacks->{$method} = $self->_mk_rand_fail_sub($rand_fail_freq, $method);
+            $callbacks->{$method} = $self->_mk_rand_fail_sub($rand_fail_pct, $method);
         }
         $dbh->{Callbacks} = $callbacks;
         $dbh->{private_gofer_rand_fail_callbacks} = $callbacks;
@@ -522,12 +522,13 @@ sub _install_rand_fail_callbacks {
 }
 
 sub _mk_rand_fail_sub {
-    my ($self, $rand_fail_freq, $method) = @_;
+    my ($self, $rand_fail_pct, $method) = @_;
+    my $rand_fail_ratio = $rand_fail_pct/100;
     # $method may be "*"
     return sub {
         my $rand = rand();
-        #warn sprintf "DBI_GOFER_RANDOM_FAIL($rand_fail_freq) %f - %f\n", $rand, 1/$rand_fail_freq;
-        return if $rand > 1/$rand_fail_freq;
+        #warn sprintf "DBI_GOFER_RANDOM_FAIL($rand_fail_pct) %f - %f\n", $rand, 1/$rand_fail_pct;
+        return if $rand >= $rand_fail_ratio;
         undef $_; # tell DBI to not call the method
         return $_[0]->set_err(1, "fake error induced by DBI_GOFER_RANDOM_FAIL env var");
     }

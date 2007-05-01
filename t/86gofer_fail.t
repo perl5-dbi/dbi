@@ -38,7 +38,7 @@ $SIG{__WARN__} = sub { warn "@_" unless "@_" =~ /^DBI_GOFER_RANDOM_FAIL set/ };
 
 # --- 100% failure rate
 
-$ENV{DBI_GOFER_RANDOM_FAIL} = "1,do"; # total failure (almost)
+$ENV{DBI_GOFER_RANDOM_FAIL} = "100,do"; # total failure (almost)
 my $dbh_100 = DBI->connect("dbi:Gofer:transport=null;policy=rush;dsn=dbi:ExampleP:", 0, 0, {
     RaiseError => 1, PrintError => 0,
 });
@@ -58,7 +58,7 @@ is precentage_exceptions(200, sub { $dbh_100->do("set foo=1") }), 100;
 
 # --- 50% failure rate, with no retries
 
-$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
+$ENV{DBI_GOFER_RANDOM_FAIL} = "50,do"; # 50% failure (almost)
 ok my $dbh_50r0 = dbi_connect("policy=rush;retry_limit=0");
 $fails = precentage_exceptions(200, sub { $dbh_50r0->do("set foo=1") });
 print "target approx 50% random failures, got $fails%\n";
@@ -66,7 +66,7 @@ between_ok $fails, 10, 90, "should fail about 50% of the time, but at least betw
 
 # --- 50% failure rate, with many retries (should yield low failure rate)
 
-$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
+$ENV{DBI_GOFER_RANDOM_FAIL} = "50,do"; # 50% failure (almost)
 ok my $dbh_50r5 = dbi_connect("policy=rush;retry_limit=5");
 $fails = precentage_exceptions(200, sub { $dbh_50r5->do("set foo=1") });
 print "target approx 5% random failures, got $fails%\n";
@@ -81,7 +81,7 @@ cmp_ok $fails, '<', 1, 'should fail < 1%';
 
 # --- 50% failure rate, test is_idempotent
 
-$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do";   # 50%
+$ENV{DBI_GOFER_RANDOM_FAIL} = "50,do";   # 50%
 
 # test go_retry_hook and that ReadOnly => 1 retries a non-idempotent statement
 ok my $dbh_50r1ro = dbi_connect("policy=rush;retry_limit=1", {
