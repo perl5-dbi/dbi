@@ -248,10 +248,10 @@
     sub go_dbh_method {
         my $dbh = shift;
         my $meta = shift;
-        # $method and @args left in @_
+        # @_ now contains ($method_name, @args)
 
         my $request = $dbh->{go_request};
-        $request->init_request([ wantarray, @_ ]);
+        $request->init_request([ wantarray, @_ ], $dbh);
         ++$dbh->{go_request_count};
 
         my $go_policy = $dbh->{go_policy};
@@ -567,7 +567,7 @@
         ++$dbh->{go_request_count};
 
         my $request = $sth->{go_request};
-        $request->init_request($sth->{go_prepare_call});
+        $request->init_request($sth->{go_prepare_call}, $sth);
         $request->sth_method_calls(delete $sth->{go_method_calls})
             if $sth->{go_method_calls};
         $request->sth_result_attr({}); # (currently) also indicates this is an sth request

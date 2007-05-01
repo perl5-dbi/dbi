@@ -3,7 +3,7 @@ use strict;
 use Carp;
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
 
-# based (ever more loosly) on Class::Accessor::Fast
+# inspired by Class::Accessor::Fast
 
 sub new {
     my($proto, $fields) = @_;
@@ -19,10 +19,10 @@ sub new {
 
 sub mk_accessors {
     my($self, @fields) = @_;
-    $self->mk_accessors_with('make_accessor', @fields);
+    $self->mk_accessors_using('make_accessor', @fields);
 }
 
-sub mk_accessors_with {
+sub mk_accessors_using {
     my($self, $maker, @fields) = @_;
     my $class = ref $self || $self;
 

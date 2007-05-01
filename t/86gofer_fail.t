@@ -8,11 +8,12 @@ use warnings;
 use DBI;
 use Data::Dumper;
 use Test::More;
+sub between_ok;
 
 # here we test the DBI_GOFER_RANDOM_FAIL mechanism
 # and how gofer deals with failures
 
-plan skip_all => "DBI_GOFER_RANDOM_FAIL not supported with PurePerl" if $DBI::PurePerl;
+plan skip_all => "requires Callbacks which are not supported with PurePerl" if $DBI::PurePerl;
 
 if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
     plan skip_all => "Gofer DBI_AUTOPROXY" if $ap =~ /^dbi:Gofer/i;
@@ -61,8 +62,7 @@ $ENV{DBI_GOFER_RANDOM_FAIL} = "2,do"; # 50% failure (almost)
 ok my $dbh_50r0 = dbi_connect("policy=rush;retry_limit=0");
 $fails = precentage_exceptions(200, sub { $dbh_50r0->do("set foo=1") });
 print "target approx 50% random failures, got $fails%\n";
-cmp_ok $fails, '>', 10, 'should fail about 50% of the time, but at least 10%';
-cmp_ok $fails, '<', 90, 'should fail about 50% of the time, but not more than 90%';
+between_ok $fails, 10, 90, "should fail about 50% of the time, but at least between 10% and 90%";
 
 # --- 50% failure rate, with many retries (should yield low failure rate)
 
@@ -79,13 +79,46 @@ ok my $dbh_1r10 = dbi_connect("policy=rush;retry_limit=10");
 $fails = precentage_exceptions(200, sub { $dbh_1r10->do("set foo=1") });
 cmp_ok $fails, '<', 1, 'should fail < 1%';
 
+# --- 50% failure rate, test is_idempotent
+
+$ENV{DBI_GOFER_RANDOM_FAIL} = "2,do";   # 50%
+
+# test go_retry_hook and that ReadOnly => 1 retries a non-idempotent statement
+ok my $dbh_50r1ro = dbi_connect("policy=rush;retry_limit=1", {
+    go_retry_hook => sub { return ($_[0]->is_idempotent) ? 1 : 0 },
+    ReadOnly => 1,
+} );
+between_ok precentage_exceptions(100, sub { $dbh_50r1ro->do("set foo=1") }),
+    15, 35, 'should fail ~25% (ie 50% with one retry)';
+between_ok $dbh_50r1ro->{go_transport}->meta->{request_retry_count},
+    35, 65, 'transport request_retry_count should be around 50';
+
+# test as above but with ReadOnly => 0
+ok my $dbh_50r1rw = dbi_connect("policy=rush;retry_limit=1", {
+    go_retry_hook => sub { return ($_[0]->is_idempotent) ? 1 : 0 },
+    ReadOnly => 0,
+} );
+between_ok precentage_exceptions(100, sub { $dbh_50r1rw->do("set foo=1") }),
+    35, 65, 'should fail ~50%, ie no retries';
+ok !$dbh_50r1rw->{go_transport}->meta->{request_retry_count},
+    'transport request_retry_count should be zero or undef';
+
+
+
 
 exit 0;
 
+sub between_ok {
+    my ($got, $min, $max, $label) = @_;
+    local $Test::Builder::Level = 2;
+    cmp_ok $got, '>=', $min, "$label (got $got)";
+    cmp_ok $got, '<=', $max, "$label (got $got)";
+}
+
 sub dbi_connect {
-    my ($gdsn) = @_;
+    my ($gdsn, $attr) = @_;
     return DBI->connect("dbi:Gofer:transport=null;$gdsn;dsn=dbi:ExampleP:", 0, 0, {
-        RaiseError => 1, PrintError => 0,
+        RaiseError => 1, PrintError => 0, ($attr) ? %$attr : ()
     });
 }
 

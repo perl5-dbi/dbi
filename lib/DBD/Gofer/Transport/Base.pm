@@ -19,8 +19,13 @@ __PACKAGE__->mk_accessors(qw(
     go_dsn
     go_url
     go_timeout
+    go_retry_hook
     go_retry_limit
 ));
+__PACKAGE__->mk_accessors_using(make_accessor_autoviv_hashref => qw(
+    meta
+));
+
 
 
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
@@ -66,7 +71,7 @@ sub _transmit_request_with_retries {
     my $response;
     do {
         $response = $transmit_sub->();
-    } while ( $response && $self->response_needs_retransmit($response, $request) );
+    } while ( $response && $self->response_needs_retransmit($request, $response) );
     return $response;
 }
 
@@ -96,42 +101,56 @@ sub receive_response {
     my $response;
     do {
         $response = $receive_sub->();
-        if ($self->response_needs_retransmit($response, $request)) {
+        if ($self->response_needs_retransmit($request, $response)) {
             $response = $self->_transmit_request_with_retries($request, $retransmit_sub);
             $response ||= $receive_sub->();
         }
-    } while ( $self->response_needs_retransmit($response, $request) );
+    } while ( $self->response_needs_retransmit($request, $response) );
 
     return $response;
 }
 
 
 sub response_needs_retransmit {
-    my ($self, $response, $request) = @_;
+    my ($self, $request, $response) = @_;
 
     my $err = $response->err
-        or return 0; # nothing wen't wrong
+        or return 0; # nothing went wrong
 
     my $retry;
-    my $errstr = $response->errstr || '';
 
-    my $idempotent = 0; # XXX set to 1 for idempotent requests, ie selects
+    # give the user a chance to express a preference (or undef for default)
+    if (my $go_retry_hook = $self->go_retry_hook) {
+        $retry = $go_retry_hook->($request, $response, $self);
+        $self->trace_msg(sprintf "response_needs_retransmit: go_retry_hook returned %s\n",
+            (defined $retry) ? $retry : 'undef');
+    }
 
-    $retry = 1 if $errstr =~ m/fake error induced by DBI_GOFER_RANDOM_FAIL/;
+    if (not defined $retry) {
+        my $errstr = $response->errstr || '';
+        $retry = 1 if $errstr =~ m/fake error induced by DBI_GOFER_RANDOM_FAIL/;
+    }
 
-    if (!$retry) {
+    if (not defined $retry) {
+        my $idempotent = $request->is_idempotent; # i.e. is SELECT or ReadOnly was set
+        $retry = 1 if $idempotent;
+    }
+
+    if (!$retry) {  # false or undef
         $self->trace_msg("response_needs_retransmit: response not suitable for retry\n");
         return 0;
     }
+
     my $meta = $request->meta;
-    my $retry_count = ++$meta->{retry_count};
     my $retry_limit = $self->go_retry_limit;
     $retry_limit = 2 unless defined $retry_limit;
-    if ($retry_count > $retry_limit) {
-        $self->trace_msg("response_needs_retransmit: $retry_count is too many retries\n");
+    if (($meta->{retry_count}||=0) >= $retry_limit) {
+        $self->trace_msg("response_needs_retransmit: $meta->{retry_count} is too many retries\n");
         return 0;
     }
-    $self->trace_msg("response_needs_retransmit: retry $retry_count\n");
+    ++$meta->{retry_count};                 # count for this request
+    ++$self->meta->{request_retry_count};   # cumulative transport stats
+    $self->trace_msg("response_needs_retransmit: retry $meta->{retry_count}\n");
     return 1;
 }
 

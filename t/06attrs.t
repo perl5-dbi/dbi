@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 137;
+use Test::More tests => 142;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -18,13 +18,12 @@ BEGIN {
 $|=1;
 
 my $using_autoproxy = ($ENV{DBI_AUTOPROXY});
+my $dsn = 'dbi:ExampleP:dummy';
 
 # Connect to the example driver.
-my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
-                           { 
-							 PrintError => 0,
-                             RaiseError => 1,
-                           });
+my $dbh = DBI->connect($dsn, '', '', { 
+    PrintError => 0, RaiseError => 1,
+});
 
 isa_ok( $dbh, 'DBI::db' );
 
@@ -66,6 +65,7 @@ ok(!defined $dbh->{HandleError},  '... checking HandleError attribute for dbh');
 ok(!defined $dbh->{Profile},      '... checking Profile attribute for dbh');
 ok(!defined $dbh->{Statement},    '... checking Statement attribute for dbh');
 ok(!defined $dbh->{RowCacheSize}, '... checking RowCacheSize attribute for dbh');
+ok(!defined $dbh->{ReadOnly},     '... checking ReadOnly attribute for dbh');
 
 is($dbh->{FetchHashKeyName}, 'NAME',  '... checking FetchHashKeyName attribute for dbh');
 is($dbh->{Name},             'dummy', '... checking Name attribute for dbh')	# fails for Multiplex
@@ -78,7 +78,7 @@ cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadL
 eval { 
     $dbh->do('select foo from foo') 
 };
-like($@, qr/^DBD::(ExampleP|Multiplex|Gofer)::db do failed: Unknown field names: foo/ , '... catching exception');
+like($@, qr/^DBD::\w+::db do failed: Unknown field names: foo/ , '... catching exception');
 
 ok(defined $dbh->err, '... $dbh->err is undefined');
 like($dbh->errstr,  qr/^Unknown field names: foo\b/, '... checking $dbh->errstr');
@@ -131,6 +131,7 @@ SKIP: {
 is($drh->{CachedKids}, undef,    '... checking CachedKids attribute for drh');
 ok(!defined $drh->{HandleError}, '... checking HandleError attribute for drh');
 ok(!defined $drh->{Profile},     '... checking Profile attribute for drh');
+ok(!defined $drh->{ReadOnly},    '... checking ReadOnly attribute for drh');
 
 cmp_ok($drh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for drh');
 cmp_ok($drh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for drh');
@@ -155,7 +156,7 @@ eval {
     $sth->execute("foo") 
 };
 # we don't check actual opendir error msg because of locale differences
-like($@, qr/^DBD::(ExampleP|Multiplex|Gofer)::st execute failed: .*opendir\(foo\): /msi, '... checking exception');
+like($@, qr/^DBD::\w+::st execute failed: .*opendir\(foo\): /msi, '... checking exception');
 
 # Test all of the statement handle attributes.
 like($sth->errstr, qr/opendir\(foo\): /, '... checking $sth->errstr');
@@ -199,6 +200,7 @@ SKIP: {
 ok(!defined $sth->{CachedKids},  '... checking CachedKids attribute for sth');
 ok(!defined $sth->{HandleError}, '... checking HandleError attribute for sth');
 ok(!defined $sth->{Profile},     '... checking Profile attribute for sth');
+ok(!defined $sth->{ReadOnly},    '... checking ReadOnly attribute for sth');
 
 cmp_ok($sth->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for sth');
 cmp_ok($sth->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for sth');
@@ -273,6 +275,27 @@ is($sth->{Statement}, "select ctime, name from ?", '... checking Statement attri
 ok(!defined $sth->{RowsInCache}, '... checking type of RowsInCache attribute for sth');
 
 # $h->{TraceLevel} tests are in t/09trace.t
+
+print "Checking inheritance\n";
+
+SKIP: {
+    skip "drh->dbh->sth inheritance test skipped with DBI_AUTOPROXY", 2 if $ENV{DBI_AUTOPROXY};
+
+sub check_inherited {
+    my ($drh, $attr, $value, $skip_sth) = @_;
+    local $drh->{$attr} = $value;
+    local $drh->{PrintError} = 1;
+    my $dbh = $drh->connect("dummy");
+    is $dbh->{$attr}, $drh->{$attr}, "dbh $attr value should be inherited from drh";
+    unless ($skip_sth) {
+        my $sth = $dbh->prepare("select name from .");
+        is $sth->{$attr}, $dbh->{$attr}, "sth $attr value should be inherited from dbh";
+    }
+}
+
+check_inherited($drh, "ReadOnly", 1, 0);
+
+}
 
 1;
 # end

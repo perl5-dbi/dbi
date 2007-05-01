@@ -15,9 +15,15 @@ use base qw(DBI::Util::_accessor);
 
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
+use constant GOf_REQUEST_IDEMPOTENT => 0x0001;
+use constant GOf_REQUEST_READONLY   => 0x0002;
+    
+our @EXPORT = qw(GOf_REQUEST_IDEMPOTENT GOf_REQUEST_READONLY);
+
 
 __PACKAGE__->mk_accessors(qw(
     version
+    flags
     dbh_connect_call
     dbh_method_call
     dbh_attributes
@@ -25,7 +31,7 @@ __PACKAGE__->mk_accessors(qw(
     sth_method_calls
     sth_result_attr
 ));
-__PACKAGE__->mk_accessors_with(make_accessor_autoviv_hashref => qw(
+__PACKAGE__->mk_accessors_using(make_accessor_autoviv_hashref => qw(
     meta
 ));
 
@@ -38,20 +44,57 @@ sub new {
 
 
 sub reset {
-    my $self = shift;
+    my ($self, $flags) = @_;
     # remove everything except connect and version
-    %$self = ( version => $self->{version}, dbh_connect_call => $self->{dbh_connect_call} );
+    %$self = (
+        version => $self->{version},
+        dbh_connect_call => $self->{dbh_connect_call},
+    );
+    $self->{flags} = $flags if $flags;
 }
+
+
+sub init_request {
+    my ($self, $method_and_args, $dbh) = @_;
+    $self->reset( $dbh->{ReadOnly} ? GOf_REQUEST_READONLY : 0 );
+    $self->dbh_method_call($method_and_args);
+}
+
 
 sub is_sth_request {
     return shift->{sth_result_attr};
 }
 
-sub init_request {
-    my ($self, $method_and_args) = @_;
-    $self->reset;
-    $self->dbh_method_call($method_and_args);
+
+sub statements {
+    my $self = shift;
+    my @statements;
+    my $statement_method_regex = qr/^(?:do|prepare)$/;
+    if (my $dbh_method_call = $self->dbh_method_call) {
+        my (undef, $method, $arg1) = @$dbh_method_call;
+        push @statements, $arg1 if $method =~ $statement_method_regex;
+    }
+    return @statements;
 }
+
+
+sub is_idempotent {
+    my $self = shift;
+
+    if (my $flags = $self->flags) {
+        return 1 if $flags & (GOf_REQUEST_IDEMPOTENT|GOf_REQUEST_READONLY);
+    }
+
+    # else check if all statements are select statement
+    my @statements = $self->statements;
+    # XXX this is very minimal for now, doesn't even allow comments before the select
+    # (and can't ever work for "exec stored_procedure_name" kinds of statements)
+    # XXX it also doesn't deal with multiple statements: prepare("select foo; update bar")
+    return 1 if @statements == grep { m/^ \s* SELECT \b/xmsi } @statements;
+
+    return 0;
+}
+
 
 sub summary_as_text {
     my $self = shift;
@@ -73,6 +116,10 @@ sub summary_as_text {
         $tmp = "{ ".neat_list([ %$tmp ])." }";
     }
     push @s, sprintf "dbh= $method(%s, %s)", neat_list([$dsn, $user, $pass]), $tmp;
+
+    if (my $flags = $self->flags) {
+        push @s, sprintf "flags: 0x%x", $flags;
+    }
 
     if (my $dbh_attr = $self->dbh_attributes) {
         push @s, sprintf "dbh->FETCH: %s", @$dbh_attr

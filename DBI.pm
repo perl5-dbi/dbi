@@ -636,6 +636,7 @@ sub connect {
 	    # been called yet and so the dbh errstr would not have been copied
 	    # up to the drh errstr. Certainly true for connect_cached!
 	    my $errstr = $DBI::errstr;
+            # Getting '(no error string)' here is a symptom of a ref loop
 	    $errstr = '(no error string)' if !defined $errstr;
 	    my $msg = "$class connect('$dsn','$user',...) failed: $errstr";
 	    DBI->trace_msg("       $msg\n");
@@ -3803,6 +3804,25 @@ The C<Profile> attribute enables the collection and reporting of method call tim
 See the L<DBI::Profile> module documentation for I<much> more detail.
 
 The C<Profile> attribute was added in DBI 1.24.
+
+=item C<ReadOnly> (boolean, inherited)
+
+An application can set the C<ReadOnly> attribute of a handle to a true value to
+indicate that it will not be attempting to make any changes (insert, delete,
+update etc) using that handle or any children of it.
+
+If the driver can make the handle truly read-only (by issuing a statement like
+"C<set transaction read only>" as needed, for example) then it should.
+Otherwise the attribute is simply advisory.
+
+A driver can set the C<ReadOnly> attribute itself to indicate that the data it
+is connected to cannot be changed for some reason.
+
+Library modules and proxy drivers can use the attribute to influence their behavior.
+For example, the DBD::Gofer driver considers the C<ReadOnly> attribute when
+making a decison about whether to retry an operation that failed.
+
+The attribute should be set to 1 or 0. (Other values are reserved.)
 
 =item C<private_your_module_name_*>
 

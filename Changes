@@ -22,7 +22,7 @@ Gofer request flags:
     only fetch one result set - handy for Sybase/MSSQL users
     will accept streamed resultsets
 Pedantic policy should force a fresh connect each time - add new policy item
-Add attr-passthru to prepare()? ie for gofer cache control
+Add attr-passthru to prepare()? ie for gofer cache control & ReadOnly
 Terminology for client and server ends
 Document user/passwd issues at the various levels of the gofer stack
 Policy's from pod
@@ -65,6 +65,7 @@ and prepends them to any error message.
     Callbacks can now elect to provide a value to be returned, in which case
     the method won't be called. A callback for "*" is applied to all methods
     that don't have their own callback.
+  Added $h->{ReadOnly} attribute.
   Added support for DBI Profile Path to contain refs to scalars
     which will be de-ref'd for each profile sample.
   Added dbilogstrip utility to edit DBI logs for diff'ing (gets installed)

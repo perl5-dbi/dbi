@@ -338,9 +338,9 @@ sub _get_std_attributes {
     $h = tied(%$h) || $h; # switch to inner handle
     my $attr_names = $h->{private_gofer_std_attr_names};
     return $attr_names if $attr_names;
-    # add ChopBlanks LongReadLen LongTruncOk because drivers may have different defaults
-    # plus Name so the client gets the real Name of the connection
-    my @attr_names = qw(ChopBlanks LongReadLen LongTruncOk Name);
+    # add some extra because drivers may have different defaults
+    # add Name so the client gets the real Name of the connection
+    my @attr_names = qw(ChopBlanks LongReadLen LongTruncOk ReadOnly Name);
     if (my $pai = $h->private_attribute_info) {
         push @attr_names, keys %$pai;
     }

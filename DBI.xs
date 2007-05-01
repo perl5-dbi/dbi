@@ -1091,9 +1091,8 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 	if (parent) {
 	    dbih_setup_attrib(aTHX_ h,imp,"HandleSetErr",parent,0,1);
 	    dbih_setup_attrib(aTHX_ h,imp,"HandleError",parent,0,1);
-	    if (DBIc_has(parent_imp,DBIcf_Profile)) {
-		dbih_setup_attrib(aTHX_ h,imp,"Profile",parent,0,1);
-	    }
+	    dbih_setup_attrib(aTHX_ h,imp,"ReadOnly",parent,0,1);
+            dbih_setup_attrib(aTHX_ h,imp,"Profile",parent,0,1);
 	    DBIc_LongReadLen(imp) = DBIc_LongReadLen(parent_imp);
 #ifdef sv_rvweaken
 	    if (1) {
@@ -1735,6 +1734,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     /* these are here due to clone() needing to set attribs through a public api */
     else if (htype<=DBIt_DB && (strEQ(key, "Name")
 			    || strEQ(key,"ImplementorClass")
+			    || strEQ(key,"ReadOnly")
 			    || strEQ(key,"Statement")
 			    || strEQ(key,"Username")
 	/* these are here for backwards histerical raisons */
@@ -2069,6 +2069,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 		||	(*key=='P' && strEQ(key, "ParamArrays"))
 		||	(*key=='P' && strEQ(key, "ParamValues"))
 		||	(*key=='P' && strEQ(key, "Profile"))
+		||	(*key=='R' && strEQ(key, "ReadOnly"))
 		||	(*key=='C' && strEQ(key, "CursorName"))
 		||	(*key=='C' && strEQ(key, "Callbacks"))
 		||	(*key=='U' && strEQ(key, "Username"))

@@ -177,6 +177,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	ParamValues
 	Profile
 	Provider
+        ReadOnly
 	RootClass
 	RowCacheSize
 	RowsInCache
@@ -483,7 +484,7 @@ sub _setup_handle {
     if ($parent) {
 	foreach (qw(
 	    RaiseError PrintError PrintWarn HandleError HandleSetErr
-	    Warn LongTruncOk ChopBlanks AutoCommit
+	    Warn LongTruncOk ChopBlanks AutoCommit ReadOnly
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {
 	    $h_inner->{$_} = $parent->{$_}

@@ -12,59 +12,18 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 209;
+use Test::More tests => 205;
 
 # "globals"
 my ($r, $dbh);
 
-## testing tracing to file
-sub trace_to_file {
-
-	my $trace_file = "dbitrace.log";
-
-        if (-e $trace_file) {
-            1 while unlink $trace_file;
-            die "Can't unlink existing $trace_file: $!" if -e $trace_file;
-        }
-
-	my $orig_trace_level = DBI->trace;
-	DBI->trace(3, $trace_file);		# enable trace before first driver load
-	
-	$dbh = DBI->connect('dbi:ExampleP(AutoCommit=>1):', undef, undef);
-	die "Unable to connect to ExampleP driver: $DBI::errstr" unless $dbh;
-
-	isa_ok($dbh, 'DBI::db');
-
-	$dbh->dump_handle("dump_handle test, write to log file", 2);
-
-	DBI->trace(0, undef);	# turn off and restore to STDERR
-	
-	SKIP: {
-		skip "cygwin has buffer flushing bug", 1 if ($^O =~ /cygwin/i);
-		ok( -s $trace_file, "trace file size = " . -s $trace_file);
-	}
-
-	my $unlinked = unlink( $trace_file );
-	ok( $unlinked, "Remove trace file $trace_file ($!)" );
-	ok( !-e $trace_file, "Trace file actually gone" );
-
-	DBI->trace($orig_trace_level);	# no way to restore previous outfile XXX
-}
-
-trace_to_file();
-
-# internal hack to assist debugging using DBI_TRACE env var. See DBI.pm.
-DBI->trace(@DBI::dbi_debug) if @DBI::dbi_debug;
-
-my $dbh2;
-eval {
-    $dbh2 = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError => 1, AutoCommit => 1 });
-};
+ok !eval {
+    $dbh = DBI->connect("dbi:NoneSuch:foobar", 1, 1, { RaiseError => 1, AutoCommit => 1 });
+}, 'connect should fail';
 like($@, qr/install_driver\(NoneSuch\) failed/, '... we should have an exception here');
-ok(!$dbh2, '... $dbh2 should not be defined');
+ok(!$dbh, '... $dbh2 should not be defined');
 
-$dbh2 = DBI->connect('dbi:ExampleP:', '', '');
-ok($dbh ne $dbh2);
+$dbh = DBI->connect('dbi:ExampleP:', '', '');
 
 sub check_connect_cached {
 	# connect_cached
@@ -181,7 +140,6 @@ $dir = VMS::Filespec::unixify($dir) if $^O eq 'VMS';
 my($col0, $col1, $col2, $col3, $rows);
 my(@row_a, @row_b);
 
-#$csr_a->trace(5);
 ok($csr_a->bind_columns(undef, \($col0, $col1, $col2)) );
 ok($csr_a->execute( $dir ), $DBI::errstr);
 
@@ -192,7 +150,6 @@ ok(@row_a);
 is($row_a[0], $col0);
 is($row_a[1], $col1);
 is($row_a[2], $col2);
-#$csr_a->trace(0);
 
 ok( ! $csr_a->bind_columns(undef, \($col0, $col1)) );
 like $csr_a->errstr, '/bind_columns called with 2 values but 3 are needed/', 'errstr should contain error message';
@@ -259,20 +216,17 @@ ok($r->[0]->[0] eq $row_a[2]);
 
 print "fetchall_arrayref hash slice\n";
 ok($csr_b->execute());
-#$csr_b->trace(9);
 $r = $csr_b->fetchall_arrayref({ SizE=>1, nAMe=>1});
 ok($r && @$r);
 ok($r->[0]->{SizE} == $row_a[1]);
 ok($r->[0]->{nAMe} eq $row_a[2]);
 
-#$csr_b->trace(4);
 print "fetchall_arrayref hash\n";
 ok($csr_b->execute());
 $r = $csr_b->fetchall_arrayref({});
 ok($r);
 ok(keys %{$r->[0]} == 3);
 ok("@{$r->[0]}{qw(MODE SIZE NAME)}" eq "@row_a", "'@{$r->[0]}{qw(MODE SIZE NAME)}' ne '@row_a'");
-#$csr_b->trace(0);
 
 # use Data::Dumper; warn Dumper([\@row_a, $r]);
 
@@ -280,7 +234,6 @@ $rows = $csr_b->rows;
 ok($rows > 0, "row count $rows");
 ok($rows == @$r, "$rows vs ".@$r);
 ok($rows == $DBI::rows, "$rows vs $DBI::rows");
-#$csr_b->trace(0);
 
 # ---
 
@@ -447,8 +400,6 @@ $r = eval { $csr_c = $dbh->prepare($error_sql); };
 ok(!$@, $@);
 ok(!defined($r), $r);
 
-#$dbh->trace(4);
-
 print "HandleError -> 2 -> return (modified)42\n";
 $HandleErrorReturn = 2;
 $r = eval { $csr_c = $dbh->prepare($error_sql); };
@@ -457,8 +408,6 @@ ok($r==42) unless $dbh->{mx_handle_list} && ok(1); # skip for Multiplex
 
 $dbh->{HandleError} = undef;
 ok(!$dbh->{HandleError});
-
-#$dbh->trace(0); die;
 
 {
 	# dump_results;
@@ -505,7 +454,6 @@ while (defined(my $file = readdir(DIR))) {
 }
 print "Local $dir subdirs: @{[ keys %dirs ]}\n";
 closedir(DIR);
-#$dbh->trace(9);
 my $sth = $dbh->table_info($dir, undef, "%", "TABLE");
 ok($sth);
 %unexpected = %dirs;
@@ -521,8 +469,6 @@ ok(keys %unexpected == 0)
     or print "Unexpected directories: ", join(",", keys %unexpected), "\n";
 ok(keys %missing == 0)
     or print "Missing directories: ", join(",", keys %missing), "\n";
-
-#$dbh->trace(0); die 1;
 
 print "tables\n";
 my @tables_expected = (
