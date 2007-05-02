@@ -39,7 +39,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.55 (svn rev 9465),  27th April 2007
+=head2 Changes in DBI 1.55 (svn rev 9480),  1st May 2007
 
   Fixed set_err() so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.
@@ -60,6 +60,7 @@ and prepends them to any error message.
   Changed DBD::NullP to be slightly more useful for testing.
   Changed File::Spec prerequisite to not require a minimum version.
   Changed tests to work with other DBMs thanks to ZMAN.
+  Changed ex/perl_dbi_nulls_test.pl to be more descriptive.
 
   Added more functionality to the (undocumented) Callback mechanism.
     Callbacks can now elect to provide a value to be returned, in which case

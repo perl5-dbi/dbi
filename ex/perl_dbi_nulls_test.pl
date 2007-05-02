@@ -102,7 +102,7 @@ $sth = $dbh->prepare("INSERT INTO $tablename (myid, mycol) VALUES (?,?)");
 for my $i (0..$#char_column_values)
 {
     my $val = $char_column_values[$i];
-    printf "Inserting values (%d, %s)\n", $i+1, $dbh->quote($val);
+    printf "   Inserting values (%d, %s)\n", $i+1, $dbh->quote($val);
     $sth->execute($i+1, $val);
 }
 print "(Driver bug: statement handle should not be Active after an INSERT.)\n"
@@ -113,17 +113,19 @@ print "(Driver bug: statement handle should not be Active after an INSERT.)\n"
 for my $i (0..$#select_clauses)
 {
     my $sel = $select_clauses[$i];
-    print "\n=> Testing clause style $i: ".$sel->{clause}." to match $marge\n";
+    print "\n=> Testing clause style $i: ".$sel->{clause}."...\n";
     
     $sth = $dbh->prepare("SELECT myid,mycol FROM $tablename ".$sel->{clause})
 	or next;
 
+    print "   Selecting row with $marge\n";
     $sth->execute(@{$sel->{nonnull}})
 	or next;
     my $r1 = $sth->fetchall_arrayref();
     my $n1_rows = $sth->rows;
     my $n1 = @$r1;
     
+    print "   Selecting rows with NULL\n";
     $sth->execute(@{$sel->{null}})
 	or next;
     my $r2 = $sth->fetchall_arrayref();
@@ -152,21 +154,23 @@ for my $i (0..$#select_clauses)
       print "=> WHERE clause style $i returned incorrect results.\n";
       if ($n1 > 0 || $n2 > 0)
       {
-        print "    Non-NULL test rows returned these row ids: ".
+        print "   Non-NULL test rows returned these row ids: ".
             join(", ", map { $r1->[$_][0] } (0..$#{$r1}))."\n";
-        print "    The NULL test rows returned these row ids: ".
-            join(", ", map { $r2->[$_][0] } (0..$#{$r1}))."\n";
+        print "   The NULL test rows returned these row ids: ".
+            join(", ", map { $r2->[$_][0] } (0..$#{$r2}))."\n";
       }
     }
 }
 
 $dbh->disconnect();
-
-printf "\n%d styles are supported $tag:\n", scalar @ok;
+print "\n";
+print "-" x 72, "\n";
+printf "%d styles are supported:\n", scalar @ok;
 print "$_\n" for @ok;
+print "-" x 72, "\n";
 print "\n";
 print "If these results don't match what's in the 'Placeholders and Bind Values'\n";
-print "section of the DBI documentation, or are for a database that not already listed,\n";
-print "please email the results to dbi-users\@perl.org. Thank you.\n";
+print "section of the DBI documentation, or are for a database that not already\n";
+print "listed, please email the results to dbi-users\@perl.org. Thank you.\n";
 
 exit 0;

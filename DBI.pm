@@ -3808,8 +3808,11 @@ The C<Profile> attribute was added in DBI 1.24.
 =item C<ReadOnly> (boolean, inherited)
 
 An application can set the C<ReadOnly> attribute of a handle to a true value to
-indicate that it will not be attempting to make any changes (insert, delete,
-update etc) using that handle or any children of it.
+indicate that it will not be attempting to make any changes using that handle
+or any children of it.
+
+Note that the exact definition of 'read only' is rather fuzzy.
+For more details see the documentation for the driver you're using.
 
 If the driver can make the handle truly read-only (by issuing a statement like
 "C<set transaction read only>" as needed, for example) then it should.
@@ -3822,7 +3825,7 @@ Library modules and proxy drivers can use the attribute to influence their behav
 For example, the DBD::Gofer driver considers the C<ReadOnly> attribute when
 making a decison about whether to retry an operation that failed.
 
-The attribute should be set to 1 or 0. (Other values are reserved.)
+The attribute should be set to 1 or 0 (or undef). Other values are reserved.
 
 =item C<private_your_module_name_*>
 
