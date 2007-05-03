@@ -33,7 +33,7 @@ DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 
 
 __PACKAGE__->mk_accessors(qw(
-    check_request
+    check_request_sub
     default_connect_dsn
     forced_connect_dsn
     default_connect_attributes
@@ -155,6 +155,11 @@ sub _connect {
         # the configured default attributes, if any
         %{ $self->default_connect_attributes },
 
+        # pass username and password as attributes
+        # then they can be overridden by forced_connect_attributes
+        Username => $username,
+        Password => $password,
+
         # the requested attributes
         %$attr,
 
@@ -245,9 +250,9 @@ sub execute_request {
 
     my $response = eval {
 
-        if (my $check_request = $self->check_request) {
-            $request = $check_request->($request)
-                or die "check_request failed";
+        if (my $check_request_sub = $self->check_request_sub) {
+            $request = $check_request_sub->($request)
+                or die "check_request_sub failed";
         }
 
         my $version = $request->version || 0;
@@ -535,6 +540,29 @@ sub _mk_rand_fail_sub {
 }
 
 
+sub update_stats {
+    my ($self, $request, $response, $frozen_request, $frozen_response, $time_received) = @_;
+
+    my $stats = $self->{stats};
+    $stats->{frozen_request_max_bytes} = length($frozen_request)
+        if length($frozen_request)  > ($stats->{frozen_request_max_bytes}||0);
+    $stats->{frozen_response_max_bytes} = length($frozen_response)
+        if length($frozen_response) > ($stats->{frozen_response_max_bytes}||0);
+    my $recent;
+    if (my $track_recent = $self->{track_recent}) {
+        my $recent_requests = $stats->{recent_requests} ||= [];
+        push @$recent_requests, $recent = {
+            request  => $frozen_request,
+            response => $frozen_response,
+            time_received => $time_received,
+            duration => dbi_time()-$time_received,
+        };
+        shift @$recent_requests if @$recent_requests > $track_recent;
+    }
+    return $recent;
+}
+
+
 1;
 __END__
 
@@ -556,9 +584,13 @@ and returns a DBI::Gofer::Response object.
 Any error, including any internal 'fatal' errors are caught and converted into
 a DBI::Gofer::Response object.
 
+This module is usually invoked by a 'server-side' Gofer transport module.
+They usually have names in the "C<DBI::Gofer::Transport::*>" namespace.
+Examples include: L<DBI::Gofer::Transport::stream> and L<DBI::Gofer::Transport::mod_perl>.
+
 =head1 CONFIGURATION
 
-=head2 check_request
+=head2 check_request_sub
 
 If defined, it must be a reference to a subroutine that will 'check' the request.
 
@@ -574,7 +606,7 @@ If set, this DSN is always used instead of the one in the request.
 
 =head2 default_connect_dsn
 
-If set, this DSN is used if C<forced_connect_dsn> is not set and the request does not contain a DSN.
+If set, this DSN is used if C<forced_connect_dsn> is not set and the request does not contain a DSN itself.
 
 =head2 forced_connect_attributes
 
@@ -600,18 +632,14 @@ cached statement handles rises above this limit. The default is 1000.
 
 =head2 forced_single_resultset
 
-If true, then only a single result set will be fetched and returned in the response.
+If true, then only the first result set will be fetched and returned in the response.
 
 =head2 track_recent
 
-If set, specifies the number of recent requests and responses that (the
-transport) should keep for diagnostics. See L<DBI::Gofer::Transport::mod_perl>
-Note that this setting can significantly increase memory use.
+If set, specifies the number of recent requests and responses that should be
+kept by the update_stats() method for diagnostics. See L<DBI::Gofer::Transport::mod_perl>.
 
-=head1 TO DO
-
-Currently every 1000 requests all the cached dbh are disconnected cleared to avoid
-the connection and statement handle caches growing too large. A smarter system is needed.
+Note that this setting can significantly increase memory use. Use with caution.
 
 =head1 AUTHOR AND COPYRIGHT
 
@@ -621,3 +649,4 @@ Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
 You may distribute under the terms of either the GNU General Public License or
 the Artistic License, as specified in the Perl README file.
 
+=cut
