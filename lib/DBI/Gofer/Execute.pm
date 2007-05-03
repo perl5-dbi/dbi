@@ -10,7 +10,7 @@ package DBI::Gofer::Execute;
 use strict;
 use warnings;
 
-use DBI;
+use DBI qw(dbi_time);
 use DBI::Gofer::Request;
 use DBI::Gofer::Response;
 
