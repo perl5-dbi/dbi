@@ -440,15 +440,15 @@ sub gather_sth_resultsets {
 
         my $row_count = 0;
         my $rs_list = [];
-        RESULTSET: do {
+        while (1) {
             my $rs = $self->fetch_result_set($sth, $sth_attr);
             push @$rs_list, $rs;
             if (my $rows = $rs->{rowset}) {
                 $row_count += @$rows;
             }
-            last RESULTSET if $self->{forced_single_resultset};
-        } while $sth->more_results
-             || $sth->{syb_more_results};
+            last if $self->{forced_single_resultset};
+            last if !($sth->more_results || $sth->{syb_more_results});
+         }
 
         my $stats = $self->{stats};
         $stats->{rows_returned_total} += $row_count;
