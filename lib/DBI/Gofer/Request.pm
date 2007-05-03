@@ -126,7 +126,7 @@ sub summary_as_text {
             if @$dbh_attr;
     }
 
-    my ($meth, @args) = @{ $self->dbh_method_call };
+    my ($wantarray, $meth, @args) = @{ $self->dbh_method_call };
     my $args = neat_list(\@args);
     $args =~ s/\n+/ /g;
     push @s, sprintf "dbh->%s(%s)", $meth, $args;
