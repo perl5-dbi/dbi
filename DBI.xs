@@ -2930,8 +2930,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	SV *code = SvRV(*hook_svp);
         I32 skip_dispatch = 0;
 	if (trace_level)
-	    PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked (mark %d)\n",
-		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0), mark);
+	    PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked\n",
+		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
 
         /* we don't use ENTER,SAVETMPS & FREETMPS,LEAVE because we may need mortal
          * results to live long enough to be returned to our caller
@@ -2963,9 +2963,9 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
         DEFSV = SvREFCNT_inc(orig_defsv);
 
 	if (trace_level)
-	    PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned%s (mark %d)\n",
+	    PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned%s\n",
 		(dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0),
-                skip_dispatch ? ", actual method will not be called" : "", mark
+                skip_dispatch ? ", actual method will not be called" : ""
             );
         if (skip_dispatch) {    /* XXX experimental */
             int ix = outitems;

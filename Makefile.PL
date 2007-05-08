@@ -50,6 +50,16 @@ if ($] < 5.008000) {
 }
 
 
+if (($ENV{LANG}||'') =~ m/utf-?8/i) {
+    print "\n";
+    print "*** Your LANG environment variable is set to '$ENV{LANG}'\a\n";
+    print "*** This is known to cause problems for some perl installations.\n";
+    print "*** If you get test failures, please try again with LANG unset.\n";
+    print "*** Please also email dbi-dev\@perl.org and include the output of 'perl -V'\n";
+    print "\a\n";
+    sleep 4;
+}
+
 if ($Config{useithreads}) {
     print "\n";
     print "*** You are using a perl configured with threading enabled.\a\n";
@@ -149,7 +159,7 @@ if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
     $opts{DEFINE} .= ' -Wmissing-noreturn -Wno-unused-parameter' if $gccversion ge "3.0";
     if ($is_developer && $::opt_g) {
         $opts{DEFINE} .= ' -DPERL_GCC_PEDANTIC -ansi -pedantic' if $gccversion ge "3.0";
-        $opts{DEFINE} .= ' -Wdisabled-optimization'             if $gccversion ge "3.0";
+        $opts{DEFINE} .= ' -Wdisabled-optimization -Wformat'    if $gccversion ge "3.0";
         $opts{DEFINE} .= ' -Wmissing-prototypes';
     }
 }

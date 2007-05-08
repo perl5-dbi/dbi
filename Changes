@@ -8,6 +8,8 @@ DBI::Changes - List of significant changes to the DBI
 
 Assorted TODO notes:
 
+XXX write up DBI_GOFER_RANDOM
+
 Policy principle:
     Designed to influence behaviour of unaltered programs
     ie go_* attributes take precidence over policy
@@ -39,7 +41,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.55 (svn rev 9480),  1st May 2007
+=head2 Changes in DBI 1.55 (svn rev 9504),  4th May 2007
 
   Fixed set_err() so HandleSetErr hook is executed reliably, if set.
   Fixed accuracy of profiling when perl configured to use long doubles.

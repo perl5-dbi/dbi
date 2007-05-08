@@ -185,10 +185,10 @@ sub _connect {
 
     $dbh->{ShowErrorStatement} = 1 if $local_log;
 
-    # note that this affects previously cached handles because $ENV{DBI_GOFER_RANDOM_FAIL}
+    # note that this affects previously cached handles because $ENV{DBI_GOFER_RANDOM}
     # isn't included in the cache key. Could add a go_rand_fail=>... attribute.
-    $self->_install_rand_fail_callbacks($dbh, $ENV{DBI_GOFER_RANDOM_FAIL})
-        if $ENV{DBI_GOFER_RANDOM_FAIL};
+    $self->_install_rand_callbacks($dbh, $ENV{DBI_GOFER_RANDOM})
+        if $ENV{DBI_GOFER_RANDOM};
 
     my $CK = $dbh->{CachedKids};
     if ($CK && keys %$CK > $self->{max_cached_sth_per_dbh}) {
@@ -504,38 +504,66 @@ sub _get_default_methods {
 }
 
 
-sub _install_rand_fail_callbacks {
-    my ($self, $dbh, $dbi_gofer_random_fail) = @_;
-    my ($rand_fail_pct, @rand_fail_methods) = split /,/, $dbi_gofer_random_fail;
-    @rand_fail_methods = qw(do prepare) if !@rand_fail_methods; # only works for dbh methods
-    if ($rand_fail_pct) {
-        warn "DBI_GOFER_RANDOM_FAIL set to '$ENV{DBI_GOFER_RANDOM_FAIL}' "
-            ."so random failures will be generated! "
-            ."(approx $rand_fail_pct% of calls to methods: @rand_fail_methods)\n";
-        my $callbacks = $dbh->{Callbacks} || {};
-        my $prev      = $dbh->{private_gofer_rand_fail_callbacks} || {};
-        for my $method (@rand_fail_methods) {
-            if ($callbacks->{$method} && $callbacks->{$method} != $prev->{$method}) {
-                warn "Callback for $method method already installed so DBI_GOFER_RANDOM_FAIL callback not installed\n";
-                next;
-            }
-            $callbacks->{$method} = $self->_mk_rand_fail_sub($rand_fail_pct, $method);
+sub _install_rand_callbacks {
+    my ($self, $dbh, $dbi_gofer_random) = @_;
+
+    my $callbacks = $dbh->{Callbacks} || {};
+    my $prev      = $dbh->{private_gofer_rand_fail_callbacks} || {};
+
+    # return if we've already setup this handle with callbacks for these specs
+    return if (($prev->{_dbi_gofer_random_spec}||'') eq $dbi_gofer_random);
+    $prev->{_dbi_gofer_random_spec} = $dbi_gofer_random;
+
+    my ($fail_percent, $delay_percent, $delay_duration);
+    my @specs = split /,/, $dbi_gofer_random;
+    for my $spec (@specs) {
+        if ($spec =~ m/^fail=([.\d]+)%?$/) {
+            $fail_percent = $1;
+            next;
         }
-        $dbh->{Callbacks} = $callbacks;
-        $dbh->{private_gofer_rand_fail_callbacks} = $callbacks;
+        if ($spec =~ m/^delay([.\d]+)=([.\d]+)%?$/) {
+            $delay_duration = $1;
+            $delay_percent  = $2;
+            next;
+        }
+        elsif ($spec !~ m/^(\w+|\*)$/) {
+            warn "Ignored DBI_GOFER_RANDOM item '$spec' which isn't a config or a dbh method name";
+            next;
+        }
+        my $method = $spec;
+        if ($callbacks->{$method} && $callbacks->{$method} != $prev->{$method}) {
+            warn "Callback for $method method already installed so DBI_GOFER_RANDOM callback not installed\n";
+            next;
+        }
+        unless (defined $fail_percent or defined $delay_percent) {
+            warn "Ignored DBI_GOFER_RANDOM item '$spec' because not preceeded by 'fail=N' and/or 'delayN=N'";
+            next;
+        }
+        warn "DBI_GOFER_RANDOM enabled for $method() - random failures/delays will be generated!\n";
+        $callbacks->{$method} = $self->_mk_rand_callback($method, $fail_percent, $delay_percent, $delay_duration);
     }
+    $dbh->{Callbacks} = $callbacks;
+    $dbh->{private_gofer_rand_fail_callbacks} = $callbacks;
 }
 
-sub _mk_rand_fail_sub {
-    my ($self, $rand_fail_pct, $method) = @_;
-    my $rand_fail_ratio = $rand_fail_pct/100;
-    # $method may be "*"
+
+sub _mk_rand_callback {
+    my ($self, $method, $fail_percent, $delay_percent, $delay_duration) = @_;
+    # note that $method may be "*"
     return sub {
-        my $rand = rand();
-        #warn sprintf "DBI_GOFER_RANDOM_FAIL($rand_fail_pct) %f - %f\n", $rand, 1/$rand_fail_pct;
-        return if $rand >= $rand_fail_ratio;
-        undef $_; # tell DBI to not call the method
-        return $_[0]->set_err(1, "fake error induced by DBI_GOFER_RANDOM_FAIL env var");
+        my ($h) = @_;
+        if ($delay_percent && rand(100) < $delay_percent) {
+            my $msg = "DBI_GOFER_RANDOM delaying execution of $method by $delay_duration seconds\n";
+            # Note what's happening in a trace message. If the delay percent is an odd
+            # number then use warn() so it's sent back to the client
+            ($delay_percent % 2 == 0) ? $h->trace_msg($msg) : warn($msg);
+            select undef, undef, undef, $delay_duration; # allows floating point value
+        }
+        if ($fail_percent && rand(100) < $fail_percent) {
+            undef $_; # tell DBI to not call the method
+            return $h->set_err(1, "fake error induced by DBI_GOFER_RANDOM env var");
+        }
+        return;
     }
 }
 

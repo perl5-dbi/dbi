@@ -27,8 +27,14 @@ __PACKAGE__->mk_accessors_using(make_accessor_autoviv_hashref => qw(
 ));
 
 
-
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
+
+
+sub new_response {
+    my $self = shift;
+    return DBI::Gofer::Response->new(@_);
+}
+
 
 sub transmit_request {
     my ($self, $request) = @_;
@@ -51,7 +57,7 @@ sub transmit_request {
         if ($@) {
             return $self->transport_timedout("transmit_request", $to)
                 if $@ eq "TIMEOUT\n";
-            return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
+            return self->new_response({ err => 1, errstr => $@ });
         }
 
         return $response;
@@ -93,7 +99,7 @@ sub receive_response {
         if ($@) {
             return $self->transport_timedout("receive_response", $to)
                 if $@ eq "TIMEOUT\n";
-            return DBI::Gofer::Response->new({ err => 1, errstr => $@ });
+            return $self->new_response({ err => 1, errstr => $@ });
         }
         return $response;
     };
@@ -128,7 +134,7 @@ sub response_needs_retransmit {
 
     if (not defined $retry) {
         my $errstr = $response->errstr || '';
-        $retry = 1 if $errstr =~ m/fake error induced by DBI_GOFER_RANDOM_FAIL/;
+        $retry = 1 if $errstr =~ m/fake error induced by DBI_GOFER_RANDOM/;
     }
 
     if (not defined $retry) {
@@ -158,7 +164,7 @@ sub response_needs_retransmit {
 sub transport_timedout {
     my ($self, $method, $timeout) = @_;
     $timeout ||= $self->go_timeout;
-    return DBI::Gofer::Response->new({ err => 1, errstr => "DBD::Gofer $method timed-out after $timeout seconds" });
+    return $self->new_response({ err => 1, errstr => "DBD::Gofer $method timed-out after $timeout seconds" });
 }
 
 
@@ -168,6 +174,77 @@ sub transport_timedout {
 
 DBD::Gofer::Transport::Base - base class for DBD::Gofer client transports
 
+=head1 SYNOPSIS
+
+  my $remote_dsn = "..."
+  DBI->connect("dbi:Gofer:transport=...;url=...;timeout=...;retry_limit=...;dsn=$remote_dsn",...)
+            
+or, enable by setting the DBI_AUTOPROXY environment variable:
+                
+  export DBI_AUTOPROXY='dbi:Gofer:transport=...;url=...'
+        
+which will force I<all> DBI connections to be made via that Gofer server.
+
+=head1 DESCRIPTION
+
+This is the base class for all DBD::Gofer client transports.
+
+=head1 ATTRIBUTES
+
+Gofer transport attributes can be specified either in the attributes parameter
+of the connect() method call, or in the DSN string. When used in the DSN
+string, attribute names don't have the C<go_> prefix.
+
+=head2 go_dsn
+
+The full DBI DSN that the Gofer server should connect to on your behalf.
+
+When used in the DSN it must be the last element in the DSN string.
+
+=head2 go_timeout
+
+A time limit for sending a request and receiving a response. Some drivers may
+implement sending and receiving as separate steps, in which case (currently)
+the timeout applies to each separately.
+
+If a request needs to be resent then the timeout is restarted for each sending
+of a request and receiving of a response.
+
+=head2 go_retry_limit
+
+The maximum number of times an request may be retried. The default is 2.
+
+=head2 go_retry_hook
+
+This subroutine reference is called, if defined, for each response received where $response->err is true.
+
+The subroutine is pass three parameters: the request object, the response object, and the transport object.
+
+If it returns an undefined value then the default retry behaviour is used. See L</RETRY ON ERROR> below.
+
+If it returns a defined but false value then the request is not resent.
+
+If it returns true value then the request is resent, so long as the number of retries does not exceed C<go_retry_limit>.
+
+=head1 RETRY ON ERROR
+
+The default retry on error behaviour is:
+
+ - Retry if the error was due to DBI_GOFER_RANDOM. See L<DBI::Gofer::Execute>.
+
+ - Retry if $request->is_idempotent returns true. See L<DBI::Gofer::Request>.
+
+A retry won't be allowed if the number of previous retries has reached C<go_retry_limit>.
+
+=head1 TRACING
+
+Tracing of gofer requests and reponses can be enabled by setting the
+C<DBD_GOFER_TRACE> environment variable. A value of 1 gives a reasonably
+compact summary o each request and response. A value of 2 or more gives a
+detailed, and voluminous, dump.
+
+The trace is written using DBI->trace_msg() and so is written to the default
+DBI trace output, which is usually STDERR.
 
 =head1 AUTHOR AND COPYRIGHT
 
@@ -179,7 +256,7 @@ the Artistic License, as specified in the Perl README file.
 
 =head1 SEE ALSO
 
-L<DBD::Gofer>
+L<DBD::Gofer>, L<DBI::Gofer::Request>, L<DBI::Gofer::Response>, L<DBI::Gofer::Execute>.
 
 and some example transports:
 
