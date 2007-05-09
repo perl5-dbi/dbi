@@ -36,7 +36,6 @@ __END__
 
 dbiproxy - A proxy server for the DBD::Proxy driver
 
-
 =head1 SYNOPSIS
 
     dbiproxy <options> --localport=<port>
@@ -46,7 +45,7 @@ dbiproxy - A proxy server for the DBD::Proxy driver
 
 This tool is just a front end for the DBI::ProxyServer package. All it
 does is picking options from the command line and calling
-DBI::ProxyServer::main(). See L<DBI::ProxyServer(3)> for details.
+DBI::ProxyServer::main(). See L<DBI::ProxyServer> for details.
 
 Available options include:
 
@@ -84,8 +83,8 @@ certain directory tree only after logging in. See also the --group and
 
 Config files are assumed to return a single hash ref that overrides the
 arguments of the new method. However, command line arguments in turn take
-precedence over the config file. See the L<"CONFIGURATION FILE"> section
-below for details on the config file.
+precedence over the config file. See the "CONFIGURATION FILE" section
+in the L<DBI::ProxyServer> documentation for details on the config file.
 
 =item B<--debug>
 
@@ -94,7 +93,7 @@ level "debug" are created.
 
 =item B<--facility=mode>
 
-(UNIX only) Facility to use for L<Sys::Syslog (3)>. The default is
+(UNIX only) Facility to use for L<Sys::Syslog>. The default is
 B<daemon>.
 
 =item B<--group=gid>
@@ -122,7 +121,7 @@ must be given somehow, as there's no default.
 Be default logging messages will be written to the syslog (Unix) or
 to the event log (Windows NT). On other operating systems you need to
 specify a log file. The special value "STDERR" forces logging to
-stderr. See L<Net::Daemon::Log(3)> for details.
+stderr. See L<Net::Daemon::Log> for details.
 
 =item B<--mode=modename>
 
@@ -185,7 +184,7 @@ the DBI.
 
 =head1 SEE ALSO
 
-L<DBI::ProxyServer(3)>, L<DBD::Proxy(3)>, L<DBI(3)>
+L<DBI::ProxyServer>, L<DBD::Proxy>, L<DBI>
 
 =cut
 SCRIPT

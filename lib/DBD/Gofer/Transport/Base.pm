@@ -178,11 +178,11 @@ DBD::Gofer::Transport::Base - base class for DBD::Gofer client transports
 
   my $remote_dsn = "..."
   DBI->connect("dbi:Gofer:transport=...;url=...;timeout=...;retry_limit=...;dsn=$remote_dsn",...)
-            
+
 or, enable by setting the DBI_AUTOPROXY environment variable:
-                
+
   export DBI_AUTOPROXY='dbi:Gofer:transport=...;url=...'
-        
+
 which will force I<all> DBI connections to be made via that Gofer server.
 
 =head1 DESCRIPTION

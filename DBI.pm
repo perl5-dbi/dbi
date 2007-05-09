@@ -2512,9 +2512,7 @@ data type doesn't mean that drivers will support that data type.
 
 The following methods are provided by the DBI class:
 
-=over 4
-
-=item C<parse_dsn>
+=head3 C<parse_dsn>
 
   ($scheme, $driver, $attr_string, $attr_hash, $driver_dsn) = DBI->parse_dsn($dsn)
       or die "Can't parse DBI DSN '$dsn'";
@@ -2540,7 +2538,7 @@ $driver_dsn is the last part of the DBI DSN string. For example:
 
 The parse_dsn() method was added in DBI 1.43.
 
-=item C<connect>
+=head3 C<connect>
 
   $dbh = DBI->connect($data_source, $username, $password)
             or die $DBI::errstr;
@@ -2680,7 +2678,7 @@ environment variable is
 checked if C<DBI_DSN> is not defined. Beware that this "old-style"
 C<connect> will soon be withdrawn in a future version of DBI.
 
-=item C<connect_cached>
+=head3 C<connect_cached>
 
   $dbh = DBI->connect_cached($data_source, $username, $password)
             or die $DBI::errstr;
@@ -2735,7 +2733,7 @@ The cache can be accessed (and cleared) via the L</CachedKids> attribute:
   %$CachedKids_hashref = () if $CachedKids_hashref;
 
 
-=item C<available_drivers>
+=head3 C<available_drivers>
 
   @ary = DBI->available_drivers;
   @ary = DBI->available_drivers($quiet);
@@ -2745,7 +2743,7 @@ through the directories in C<@INC>. By default, a warning is given if
 some drivers are hidden by others of the same name in earlier
 directories. Passing a true value for C<$quiet> will inhibit the warning.
 
-=item C<installed_drivers>
+=head3 C<installed_drivers>
 
   %drivers = DBI->installed_drivers();
 
@@ -2758,7 +2756,7 @@ L</available_drivers>.
 
 Added in DBI 1.49.
 
-=item C<installed_versions>
+=head3 C<installed_versions>
 
   DBI->installed_versions;
   @ary  = DBI->installed_versions;
@@ -2791,7 +2789,7 @@ way to see from the command line what's installed. For example:
 
 The installed_versions() method was added in DBI 1.38.
 
-=item C<data_sources>
+=head3 C<data_sources>
 
   @ary = DBI->data_sources($driver);
   @ary = DBI->data_sources($driver, \%attr);
@@ -2814,7 +2812,7 @@ or may require driver-specific attributes.
 There is also a data_sources() method defined for database handles.
 
 
-=item C<trace>
+=head3 C<trace>
 
   DBI->trace($trace_setting)
   DBI->trace($trace_setting, $trace_filename)
@@ -2831,7 +2829,6 @@ settings for the specific handle it's called on.
 See the L</TRACING> section for full details about the DBI's powerful
 tracing facilities.
 
-=back
 
 
 =head2 DBI Utility Functions
@@ -2849,9 +2846,7 @@ imported using the C<:utils> import tag. For example:
 
   use DBI qw(:utils);
 
-=over 4
-
-=item C<data_string_desc>
+=head3 C<data_string_desc>
 
   $description = data_string_desc($string);
 
@@ -2873,7 +2868,7 @@ characters in the string are ASCII (have code points <= 127).
 
 The data_string_desc() function was added in DBI 1.46.
 
-=item C<data_string_diff>
+=head3 C<data_string_diff>
 
   $diff = data_string_diff($a, $b);
 
@@ -2900,7 +2895,7 @@ and not the underlying encoding. See L</data_diff> for an alternative.
 
 The data_string_diff() function was added in DBI 1.46.
 
-=item C<data_diff>
+=head3 C<data_diff>
 
   $diff = data_diff($a, $b);
   $diff = data_diff($a, $b, $logical);
@@ -2922,7 +2917,7 @@ If $logical is true then physical encoding differences are ignored
 
 The data_diff() function was added in DBI 1.46.
 
-=item C<neat>
+=head3 C<neat>
 
   $str = neat($value);
   $str = neat($value, $maxlen);
@@ -2947,7 +2942,7 @@ It is used internally by the DBI for L</trace> output. It should
 typically I<not> be used for formatting values for database use.
 (See also L</quote>.)
 
-=item C<neat_list>
+=head3 C<neat_list>
 
   $str = neat_list(\@listref, $maxlen, $field_sep);
 
@@ -2955,7 +2950,7 @@ Calls C<neat> on each element of the list and returns a string
 containing the results joined with C<$field_sep>. C<$field_sep> defaults
 to C<", ">.
 
-=item C<looks_like_number>
+=head3 C<looks_like_number>
 
   @bool = looks_like_number(@array);
 
@@ -2963,7 +2958,7 @@ Returns true for each element that looks like a number.
 Returns false for each element that does not look like a number.
 Returns C<undef> for each element that is undefined or empty.
 
-=item C<hash>
+=head3 C<hash>
 
   $hash_value = DBI::hash($buffer, $type);
 
@@ -2979,8 +2974,6 @@ Both types are implemented in C and are very fast.
 
 This function doesn't have much to do with databases, except that
 it can be handy to store hash values in a database.
-
-=back
 
 
 =head2 DBI Dynamic Attributes
@@ -2998,41 +2991,35 @@ the last handle used, they should only be used I<immediately> after
 calling the method that "sets" them.
 If in any doubt, use the corresponding method call.
 
-=over 4
-
-=item C<$DBI::err>
+=head3 C<$DBI::err>
 
 Equivalent to C<$h-E<gt>err>.
 
-=item C<$DBI::errstr>
+=head3 C<$DBI::errstr>
 
 Equivalent to C<$h-E<gt>errstr>.
 
-=item C<$DBI::state>
+=head3 C<$DBI::state>
 
 Equivalent to C<$h-E<gt>state>.
 
-=item C<$DBI::rows>
+=head3 C<$DBI::rows>
 
 Equivalent to C<$h-E<gt>rows>. Please refer to the documentation
 for the L</rows> method.
 
-=item C<$DBI::lasth>
+=head3 C<$DBI::lasth>
 
 Returns the DBI object handle used for the most recent DBI method call.
 If the last DBI method call was a DESTROY then $DBI::lasth will return
 the handle of the parent of the destroyed handle, if there is one.
-
-=back
 
 
 =head1 METHODS COMMON TO ALL HANDLES
 
 The following methods can be used by all types of DBI handles.
 
-=over 4
-
-=item C<err>
+=head3 C<err>
 
   $rv = $h->err;
 
@@ -3062,7 +3049,7 @@ methods may be used to retrieve extra information in these cases.
 
 See L</set_err> for more information.
 
-=item C<errstr>
+=head3 C<errstr>
 
   $str = $h->errstr;
 
@@ -3079,7 +3066,7 @@ warning messages via errstr() for methods that have not 'failed'.
 
 See L</set_err> for more information.
 
-=item C<state>
+=head3 C<state>
 
   $str = $h->state;
 
@@ -3096,7 +3083,7 @@ The state() method should not be used to test for errors, use err()
 for that, because drivers may return a 'success with information' or
 warning state code via state() for methods that have not 'failed'.
 
-=item C<set_err>
+=head3 C<set_err>
 
   $rv = $h->set_err($err, $errstr);
   $rv = $h->set_err($err, $errstr, $state);
@@ -3151,7 +3138,7 @@ the handle C<err> value was set (by the rules above).
 
 Support for warning and information states was added in DBI 1.41.
 
-=item C<trace>
+=head3 C<trace>
 
   $h->trace($trace_settings);
   $h->trace($trace_settings, $trace_filename);
@@ -3167,7 +3154,7 @@ default trace settings.
 See the L</TRACING> section for full details about the DBI's powerful
 tracing facilities.
 
-=item C<trace_msg>
+=head3 C<trace_msg>
 
   $h->trace_msg($message_text);
   $h->trace_msg($message_text, $min_level);
@@ -3178,7 +3165,7 @@ Can also be called as C<DBI-E<gt>trace_msg($msg)>.
 
 See L</TRACING> for more details.
 
-=item C<func>
+=head3 C<func>
 
   $h->func(@func_arguments, $func_name) or die ...;
 
@@ -3196,10 +3183,10 @@ Calling stored procedures is currently not defined by the DBI.
 Some drivers, such as DBD::Oracle, support it in non-portable ways.
 See driver documentation for more details.)
 
-See also L</install_method> for how you can avoid needing to
-use func() and gain.
+See also install_method() in L<DBI::DBD> for how you can avoid needing to
+use func() and gain direct access to driver-private methods.
 
-=item C<can>
+=head3 C<can>
 
   $is_implemented = $h->can($method_name);
 
@@ -3208,7 +3195,7 @@ default method is provided by the DBI.
 It returns false where a driver hasn't implemented a method and the
 default method is provided by the DBI is just an empty stub.
 
-=item C<parse_trace_flags>
+=head3 C<parse_trace_flags>
 
   $trace_settings_integer = $h->parse_trace_flags($trace_settings);
 
@@ -3224,7 +3211,7 @@ the individual trage flag names.
 
 The parse_trace_flags() method was added in DBI 1.42.
 
-=item C<parse_trace_flag>
+=head3 C<parse_trace_flag>
 
   $bit_flag = $h->parse_trace_flag($trace_flag_name);
 
@@ -3235,7 +3222,7 @@ not, then call the DBIs default parse_trace_flag().
 
 The parse_trace_flag() method was added in DBI 1.42.
 
-=item C<private_attribute_info>
+=head3 C<private_attribute_info>
 
   $hash_ref = $h->private_attribute_info();
 
@@ -3243,7 +3230,7 @@ Returns a reference to a hash whose keys are the names of driver-private
 attributes available for that kind of handle (driver, database, statement).
 (The values should be undef. Meanings may be assigned to particular values in future.)
 
-=item C<swap_inner_handle>
+=head3 C<swap_inner_handle>
 
   $rc = $h1->swap_inner_handle( $h2 );
   $rc = $h1->swap_inner_handle( $h2, $allow_reparent );
@@ -3288,8 +3275,6 @@ happening:
             dbh1o -> dbh2i
             sthAo -> sthBi(dbh2i)
 
-=back
-
 
 =head1 ATTRIBUTES COMMON TO ALL HANDLES
 
@@ -3311,9 +3296,7 @@ Example:
   $h->{AttributeName} = ...;	# set/write
   ... = $h->{AttributeName};	# get/read
 
-=over 4
-
-=item C<Warn> (boolean, inherited)
+=head3 C<Warn> (boolean, inherited)
 
 The C<Warn> attribute enables useful warnings for certain bad
 practices. It is enabled by default and should only be disabled in
@@ -3323,7 +3306,7 @@ hook.
 
 The C<Warn> attribute is not related to the C<PrintWarn> attribute.
 
-=item C<Active> (boolean, read-only)
+=head3 C<Active> (boolean, read-only)
 
 The C<Active> attribute is true if the handle object is "active". This is rarely used in
 applications. The exact meaning of active is somewhat vague at the
@@ -3333,7 +3316,7 @@ a statement handle it typically means that the handle is a C<SELECT>
 that may have more data to fetch. (Fetching all the data or calling C<$sth-E<gt>finish>
 sets C<Active> off.)
 
-=item C<Executed> (boolean)
+=head3 C<Executed> (boolean)
 
 The C<Executed> attribute is true if the handle object has been "executed".
 Currently only the $dbh do() method and the $sth execute(), execute_array(),
@@ -3350,7 +3333,7 @@ as a permanent record of whether the statement handle was ever used.
 
 The C<Executed> attribute was added in DBI 1.41.
 
-=item C<Kids> (integer, read-only)
+=head3 C<Kids> (integer, read-only)
 
 For a driver handle, C<Kids> is the number of currently existing database
 handles that were created from that driver handle.  For a database
@@ -3358,24 +3341,24 @@ handle, C<Kids> is the number of currently existing statement handles that
 were created from that database handle.
 For a statement handle, the value is zero.
 
-=item C<ActiveKids> (integer, read-only)
+=head3 C<ActiveKids> (integer, read-only)
 
 Like C<Kids>, but only counting those that are C<Active> (as above).
 
-=item C<CachedKids> (hash ref)
+=head3 C<CachedKids> (hash ref)
 
 For a database handle, C<CachedKids> returns a reference to the cache (hash) of
 statement handles created by the L</prepare_cached> method.  For a
 driver handle, returns a reference to the cache (hash) of
 database handles created by the L</connect_cached> method.
 
-=item C<Type> (scalar, read-only)
+=head3 C<Type> (scalar, read-only)
 
 The C<Type> attribute identifies the type of a DBI handle.  Returns
 "dr" for driver handles, "db" for database handles and "st" for
 statement handles.
 
-=item C<ChildHandles> (array ref)
+=head3 C<ChildHandles> (array ref)
 
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
@@ -3400,7 +3383,7 @@ statement handles:
     my %drivers = DBI->installed_drivers();
     show_child_handles($_) for (values %drivers);
 
-=item C<CompatMode> (boolean, inherited)
+=head3 C<CompatMode> (boolean, inherited)
 
 The C<CompatMode> attribute is used by emulation layers (such as
 Oraperl) to enable compatible behaviour in the underlying driver
@@ -3411,7 +3394,7 @@ values from the handles attribute cache. So all attribute values
 are handled by the drivers own FETCH method. This makes them slightly
 slower but is useful for special-purpose drivers like DBD::Multiplex.
 
-=item C<InactiveDestroy> (boolean)
+=head3 C<InactiveDestroy> (boolean)
 
 The default value, false, means a handle will be fully destroyed
 as normal when the last reference to it is removed, just as you'd expect.
@@ -3439,7 +3422,7 @@ The process id also shown for I<every> method call if the DBI trace
 level (not handle trace level) is set high enough to show the trace
 from the DBI's method dispatcher, e.g. >= 9.
 
-=item C<PrintWarn> (boolean, inherited)
+=head3 C<PrintWarn> (boolean, inherited)
 
 The C<PrintWarn> attribute controls the printing of warnings recorded
 by the driver.  When set to a true value the DBI will check method
@@ -3466,7 +3449,7 @@ attribute is true. If C<PrintWarn> is false then these drivers should
 still indicate the fact that there were warnings by setting the
 warning string to, for example: "3 warnings".
 
-=item C<PrintError> (boolean, inherited)
+=head3 C<PrintError> (boolean, inherited)
 
 The C<PrintError> attribute can be used to force errors to generate warnings (using
 C<warn>) in addition to returning error codes in the normal way.  When set
@@ -3481,7 +3464,7 @@ By default, C<DBI-E<gt>connect> sets C<PrintError> "on".
 If desired, the warnings can be caught and processed using a C<$SIG{__WARN__}>
 handler or modules like CGI::Carp and CGI::ErrorWrap.
 
-=item C<RaiseError> (boolean, inherited)
+=head3 C<RaiseError> (boolean, inherited)
 
 The C<RaiseError> attribute can be used to force errors to raise exceptions rather
 than simply return error codes in the normal way. It is "off" by default.
@@ -3529,7 +3512,7 @@ The original value will automatically and reliably be restored by Perl,
 regardless of how the block is exited.
 The same logic applies to other attributes, including C<PrintError>.
 
-=item C<HandleError> (code ref, inherited)
+=head3 C<HandleError> (code ref, inherited)
 
 The C<HandleError> attribute can be used to provide your own alternative behaviour
 in case of errors. If set to a reference to a subroutine then that
@@ -3594,7 +3577,7 @@ to make reliable (avoiding infinite loops, for example) and so isn't
 recommended for general use!  If you find a I<good> use for it then
 please let me know.
 
-=item C<HandleSetErr> (code ref, inherited)
+=head3 C<HandleSetErr> (code ref, inherited)
 
 The C<HandleSetErr> attribute can be used to intercept
 the setting of handle C<err>, C<errstr>, and C<state> values.
@@ -3630,7 +3613,7 @@ documentation and discussed on the dbi-dev mailing list.
 
 The C<HandleSetErr> attribute was added in DBI 1.41.
 
-=item C<ErrCount> (unsigned integer)
+=head3 C<ErrCount> (unsigned integer)
 
 The C<ErrCount> attribute is incremented whenever the set_err()
 method records an error. It isn't incremented by warnings or
@@ -3641,7 +3624,7 @@ not have been updated to use set_err() to record errors and so this
 attribute may not be incremented when using them.
 
 
-=item C<ShowErrorStatement> (boolean, inherited)
+=head3 C<ShowErrorStatement> (boolean, inherited)
 
 The C<ShowErrorStatement> attribute can be used to cause the relevant
 Statement text to be appended to the error messages generated by
@@ -3654,7 +3637,7 @@ If C<$h-E<gt>{ParamValues}> returns a hash reference of parameter
 (placeholder) values then those are formatted and appended to the
 end of the Statement text in the error message.
 
-=item C<TraceLevel> (integer, inherited)
+=head3 C<TraceLevel> (integer, inherited)
 
 The C<TraceLevel> attribute can be used as an alternative to the
 L</trace> method to set the DBI trace level and trace flags for a
@@ -3663,7 +3646,7 @@ specific handle.  See L</TRACING> for more details.
 The C<TraceLevel> attribute is especially useful combined with
 C<local> to alter the trace settings for just a single block of code.
 
-=item C<FetchHashKeyName> (string, inherited)
+=head3 C<FetchHashKeyName> (string, inherited)
 
 The C<FetchHashKeyName> attribute is used to specify whether the fetchrow_hashref()
 method should perform case conversion on the field names used for
@@ -3674,7 +3657,7 @@ It can only be set for driver and database handles.  For statement
 handles the value is frozen when prepare() is called.
 
 
-=item C<ChopBlanks> (boolean, inherited)
+=head3 C<ChopBlanks> (boolean, inherited)
 
 The C<ChopBlanks> attribute can be used to control the trimming of trailing space
 characters from fixed width character (CHAR) fields. No other field
@@ -3688,7 +3671,7 @@ Drivers are not required to support this attribute, but any driver which
 does not support it must arrange to return C<undef> as the attribute value.
 
 
-=item C<LongReadLen> (unsigned integer, inherited)
+=head3 C<LongReadLen> (unsigned integer, inherited)
 
 The C<LongReadLen> attribute may be used to control the maximum
 length of 'long' type fields (LONG, BLOB, CLOB, MEMO, etc.) which the driver will
@@ -3735,7 +3718,7 @@ for Oracle use LENGTHB().
 
 See also L</LongTruncOk> for information on truncation of long types.
 
-=item C<LongTruncOk> (boolean, inherited)
+=head3 C<LongTruncOk> (boolean, inherited)
 
 The C<LongTruncOk> attribute may be used to control the effect of
 fetching a long field value which has been truncated (typically
@@ -3753,7 +3736,7 @@ false, many drivers will allow you to continue fetching further rows.
 
 See also L</LongReadLen>.
 
-=item C<TaintIn> (boolean, inherited)
+=head3 C<TaintIn> (boolean, inherited)
 
 If the C<TaintIn> attribute is set to a true value I<and> Perl is running in
 taint mode (e.g., started with the C<-T> option), then all the arguments
@@ -3768,7 +3751,7 @@ for that statement handle, for the duration of the fetch loop.
 
 The C<TaintIn> attribute was added in DBI 1.31.
 
-=item C<TaintOut> (boolean, inherited)
+=head3 C<TaintOut> (boolean, inherited)
 
 If the C<TaintOut> attribute is set to a true value I<and> Perl is running in
 taint mode (e.g., started with the C<-T> option), then most data fetched
@@ -3789,7 +3772,7 @@ please report your experience and any suggestions for changes.
 
 The C<TaintOut> attribute was added in DBI 1.31.
 
-=item C<Taint> (boolean, inherited)
+=head3 C<Taint> (boolean, inherited)
 
 The C<Taint> attribute is a shortcut for L</TaintIn> and L</TaintOut> (it is also present
 for backwards compatibility).
@@ -3798,14 +3781,14 @@ Setting this attribute sets both L</TaintIn> and L</TaintOut>, and retrieving
 it returns a true value if and only if L</TaintIn> and L</TaintOut> are
 both set to true values.
 
-=item C<Profile> (inherited)
+=head3 C<Profile> (inherited)
 
 The C<Profile> attribute enables the collection and reporting of method call timing statistics.
 See the L<DBI::Profile> module documentation for I<much> more detail.
 
 The C<Profile> attribute was added in DBI 1.24.
 
-=item C<ReadOnly> (boolean, inherited)
+=head3 C<ReadOnly> (boolean, inherited)
 
 An application can set the C<ReadOnly> attribute of a handle to a true value to
 indicate that it will not be attempting to make any changes using that handle
@@ -3827,7 +3810,7 @@ making a decison about whether to retry an operation that failed.
 
 The attribute should be set to 1 or 0 (or undef). Other values are reserved.
 
-=item C<private_your_module_name_*>
+=head3 C<private_your_module_name_*>
 
 The DBI provides a way to store extra information in a DBI handle as
 "private" attributes. The DBI will allow you to store and retrieve any
@@ -3851,9 +3834,6 @@ you should use a two step approach like this:
 This attribute is primarily of interest to people sub-classing DBI,
 or for applications to piggy-back extra information onto DBI handles.
 
-=back
-
-
 =head1 DBI DATABASE HANDLE OBJECTS
 
 This section covers the methods and attributes associated with
@@ -3863,9 +3843,7 @@ database handles.
 
 The following methods are specified for DBI database handles:
 
-=over 4
-
-=item C<clone>
+=head3 C<clone>
 
   $new_dbh = $dbh->clone();
   $new_dbh = $dbh->clone(\%attr);
@@ -3893,7 +3871,7 @@ The clone method can be used even if the database handle is disconnected.
 The C<clone> method was added in DBI 1.33. It is very new and likely
 to change.
 
-=item C<data_sources>
+=head3 C<data_sources>
 
   @ary = $dbh->data_sources();
   @ary = $dbh->data_sources(\%attr);
@@ -3909,7 +3887,7 @@ L</connect> method (that is, they will include the "C<dbi:$driver:>" prefix).
 
 The data_sources() method, for a $dbh, was added in DBI 1.38.
 
-=item C<do>
+=head3 C<do>
 
   $rows = $dbh->do($statement)           or die $dbh->errstr;
   $rows = $dbh->do($statement, \%attr)   or die $dbh->errstr;
@@ -3953,7 +3931,7 @@ quotes that may be used in the SQL statement. Use the double-quote-like
 C<qq{...}> operator if you want to interpolate variables into the string.
 See L<perlop/"Quote and Quote-like Operators"> for more details.
 
-=item C<last_insert_id>
+=head3 C<last_insert_id>
 
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field, \%attr);
@@ -4006,7 +3984,7 @@ used with care.
 
 The C<last_insert_id> method was added in DBI 1.38.
 
-=item C<selectrow_array>
+=head3 C<selectrow_array>
 
   @row_ary = $dbh->selectrow_array($statement);
   @row_ary = $dbh->selectrow_array($statement, \%attr);
@@ -4031,7 +4009,7 @@ For these reasons you should exercise some caution if you use
 C<selectrow_array> in a scalar context, or just don't do that.
 
 
-=item C<selectrow_arrayref>
+=head3 C<selectrow_arrayref>
 
   $ary_ref = $dbh->selectrow_arrayref($statement);
   $ary_ref = $dbh->selectrow_arrayref($statement, \%attr);
@@ -4046,7 +4024,7 @@ If any method fails, and L</RaiseError> is not set, C<selectrow_array>
 will return undef.
 
 
-=item C<selectrow_hashref>
+=head3 C<selectrow_hashref>
 
   $hash_ref = $dbh->selectrow_hashref($statement);
   $hash_ref = $dbh->selectrow_hashref($statement, \%attr);
@@ -4061,7 +4039,7 @@ If any method fails, and L</RaiseError> is not set, C<selectrow_hashref>
 will return undef.
 
 
-=item C<selectall_arrayref>
+=head3 C<selectall_arrayref>
 
   $ary_ref = $dbh->selectall_arrayref($statement);
   $ary_ref = $dbh->selectall_arrayref($statement, \%attr);
@@ -4114,7 +4092,7 @@ Or, to fetch into an array instead of an array ref:
 
 See L</fetchall_arrayref> method for more details.
 
-=item C<selectall_hashref>
+=head3 C<selectall_hashref>
 
   $hash_ref = $dbh->selectall_hashref($statement, $key_field);
   $hash_ref = $dbh->selectall_hashref($statement, $key_field, \%attr);
@@ -4142,7 +4120,7 @@ has fetched thus far. $DBI::err should be checked to catch that.
 
 See fetchall_hashref() for more details.
 
-=item C<selectcol_arrayref>
+=head3 C<selectcol_arrayref>
 
   $ary_ref = $dbh->selectcol_arrayref($statement);
   $ary_ref = $dbh->selectcol_arrayref($statement, \%attr);
@@ -4175,7 +4153,7 @@ or numbers to use. For example:
 You can specify a maximum number of rows to fetch by including a
 'C<MaxRows>' attribute in \%attr.
 
-=item C<prepare>
+=head3 C<prepare>
 
   $sth = $dbh->prepare($statement)          or die $dbh->errstr;
   $sth = $dbh->prepare($statement, \%attr)  or die $dbh->errstr;
@@ -4210,7 +4188,7 @@ to indicate the end of a statement. Such terminators should not normally
 be used with the DBI.
 
 
-=item C<prepare_cached>
+=head3 C<prepare_cached>
 
   $sth = $dbh->prepare_cached($statement)
   $sth = $dbh->prepare_cached($statement, \%attr)
@@ -4310,7 +4288,7 @@ such as L<Tie::Cache::LRU>:
   my $cache = $dbh->{CachedKids};
   tie %$cache, 'Tie::Cache::LRU', 500;
 
-=item C<commit>
+=head3 C<commit>
 
   $rc  = $dbh->commit     or die $dbh->errstr;
 
@@ -4322,7 +4300,7 @@ C<commit> will issue a "commit ineffective with AutoCommit" warning.
 
 See also L</Transactions> in the L</FURTHER INFORMATION> section below.
 
-=item C<rollback>
+=head3 C<rollback>
 
   $rc  = $dbh->rollback   or die $dbh->errstr;
 
@@ -4334,7 +4312,7 @@ C<rollback> will issue a "rollback ineffective with AutoCommit" warning.
 
 See also L</Transactions> in the L</FURTHER INFORMATION> section below.
 
-=item C<begin_work>
+=head3 C<begin_work>
 
   $rc  = $dbh->begin_work   or die $dbh->errstr;
 
@@ -4350,7 +4328,7 @@ the driver will trigger a fatal error.
 See also L</Transactions> in the L</FURTHER INFORMATION> section below.
 
 
-=item C<disconnect>
+=head3 C<disconnect>
 
   $rc = $dbh->disconnect  or warn $dbh->errstr;
 
@@ -4383,7 +4361,7 @@ that a fetch loop terminated early, perhaps due to an uncaught error.
 To avoid the warning call the C<finish> method on the active handles.
 
 
-=item C<ping>
+=head3 C<ping>
 
   $rc = $dbh->ping;
 
@@ -4402,7 +4380,7 @@ Few applications would have direct use for this method. See the specialized
 Apache::DBI module for one example usage.
 
 
-=item C<get_info>
+=head3 C<get_info>
 
   $value = $dbh->get_info( $info_type );
 
@@ -4436,7 +4414,7 @@ of information types to ensure the DBI itself works properly:
    41  SQL_CATALOG_NAME_SEPARATOR  '.'           '@'
   114  SQL_CATALOG_LOCATION        1             2
 
-=item C<table_info>
+=head3 C<table_info>
 
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
   $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
@@ -4515,7 +4493,7 @@ returned by C<table_info>.
 See also L</tables>, L</"Catalog Methods"> and
 L</"Standards Reference Information">.
 
-=item C<column_info>
+=head3 C<column_info>
 
   $sth = $dbh->column_info( $catalog, $schema, $table, $column );
 
@@ -4632,7 +4610,7 @@ SQLDescribeCol (in ODBC). However, SQLColumns provides more metadata.
 
 See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
-=item C<primary_key_info>
+=head3 C<primary_key_info>
 
   $sth = $dbh->primary_key_info( $catalog, $schema, $table );
 
@@ -4674,7 +4652,7 @@ This field is NULL (C<undef>) if not applicable to the data source.
 
 See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
-=item C<primary_key>
+=head3 C<primary_key>
 
   @key_column_names = $dbh->primary_key( $catalog, $schema, $table );
 
@@ -4683,7 +4661,7 @@ the column names that comprise the primary key of the specified table.
 The list is in primary key column sequence order.
 If there is no primary key then an empty list is returned.
 
-=item C<foreign_key_info>
+=head3 C<foreign_key_info>
 
   $sth = $dbh->foreign_key_info( $pk_catalog, $pk_schema, $pk_table
                                , $fk_catalog, $fk_schema, $fk_table );
@@ -4805,7 +4783,7 @@ may be undefined if the driver doesn't have access to the information.
 
 See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
-=item C<statistics_info>
+=head3 C<statistics_info>
 
 B<Warning:> This method is experimental and may change.
 
@@ -4895,7 +4873,7 @@ such as C<SALARY <= 4500>.
 
 See also L</"Catalog Methods"> and L</"Standards Reference Information">.
 
-=item C<tables>
+=head3 C<tables>
 
   @names = $dbh->tables( $catalog, $schema, $table, $type );
   @names = $dbh->tables;	# deprecated
@@ -4911,7 +4889,7 @@ to ensure they are usable even if they contain whitespace or reserved
 words etc. This means that the table names returned will include
 quote characters.
 
-=item C<type_info_all>
+=head3 C<type_info_all>
 
   $type_info_all = $dbh->type_info_all;
 
@@ -4980,7 +4958,7 @@ The type_info_all() method is not normally used directly.
 The L</type_info> method provides a more usable and useful interface
 to the data.
 
-=item C<type_info>
+=head3 C<type_info>
 
   @type_info = $dbh->type_info($data_type);
 
@@ -5152,7 +5130,7 @@ use a list starting with C<SQL_SMALLINT>, C<SQL_INTEGER>, C<SQL_DECIMAL>, etc.
 See also L</"Standards Reference Information">.
 
 
-=item C<quote>
+=head3 C<quote>
 
   $sql = $dbh->quote($value);
   $sql = $dbh->quote($value, $data_type);
@@ -5192,7 +5170,7 @@ may return something like:
 The quote() method should I<not> be used with L</"Placeholders and
 Bind Values">.
 
-=item C<quote_identifier>
+=head3 C<quote_identifier>
 
   $sql = $dbh->quote_identifier( $name );
   $sql = $dbh->quote_identifier( $catalog, $schema, $table, \%attr );
@@ -5218,7 +5196,7 @@ For example, for Oracle:
 
 would return C<"schema"."table"@"link">.
 
-=item C<take_imp_data>
+=head3 C<take_imp_data>
 
   $imp_data = $dbh->take_imp_data;
 
@@ -5253,8 +5231,6 @@ called.
 
 The C<take_imp_data> method was added in DBI 1.36 but wasn't useful till 1.49.
 
-=back
-
 
 =head2 Database Handle Attributes
 
@@ -5272,9 +5248,7 @@ Example:
   $h->{AutoCommit} = ...;	# set/write
   ... = $h->{AutoCommit};	# get/read
 
-=over 4
-
-=item C<AutoCommit>  (boolean)
+=head3 C<AutoCommit>  (boolean)
 
 If true, then database changes cannot be rolled-back (undone).  If false,
 then database changes automatically occur within a "transaction", which
@@ -5344,7 +5318,7 @@ See L</commit>, L</disconnect> and L</Transactions> for other important
 notes about transactions.
 
 
-=item C<Driver>  (handle)
+=head3 C<Driver>  (handle)
 
 Holds the handle of the parent driver. The only recommended use for this
 is to find the name of the driver using:
@@ -5352,14 +5326,14 @@ is to find the name of the driver using:
   $dbh->{Driver}->{Name}
 
 
-=item C<Name>  (string)
+=head3 C<Name>  (string)
 
 Holds the "name" of the database. Usually (and recommended to be) the
 same as the "C<dbi:DriverName:...>" string used to connect to the database,
 but with the leading "C<dbi:DriverName:>" removed.
 
 
-=item C<Statement>  (string, read-only)
+=head3 C<Statement>  (string, read-only)
 
 Returns the statement string passed to the most recent L</prepare> method
 called in this database handle, even if that method failed. This is especially
@@ -5367,7 +5341,7 @@ useful where C<RaiseError> is enabled and the exception handler checks $@
 and sees that a 'prepare' method call failed.
 
 
-=item C<RowCacheSize>  (integer)
+=head3 C<RowCacheSize>  (integer)
 
 A hint to the driver indicating the size of the local row cache that the
 application would like the driver to use for future C<SELECT> statements.
@@ -5388,12 +5362,9 @@ cache needs refilling.
 
 See also the L</RowsInCache> statement handle attribute.
 
-=item C<Username>  (string)
+=head3 C<Username>  (string)
 
 Returns the username used to connect to the database.
-
-
-=back
 
 
 =head1 DBI STATEMENT HANDLE OBJECTS
@@ -5405,9 +5376,7 @@ statement handles.
 
 The DBI defines the following methods for use on DBI statement handles:
 
-=over 4
-
-=item C<bind_param>
+=head3 C<bind_param>
 
   $sth->bind_param($p_num, $bind_value)
   $sth->bind_param($p_num, $bind_value, \%attr)
@@ -5480,7 +5449,7 @@ and syntax will vary between different databases and is non-portable.
 See also L</"Placeholders and Bind Values"> for more information.
 
 
-=item C<bind_param_inout>
+=head3 C<bind_param_inout>
 
   $rc = $sth->bind_param_inout($p_num, \$bind_value, $max_len)  or die $sth->errstr;
   $rv = $sth->bind_param_inout($p_num, \$bind_value, $max_len, \%attr)     or ...
@@ -5506,7 +5475,7 @@ Undefined values or C<undef> are used to indicate null values.
 See also L</"Placeholders and Bind Values"> for more information.
 
 
-=item C<bind_param_array>
+=head3 C<bind_param_array>
 
   $rc = $sth->bind_param_array($p_num, $array_ref_or_value)
   $rc = $sth->bind_param_array($p_num, $array_ref_or_value, \%attr)
@@ -5554,7 +5523,7 @@ for L</execute>.
 
 The C<bind_param_array> method was added in DBI 1.22.
 
-=item C<execute>
+=head3 C<execute>
 
   $rv = $sth->execute                or die $sth->errstr;
   $rv = $sth->execute(@bind_values)  or die $sth->errstr;
@@ -5593,7 +5562,7 @@ If execute() is called on a statement handle that's still active
 to tidy up the previous execution results before starting this new
 execution.
 
-=item C<execute_array>
+=head3 C<execute_array>
 
   $tuples = $sth->execute_array(\%attr) or die $sth->errstr;
   $tuples = $sth->execute_array(\%attr, @bind_values) or die $sth->errstr;
@@ -5730,7 +5699,7 @@ C<execute_array> call.
 The C<execute_array> method was added in DBI 1.22, and ArrayTupleFetch
 was added in 1.36.
 
-=item C<execute_for_fetch>
+=head3 C<execute_for_fetch>
 
   $tuples = $sth->execute_for_fetch($fetch_tuple_sub);
   $tuples = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
@@ -5804,7 +5773,7 @@ each array ref in turn:
 The C<execute_for_fetch> method was added in DBI 1.38.
 
 
-=item C<fetchrow_arrayref>
+=head3 C<fetchrow_arrayref>
 
   $ary_ref = $sth->fetchrow_arrayref;
   $ary_ref = $sth->fetch;    # alias
@@ -5825,7 +5794,7 @@ store the reference and then use it after a later fetch.  Also, the
 elements of the array are also reused for each row, so take care if you
 want to take a reference to an element. See also L</bind_columns>.
 
-=item C<fetchrow_array>
+=head3 C<fetchrow_array>
 
  @ary = $sth->fetchrow_array;
 
@@ -5847,7 +5816,7 @@ from an C<undef> returned because the first field value was NULL.
 For these reasons you should exercise some caution if you use
 C<fetchrow_array> in a scalar context.
 
-=item C<fetchrow_hashref>
+=head3 C<fetchrow_hashref>
 
  $hash_ref = $sth->fetchrow_hashref;
  $hash_ref = $sth->fetchrow_hashref($name);
@@ -5879,7 +5848,7 @@ row. This will give a significant performance boost, but it won't
 be enabled by default because of the risk of breaking old code.
 
 
-=item C<fetchall_arrayref>
+=head3 C<fetchall_arrayref>
 
   $tbl_ary_ref = $sth->fetchall_arrayref;
   $tbl_ary_ref = $sth->fetchall_arrayref( $slice );
@@ -5958,7 +5927,7 @@ provide a way to reuse the memory of a previous batch in future, which
 would then shift the balance back towards fetchall_arrayref().
 
 
-=item C<fetchall_hashref>
+=head3 C<fetchall_hashref>
 
   $hash_ref = $sth->fetchall_hashref($key_field);
 
@@ -6003,7 +5972,7 @@ fields values for each row are unique.  If multiple rows are returned
 with the same values for the key fields then later rows overwrite
 earlier ones.
 
-=item C<finish>
+=head3 C<finish>
 
   $rc  = $sth->finish;
 
@@ -6045,7 +6014,7 @@ See also L</disconnect> and the L</Active> attribute.
 The C<finish> method should have been called C<discard_pending_rows>.
 
 
-=item C<rows>
+=head3 C<rows>
 
   $rv = $sth->rows;
 
@@ -6068,7 +6037,7 @@ One alternative method to get a row count for a C<SELECT> is to execute a
 query and then fetch the row count from that.
 
 
-=item C<bind_col>
+=head3 C<bind_col>
 
   $rc = $sth->bind_col($column_number, \$var_to_bind);
   $rc = $sth->bind_col($column_number, \$var_to_bind, \%attr );
@@ -6131,7 +6100,7 @@ for the first call for a given $sth and column.
 The TYPE attribute for bind_col() was first specified in DBI 1.41.
 
 
-=item C<bind_columns>
+=head3 C<bind_columns>
 
   $rc = $sth->bind_columns(@list_of_refs_to_vars_to_bind);
 
@@ -6176,7 +6145,7 @@ a hash (thanks to H.Merijn Brand):
   }
 
 
-=item C<dump_results>
+=head3 C<dump_results>
 
   $rows = $sth->dump_results($maxlen, $lsep, $fsep, $fh);
 
@@ -6188,8 +6157,6 @@ This method is designed as a handy utility for prototyping and
 testing queries. Since it uses L</neat_list> to
 format and edit the string for reading by humans, it is not recomended
 for data transfer applications.
-
-=back
 
 
 =head2 Statement Handle Attributes
@@ -6219,22 +6186,20 @@ in these situations.
 See also L</finish> to learn more about the effect it
 may have on some attributes.
 
-=over 4
-
-=item C<NUM_OF_FIELDS>  (integer, read-only)
+=head3 C<NUM_OF_FIELDS>  (integer, read-only)
 
 Number of fields (columns) in the data the prepared statement may return.
 Statements that don't return rows of data, like C<DELETE> and C<CREATE>
 set C<NUM_OF_FIELDS> to 0 (though it may be undef in some drivers).
 
 
-=item C<NUM_OF_PARAMS>  (integer, read-only)
+=head3 C<NUM_OF_PARAMS>  (integer, read-only)
 
 The number of parameters (placeholders) in the prepared statement.
 See SUBSTITUTION VARIABLES below for more details.
 
 
-=item C<NAME>  (array-ref, read-only)
+=head3 C<NAME>  (array-ref, read-only)
 
 Returns a reference to an array of field names for each column. The
 names may contain spaces but should not be truncated or have any
@@ -6244,19 +6209,19 @@ should use L</NAME_lc> or L</NAME_uc>.
 
   print "First column name: $sth->{NAME}->[0]\n";
 
-=item C<NAME_lc>  (array-ref, read-only)
+=head3 C<NAME_lc>  (array-ref, read-only)
 
 Like L</NAME> but always returns lowercase names.
 
-=item C<NAME_uc>  (array-ref, read-only)
+=head3 C<NAME_uc>  (array-ref, read-only)
 
 Like L</NAME> but always returns uppercase names.
 
-=item C<NAME_hash>  (hash-ref, read-only)
+=head3 C<NAME_hash>  (hash-ref, read-only)
 
-=item C<NAME_lc_hash>  (hash-ref, read-only)
+=head3 C<NAME_lc_hash>  (hash-ref, read-only)
 
-=item C<NAME_uc_hash>  (hash-ref, read-only)
+=head3 C<NAME_uc_hash>  (hash-ref, read-only)
 
 The C<NAME_hash>, C<NAME_lc_hash>, and C<NAME_uc_hash> attributes
 return column name information as a reference to a hash.
@@ -6274,7 +6239,7 @@ corresponding column (counting from 0). For example:
   print "Name $row[ $sth->{NAME_lc_hash}{name} ]\n";
 
 
-=item C<TYPE>  (array-ref, read-only)
+=head3 C<TYPE>  (array-ref, read-only)
 
 Returns a reference to an array of integer values for each
 column. The value indicates the data type of the corresponding column.
@@ -6295,7 +6260,7 @@ officially reserved for use by the DBI: -9999 to -9000.
 All possible values for C<TYPE> should have at least one entry in the
 output of the C<type_info_all> method (see L</type_info_all>).
 
-=item C<PRECISION>  (array-ref, read-only)
+=head3 C<PRECISION>  (array-ref, read-only)
 
 Returns a reference to an array of integer values for each column.
 
@@ -6311,12 +6276,12 @@ in other words the number of bytes, not characters.
 (More recent standards refer to this as COLUMN_SIZE but we stick
 with PRECISION for backwards compatibility.)
 
-=item C<SCALE>  (array-ref, read-only)
+=head3 C<SCALE>  (array-ref, read-only)
 
 Returns a reference to an array of integer values for each column.
 NULL (C<undef>) values indicate columns where scale is not applicable.
 
-=item C<NULLABLE>  (array-ref, read-only)
+=head3 C<NULLABLE>  (array-ref, read-only)
 
 Returns a reference to an array indicating the possibility of each
 column returning a null.  Possible values are C<0>
@@ -6325,19 +6290,19 @@ column returning a null.  Possible values are C<0>
   print "First column may return NULL\n" if $sth->{NULLABLE}->[0];
 
 
-=item C<CursorName>  (string, read-only)
+=head3 C<CursorName>  (string, read-only)
 
 Returns the name of the cursor associated with the statement handle, if
 available. If not available or if the database driver does not support the
 C<"where current of ..."> SQL syntax, then it returns C<undef>.
 
 
-=item C<Database>  (dbh, read-only)
+=head3 C<Database>  (dbh, read-only)
 
 Returns the parent $dbh of the statement handle.
 
 
-=item C<ParamValues>  (hash ref, read-only)
+=head3 C<ParamValues>  (hash ref, read-only)
 
 Returns a reference to a hash containing the values currently bound
 to placeholders.  The keys of the hash are the 'names' of the
@@ -6367,7 +6332,7 @@ where N is a sequence number starting at 1.
 
 The C<ParamValues> attribute was added in DBI 1.28.
 
-=item C<ParamArrays>  (hash ref, read-only)
+=head3 C<ParamArrays>  (hash ref, read-only)
 
 Returns a reference to a hash containing the values currently bound to
 placeholders with L</execute_array> or L</bind_param_array>.  The
@@ -6401,7 +6366,7 @@ C<ParamArrays> are not exactly the same as those implied by the
 prepared statement.  For example, DBD::Oracle translates 'C<?>'
 placeholders into 'C<:pN>' where N is a sequence number starting at 1.
 
-=item C<ParamTypes>  (hash ref, read-only)
+=head3 C<ParamTypes>  (hash ref, read-only)
 
 Returns a reference to a hash containing the type information
 currently bound to placeholders.  The keys of the hash are the
@@ -6409,7 +6374,7 @@ currently bound to placeholders.  The keys of the hash are the
 for drivers that support named placeholders, the actual parameter
 name string. The hash values are hashrefs of type information in
 the same form as that provided to the various bind_param() methods
-(See L</"Data Types for Placeholders"> for the format and values),
+(See L</bind_param> for the format and values),
 plus anything else that was passed as the third argument to bind_param().
 Returns undef if not supported by the driver.
 
@@ -6436,12 +6401,12 @@ is the responsibility of individual drivers; the DBI layer default
 implementation simply returns undef.
 
 
-=item C<Statement>  (string, read-only)
+=head3 C<Statement>  (string, read-only)
 
 Returns the statement string passed to the L</prepare> method.
 
 
-=item C<RowsInCache>  (integer, read-only)
+=head3 C<RowsInCache>  (integer, read-only)
 
 If the driver supports a local row cache for C<SELECT> statements, then
 this attribute holds the number of un-fetched rows in the cache. If the
@@ -6449,51 +6414,6 @@ driver doesn't, then it returns C<undef>. Note that some drivers pre-fetch
 rows on execute, whereas others wait till the first fetch.
 
 See also the L</RowCacheSize> database handle attribute.
-
-=back
-
-=head1 OTHER METHODS
-
-=over 4
-
-=item C<install_method>
-
-    DBD::Foo::db->install_method($method_name, \%attr);
-
-Installs the driver-private method named by $method_name into the
-DBI method dispatcher so it can be called directly, avoiding the
-need to use the func() method.
-
-It is called as a static method on the driver class to which the
-method belongs. The method name must begin with the corresponding
-registered driver-private prefix. For example, for DBD::Oracle
-$method_name must being with 'C<ora_>', and for DBD::AnyData it
-must begin with 'C<ad_>'.
-
-The attributes can be used to provide fine control over how the DBI
-dispatcher handles the dispatching of the method. However, at this
-point, it's undocumented and very liable to change. (Volunteers to
-polish up and document the interface are very welcome to get in
-touch via dbi-dev@perl.org)
-
-Methods installed using install_method default to the standard error
-handling behaviour for DBI methods: clearing err and errstr before
-calling the method, and checking for errors to trigger RaiseError
-etc. on return. This differs from the default behaviour of func().
-
-Note for driver authors: The DBD::Foo::xx->install_method call won't
-work until the class-hierarchy has been setup. Normally the DBI
-looks after that just after the driver is loaded. This means
-install_method() can't be called at the time the driver is loaded
-unless the class-hierarchy is set up first. The way to do that is
-to call the setup_driver() method:
-
-    DBI->setup_driver('DBD::Foo');
-
-before using install_method().
-
-
-=back
 
 =head1 FURTHER INFORMATION
 
@@ -6789,7 +6709,7 @@ parent database handle, will not be usable afterwards.
 If C<cancel> returns true, then it has successfully
 invoked the database engine's own cancel function.  If it returns false,
 then C<cancel> failed. If it returns C<undef>, then the database
-driver does not have cancel implemented.
+driver does not have cancel implemented - very few do.
 
 =item Timeout
 

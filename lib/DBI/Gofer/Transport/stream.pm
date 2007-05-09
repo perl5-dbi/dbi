@@ -57,7 +57,7 @@ __END__
 =head1 NAME
     
 DBI::Gofer::Transport::stream - DBD::Gofer server-side transport for stream
-    
+
 =head1 SYNOPSIS
 
 See L<DBD::Gofer::Transport::stream>.

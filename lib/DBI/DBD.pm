@@ -676,6 +676,9 @@ B<DBD::Driver::db>.
 
       $class .= "::dr";
 
+      DBD::Driver::db->install_method('drv_example_dbh_method');
+      DBD::Driver::st->install_method('drv_example_sth_method');
+
       # not a 'my' since we use it above to prevent multiple drivers
       $drh = DBI::_new_drh($class, {
               'Name'        => 'File',
@@ -722,6 +725,44 @@ B<DBI> will store them and otherwise leave them alone.
 The C<DBI::_new_drh()> method and the C<driver()> method both return C<undef>
 for failure (in which case you must look at I<$DBI::err> and I<$DBI::errstr>
 for the failure information, because you have no driver handle to use).
+
+
+=head4 Using install_method() to expose driver-private methods
+
+    DBD::Foo::db->install_method($method_name, \%attr);
+
+Installs the driver-private method named by $method_name into the
+DBI method dispatcher so it can be called directly, avoiding the
+need to use the func() method.
+
+It is called as a static method on the driver class to which the
+method belongs. The method name must begin with the corresponding
+registered driver-private prefix. For example, for DBD::Oracle
+$method_name must being with 'C<ora_>', and for DBD::AnyData it
+must begin with 'C<ad_>'.
+
+The attributes can be used to provide fine control over how the DBI
+dispatcher handles the dispatching of the method. However, at this
+point, it's undocumented and very liable to change. (Volunteers to
+polish up and document the interface are very welcome to get in
+touch via dbi-dev@perl.org)
+
+Methods installed using install_method default to the standard error
+handling behaviour for DBI methods: clearing err and errstr before
+calling the method, and checking for errors to trigger RaiseError 
+etc. on return. This differs from the default behaviour of func(). 
+
+Note for driver authors: The DBD::Foo::xx->install_method call won't
+work until the class-hierarchy has been setup. Normally the DBI
+looks after that just after the driver is loaded. This means
+install_method() can't be called at the time the driver is loaded
+unless the class-hierarchy is set up first. The way to do that is
+to call the setup_driver() method:
+
+    DBI->setup_driver('DBD::Foo');
+
+before using install_method().
+
 
 =head4 The CLONE special subroutine
 

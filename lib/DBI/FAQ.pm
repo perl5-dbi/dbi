@@ -532,10 +532,10 @@ older, non-standard, ActiveState port).
 
 Scripts written with the DBI and DBD::ODBC are faster than Win32::ODBC
 on Win32 and are trivially portable to other supported database types.
-  
+
 The DBI offers optional automatic printing or die()ing on errors which
 makes applications simpler and more robust.
-  
+
 The current DBD::ODBC driver version 0.16 is new and not yet fully stable.
 A new release is due soon [relative to the date of the next TPJ issue :-]
 and will be much improved and offer more ODBC functionality.
@@ -805,7 +805,7 @@ defaultly set to a false value ( thus making overlong BLOB fetches fail ).
 Truncation of BLOB data may not be a big deal in cases where the BLOB
 contains run-length encoded data, but data containing checksums at the end,
 for example, a ZIP file, would be rendered useless.
-  
+
 =head2 5.3 How can I invoke stored procedures with DBI?
 
 The DBI does not define a database-independent way of calling stored procedures.

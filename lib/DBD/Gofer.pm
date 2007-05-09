@@ -812,6 +812,8 @@ single response that includes all the data.
 This is very similar to the way http works as a stateless protocol for the web.
 Each request from your web browser can be handled by a different web server process.
 
+=head2 Use Cases
+
 This may seem like pointless overhead but there are situations where this is a
 very good thing. Let's consider a specific case.
 
@@ -827,6 +829,8 @@ if the statement returned any, along with all the attributes that describe the
 results, such as $sth->{NAME}. This response is sent back to DBD::Gofer which
 unpacks it and presents it to the application as if it had executed the
 statement itself.
+
+=head2 Advantages
 
 Okay, but you still don't see the point? Well let's consider what we've gained:
 
@@ -858,7 +862,7 @@ You no longer need drivers for your database on every system.  DBD::Gofer is pur
 =head1 CONSTRAINTS
 
 There are some natural constraints imposed by the DBD::Gofer 'stateless' approach.
-But not too many:
+But not many:
 
 =head2 You can't change database handle attributes after connect()
 
@@ -882,29 +886,30 @@ They can be set after prepare() but the change is only applied locally.
 
 AutoCommit only. Transactions aren't supported.
 
+(In theory transactions could be supported when using a transport that
+maintains a connection, like C<stream> does. If you're interested in this
+please get in touch via dbi-dev@perl.org)
+
 =head2 You can't call driver-private sth methods
 
 But that's rarely needed anyway.
-
-=head2 Per-row driver-private sth attributes aren't supported
-
-Some drivers provide sth attributes that relate to the row that was just
-fetched (e.g., Sybase and syb_result_type). These aren't supported.
 
 =head1 GENERAL CAVEATS
 
 A few important things to keep in mind when using DBD::Gofer:
 
-=head2 You shouldn't use temporary tables, locks, or other per-connection persistent state
+=head2 Temporary tables, locks, and other per-connection persistent state
+
+You shouldn't expect any per-session state to persist between requests.
+This includes locks and temporary tables.
 
 Because the server-side may execute your requests via a different
 database connections, you can't rely on any per-connection persistent state,
 such as temporary tables, being available from one request to the next.
 
-This is an easy trap to fall into and a difficult one to debug.
-The pipeone transport may help as it forces a new connection for each request.
-(It is very slow though, so I plan to add a way for the stream driver to use
-connect instead of connect_cache to achive the same effect much more efficiently.)
+This is an easy trap to fall into. A good way to check for this is to test your
+code with a Gofer policy package that sets the C<connect_method> policy to
+'connect' to force a new connection for each request. The C<pedantic> policy does this.
 
 =head2 Driver-private Database Handle Attributes
 
@@ -932,7 +937,7 @@ more general mechanism is needed for other drivers to use.
 
 =head2 Methods that report an error always return undef
 
-With DBD::Gofer a method that sets an error always return an undef or empty list.
+With DBD::Gofer, a method that sets an error always return an undef or empty list.
 That shouldn't be a problem in practice because the DBI doesn't define any
 methods that return meaningful values while also reporting an error.
 
@@ -961,7 +966,8 @@ last_insert_id() method.
 
 The array methods bind_param_array() and execute_array() are supported.
 When execute_array() is called the data is serialized and executed in a single
-round-trip to the Gofer server.
+round-trip to the Gofer server. This makes it very fast, but requires enough
+memory to store all the serialized data.
 
 The execute_for_fetch() method currently isn't optimised, it uses the DBI
 fallback behaviour of executing each tuple individually.
@@ -995,8 +1001,8 @@ a data structure before passing it to DBI::Gofer::Execute to execute. The same
 freeze and thaw is applied to the results.
 
 The null transport is the best way to test if your application will work with Gofer.
-Just set the DBI_AUTOPROXY environment variable to "C<dbi:Gofer:transport=null>"
-(see L</DBI_AUTOPROXY> below) and run your application, or ideally its test suite, as usual.
+Just set the DBI_AUTOPROXY environment variable to "C<dbi:Gofer:transport=null;policy=pedantic>"
+(see L</Using DBI_AUTOPROXY> below) and run your application, or ideally its test suite, as usual.
 
 It doesn't take any parameters.
 
@@ -1006,33 +1012,31 @@ The pipeone transport launches a subprocess for each request. It passes in the
 request and reads the response.
 
 The fact that a new subprocess is started for each request ensures that the
-server side is truly stateless. While this does make the transport very slow it
-is useful as a way to test that your application doesn't depend on
+server side is truly stateless. While this does make the transport I<very> slow,
+it is useful as a way to test that your application doesn't depend on
 per-connection state, such as temporary tables, persisting between requests.
 
 It's also useful both as a proof of concept and as a base class for the stream
 driver.
 
-This transport supports a timeout parameter in the dsn which specifies
-the maximum time it can take to send a requestor receive a response.
-
 =head3 stream
 
 The stream driver also launches a subprocess and writes requests and reads
 responses, like the pipeone transport.  In this case, however, the subprocess
-is expected to handle more that one request. (Though it will be restarted if it exits.)
+is expected to handle more that one request. (Though it will be automitically
+restarted if it exits.)
 
 This is the first transport that is truly useful because it can launch the
-subprocess on a remote machine using ssh. This means you can now use DBD::Gofer
+subprocess on a remote machine using C<ssh>. This means you can now use DBD::Gofer
 to easily access any databases that's accessible from any system you can login to.
 You also get all the benefits of ssh, including encryption and optional compression.
 
-This transport supports a timeout parameter in the dsn which specifies the
-maximum time it can take to send a requestor receive a response.
-
-See L</DBI_AUTOPROXY> below for an example.
+See L</Using DBI_AUTOPROXY> below for an example.
 
 =head2 Other Transports
+
+Implementing a transport is very simple, and more transports are very welcome.
+Just take a look at any existing transports that are similar to your needs.
 
 =head3 http
 
@@ -1040,11 +1044,8 @@ See the GoferTransport-http distribution on CPAN.
 
 =head3 Gearman
 
-I know Ask Bjørn Hansen has implemented a transport for the gearman distributed
-job system. (Not yet on CPAN.)
-
-Implementing a transport is very simple, and more transports are very welcome.
-Just take a look at any existing transports that are similar to your needs.
+I know Ask Bjørn Hansen has implemented a transport for the C<gearman> distributed
+job system, though it's not yet on CPAN.
 
 =head1 CONNECTING
 
@@ -1053,19 +1054,19 @@ where $transport is the name of the Gofer transport you want to use (see L</TRAN
 The C<transport> and C<dsn> attributes must be specified and the C<dsn> attributes must be last.
 
 Other attributes can be specified in the DSN to configure DBD::Gofer and/or the
-Gofer transport module being used. The two main attributes after C<transport>,
-are C<url> and C<policy>. These are described below.
+Gofer transport module being used. The main attributes after C<transport>, are
+C<url> and C<policy>. These are described below.
 
 =head2 Using DBI_AUTOPROXY
 
 The simplest way to try out DBD::Gofer is to set the DBI_AUTOPROXY environment variable.
 In this case you don't include the C<dsn=> part. For example:
 
-    export DBI_AUTOPROXY=dbi:Gofer:transport=null
+    export DBI_AUTOPROXY="dbi:Gofer:transport=null"
 
 or, for a more useful example, try:
 
-    export DBI_AUTOPROXY=dbi:Gofer:transport=stream;url=ssh:user@example.com
+    export DBI_AUTOPROXY="dbi:Gofer:transport=stream;url=ssh:user@example.com"
 
 
 =head1 CONFIGURING VIA POLICY
@@ -1109,15 +1110,13 @@ of the Gofer approach - as documented avove.
 
 =head1 TODO
 
-This is just a random brain dump... (There's more in Changes)
+This is just a random brain dump... (There's more in the source of the Changes file, not the pod)
 
 Document policy mechanism
 
 Add mechanism for transports to list config params and for Gofer to apply any that match (and warn if any left over?)
 
 Driver-private sth attributes - set via prepare() - change DBI spec
-
-Caching of get_info values
 
 add hooks into transport base class for checking & updating a result set cache
    ie via a standard cache interface such as:
@@ -1130,8 +1129,6 @@ in such a way that appropriate http cache headers are added to the results
 so that web caches (squid etc) could be used to implement the caching.
 (MUST require the use of GET rather than POST requests.)
 
-Neat way for $h->trace to enable transport tracing.
-
 Rework handling of installed_methods to not piggback on dbh_attributes?
 
 Perhaps support transactions for transports where it's possible (ie null and stream)?
@@ -1141,6 +1138,6 @@ Make sth_result_attr more like dbh_attributes (using '*' etc)
 
 Add @val = FETCH_many(@names) to DBI in C and use in Gofer/Execute?
 
-Implement DBI::st::TIEHASH etc in C.
+Implement _new_sth in C.
 
 =cut
