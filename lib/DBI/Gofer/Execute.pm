@@ -341,8 +341,7 @@ sub gather_dbh_attributes {
         push @req_attr_names, @{ $self->_std_response_attribute_names($dbh) };
     }
     my %dbh_attr_values;
-    # XXX a FETCH_many() method implemented in C would help here
-    $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
+    @dbh_attr_values{@req_attr_names} = $dbh->FETCH_many(@req_attr_names);
 
     # XXX piggyback installed_methods onto dbh_attributes for now
     $dbh_attr_values{dbi_installed_methods} = { DBI->installed_methods };
@@ -454,7 +453,7 @@ sub execute_sth_request {
     }
     # XXX needs to be integrated with private_attribute_info() etc
     if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
-        $dbh_attr_set->{$_} = $dbh->FETCH($_) for @$dbh_attr;
+        @{$dbh_attr_set}{@$dbh_attr} = $dbh->FETCH_many(@$dbh_attr);
     }
     $response->dbh_attributes($dbh_attr_set) if $dbh_attr_set && %$dbh_attr_set;
 
@@ -477,11 +476,12 @@ sub gather_sth_resultsets {
             $sth_attr->{$_} = $sth_result_attr->{$_}
                 for keys %$sth_result_attr;
         }
+        my @sth_attr = grep { $sth_attr->{$_} } keys %$sth_attr;
 
         my $row_count = 0;
         my $rs_list = [];
         while (1) {
-            my $rs = $self->fetch_result_set($sth, $sth_attr);
+            my $rs = $self->fetch_result_set($sth, \@sth_attr);
             push @$rs_list, $rs;
             if (my $rows = $rs->{rowset}) {
                 $row_count += @$rows;
@@ -503,24 +503,23 @@ sub gather_sth_resultsets {
 
 
 sub fetch_result_set {
-    my ($self, $sth, $extra_sth_attr) = @_;
+    my ($self, $sth, $sth_attr) = @_;
     my %meta;
-    while ( my ($attr,$use) = each %$extra_sth_attr ) {
-        next unless $use;
-        my $v = eval { $sth->FETCH($attr) };
-        if (defined $v) {
-            $meta{ $attr } = $v;
-        }
-        else {
-            warn $@ if $@;
-        }
-    }
-    my $NUM_OF_FIELDS = $meta{NUM_OF_FIELDS};
-    $NUM_OF_FIELDS = $sth->FETCH('NUM_OF_FIELDS') unless defined $NUM_OF_FIELDS;
-    if ($NUM_OF_FIELDS) { # is a select
-        $meta{rowset} = eval { $sth->fetchall_arrayref() };
-        $meta{err}    = $DBI::err;
-        $meta{errstr} = $DBI::errstr;
+    eval {
+        @meta{ @$sth_attr } = $sth->FETCH_many(@$sth_attr);
+        # we assume @$sth_attr contains NUM_OF_FIELDS
+        $meta{rowset}       = $sth->fetchall_arrayref()
+            if (($meta{NUM_OF_FIELDS}||0) > 0); # is SELECT
+        # the fetchall_arrayref may fail with a 'not executed' kind of error
+        # because gather_sth_resultsets/fetch_result_set are called even if
+        # execute() failed, or even if there was no execute() call at all.
+        # The corresponding error goes into the resultset err, not the top-level
+        # response err, so in most cases this resultset err is never noticed.
+    };
+    if ($@) {
+        chomp $@;
+        $meta{err}    = $DBI::err    || 1;
+        $meta{errstr} = $DBI::errstr || $@;
         $meta{state}  = $DBI::state;
     }
     return \%meta;

@@ -373,6 +373,7 @@ my $keeperr = { O=>0x0004 };
 	'CLEAR'  	=> $keeperr,
 	'EXISTS' 	=> $keeperr,
 	'FETCH'		=> { O=>0x0404 },
+	'FETCH_many'	=> { O=>0x0404 },
 	'FIRSTKEY'	=> $keeperr,
 	'NEXTKEY'	=> $keeperr,
 	'STORE'		=> { O=>0x0418 | 0x4 },
@@ -1321,6 +1322,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     sub NEXTKEY  { }
     sub EXISTS   { defined($_[0]->FETCH($_[1])) } # XXX undef?
     sub CLEAR    { Carp::carp "Can't CLEAR $_[0] (DBI)" }
+
+    sub FETCH_many {    # should move to C one day
+        my $h = shift;
+        return map { $h->FETCH($_) } @_;
+    }
 
     *dump_handle = \&DBI::dump_handle;
 

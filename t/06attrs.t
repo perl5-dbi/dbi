@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 144;
+use Test::More tests => 145;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -73,6 +73,9 @@ is($dbh->{Name},             'dummy', '... checking Name attribute for dbh')	# f
 
 cmp_ok($dbh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for dbh');
 cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for dbh');
+
+is_deeply [ $dbh->FETCH_many(qw(HandleError FetchHashKeyName LongReadLen ErrCount)) ],
+          [ undef, qw(NAME 80 0) ], 'should be able to FETCH_many';
 
 is $dbh->{examplep_private_dbh_attrib}, 42, 'should see driver-private dbh attribute value';
 
