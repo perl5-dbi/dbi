@@ -232,7 +232,7 @@ SKIP: {
     skip("Math::BigInt < 1.56",2)
 	if $DBI::PurePerl && !eval { require Math::BigInt; require_version Math::BigInt 1.56 };
     skip("Math::BigInt $Math::BigInt::VERSION broken",2)
-	if $DBI::PurePerl && $Math::BigInt::VERSION =~ /^1\.5[45]/;
+	if $DBI::PurePerl && $Math::BigInt::VERSION =~ /^1\.8[45]/;
 cmp_ok(DBI::hash("foo1",1), '==', -1263462440, '... should be -1263462440');
 cmp_ok(DBI::hash("foo2",1), '==', -1263462437, '... should be -1263462437');
 }
