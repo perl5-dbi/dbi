@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 142;
+use Test::More tests => 144;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -73,6 +73,8 @@ is($dbh->{Name},             'dummy', '... checking Name attribute for dbh')	# f
 
 cmp_ok($dbh->{TraceLevel},  '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute for dbh');
 cmp_ok($dbh->{LongReadLen}, '==', 80,                    '... checking LongReadLen attribute for dbh');
+
+is $dbh->{examplep_private_dbh_attrib}, 42, 'should see driver-private dbh attribute value';
 
 # Raise an error.
 eval { 
@@ -273,6 +275,8 @@ is($params->{1}, 'foo', '... checking values returned');
 
 is($sth->{Statement}, "select ctime, name from ?", '... checking Statement attribute for sth');
 ok(!defined $sth->{RowsInCache}, '... checking type of RowsInCache attribute for sth');
+
+is $sth->{examplep_private_sth_attrib}, 24, 'should see driver-private sth attribute value';
 
 # $h->{TraceLevel} tests are in t/09trace.t
 

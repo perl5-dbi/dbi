@@ -32,18 +32,26 @@ our $current_dbh;   # the dbh we're using for this request
 DBI->trace(split /=/, $ENV{DBI_GOFER_TRACE}, 2) if $ENV{DBI_GOFER_TRACE};
 
 
-__PACKAGE__->mk_accessors(qw(
-    check_request_sub
-    default_connect_dsn
-    forced_connect_dsn
-    default_connect_attributes
-    forced_connect_attributes
-    forced_single_resultset
-    max_cached_dbh_per_drh
-    max_cached_sth_per_dbh
-    track_recent
-    stats
-)); 
+# define valid configuration attributes (args to new())
+# the values here indicate the basic type of values allowed
+my %configuration_attributes = (
+    default_connect_dsn => 1,
+    forced_connect_dsn  => 1,
+    default_connect_attributes => {},
+    forced_connect_attributes  => {},
+    track_recent => 1,
+    check_request_sub => sub {},
+    forced_single_resultset => 1,
+    max_cached_dbh_per_drh => 1,
+    max_cached_sth_per_dbh => 1,
+    forced_response_attributes => {},
+    stats => {},
+);
+
+__PACKAGE__->mk_accessors(
+    keys %configuration_attributes
+);
+
 
 
 sub new {
@@ -56,19 +64,15 @@ sub new {
 }
 
 
-my @sth_std_attr = qw(
-    NUM_OF_PARAMS
-    NUM_OF_FIELDS
-    NAME
-    TYPE
-    NULLABLE
-    PRECISION
-    SCALE
-);
+sub valid_configuration_attributes {
+    my $self = shift;
+    return { %configuration_attributes };
+}
+
 
 my %extra_attr = (
     # Only referenced if the driver doesn't support private_attribute_info method.
-    # what driver-specific attributes should be returned for the driver being used?
+    # What driver-specific attributes should be returned for the driver being used?
     # keyed by $dbh->{Driver}{Name}
     # XXX for sth should split into attr specific to resultsets (where NUM_OF_FIELDS > 0) and others
     # which would reduce processing/traffic for non-select statements
@@ -111,6 +115,17 @@ my %extra_attr = (
             sqlite_version
         )],
         sth => [qw(
+        )],
+    },
+    ExampleP => {
+        dbh => [qw(
+            examplep_private_dbh_attrib
+        )],
+        sth => [qw(
+            examplep_private_sth_attrib
+        )],
+        dbh_after_sth => [qw(
+            examplep_insertid
         )],
     },
 );
@@ -323,9 +338,10 @@ sub gather_dbh_attributes {
     my @req_attr_names = @$dbh_attributes;
     if ($req_attr_names[0] eq '*') { # auto include std + private
         shift @req_attr_names;
-        push @req_attr_names, @{ $self->_get_std_attributes($dbh) };
+        push @req_attr_names, @{ $self->_std_response_attribute_names($dbh) };
     }
     my %dbh_attr_values;
+    # XXX a FETCH_many() method implemented in C would help here
     $dbh_attr_values{$_} = $dbh->FETCH($_) for @req_attr_names;
 
     # XXX piggyback installed_methods onto dbh_attributes for now
@@ -338,24 +354,48 @@ sub gather_dbh_attributes {
 }
 
 
-sub _get_std_attributes {
+sub _std_response_attribute_names {
     my ($self, $h) = @_;
     $h = tied(%$h) || $h; # switch to inner handle
-    my $attr_names = $h->{private_gofer_std_attr_names};
-    return $attr_names if $attr_names;
-    # add some extra because drivers may have different defaults
-    # add Name so the client gets the real Name of the connection
-    my @attr_names = qw(ChopBlanks LongReadLen LongTruncOk ReadOnly Name);
+
+    # cache the private_attribute_info data for each handle
+    # XXX might be better to cache it in the executor
+    # as it's unlikely to change
+    # or perhaps at least cache it in the dbh even for sth
+    # as the sth are typically very short lived
+
+    my ($dbh, $h_type, $driver_name, @attr_names);
+
+    if ($dbh = $h->{Database}) {    # is an sth
+
+        # does the dbh already have the answer cached?
+        return $dbh->{private_gofer_std_attr_names_sth} if $dbh->{private_gofer_std_attr_names_sth};
+
+        ($h_type, $driver_name) = ('sth', $dbh->{Driver}{Name});
+        push @attr_names, qw(NUM_OF_PARAMS NUM_OF_FIELDS NAME TYPE NULLABLE PRECISION SCALE);
+    }
+    else {                          # is a dbh
+        return $h->{private_gofer_std_attr_names_dbh} if $h->{private_gofer_std_attr_names_dbh};
+
+        ($h_type, $driver_name, $dbh) = ('dbh', $h->{Driver}{Name}, $h);
+        # explicitly add these because drivers may have different defaults
+        # add Name so the client gets the real Name of the connection
+        push @attr_names, qw(ChopBlanks LongReadLen LongTruncOk ReadOnly Name);
+    }
+
     if (my $pai = $h->private_attribute_info) {
         push @attr_names, keys %$pai;
     }
-    elsif (my $drh = $h->{Driver}) { # is a dbh
-        push @attr_names, @{ $extra_attr{ $drh->{Name} }{dbh} || []};
+    else {
+        push @attr_names, @{ $extra_attr{ $driver_name }{$h_type} || []};
     }
-    elsif ($drh = $h->{Driver}{Database}) { # is an sth
-        push @attr_names, @{ $extra_attr{ $drh->{Name} }{sth} || []};
+    if (my $fra = $self->{forced_response_attributes}) {
+        push @attr_names, @{ $fra->{ $driver_name }{$h_type} || []}
     }
-    return $h->{private_gofer_std_attr_names} = \@attr_names;
+    $dbh->trace_msg("_std_response_attribute_names for $driver_name $h_type: @attr_names\n");
+
+    # cache into the dbh even for sth, as the dbh is usually longer lived
+    return $dbh->{"private_gofer_std_attr_names_$h_type"} = \@attr_names;
 }
 
 
@@ -412,6 +452,7 @@ sub execute_sth_request {
     if (my $dbh_attributes = $request->dbh_attributes) {
         $dbh_attr_set = $self->gather_dbh_attributes($dbh, $dbh_attributes);
     }
+    # XXX needs to be integrated with private_attribute_info() etc
     if (my $dbh_attr = $extra_attr{$dbh->{Driver}{Name}}{dbh_after_sth}) {
         $dbh_attr_set->{$_} = $dbh->FETCH($_) for @$dbh_attr;
     }
@@ -426,11 +467,10 @@ sub execute_sth_request {
 sub gather_sth_resultsets {
     my ($self, $sth, $request, $response) = @_;
     my $resultsets = eval {
-        my $driver_name = $sth->{Database}{Driver}{Name};
-        my $extra_sth_attr = $extra_attr{$driver_name}{sth} || [];
 
+        my $attr_names = $self->_std_response_attribute_names($sth);
         my $sth_attr = {};
-        $sth_attr->{$_} = 1 for (@sth_std_attr, @$extra_sth_attr);
+        $sth_attr->{$_} = 1 for @$attr_names;
 
         # let the client add/remove sth atributes
         if (my $sth_result_attr = $request->sth_result_attr) {
@@ -669,12 +709,25 @@ kept by the update_stats() method for diagnostics. See L<DBI::Gofer::Transport::
 
 Note that this setting can significantly increase memory use. Use with caution.
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 DRIVER-SPECIFIC ISSUES
 
-The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
-Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+Gofer needs to know about any driver-private attributes that should have their
+values sent back to the client.
 
-You may distribute under the terms of either the GNU General Public License or
-the Artistic License, as specified in the Perl README file.
+If the driver doesn't support private_attribute_info() method, and very few do,
+then the module fallsback to using some hard-coded details, if available, for
+the driver being used. Currently hard-coded details are available for the
+mysql, Pg, Sybase, and SQLite drivers.
+
+=head1 AUTHOR
+
+Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
 
 =cut
