@@ -45,6 +45,7 @@ my %configuration_attributes = (
     max_cached_dbh_per_drh => 1,
     max_cached_sth_per_dbh => 1,
     forced_response_attributes => {},
+    forced_gofer_random => 1,
     stats => {},
 );
 
@@ -164,6 +165,13 @@ sub _connect {
     $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
         or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";
 
+    # ensure this connect_cached doesn't have the same args as the client
+    # because that causes subtle issues if in the same process (ie transport=null)
+    # include pid to avoid problems with forking (ie null transport in mod_perl)
+    # include gofer-random to avoid random behaviour leaking to other handles
+    my $extra_cache_key = join "|",
+        __PACKAGE__, "$$", $self->{forced_gofer_random} || $ENV{DBI_GOFER_RANDOM} || '';
+
     # XXX implement our own private connect_cached method? (with rate-limited ping)
     my $dbh = DBI->$connect_method($dsn, undef, undef, {
 
@@ -192,18 +200,17 @@ sub _connect {
         # if errors happened before the main part of the request was executed
         Executed => 0,
 
-        # ensure this connect_cached doesn't have the same args as the client
-        # because that causes subtle issues if in the same process (ie transport=null)
-	# include pid to avoid problems with forking (ie null transport in mod_perl)
-        dbi_go_execute_unique => __PACKAGE__."$$",
+        # ensure connect_cached is sufficiently distinct
+        dbi_go_execute_unique => $extra_cache_key,
     });
 
     $dbh->{ShowErrorStatement} = 1 if $local_log;
 
-    # note that this affects previously cached handles because $ENV{DBI_GOFER_RANDOM}
-    # isn't included in the cache key. Could add a go_rand_fail=>... attribute.
-    $self->_install_rand_callbacks($dbh, $ENV{DBI_GOFER_RANDOM})
-        if $ENV{DBI_GOFER_RANDOM};
+    # XXX should probably just be a Callbacks => arg to connect_cached
+    # with a cache of pre-built callback hoks (memoized, without $self) 
+    if (my $random = $self->{forced_gofer_random} || $ENV{DBI_GOFER_RANDOM}) {
+        $self->_install_rand_callbacks($dbh, $random);
+    }
 
     my $CK = $dbh->{CachedKids};
     if ($CK && keys %$CK > $self->{max_cached_sth_per_dbh}) {
@@ -708,6 +715,10 @@ kept by the update_stats() method for diagnostics. See L<DBI::Gofer::Transport::
 
 Note that this setting can significantly increase memory use. Use with caution.
 
+=head2 forced_gofer_random
+
+Enable forced random failures and/or delays for testing. See L</DBI_GOFER_RANDOM> below.
+
 =head1 DRIVER-SPECIFIC ISSUES
 
 Gofer needs to know about any driver-private attributes that should have their
@@ -717,6 +728,52 @@ If the driver doesn't support private_attribute_info() method, and very few do,
 then the module fallsback to using some hard-coded details, if available, for
 the driver being used. Currently hard-coded details are available for the
 mysql, Pg, Sybase, and SQLite drivers.
+
+=head1 TESTING
+
+DBD::Gofer, DBD::Execute and related packages are well tested by executing the
+DBI test suite with DBI_AUTOPROXY configured to route all DBI calls via DBD::Gofer.
+
+Because Gofer includes timeout and 'retry on error' mechanisms there is a need
+for some way to trigger delays and/or errors. This can be done via the
+C<forced_gofer_random> configuration item, or else the DBI_GOFER_RANDOM environment
+variable.
+
+=head2 DBI_GOFER_RANDOM
+
+The value of the C<forced_gofer_random> configuration item (or else the
+DBI_GOFER_RANDOM environment variable) is treated as a series of tokens
+separated by commas.
+
+The tokens can be one of three types:
+
+=over 4
+
+=item fail=R%
+
+Set the current random failure rate to R where R is a percentage. The value R can be floating point, e.g., C<fail=0.05%>.
+
+=item delayN=R%
+
+Set the current random delay rate to R where R is a percentage, and set the
+current delay duration to N seconds. The values of R and N can be floating point,
+e.g., C<delay120=0.1%>.
+
+=item methodname
+
+Applies the current current random failure rate and random delay rate and duration to the named method.
+If neither a fail nor delay have been set yet then a warning is generated.
+
+=back
+
+For example:
+
+  $executor = DBI::Gofer::Execute->new( {
+    forced_gofer_random => "fail=0.01%,do,delay60=1%,execute",
+  });
+
+will cause the do() method to fail for 0.01% of calls, and the execute() method to
+fail for 0.01% of calls and be delayed by 60 seconds on 1% of calls.
 
 =head1 AUTHOR
 

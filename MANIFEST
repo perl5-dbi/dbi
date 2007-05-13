@@ -5,7 +5,6 @@ DBIXS.h				The DBI XS public interface for Drivers (DBD::...)
 Driver.xst			Template driver xs file
 Driver_xst.h			Template driver xs support code
 MANIFEST
-META.yml			Module meta-data in YAML
 Makefile.PL			The Makefile generator
 Perl.xs				Test harness (currently) for Driver.xst
 README

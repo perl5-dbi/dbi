@@ -18,6 +18,7 @@ __PACKAGE__->mk_accessors(qw(
     trace
     go_dsn
     go_url
+    go_policy
     go_timeout
     go_retry_hook
     go_retry_limit
@@ -147,9 +148,13 @@ sub response_needs_retransmit {
         return 0;
     }
 
-    my $meta = $request->meta;
     my $retry_limit = $self->go_retry_limit;
-    $retry_limit = 2 unless defined $retry_limit;
+    # $retry_limit = 2 unless defined $retry_limit; # not safe enough to do this
+    if (!$retry_limit) {
+        $self->trace_msg("response_needs_retransmit: retries disabled (retry_limit not set)\n");
+        return 0;
+    }
+    my $meta = $request->meta;
     if (($meta->{retry_count}||=0) >= $retry_limit) {
         $self->trace_msg("response_needs_retransmit: $meta->{retry_count} is too many retries\n");
         return 0;
@@ -240,19 +245,22 @@ A retry won't be allowed if the number of previous retries has reached C<go_retr
 
 Tracing of gofer requests and reponses can be enabled by setting the
 C<DBD_GOFER_TRACE> environment variable. A value of 1 gives a reasonably
-compact summary o each request and response. A value of 2 or more gives a
+compact summary of each request and response. A value of 2 or more gives a
 detailed, and voluminous, dump.
 
 The trace is written using DBI->trace_msg() and so is written to the default
 DBI trace output, which is usually STDERR.
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 AUTHOR
 
-The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
-Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+Tim Bunce, L<http://www.linkedin.com/in/timbunce>
 
-You may distribute under the terms of either the GNU General Public License or
-the Artistic License, as specified in the Perl README file.
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
 
 =head1 SEE ALSO
 

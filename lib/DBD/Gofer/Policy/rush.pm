@@ -58,11 +58,33 @@ __PACKAGE__->create_policy_subs({
 
 1;
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 NAME
 
-The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
-Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+DBD::Gofer::Policy::rush - The 'rush' policy for DBD::Gofer
 
-You may distribute under the terms of either the GNU General Public License or
-the Artistic License, as specified in the Perl README file.
+=head1 SYNOPSIS
+
+  $dbh = DBI->connect("dbi:Gofer:transport=...;policy=rush", ...)
+
+=head1 DESCRIPTION
+
+The C<rush> policy tries to make as few round-trips as possible.
+It's the opposite end of the policy spectrum to the C<pedantic> policy.
+
+Temporary docs: See the source code for list of policies and their defaults.
+
+In a future version the policies and their defaults will be defined in the pod and parsed out at load-time.
+
+=head1 AUTHOR
+
+Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
+
+=cut
 

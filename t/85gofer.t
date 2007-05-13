@@ -127,7 +127,7 @@ sub run_tests {
     $dsn = $remote_dsn if $transport eq 'no';
     print " $dsn\n";
 
-    my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1, PrintError => 0 } );
+    my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1, PrintError => 0, ShowErrorStatement => 1 } );
     die "$test_run_tag aborted: $DBI::errstr\n" unless $dbh; # no point continuing
     ok $dbh, sprintf "should connect to %s", $dsn;
 

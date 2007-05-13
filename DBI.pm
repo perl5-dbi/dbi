@@ -1323,7 +1323,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     sub EXISTS   { defined($_[0]->FETCH($_[1])) } # XXX undef?
     sub CLEAR    { Carp::carp "Can't CLEAR $_[0] (DBI)" }
 
-    sub FETCH_many {    # should move to C one day
+    sub FETCH_many {    # XXX should move to C one day
         my $h = shift;
         return map { $h->FETCH($_) } @_;
     }

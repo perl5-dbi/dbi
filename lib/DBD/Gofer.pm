@@ -1071,23 +1071,36 @@ or, for a more useful example, try:
 
 =head1 CONFIGURING VIA POLICY
 
-XXX
+DBD::Gofer supports a 'policy' mechanism that allows you to fine-tune the number of round-trips to the Gofer server.
+The policies are grouped into classes (which may be subclassed) and referenced by the name of the class.
 
-policy=pedantic is most transparent but slow
+The L<DBD::Gofer::Policy::Base> class is the base class for all the policy
+packages and describes all the available policies.
 
-policy=classic is a reasonable compromise, and is the default
+Three policy packages are supplied with DBD::Gofer:
 
-policy=rush is fastest but may require code changes in application
+L<DBD::Gofer::Policy::pedantic> is most 'transparent' but slowest because it
+makes more  round-trips to the Gofer server.
 
-See L<DBD::Gofer::Policy::Base> for more information.
+L<DBD::Gofer::Policy::classic> is a reasonable compromise - it's the default policy.
 
-=head1 AUTHOR AND COPYRIGHT
+L<DBD::Gofer::Policy::rush> is fastest, but may require code changes in your applications.
 
-The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
-Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+Generally the default C<classic> policy is fine. When first testing an existing
+application with Gofer it is a good idea to start with the C<pedantic> policy
+first and then switch to C<classic> or a custom policy, for final testing.
 
-You may distribute under the terms of either the GNU General Public License or
-the Artistic License, as specified in the Perl README file.
+
+=head1 AUTHOR
+
+Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
 
 =head1 ACKNOWLEDGEMENTS
 

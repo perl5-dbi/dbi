@@ -83,11 +83,40 @@ sub DESTROY { };
 
 1;
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 NAME
 
-The DBD::Gofer, DBD::Gofer::* and DBI::Gofer::* modules are
-Copyright (c) 2007 Tim Bunce. Ireland.  All rights reserved.
+DBD::Gofer::Policy::Base - Base class for DBD::Gofer policies
 
-You may distribute under the terms of either the GNU General Public License or
-the Artistic License, as specified in the Perl README file.
+=head1 SYNOPSIS
+
+  $dbh = DBI->connect("dbi:Gofer:transport=...;policy=...", ...)
+
+=head1 DESCRIPTION
+
+The Base policy is not used directly. You should use a policy class derived from it.
+
+Policies included with DBD::Gofer include:
+
+L<DBD::Gofer::Policy::pedantic> - strictest but slowest
+
+L<DBD::Gofer::Policy::classic> - reasonable strictness and speed - the default
+
+L<DBD::Gofer::Policy::rush> - least strictness, fewest round-trips
+
+These are temporary docs: See the source code for list of policies and their defaults.
+
+In a future version the policies and their defaults will be defined in the pod and parsed out at load-time.
+
+=head1 AUTHOR
+
+Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
+
+=cut
 

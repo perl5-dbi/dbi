@@ -17,7 +17,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 use constant GOf_REQUEST_IDEMPOTENT => 0x0001;
 use constant GOf_REQUEST_READONLY   => 0x0002;
-    
+
 our @EXPORT = qw(GOf_REQUEST_IDEMPOTENT GOf_REQUEST_READONLY);
 
 
@@ -151,6 +151,13 @@ sub summary_as_text {
 
 1;
 
+=head1 NAME
+
+DBI::Gofer::Request - Encapsulate a request from DBD::Gofer to DBI::Gofer::Execute
+
+=head1 DESCRIPTION
+
+This is an internal class.
 
 =head1 AUTHOR
 
@@ -163,3 +170,4 @@ Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
 
+=cut
