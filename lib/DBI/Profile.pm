@@ -439,19 +439,19 @@ or a reference to hash containing values that are either further hash
 references or leaf array references.
 
 Sometimes it's useful to be able to summarise some or all of the collected data.
-The dbi_profile_merge() function can be used to merge leaf node values.
+The dbi_profile_merge_nodes() function can be used to merge leaf node values.
 
-=head2 dbi_profile_merge
+=head2 dbi_profile_merge_nodes
 
-  use DBI qw(dbi_profile_merge);
+  use DBI qw(dbi_profile_merge_nodes);
 
-  $time_in_dbi = dbi_profile_merge(my $totals=[], @$leaves);
+  $time_in_dbi = dbi_profile_merge_nodes(my $totals=[], @$leaves);
 
 Merges profile data node. Given a reference to a destination array, and zero or
 more references to profile data, merges the profile data into the destination array.
 For example:
 
-  $time_in_dbi = dbi_profile_merge(
+  $time_in_dbi = dbi_profile_merge_nodes(
       my $totals=[],
       [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
       [ 15, 0.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
@@ -463,19 +463,26 @@ $totals will then contain
 
 and $time_in_dbi will be 0.93;
 
+The second argument need not be just leaf nodes. If given a reference to a hash
+then the hash is recursively searched for for leaf nodes and all those found
+are merged.
+
 For example, to get the time spent 'inside' the DBI during an http request,
 your logging code run at the end of the request (i.e. mod_perl LogHandler)
 could use:
 
   my $time_in_dbi = 0;
   if (my $Profile = $dbh->{Profile}) { # if DBI profiling is enabled
-      $time_in_dbi = dbi_profile_merge(my $total=[], $Profile->{Data});
+      $time_in_dbi = dbi_profile_merge_nodes(my $total=[], $Profile->{Data});
       $Profile->{Data} = {}; # reset the profile data
   }
 
 If profiling has been enabled then $time_in_dbi will hold the time spent inside
 the DBI for that handle (and any other handles that share the same profile data)
 since the last request.
+
+Prior to DBI 1.56 the dbi_profile_merge_nodes() function was called dbi_profile_merge().
+That name still exists as an alias.
 
 =head1 CUSTOM DATA COLLECTION
 
@@ -578,7 +585,7 @@ use Exporter ();
 use UNIVERSAL ();
 use Carp;
 
-use DBI qw(dbi_time dbi_profile dbi_profile_merge);
+use DBI qw(dbi_time dbi_profile dbi_profile_merge_nodes dbi_profile_merge);
 
 $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
 
@@ -589,6 +596,7 @@ $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
     DBIprofile_MethodName
     DBIprofile_MethodClass
     dbi_profile
+    dbi_profile_merge_nodes
     dbi_profile_merge
     dbi_time
 );
@@ -674,7 +682,7 @@ sub format {
     )."\n";
 
     if (@$leaves) {
-	dbi_profile_merge(my $totals=[], @$leaves);
+	dbi_profile_merge_nodes(my $totals=[], @$leaves);
 	my ($count, $time_in_dbi, undef, undef, undef, $t1, $t2) = @$totals;
 	(my $progname = $0) =~ s:.*/::;
 	if ($count) {

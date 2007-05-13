@@ -235,7 +235,7 @@ BEGIN {
 	data_string_diff data_string_desc data_diff
    ) ],
    profile   => [ qw(
-	dbi_profile dbi_profile_merge dbi_time
+	dbi_profile dbi_profile_merge dbi_profile_merge_nodes dbi_time
    ) ], # notionally "in" DBI::Profile and normally imported from there
 );
 

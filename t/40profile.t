@@ -325,10 +325,13 @@ is_deeply $tmp, {
     'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
 }, 'should be able to filter by method';
 
+DBI->trace(0, "STDOUT"); # close current log to flush it
+ok(-s $LOG_FILE, 'output should go to log file');
+
 # -----------------------------------------------------------------------------------
 
-print "dbi_profile_merge\n";
-my $total_time = dbi_profile_merge(
+print "dbi_profile_merge_nodes\n";
+my $total_time = dbi_profile_merge_nodes(
     my $totals=[],
     [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
     [ 15, 0.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
@@ -337,7 +340,7 @@ $_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
 is("@$totals", "25.00 0.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
 is($total_time, 0.93);
 
-$total_time = dbi_profile_merge(
+$total_time = dbi_profile_merge_nodes(
     $totals=[], {
 	foo => [ 10, 1.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
         bar => [ 17, 1.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
@@ -346,9 +349,6 @@ $total_time = dbi_profile_merge(
 $_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
 is("@$totals", "27.00 2.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
 is($total_time, 2.93);
-
-DBI->trace(0, "STDOUT"); # close current log to flush it
-ok(-s $LOG_FILE, 'output should go to log file');
 
 exit 0;
 

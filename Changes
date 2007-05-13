@@ -42,6 +42,8 @@ and prepends them to any error message.
     so now in html you get links to individual methods etc.
   Changed default gofer retry_limit from 2 to 0.
   Changed tests to workaround Math::BigInt broken versions.
+  Changed dbi_profile_merge() to dbi_profile_merge_nodes()
+    old name still works as an alias for the new one.
 
   Added DBI_GOFER_RANDOM env var that can be use to trigger random
     failures and delays when executing gofer requests. Designed to help

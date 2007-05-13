@@ -2281,9 +2281,12 @@ _profile_next_node(SV *node, const char *name)
         node = SvRV(node);
     if (SvTYPE(node) != SVt_PVHV) {
         HV *hv = newHV();
-        if (SvOK(node))
-            warn("Profile data element %s replaced with new hash ref (for %s)",
-                neatsvpv(orig_node,0), name);
+        if (SvOK(node)) {
+            char *key = "(demoted)";
+            warn("Profile data element %s replaced with new hash ref (for %s) and original value stored with key '%s'",
+                neatsvpv(orig_node,0), name, key);
+            hv_store(hv, key, strlen(key), SvREFCNT_inc(orig_node), 0);
+        }
         sv_setsv(node, newRV_noinc((SV*)hv));
         node = (SV*)hv;
     }
@@ -2531,7 +2534,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 }
 
 static void
-dbi_profile_merge(SV *dest, SV *increment)
+dbi_profile_merge_nodes(SV *dest, SV *increment)
 {
     dTHX;
     AV *d_av, *i_av;
@@ -2540,7 +2543,7 @@ dbi_profile_merge(SV *dest, SV *increment)
     int i_is_earlier;
 
     if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
-	croak("dbi_profile_merge(%s, ...) requires array ref", neatsvpv(dest,0));
+	croak("dbi_profile_merge_nodes(%s, ...) requires array ref", neatsvpv(dest,0));
     d_av = (AV*)SvRV(dest);
 
     if (av_len(d_av) < DBIprof_max_index) {
@@ -2562,13 +2565,13 @@ dbi_profile_merge(SV *dest, SV *increment)
 	I32 keylen = 0;
 	hv_iterinit(hv);
 	while ( (tmp = hv_iternextsv(hv, &key, &keylen)) != NULL ) {
-	    dbi_profile_merge(dest, tmp);
+	    dbi_profile_merge_nodes(dest, tmp);
 	};
 	return;
     }
 
     if (!SvROK(increment) || SvTYPE(SvRV(increment)) != SVt_PVAV)
-	croak("dbi_profile_merge: increment not an array or hash ref");
+	croak("dbi_profile_merge_nodes: increment not an array or hash ref");
     i_av = (AV*)SvRV(increment);
 
     tmp = *av_fetch(d_av, DBIprof_COUNT, 1);
@@ -4163,12 +4166,14 @@ dbi_profile(h, statement, method, t1, t2)
 
 
 SV *
-dbi_profile_merge(dest, ...)
+dbi_profile_merge_nodes(dest, ...)
     SV * dest
+    ALIAS:
+    dbi_profile_merge = 1
     CODE:
     {
 	if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
-	    croak("dbi_profile_merge(%s,...) not an array reference", neatsvpv(dest,0));
+	    croak("dbi_profile_merge_nodes(%s,...) not an array reference", neatsvpv(dest,0));
 	if (items <= 1) {
 	    (void)cv;
 	    RETVAL = 0;
@@ -4177,7 +4182,7 @@ dbi_profile_merge(dest, ...)
 	    /* items==2 for dest + 1 arg, ST(0) is dest, ST(1) is first arg */
 	    while (--items >= 1) {
 		SV *thingy = ST(items);
-		dbi_profile_merge(dest, thingy);
+		dbi_profile_merge_nodes(dest, thingy);
 	    }
 	    RETVAL = newSVsv(*av_fetch((AV*)SvRV(dest), DBIprof_TOTAL_TIME, 1));
 	}
