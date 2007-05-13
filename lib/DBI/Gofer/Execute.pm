@@ -708,6 +708,21 @@ cached statement handles rises above this limit. The default is 1000.
 
 If true, then only the first result set will be fetched and returned in the response.
 
+=head2 forced_response_attributes
+
+A reference to a data structure that can specify extra attributes to be returned in responses.
+
+  forced_response_attributes => {
+      DriverName => {
+          dbh => [ qw(dbh_attrib_name) ],
+          sth => [ qw(sth_attrib_name) ],
+      },
+  },
+
+This can be useful in cases where the driver has not implemented the
+private_attribute_info() method and DBI::Gofer::Execute's own fallback list of
+private attributes doesn't include the driver or attributes you need.
+
 =head2 track_recent
 
 If set, specifies the number of recent requests and responses that should be
@@ -773,7 +788,7 @@ For example:
   });
 
 will cause the do() method to fail for 0.01% of calls, and the execute() method to
-fail for 0.01% of calls and be delayed by 60 seconds on 1% of calls.
+fail 0.01% of calls and be delayed by 60 seconds on 1% of calls.
 
 =head1 AUTHOR
 
