@@ -2452,6 +2452,17 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                     else if (p[1] == 'C' && strEQ(p, "!Caller2")) {
                         dest_node = _profile_next_node(dest_node, log_where(0, 0, "", "", 1, 1, 0));
                     }
+                    else if (p[1] == 'T' && (strEQ(p, "!Time") || strnEQ(p, "!Time~", 6))) {
+                        char timebuf[20];
+                        int factor = 1;
+                        if (p[5] == '~') {
+                            factor = atoi(&p[6]);
+                            if (factor == 0) /* sanity check to avoid div by zero error */
+                                factor = 3600;
+                        }
+                        sprintf(timebuf, "%ld", ((long)(dbi_time()/factor))*factor);
+                        dest_node = _profile_next_node(dest_node, timebuf);
+                    }
                     else {
                         warn("Unknown ! element in DBI::Profile Path: %s", p);
                         dest_node = _profile_next_node(dest_node, p);

@@ -72,7 +72,27 @@ If you don't do one of those then you'll see messages in your error_log similar 
 
 =head3 Naming the files
 
-XXX
+The default file name is inherited from L<DBI::ProfileDumper> via the
+filename() method, but DBI::ProfileDumper::Apache appends the parent pid and
+the current pid, separated by dots, to that name.
+
+=head3 Silencing the log
+
+By default a message is written to STDERR (i.e., the apache error_log file)
+when flush_to_disk() is called (either explicitly, or implicitly via DESTROY).
+
+That's usually very useful. If you don't want the log message you can silence
+it by setting the C<Quiet> attribute true.
+
+  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache/Quiet:1
+
+  $dbh->{Profile} = "!Statement/DBI::ProfileDumper/Quiet:1";
+
+  $dbh->{Profile} = DBI::ProfileDumper->new(
+      Path => [ '!Statement' ]
+      Quiet => 1
+  );
+
 
 =head2 GATHERING PROFILE DATA
 
@@ -96,7 +116,7 @@ dbiprof sorting and querying options, see L<dbiprof> for details.
 Once you've made some code changes, you're ready to start again.
 First, delete the old profile data files:
 
-  rm /usr/local/apache/logs/dbi.prof. 
+  rm /usr/local/apache/logs/dbi.prof.*
 
 Then restart your server and get back to work.
 
@@ -136,12 +156,20 @@ use File::Spec;
 
 use constant MP2 => ($ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} == 2) ? 1 : 0;
 
-# Override flush_to_disk() to setup File just in time for output.
-# Overriding new() would work unless the user creates a DBI handle
-# during server startup, in which case all the children would try to
-# write to the same file.
-sub flush_to_disk {
-    my $self = shift;
+
+sub filename {
+    my $filename = shift->SUPER::filename(@_);
+    # to be able to identify groups of profile files from the same set of
+    # apache processes, we include the parent pid in the file name
+    # as well as the pid.
+    my $parent_pid = getppid();
+    my $path = $self->fileabspath();
+    return File::Spec->catfile($path, "$filename.$parent_pid.$$");
+}
+
+
+sub fileabspath {
+    my ($self) = @_;
     
     # setup File per process
     my $path;
@@ -149,28 +177,28 @@ sub flush_to_disk {
         $path = $ENV{DBI_PROFILE_APACHE_LOG_DIR};
     }
     else {
+        # can't cache, at least not during startup
+        my $subdir = "logs";
         if (MP2) {
             require Apache2::RequestUtil;
             require Apache2::ServerUtil;
-            $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, "logs/")
+            $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, $subdir)
         }
         else {
             require Apache;
-            $path = Apache->server_root_relative("logs/");
+            $path = Apache->server_root_relative($subdir);
         }
     }
+    return $path;
+}
 
-    # to be able to identify groups of profile files from the same set of
-    # apache processes, we include the parent pid in the file name.
-    my $parent_pid = getppid();
 
-    my $filename = $self->filename();
-    local $self->{File} = File::Spec->catfile($path, "$filename.$parent_pid.$$");
+sub flush_to_disk {
+    my $self = shift;
 
-    print STDERR "DBI::ProfileDumper::Apache writing to $self->{File}\n"
+    printf STDERR ref($self)." writing to %s\n", $self->filename();
         unless $self->{Quiet};
 
-    # write out to disk
     return $self->SUPER::flush_to_disk(@_);
 }
 

@@ -8,10 +8,6 @@ DBI::Changes - List of significant changes to the DBI
 
 Assorted TODO notes:
 
-Add to profile Path for 'self clocking' sample periods:
-    !Time - integer unix time GMT
-    !TimeN - integer(time/N)*N
-
 Add count of identical frozen_request (plus sum(results size)) to Gofer status
 Highlight those seen before.
 
@@ -30,7 +26,6 @@ Policy for dbh attr FETCH (ie example_driver_path)
     or piggyback on skip_connect_check
     could also remember which attr have been returned to us
     so not bother FETCHing them (unless pedantic)
-Refactor http transport like the others re timeout
 Call method on transport failure so transport can cleanup/reset it it wants
 
 prepare(...,{ Err=>\my $isolated_err, ...})
@@ -42,7 +37,21 @@ and prepends them to any error message.
 
 =head2 Changes in DBI 1.57 (svn rev XXX),  XX May 2007
 
-  Fixed unused var warning thanks to JDHEDDEN.
+  Fixed unused var compiler warning thanks to JDHEDDEN.
+
+  Added support for !Time and !Time~N to DBI::Profile Path.
+
+  DBI::ProfileDumper changes:
+    Use full natural precision (was using %.6f).
+    Optimized flush_to_disk().
+    Lock the data file while writing.
+    Added $profile->filename method.
+    Enabled filename to be a code ref for dynamic names.
+  DBI::ProfileDumper::Apache changes:
+    Added Quiet=>1 to avoid write to STDERR in flush_to_disk().
+    Enable DBI_PROFILE_APACHE_LOG_DIR for mod_perl 1 as well as 2.
+    Added parent pid to default data file name.
+  Added/updated docs for both DBI::ProfileDumper && ::Apache.
 
 =head2 Changes in DBI 1.56 (svn rev 9561),  13th May 2007
 

@@ -22,7 +22,7 @@ BEGIN {
     # tie methods (STORE/FETCH etc) get called different number of times
     plan skip_all => "test results assume perl >= 5.8.2"
         if $] <= 5.008001;
-    plan tests => 51;
+    plan tests => 52;
 }
 
 $Data::Dumper::Indent = 1;
@@ -232,6 +232,8 @@ is_deeply $tmp, bless {
 } => 'DBI::Profile';
 
 
+print "testing '!File', '!Caller' and their variants in Path\n";
+
 $dbh->{Profile}->{Path} = [ '!File', '!File2', '!Caller', '!Caller2' ];
 $dbh->{Profile}->{Data} = undef;
 
@@ -255,6 +257,26 @@ is_deeply $tmp, {
 };
 
 
+print "testing '!Time' and variants in Path\n";
+
+undef $sth;
+my $factor = 100_000; # ~27 hours
+$dbh->{Profile}->{Path} = [ '!Time', "!Time~$factor", '!MethodName' ];
+$dbh->{Profile}->{Data} = undef;
+
+$t1 = time()+1; 1 while time() < $t1; # spin till new second starts
+$sth = $dbh->prepare("select name from .");
+$t2 = int($t1/$factor)*$factor;
+
+$tmp = sanitize_profile_data_nodes($dbh->{Profile}{Data});
+#warn Dumper($tmp);
+is_deeply $tmp, {
+    $t1 => { $t2 => { prepare => [ 1, 0, 0, 0, 0, 0, 0 ] }}
+}, "!Time and !Time~$factor should work";
+
+
+print "testing &norm_std_n3 in Path\n";
+
 $dbh->{Profile} = '&norm_std_n3'; # assign as string to get magic
 is_deeply $dbh->{Profile}{Path}, [
     \&DBI::ProfileSubs::norm_std_n3
@@ -266,7 +288,7 @@ $tmp = $dbh->{Profile}{Data};
 #warn Dumper($tmp);
 is_deeply $tmp, {
     'insert into foo<N> (a,b) values (<N>,"<S>")' => [ 1, '2', '2', '2', '2', '100000000', '100000000' ]
-};
+}, '&norm_std_n3 should normalize statement';
 
 
 # -----------------------------------------------------------------------------------

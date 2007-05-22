@@ -22,10 +22,10 @@ You can also activate DBI::ProfileDumper from within your code:
   use DBI;
 
   # profile with default path (2) and output file (dbi.prof)
-  $dbh->{Profile} = "2/DBI::ProfileDumper";
+  $dbh->{Profile} = "!Statement/DBI::ProfileDumper";
 
   # same thing, spelled out
-  $dbh->{Profile} = "2/DBI::ProfileDumper/File:dbi.prof";
+  $dbh->{Profile} = "!Statement/DBI::ProfileDumper/File:dbi.prof";
 
   # another way to say it
   use DBI::Profile;
@@ -93,6 +93,10 @@ in any DBI handle:
 
 Flushes all collected profile data to disk and empties the Data hash.
 This method may be called multiple times during a program run.
+
+The file is locked while it's being written. A process 'consuming' the files
+while they're being written to, should lock the file before reading and then
+truncate() it before releasing the lock.
 
 =head2 empty
 
@@ -173,6 +177,7 @@ our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
 our @ISA = ("DBI::Profile");
 
 use Carp qw(croak);
+use Fcntl qw(:flock);
 use Symbol;
 
 my $program_header;
@@ -206,22 +211,29 @@ sub flush_to_disk {
     my $filename = $self->filename;
 
     my $fh = gensym;
-    if ($self->{_wrote_header}) {
+    if (($self->{_wrote_header}||'') eq $filename) {
         # append more data to the file
         # XXX assumes that Path hasn't changed
         open($fh, ">>$filename") 
           or croak("Unable to open '$filename' for profile output: $!");
     } else {
-        # create new file (overwrite existing) and write the header
+        # create new file (overwrite existing)
         open($fh, ">$filename") 
           or croak("Unable to open '$filename' for profile output: $!");
+    }
+    # lock the file (before checking size and writing the header)
+    flock($fh, LOCK_EX);
+    # write header if file is empty - typically because we just opened it
+    # in '>' mode, or perhaps we used '>>' but the file had been truncated externally.
+    if (-s $fh == 0) {
         $self->write_header($fh);
-        $self->{_wrote_header} = 1;
+        $self->{_wrote_header} = $filename;
     }
 
     $self->write_data($fh, $self->{Data}, 1);
 
-    close($fh) or croak("Error closing '$filename': $!");
+    close($fh)  # unlocks the file
+        or croak("Error closing '$filename': $!");
 
     $self->empty();
 }

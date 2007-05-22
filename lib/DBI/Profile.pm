@@ -220,11 +220,14 @@ A reference to a hash containing the collected profile data.
 The Path value is a reference to an array. Each element controls the
 value to use at the corresponding level of the profile Data tree.
 
+If the value of Path is anything other than an array reference,
+it is treated as if it was:
+
+	[ '!Statement' ]
+
 The elements of Path array can be one of the following types:
 
-=over 4
-
-=item Special Constant
+=head3 Special Constant
 
 B<!Statement>
 
@@ -283,7 +286,22 @@ B<!File2>
 
 Same as !Caller2 above except that only the filenames are included, not the line number.
 
-=item Code Reference
+B<!Time>
+
+Use the current value of time(). Rarely used. See the more useful C<!Time~N> below.
+
+B<!Time~N>
+
+Where C<N> is an integer. Use the current value of time() but with reduced precision.
+The value used is determined in this way:
+
+    int( time() / N ) * N
+
+This is a useful way to segregate a profile into time slots. For example:
+
+    [ '!Time~60', '!Statement' ]
+
+=head3 Code Reference
 
 The subroutine is passed the handle it was called on and the DBI method name.
 The current Statement is in $_. The statement string should not be modified,
@@ -295,7 +313,7 @@ The sub can 'veto' (reject) a profile sample by including a reference to undef
 in the returned list. That can be useful when you want to only profile
 statements that match a certain pattern, or only profile certain methods.
 
-=item Subroutine Specifier
+=head3 Subroutine Specifier
 
 A Path element that begins with 'C<&>' is treated as the name of a subroutine
 in the DBI::ProfileSubs namespace and replaced with the corresponding code reference.
@@ -307,32 +325,23 @@ Also, currently, the only subroutine in the DBI::ProfileSubs namespace is
 C<'&norm_std_n3'>. That's a very handy subroutine when profiling code that
 doesn't use placeholders. See L<DBI::ProfileSubs> for more information.
 
-=item Attribute Specifier
+=head3 Attribute Specifier
 
 A string enclosed in braces, such as 'C<{Username}>', specifies that the current
 value of the corresponding database handle attribute should be used at that
 point in the Path.
 
-=item Reference to a Scalar
+=head3 Reference to a Scalar
 
 Specifies that the current value of the referenced scalar be used at that point
 in the Path.  This provides an efficient way to get 'contextual' values into
 your profile.
 
-=item Other Values
+=head3 Other Values
 
 Any other values are stringified and used literally.
 
 (References, and values that begin with punctuation characters are reserved.)
-
-=back
-
-Only the first 100 elements in Path are used.
-
-If the value of Path is anything other than an array reference,
-it is treated as if it was:
-
-	[ DBI::Profile::!Statement ]
 
 
 =head1 REPORTING
