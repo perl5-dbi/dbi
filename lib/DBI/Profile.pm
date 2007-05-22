@@ -709,10 +709,6 @@ sub format_profile_leaf {
 	unless UNIVERSAL::isa($thingy,'ARRAY');
 
     push @$leaves, $thingy if $leaves;
-    if (0) {
-	use Data::Dumper;
-	return Dumper($thingy);
-    }
     my ($count, $total_time, $first_time, $min, $max, $first_called, $last_called) = @$thingy;
     return sprintf "%s%fs\n", ($pad x $depth), $total_time
 	if $count <= 1;

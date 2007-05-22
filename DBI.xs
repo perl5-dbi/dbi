@@ -4175,7 +4175,8 @@ dbi_profile_merge_nodes(dest, ...)
 	if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
 	    croak("dbi_profile_merge_nodes(%s,...) not an array reference", neatsvpv(dest,0));
 	if (items <= 1) {
-	    (void)cv;
+	    (void)cv;   /* avoid unused var warnings */
+	    (void)ix;
 	    RETVAL = 0;
 	}
 	else {

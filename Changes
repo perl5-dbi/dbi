@@ -8,6 +8,13 @@ DBI::Changes - List of significant changes to the DBI
 
 Assorted TODO notes:
 
+Add to profile Path for 'self clocking' sample periods:
+    !Time - integer unix time GMT
+    !TimeN - integer(time/N)*N
+
+Add count of identical frozen_request (plus sum(results size)) to Gofer status
+Highlight those seen before.
+
 Move post-request cleanup into separate method and enable hooks so
     it can be done after the response has been sent
 
@@ -32,6 +39,10 @@ Implement FETCH_many() in C
 Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
+
+=head2 Changes in DBI 1.57 (svn rev XXX),  XX May 2007
+
+  Fixed unused var warning thanks to JDHEDDEN.
 
 =head2 Changes in DBI 1.56 (svn rev 9561),  13th May 2007
 

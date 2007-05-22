@@ -221,22 +221,19 @@ sub _read_body {
             $path[$index] = $key; # place new key at end
 
         }
-	elsif (/^=/) {
+	elsif (s/^=\s+//) {
             # it's data - file in the node array with the path in index 0
 	    # (the optional minus is to make it more robust against systems
 	    # with unstable high-res clocks - typically due to poor NTP config
 	    # of kernel SMP behaviour, i.e. min time may be -0.000008))
-            @data = /^=\s+(\d+)
-                       \s+(-?\d+\.?\d*)
-                       \s+(-?\d+\.?\d*)
-                       \s+(-?\d+\.?\d*)
-                       \s+(-?\d+\.?\d*)
-                       \s+(\d+\.?\d*)
-                       \s+(\d+\.?\d*)
-                       \s*$/x;
+
+            @data = split / /, $_;
 
             # corrupt data?
-            croak("Invalid data syntax format in $filename line $.: $_") unless @data;
+            croak("Invalid number of fields in $filename line $.: $_")
+                unless @data == 7;
+            croak("Invalid leaf node characters $filename line $.: $_")
+                unless m/^[-+ 0-9eE\.]+$/;
 
 	    # hook to enable pre-processing of the data - such as mangling SQL
 	    # so that slightly different statements get treated as the same

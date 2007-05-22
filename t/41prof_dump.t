@@ -63,13 +63,15 @@ open(PROF, "dbi.prof") or die $!;
 my @prof = <PROF>;
 close PROF;
 
+print @prof;
+
 # has a header?
-ok( $prof[0] =~ /^DBI::ProfileDumper\s+([\d.]+)/, 'Found a version number' );
-# Can't use like() because we need $1
+like( $prof[0], '/^DBI::ProfileDumper\s+([\d.]+)/', 'Found a version number' );
 
 # version matches VERSION? (DBI::ProfileDumper uses $self->VERSION so
 # it's a stringified version object that looks like N.N.N)
-is( $1, DBI::ProfileDumper->VERSION, 'Version numbers match' );
+$prof[0] =~ /^DBI::ProfileDumper\s+([\d.]+)/;
+is( $1, DBI::ProfileDumper->VERSION, "Version numbers match in $prof[0]" );
 
 like( $prof[1], qr{^Path\s+=\s+\[\s+\]}, 'Found the Path');
 ok( $prof[2] =~ m{^Program\s+=\s+(\S+)}, 'Found the Program');

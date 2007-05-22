@@ -10,33 +10,17 @@ Add this line to your F<httpd.conf>:
 
   PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache
 
-Under mod_perl2 RC5+ you'll need to also add:
-
-  PerlSetEnv DBI_PROFILE_APACHE_LOG_DIR /server_root/logs
-
-OR add
-
-  PerlOptions +GlobalRequest
-
-to the gobal config section you're about test with DBI::ProfileDumper::Apache.
-If you don't do this, you'll see messages in your error_log similar to:
-
-  DBI::ProfileDumper::Apache on_destroy failed: Global $r object is not available. Set:
-    PerlOptions +GlobalRequest in httpd.conf at ..../DBI/ProfileDumper/Apache.pm line 144
+(If you're using mod_perl2, see L</When using mod_perl2> for some additional notes.)
 
 Then restart your server.  Access the code you wish to test using a
 web browser, then shutdown your server.  This will create a set of
-F<dbi.prof.*> files in your Apache log directory.  Get a profiling
-report with L<dbiprof|dbiprof>:
+F<dbi.prof.*> files in your Apache log directory.
 
-  dbiprof /usr/local/apache/logs/dbi.prof.*
+Get a profiling report with L<dbiprof|dbiprof>:
 
-When you're ready to perform another profiling run, delete the old
-files
+  dbiprof /path/to/your/apache/logs/dbi.prof.*
 
-  rm /usr/local/apache/logs/dbi.prof.*
-
-and start again.
+When you're ready to perform another profiling run, delete the old files and start again.
 
 =head1 DESCRIPTION
 
@@ -44,7 +28,7 @@ This module interfaces DBI::ProfileDumper to Apache/mod_perl.  Using
 this module you can collect profiling data from mod_perl applications.
 It works by creating a DBI::ProfileDumper data file for each Apache
 process.  These files are created in your Apache log directory.  You
-can then use dbiprof to analyze the profile files.
+can then use the dbiprof utility to analyze the profile files.
 
 =head1 USAGE
 
@@ -55,17 +39,40 @@ environment variable in your F<httpd.conf>:
 
   PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache
 
-If you want to use one of DBI::Profile's other Path settings, you can
-use a string like:
-
-  PerlSetEnv DBI_PROFILE 2/DBI::ProfileDumper::Apache
+The DBI will look after loading and using the module when the first DBI handle
+is created.
 
 It's also possible to use this module by setting the Profile attribute
 of any DBI handle:
 
   $dbh->{Profile} = "2/DBI::ProfileDumper::Apache";
 
-See L<DBI::ProfileDumper> for more possibilities.
+See L<DBI::ProfileDumper> for more possibilities, and L<DBI::Profile> for full
+details of the DBI's profiling mechanism.
+
+=head2 WRITING PROFILE DATA
+
+The profile data files will be written to your Apache log directory by default.
+You can use the C<DBI_PROFILE_APACHE_LOG_DIR> env var to change that. For example:
+
+  PerlSetEnv DBI_PROFILE_APACHE_LOG_DIR /server_root/logs
+
+=head3 When using mod_perl2
+
+Under mod_perl2 you'll need to either set the C<DBI_PROFILE_APACHE_LOG_DIR> env var,
+or enable the mod_perl2 C<GlobalRequest> option, like this:
+
+  PerlOptions +GlobalRequest
+
+to the global config section you're about test with DBI::ProfileDumper::Apache.
+If you don't do one of those then you'll see messages in your error_log similar to:
+
+  DBI::ProfileDumper::Apache on_destroy failed: Global $r object is not available. Set:
+    PerlOptions +GlobalRequest in httpd.conf at ..../DBI/ProfileDumper/Apache.pm line 144
+
+=head3 Naming the files
+
+XXX
 
 =head2 GATHERING PROFILE DATA
 
@@ -74,11 +81,11 @@ would.  Stop the webserver when your tests are complete.  Profile data
 files will be produced when Apache exits and you'll see something like
 this in your error_log:
 
-  DBI::ProfileDumper::Apache writing to /usr/local/apache/logs/dbi.prof.2619
+  DBI::ProfileDumper::Apache writing to /usr/local/apache/logs/dbi.prof.2604.2619
 
 Now you can use dbiprof to examine the data:
 
-  dbiprof /usr/local/apache/logs/dbi.prof.*
+  dbiprof /usr/local/apache/logs/dbi.prof.2604.*
 
 By passing dbiprof a list of all generated files, dbiprof will
 automatically merge them into one result set.  You can also pass
@@ -89,22 +96,23 @@ dbiprof sorting and querying options, see L<dbiprof> for details.
 Once you've made some code changes, you're ready to start again.
 First, delete the old profile data files:
 
-  rm /usr/local/apache/logs/dbi.prof.* 
+  rm /usr/local/apache/logs/dbi.prof. 
 
 Then restart your server and get back to work.
 
 =head1 MEMORY USAGE
 
-DBI::Profile can use a lot of memory for very active applications.  It
-collects profiling data in memory for each distinct query your
-application runs.  You can avoid this problem with a call like this:
+DBI::Profile can use a lot of memory for very active applications because it
+collects profiling data in memory for each distinct query run.
+Calling C<flush_to_disk()> will write the current data to disk and free the
+memory it's using. For example:
 
   $dbh->{Profile}->flush_to_disk() if $dbh->{Profile};
 
-Calling C<flush_to_disk()> will clear out the profile data and write
-it to disk.  Put this someplace where it will run on every request,
-like a CleanupHandler, and your memory troubles should go away.  Well,
-at least the ones caused by DBI::Profile anyway.
+or, rather than flush every time, you could flush less often:
+
+  $dbh->{Profile}->flush_to_disk()
+    if $dbh->{Profile} and ++$i % 100;
 
 =head1 AUTHOR
 
@@ -137,29 +145,33 @@ sub flush_to_disk {
     
     # setup File per process
     my $path;
-    if (MP2) {
-        if ($ENV{DBI_PROFILE_APACHE_LOG_DIR}) {
-            $path = $ENV{DBI_PROFILE_APACHE_LOG_DIR};
-        }
-        else {
+    if ($ENV{DBI_PROFILE_APACHE_LOG_DIR}) {
+        $path = $ENV{DBI_PROFILE_APACHE_LOG_DIR};
+    }
+    else {
+        if (MP2) {
             require Apache2::RequestUtil;
             require Apache2::ServerUtil;
             $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, "logs/")
         }
+        else {
+            require Apache;
+            $path = Apache->server_root_relative("logs/");
+        }
     }
-    else {
-       require Apache;
-       $path = Apache->server_root_relative("logs/");
-    }
-    my $old_file = $self->{File};
-    $self->{File} = File::Spec->catfile($path, "$old_file.$$");
+
+    # to be able to identify groups of profile files from the same set of
+    # apache processes, we include the parent pid in the file name.
+    my $parent_pid = getppid();
+
+    my $filename = $self->filename();
+    local $self->{File} = File::Spec->catfile($path, "$filename.$parent_pid.$$");
+
+    print STDERR "DBI::ProfileDumper::Apache writing to $self->{File}\n"
+        unless $self->{Quiet};
 
     # write out to disk
-    print STDERR "DBI::ProfileDumper::Apache writing to $self->{File}\n";
-    $self->SUPER::flush_to_disk(@_);
-   
-    # reset File to previous setting
-    $self->{File} = $old_file;    
+    return $self->SUPER::flush_to_disk(@_);
 }
 
 1;
