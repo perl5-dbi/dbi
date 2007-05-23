@@ -1,5 +1,7 @@
 package DBI::ProfileDumper::Apache;
 
+use strict;
+
 =head1 NAME
 
 DBI::ProfileDumper::Apache - capture DBI profiling data from Apache/mod_perl
@@ -158,7 +160,8 @@ use constant MP2 => ($ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} =
 
 
 sub filename {
-    my $filename = shift->SUPER::filename(@_);
+    my $self = shift;
+    my $filename = $self->SUPER::filename(@_);
     # to be able to identify groups of profile files from the same set of
     # apache processes, we include the parent pid in the file name
     # as well as the pid.
@@ -196,7 +199,7 @@ sub fileabspath {
 sub flush_to_disk {
     my $self = shift;
 
-    printf STDERR ref($self)." writing to %s\n", $self->filename();
+    printf STDERR ref($self)." writing to %s\n", $self->filename()
         unless $self->{Quiet};
 
     return $self->SUPER::flush_to_disk(@_);

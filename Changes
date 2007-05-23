@@ -37,6 +37,8 @@ and prepends them to any error message.
 
 =head2 Changes in DBI 1.57 (svn rev XXX),  XX May 2007
 
+XXX Add a DBI_REVISION macro that drivers can use
+
   Fixed unused var compiler warning thanks to JDHEDDEN.
 
   Added support for !Time and !Time~N to DBI::Profile Path.
