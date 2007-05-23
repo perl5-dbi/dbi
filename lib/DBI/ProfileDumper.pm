@@ -241,7 +241,7 @@ sub flush_to_disk {
 
 # empty out profile data
 sub empty {
-    shift->{Data} = {};
+    shift->{Data} = undef;
 }
 
 
@@ -252,8 +252,11 @@ sub write_header {
     # isolate us against globals which effect print
     local($\, $,);
 
+    # $self->VERSION can return undef during global destruction
+    my $version = $self->VERSION || $VERSION;
+
     # module name and version number
-    print $fh ref($self), " ", $self->VERSION, "\n";
+    print $fh ref($self)." $version\n";
 
     # print out Path (may contain CODE refs etc)
     my @path_words = map { escape_key($_) } @{ $self->{Path} || [] };
