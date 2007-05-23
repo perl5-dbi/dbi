@@ -180,16 +180,22 @@ sub fileabspath {
         $path = $ENV{DBI_PROFILE_APACHE_LOG_DIR};
     }
     else {
-        # can't cache, at least not during startup
-        my $subdir = "logs";
-        if (MP2) {
-            require Apache2::RequestUtil;
-            require Apache2::ServerUtil;
-            $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, $subdir)
-        }
-        else {
-            require Apache;
-            $path = Apache->server_root_relative($subdir);
+        eval {
+            # can't cache, at least not during startup
+            my $subdir = "logs";
+            if (MP2) {
+                require Apache2::RequestUtil;
+                require Apache2::ServerUtil;
+                $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, $subdir)
+            }
+            else {
+                require Apache;
+                $path = Apache->server_root_relative($subdir);
+            }
+        };
+        if ($@) {   # probably due to not running inside Apache
+            $path = "/tmp";
+            warn "Can't determine path for $self (will use $path): $@";
         }
     }
     return $path;

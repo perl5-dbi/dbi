@@ -14,12 +14,12 @@ use DBI;
 use Test::More;
 
 BEGIN {
-	if ($DBI::PurePerl) {
-		plan skip_all => 'profiling not supported for DBI::PurePerl';
-	}
-	else {
-		plan tests => 15;
-	}
+    if ($DBI::PurePerl) {
+        plan skip_all => 'profiling not supported for DBI::PurePerl';
+    }
+    else {
+        plan tests => 16;
+    }
 }
 
 BEGIN {
@@ -82,5 +82,7 @@ is( $1, $0, 'Program matches' );
 like(join('', @prof), qr/\+\s+1\s+\Q$sql\E/m);
 
 # unlink("dbi.prof"); # now done by 'make clean'
+
+require_ok('DBI::ProfileDumper::Apache'); # should be able to load DBI::ProfileDumper::Apache outside apache
 
 1;
