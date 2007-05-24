@@ -184,7 +184,7 @@ my $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} || File::Spec->catdir($server_ro
 if (UNIVERSAL::can($apache_server, "push_handlers")) {
     $apache_server->push_handlers(PerlChildInitHandler => sub {
         $parent_pid = getppid();
-        warn "PerlChildInitHandler pid$$ has ppid $parent_pid";
+        #warn "PerlChildInitHandler pid$$ has ppid $parent_pid";
         # update dest_dir from DBI_PROFILE_APACHE_LOG_DIR now
         $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} if $ENV{DBI_PROFILE_APACHE_LOG_DIR};
         OK();
