@@ -144,6 +144,7 @@ sub new {
                 _header      => {},
                 _nodes       => [],
                 _node_lookup => {},
+                _sort        => 'none',
                 @_
                };
     bless $self, $pkg;
@@ -192,6 +193,8 @@ sub _read_header {
         last unless length $_;
         /^(\S+)\s*=\s*(.*)/
           or croak("Syntax error in header in $filename line $.: $_");
+        # XXX should compare new with existing (from previous file)
+        # and warn if they differ (diferent program or path)
         $self->{_header}{$1} = $2 if $keep;
     }
 }

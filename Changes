@@ -44,6 +44,7 @@ XXX Add a DBI_REVISION macro that drivers can use
   Added support for !Time and !Time~N to DBI::Profile Path.
 
   DBI::ProfileDumper changes:
+    Don't write file if there's no profile data.
     Use full natural precision (was using %.6f).
     Optimized flush_to_disk().
     Lock the data file while writing.

@@ -91,12 +91,15 @@ in any DBI handle:
 
   $profile->flush_to_disk()
 
-Flushes all collected profile data to disk and empties the Data hash.
-This method may be called multiple times during a program run.
+Flushes all collected profile data to disk and empties the Data hash.  Returns
+the filename writen to.  If there's no actual profile data then the file is not
+written and flush_to_disk() returns undef.
 
 The file is locked while it's being written. A process 'consuming' the files
 while they're being written to, should lock the file before reading and then
 truncate() it before releasing the lock.
+
+This method may be called multiple times during a program run.
 
 =head2 empty
 
@@ -208,18 +211,25 @@ sub filename {
 # flush available data to disk
 sub flush_to_disk {
     my $self = shift;
+    my $class = ref $self;
     my $filename = $self->filename;
+    my $data = $self->{Data};
+
+    if (1) { # make an option
+        return undef if not $data;
+        return undef if ref $data eq 'HASH' && !%$data;
+    }
 
     my $fh = gensym;
     if (($self->{_wrote_header}||'') eq $filename) {
         # append more data to the file
         # XXX assumes that Path hasn't changed
         open($fh, ">>$filename") 
-          or croak("Unable to open '$filename' for profile output: $!");
+          or croak("Unable to open '$filename' for $class output: $!");
     } else {
         # create new file (overwrite existing)
         open($fh, ">$filename") 
-          or croak("Unable to open '$filename' for profile output: $!");
+          or croak("Unable to open '$filename' for $class output: $!");
     }
     # lock the file (before checking size and writing the header)
     flock($fh, LOCK_EX);
@@ -236,6 +246,8 @@ sub flush_to_disk {
         or croak("Error closing '$filename': $!");
 
     $self->empty();
+
+    return $filename;
 }
 
 

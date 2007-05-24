@@ -156,8 +156,40 @@ our @ISA = qw(DBI::ProfileDumper);
 use DBI::ProfileDumper;
 use File::Spec;
 
+my $parent_pid = $$; # init to pid because we are currently the parent of the children-to-be
+
 use constant MP2 => ($ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} == 2) ? 1 : 0;
 
+my $apache_server;
+my $server_root_dir;
+
+if (MP2) {
+    require Apache2::Const;
+    Apache2::Const->import(-compile => qw(OK DECLINED));
+    require Apache2::ServerUtil;
+    $apache_server = Apache2::ServerUtil->server;
+    $server_root_dir = Apache2::ServerUtil::server_root();
+}
+else {
+    require Apache;
+    require Apache::Constants;
+    Apache::Constants->import(qw(OK DECLINED));
+    $apache_server = "Apache";
+    $server_root_dir = eval { Apache->server_root_relative('') } || "/tmp";
+}
+
+my $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} || File::Spec->catdir($server_root_dir, "logs");
+
+
+if (UNIVERSAL::can($apache_server, "push_handlers")) {
+    $apache_server->push_handlers(PerlChildInitHandler => sub {
+        $parent_pid = getppid();
+        warn "PerlChildInitHandler pid$$ has ppid $parent_pid";
+        # update dest_dir from DBI_PROFILE_APACHE_LOG_DIR now
+        $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} if $ENV{DBI_PROFILE_APACHE_LOG_DIR};
+        OK();
+    });
+}
 
 sub filename {
     my $self = shift;
@@ -165,50 +197,21 @@ sub filename {
     # to be able to identify groups of profile files from the same set of
     # apache processes, we include the parent pid in the file name
     # as well as the pid.
-    my $parent_pid = getppid();
-    my $path = $self->fileabspath();
-    return File::Spec->catfile($path, "$filename.$parent_pid.$$");
-}
-
-
-sub fileabspath {
-    my ($self) = @_;
-    
-    # setup File per process
-    my $path;
-    if ($ENV{DBI_PROFILE_APACHE_LOG_DIR}) {
-        $path = $ENV{DBI_PROFILE_APACHE_LOG_DIR};
-    }
-    else {
-        eval {
-            # can't cache, at least not during startup
-            my $subdir = "logs";
-            if (MP2) {
-                require Apache2::RequestUtil;
-                require Apache2::ServerUtil;
-                $path = Apache2::ServerUtil::server_root_relative(Apache2::RequestUtil->request()->pool, $subdir)
-            }
-            else {
-                require Apache;
-                $path = Apache->server_root_relative($subdir);
-            }
-        };
-        if ($@) {   # probably due to not running inside Apache
-            $path = "/tmp";
-            warn "Can't determine path for $self (will use $path): $@";
-        }
-    }
-    return $path;
+    $filename .= ".$parent_pid.$$";
+    return $filename if File::Spec->file_name_is_absolute($filename);
+    return File::Spec->catfile($dest_dir, $filename);
 }
 
 
 sub flush_to_disk {
     my $self = shift;
 
-    printf STDERR ref($self)." writing to %s\n", $self->filename()
-        unless $self->{Quiet};
+    my $filename = $self->SUPER::flush_to_disk(@_);
 
-    return $self->SUPER::flush_to_disk(@_);
+    print STDERR ref($self)." pid$$ written to $filename\n"
+        if $filename && not $self->{Quiet};
+
+    return $filename;
 }
 
 1;

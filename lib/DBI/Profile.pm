@@ -770,6 +770,7 @@ sub DESTROY {
     local $@;
     eval { $self->on_destroy };
     if ($@) {
+        chomp $@;
         my $class = ref($self) || $self;
         DBI->trace_msg("$class on_destroy failed: $@", 0);
     }

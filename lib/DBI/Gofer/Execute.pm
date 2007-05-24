@@ -273,7 +273,7 @@ sub execute_request {
     my $response = eval {
 
         if (my $check_request_sub = $self->check_request_sub) {
-            $request = $check_request_sub->($request)
+            $request = $check_request_sub->($request, $self)
                 or die "check_request_sub failed";
         }
 
@@ -667,6 +667,7 @@ Examples include: L<DBI::Gofer::Transport::stream> and L<DBI::Gofer::Transport::
 =head2 check_request_sub
 
 If defined, it must be a reference to a subroutine that will 'check' the request.
+It is pass the request object and the executor as its only arguments.
 
 The subroutine can either return the original request object or die with a
 suitable error message (which will be turned into a Gofer response).
