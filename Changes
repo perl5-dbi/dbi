@@ -8,6 +8,8 @@ DBI::Changes - List of significant changes to the DBI
 
 Assorted TODO notes:
 
+Protect trace_msg from SIGPIPE?
+
 Add count of identical frozen_request (plus sum(results size)) to Gofer status
 Highlight those seen before.
 
@@ -45,15 +47,20 @@ XXX Add a DBI_REVISION macro that drivers can use
 
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
-    Use full natural precision (was using %.6f).
+    Use full natural precision when saving data (was using %.6f)
     Optimized flush_to_disk().
     Lock the data file while writing.
     Added $profile->filename method.
     Enabled filename to be a code ref for dynamic names.
   DBI::ProfileDumper::Apache changes:
     Added Quiet=>1 to avoid write to STDERR in flush_to_disk().
-    Enable DBI_PROFILE_APACHE_LOG_DIR for mod_perl 1 as well as 2.
+    Added Dir=>... to specify a writable destination directory.
+    Enabled DBI_PROFILE_APACHE_LOG_DIR for mod_perl 1 as well as 2.
     Added parent pid to default data file name.
+  DBI::ProfileData changes:
+    Added ability to sort by Path elements.
+  dbiprof changes:
+    Added --dumpnodes option.
   Added/updated docs for both DBI::ProfileDumper && ::Apache.
 
 =head2 Changes in DBI 1.56 (svn rev 9561),  13th May 2007

@@ -55,7 +55,15 @@ details of the DBI's profiling mechanism.
 =head2 WRITING PROFILE DATA
 
 The profile data files will be written to your Apache log directory by default.
-You can use the C<DBI_PROFILE_APACHE_LOG_DIR> env var to change that. For example:
+
+The user that the httpd processes run as will need write access to the
+directory.  So, for example, if you're running the child httpds as user 'nobody'
+and using chronolog to write to the logs directory, then you'll need to change
+the default.
+
+You can change the destination directory either by secifying a C<Dir> value
+when creating the profile (like C<File> in the L<DBI::ProfileDumper> docs),
+or you can use the C<DBI_PROFILE_APACHE_LOG_DIR> env var to change that. For example:
 
   PerlSetEnv DBI_PROFILE_APACHE_LOG_DIR /server_root/logs
 
@@ -122,7 +130,9 @@ First, delete the old profile data files:
 
 Then restart your server and get back to work.
 
-=head1 MEMORY USAGE
+=head1 OTHER ISSUES
+
+=head2 Memory usage
 
 DBI::Profile can use a lot of memory for very active applications because it
 collects profiling data in memory for each distinct query run.
@@ -178,17 +188,20 @@ else {
     $server_root_dir = eval { Apache->server_root_relative('') } || "/tmp";
 }
 
-my $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} || File::Spec->catdir($server_root_dir, "logs");
-
 
 if (UNIVERSAL::can($apache_server, "push_handlers")) {
     $apache_server->push_handlers(PerlChildInitHandler => sub {
         $parent_pid = getppid();
         #warn "PerlChildInitHandler pid$$ has ppid $parent_pid";
-        # update dest_dir from DBI_PROFILE_APACHE_LOG_DIR now
-        $dest_dir = $ENV{DBI_PROFILE_APACHE_LOG_DIR} if $ENV{DBI_PROFILE_APACHE_LOG_DIR};
         OK();
     });
+}
+
+sub dirname {
+    my $self = shift;
+    return $self->{Dir} if $self->{Dir};
+    $self->{Dir} ||= $ENV{DBI_PROFILE_APACHE_LOG_DIR};
+    return $self->{Dir} || File::Spec->catdir($server_root_dir, "logs");
 }
 
 sub filename {
@@ -199,7 +212,7 @@ sub filename {
     # as well as the pid.
     $filename .= ".$parent_pid.$$";
     return $filename if File::Spec->file_name_is_absolute($filename);
-    return File::Spec->catfile($dest_dir, $filename);
+    return File::Spec->catfile($self->dirname, $filename);
 }
 
 

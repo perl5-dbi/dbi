@@ -258,7 +258,9 @@ sub flush_to_disk {
 
 # empty out profile data
 sub empty {
-    shift->{Data} = undef;
+    my $self = shift;
+    DBI->trace_msg("profile data discarded\n",0) if $self->{Trace};
+    $self->{Data} = undef;
 }
 
 

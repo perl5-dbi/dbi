@@ -83,6 +83,8 @@ like(join('', @prof), qr/\+\s+1\s+\Q$sql\E/m);
 
 # unlink("dbi.prof"); # now done by 'make clean'
 
-require_ok('DBI::ProfileDumper::Apache'); # should be able to load DBI::ProfileDumper::Apache outside apache
+# should be able to load DBI::ProfileDumper::Apache outside apache
+# this also naturally checks for syntax errors etc.
+require_ok('DBI::ProfileDumper::Apache');
 
 1;

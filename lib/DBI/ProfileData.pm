@@ -373,6 +373,9 @@ the dbiprof frontend.
                   total    => TOTAL,
                   count    => COUNT,
                   shortest => SHORTEST,
+                  key1     => PATH+0,
+                  key2     => PATH+1,
+                  key3     => PATH+2,
                  );
     sub sort {
         my $self = shift;

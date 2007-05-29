@@ -9,6 +9,7 @@ use strict;
 
 my $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
 
+use Data::Dumper;
 use DBI::ProfileData;
 use Getopt::Long;
 
@@ -26,6 +27,7 @@ GetOptions(
            'help'           => sub { exit usage() },
            'number=i'       => \$number,
            'sort=s'         => \$sort,
+           'dumpnodes!'     => \my $dumpnodes,
            'reverse'        => \$reverse,
            'match=s'        => \%match,
            'exclude=s'      => \%exclude,
@@ -86,7 +88,16 @@ if (%exclude) { # handle excludes
 $prof->sort(field => $sort, reverse => $reverse);
 
 # all done, print it out
-print $prof->report(number => $number);
+if ($dumpnodes) {
+    $Data::Dumper::Indent    = 1;
+    $Data::Dumper::Terse     = 1;
+    $Data::Dumper::Useqq     = 1;
+    $Data::Dumper::Deparse   = 0;
+    print Dumper($prof->nodes);
+}
+else {
+    print $prof->report(number => $number);
+}
 exit 0;
 
 __END__
@@ -130,7 +141,8 @@ Produce this many items in the report.  Defaults to 10.  If set to
 
 =item --sort field
 
-Sort results by the given field.  The available sort fields are:
+Sort results by the given field. Sorting by multiple fields isn't currently
+supported (patches welcome).  The available sort fields are:
 
 =over 4
 
@@ -154,6 +166,11 @@ Sorts by the time taken in the first run.
 =item shortest
 
 Sorts by the shortest single run.
+
+=item key1
+
+Sorts by the value of the first element in the Path, which should be numeric.
+You can also sort by C<key2> and C<key3>.
 
 =back
 
@@ -208,6 +225,11 @@ this can be changed with the --case-sensitive option.
 
 Using this option causes --match and --exclude to work
 case-sensitively.  Defaults to off.
+
+=item --dumpnodes
+
+Print the list of nodes in the form of a perl data structure.
+Use the C<-sort> option if you want the list sorted.
 
 =item --version
 
