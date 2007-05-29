@@ -17,7 +17,7 @@ This module can also be used to roll your own profile analysis:
   # load data from dbi.prof
   $prof = DBI::ProfileData->new(File => "dbi.prof");
 
-  # get a count of the records in the data set
+  # get a count of the records (unique paths) in the data set
   $count = $prof->count();
 
   # sort by longest overall time
@@ -67,8 +67,6 @@ record have the same number of keys.
 
 The following methods are supported by DBI::ProfileData objects.
 
-=over 4
-
 =cut
 
 
@@ -76,6 +74,7 @@ our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
 
 use Carp qw(croak);
 use Symbol;
+use Fcntl qw(:flock);
 
 use DBI::Profile qw(dbi_profile_merge);
 
@@ -89,16 +88,32 @@ sub FIRST_AT  () { 5 };
 sub LAST_AT   () { 6 };
 sub PATH      () { 7 };
 
-=item $prof = DBI::ProfileData->new(File => "dbi.prof")
+=head2 $prof = DBI::ProfileData->new(File => "dbi.prof")
 
-=item $prof = DBI::ProfileData->new(File => "dbi.prof", Filter => sub { ... })
+=head2 $prof = DBI::ProfileData->new(File => "dbi.prof", Filter => sub { ... })
 
-=item $prof = DBI::ProfileData->new(Files => [ "dbi.prof.1", "dbi.prof.2" ])
+=head2 $prof = DBI::ProfileData->new(Files => [ "dbi.prof.1", "dbi.prof.2" ])
 
 Creates a a new DBI::ProfileData object.  Takes either a single file
 through the File option or a list of Files in an array ref.  If
 multiple files are specified then the header data from the first file
 is used.
+
+=head3 Files
+
+Reference to an array of file names to read.
+
+=head3 File
+
+Name of file to read. Takes precedence over C<Files>.
+
+=head3 DeleteFiles
+
+If true, the files are deleted after being read. (Actually the files are
+renamed first which, together with locking, avoids problems if other
+applications are writing to the file.)
+
+=head3 Filter
 
 The C<Filter> parameter can be used to supply a code reference that can
 manipulate the profile data as it is being read. This is most useful for
@@ -141,6 +156,7 @@ sub new {
     my $self = {                
                 Files        => [ "dbi.prof" ],
 		Filter       => undef,
+                DeleteFiles  => 0,
                 _header      => {},
                 _nodes       => [],
                 _node_lookup => {},
@@ -149,7 +165,7 @@ sub new {
                };
     bless $self, $pkg;
     
-    # File overrides Files
+    # File (singular) overrides Files (plural)
     $self->{Files} = [ $self->{File} ] if exists $self->{File};
 
     $self->_read_files();
@@ -159,18 +175,33 @@ sub new {
 # read files into _header and _nodes
 sub _read_files {
     my $self = shift;
-    my $files = $self->{Files};
+    my $files  = $self->{Files};
     my $read_header = 0;
-    
-    foreach my $filename (@$files) {
-        my $fh = gensym;
-        open($fh, $filename)
+  
+    my $fh = gensym;
+    foreach (@$files) {
+        my $filename = $_;
+        if ($self->{DeleteFiles}) {
+            my $newfilename = $filename . ".deleteme";
+            rename($filename, $newfilename)
+                or croak "Can't rename($filename, $newfilename): $!";
+            $filename = $newfilename;
+        }
+        open($fh, "<", $filename)
           or croak("Unable to read profile file '$filename': $!");
-        
-        $self->_read_header($fh, $filename, $read_header ? 0 : 1);
-        $read_header = 1;
-        $self->_read_body($fh, $filename);
-        close($fh);
+
+        # lock the file in case it's still being written to
+        # (we'll be foced to wait till the write is complete)
+        flock($fh, LOCK_SH);
+
+        if (-s $fh) {   # not empty
+            $self->_read_header($fh, $filename, $read_header ? 0 : 1);
+            $read_header = 1;
+            $self->_read_body($fh, $filename);
+        }
+        close($fh); # and release lock
+        unlink $filename or warn "Can't delete '$filename': $!"
+            if $self->{DeleteFiles};
     }
     
     # discard node_lookup now that all files are read
@@ -270,7 +301,7 @@ sub _read_body {
 
 
 
-=item $copy = $prof->clone();
+=head2 $copy = $prof->clone();
 
 Clone a profile data set creating a new object.
 
@@ -291,7 +322,7 @@ sub clone {
     return $clone;
 }
 
-=item $header = $prof->header();
+=head2 $header = $prof->header();
 
 Returns a reference to a hash of header values.  These are the key
 value pairs included in the header section of the DBI::ProfileDumper
@@ -310,7 +341,7 @@ inside the profile object.
 sub header { shift->{_header} }
 
 
-=item $nodes = $prof->nodes()
+=head2 $nodes = $prof->nodes()
 
 Returns a reference the sorted nodes array.  Each element in the array
 is a single record in the data set.  The first seven elements are the
@@ -340,7 +371,8 @@ the profile object.
 
 sub nodes { shift->{_nodes} }
 
-=item $count = $prof->count()
+
+=head2 $count = $prof->count()
 
 Returns the number of items in the profile data set.
 
@@ -348,9 +380,10 @@ Returns the number of items in the profile data set.
 
 sub count { scalar @{shift->{_nodes}} }
 
-=item $prof->sort(field => "field")
 
-=item $prof->sort(field => "field", reverse => 1)
+=head2 $prof->sort(field => "field")
+
+=head2 $prof->sort(field => "field", reverse => 1)
 
 Sorts data by the given field.  Available fields are:
 
@@ -407,11 +440,12 @@ the dbiprof frontend.
     }
 }
 
-=item $count = $prof->exclude(key2 => "disconnect")
 
-=item $count = $prof->exclude(key2 => "disconnect", case_sensitive => 1)
+=head2 $count = $prof->exclude(key2 => "disconnect")
 
-=item $count = $prof->exclude(key1 => qr/^SELECT/i)
+=head2 $count = $prof->exclude(key2 => "disconnect", case_sensitive => 1)
+
+=head2 $count = $prof->exclude(key1 => qr/^SELECT/i)
 
 Removes records from the data set that match the given string or
 regular expression.  This method modifies the data in a permanent
@@ -458,11 +492,11 @@ sub exclude {
 }
 
 
-=item $count = $prof->match(key2 => "disconnect")
+=head2 $count = $prof->match(key2 => "disconnect")
 
-=item $count = $prof->match(key2 => "disconnect", case_sensitive => 1)
+=head2 $count = $prof->match(key2 => "disconnect", case_sensitive => 1)
 
-=item $count = $prof->match(key1 => qr/^SELECT/i)
+=head2 $count = $prof->match(key1 => qr/^SELECT/i)
 
 Removes records from the data set that do not match the given string
 or regular expression.  This method modifies the data in a permanent
@@ -508,7 +542,8 @@ sub match {
     return scalar @$nodes;
 }
 
-=item $Data = $prof->Data()
+
+=head2 $Data = $prof->Data()
 
 Returns the same Data hash structure as seen in DBI::Profile.  This
 structure is not sorted.  The nodes() structure probably makes more
@@ -535,7 +570,8 @@ sub Data {
     return \%Data;
 }
 
-=item $text = $prof->format($nodes->[0])
+
+=head2 $text = $prof->format($nodes->[0])
 
 Formats a single node into a human-readable block of text.
 
@@ -585,7 +621,8 @@ END
     }
 }
 
-=item $text = $prof->report(number => 10)
+
+=head2 $text = $prof->report(number => 10)
 
 Produces a report with the given number of items.
 
@@ -649,8 +686,6 @@ END
 1;
 
 __END__
-
-=back
 
 =head1 AUTHOR
 

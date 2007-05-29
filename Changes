@@ -47,9 +47,9 @@ XXX Add a DBI_REVISION macro that drivers can use
 
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
-    Use full natural precision when saving data (was using %.6f)
+    Uses full natural precision when saving data (was using %.6f)
     Optimized flush_to_disk().
-    Lock the data file while writing.
+    Locks the data file while writing.
     Added $profile->filename method.
     Enabled filename to be a code ref for dynamic names.
   DBI::ProfileDumper::Apache changes:
@@ -58,6 +58,8 @@ XXX Add a DBI_REVISION macro that drivers can use
     Enabled DBI_PROFILE_APACHE_LOG_DIR for mod_perl 1 as well as 2.
     Added parent pid to default data file name.
   DBI::ProfileData changes:
+    Added DeleteFiles option to delete files once read.
+    Locks the data files while reading.
     Added ability to sort by Path elements.
   dbiprof changes:
     Added --dumpnodes option.

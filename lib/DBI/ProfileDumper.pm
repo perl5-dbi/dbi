@@ -226,11 +226,11 @@ sub flush_to_disk {
     if (($self->{_wrote_header}||'') eq $filename) {
         # append more data to the file
         # XXX assumes that Path hasn't changed
-        open($fh, ">>$filename") 
+        open($fh, ">>", $filename) 
           or croak("Unable to open '$filename' for $class output: $!");
     } else {
-        # create new file (overwrite existing)
-        open($fh, ">$filename") 
+        # create new file (or overwrite existing)
+        open($fh, ">", $filename) 
           or croak("Unable to open '$filename' for $class output: $!");
     }
     # lock the file (before checking size and writing the header)
