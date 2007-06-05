@@ -43,6 +43,8 @@ XXX Add a DBI_REVISION macro that drivers can use
 
   Fixed unused var compiler warning thanks to JDHEDDEN.
 
+  Corrected timeout example in docs thanks to Egmont Koblinger.
+
   Added support for !Time and !Time~N to DBI::Profile Path.
 
   DBI::ProfileDumper changes:

@@ -6731,7 +6731,7 @@ to be delivered $seconds in the future. For example:
     alarm(0);  # cancel alarm (if code ran fast)
   };
   alarm(0);    # cancel alarm (if eval failed)
-  if ( $@ eq "TIMEOUT" ) { ... }
+  if ( $@ eq "TIMEOUT\n" ) { ... }
 
 Unfortunately, as described above, this won't always work as expected,
 depending on your perl version and the underlying database code.
