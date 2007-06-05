@@ -100,7 +100,7 @@ ok my $dbh_50r1rw = dbi_connect("policy=rush;retry_limit=1", {
     ReadOnly => 0,
 } );
 between_ok precentage_exceptions(100, sub { $dbh_50r1rw->do("set foo=1") }),
-    35, 65, 'should fail ~50%, ie no retries';
+    30, 70, 'should fail ~50%, ie no retries';
 ok !$dbh_50r1rw->{go_transport}->meta->{request_retry_count},
     'transport request_retry_count should be zero or undef';
 

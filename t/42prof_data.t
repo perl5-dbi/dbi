@@ -8,12 +8,12 @@ use DBI;
 use Test::More;
 
 BEGIN {
-	if ($DBI::PurePerl) {
-		plan skip_all => 'profiling not supported for DBI::PurePerl';
-	}
-	else {
-		plan tests => 30;
-	}
+    if ($DBI::PurePerl) {
+        plan skip_all => 'profiling not supported for DBI::PurePerl';
+    }
+    else {
+        plan tests => 31;
+    }
 }
 
 BEGIN {
@@ -46,10 +46,12 @@ undef $dbh;
 ok(-s "dbi.prof", "Profile written to disk, non-zero size" );
 
 # load up
-my $prof = DBI::ProfileData->new( Filter => sub {
-    my ($path_ref, $data_ref) = @_;
-    $path_ref->[0] =~ s/set dummy=\d/set dummy=N/;
-});
+my $prof = DBI::ProfileData->new(
+    Filter => sub {
+        my ($path_ref, $data_ref) = @_;
+        $path_ref->[0] =~ s/set dummy=\d/set dummy=N/;
+    },
+);
 isa_ok( $prof, 'DBI::ProfileData' );
 cmp_ok( $prof->count, '>=', 3, 'At least 3 profile data items' );
 
@@ -119,15 +121,15 @@ $dbh->disconnect;
 undef $dbh;
 
 # load dbi.prof
-$prof = DBI::ProfileData->new();
+$prof = DBI::ProfileData->new( DeleteFiles => 1 );
 isa_ok( $prof, 'DBI::ProfileData' );
+
+ok(not(-e "dbi.prof"), "file should be deleted when DeleteFiles set" );
+
 
 # make sure the keys didn't get garbled
 $Data = $prof->Data;
 ok(exists $Data->{$sql2});
 ok(exists $Data->{$sql3});
-
-# cleanup
-# unlink("dbi.prof"); # now done by 'make clean'
 
 1;

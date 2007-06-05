@@ -46,6 +46,7 @@ XXX Add a DBI_REVISION macro that drivers can use
   Corrected timeout example in docs thanks to Egmont Koblinger.
 
   Added support for !Time and !Time~N to DBI::Profile Path.
+  Added extra trace info to connect_cached thanks to Walery Studennikov.
 
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
@@ -64,7 +65,7 @@ XXX Add a DBI_REVISION macro that drivers can use
     Locks the data files while reading.
     Added ability to sort by Path elements.
   dbiprof changes:
-    Added --dumpnodes option.
+    Added --dumpnodes and --delete options.
   Added/updated docs for both DBI::ProfileDumper && ::Apache.
 
 =head2 Changes in DBI 1.56 (svn rev 9561),  13th May 2007

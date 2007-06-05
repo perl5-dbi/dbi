@@ -92,12 +92,13 @@ in any DBI handle:
   $profile->flush_to_disk()
 
 Flushes all collected profile data to disk and empties the Data hash.  Returns
-the filename writen to.  If there's no actual profile data then the file is not
-written and flush_to_disk() returns undef.
+the filename writen to.  If no profile data has been collected then the file is
+not written and flush_to_disk() returns undef.
 
 The file is locked while it's being written. A process 'consuming' the files
-while they're being written to, should lock the file before reading and then
-truncate() it before releasing the lock.
+while they're being written to, should rename the file first, then lock it,
+then read it, then close and delete it. The C<DeleteFiles> option to
+L<DBI::ProfileData> does the right thing.
 
 This method may be called multiple times during a program run.
 
@@ -109,7 +110,6 @@ Clears the Data hash without writing to disk.
 
 =head2 filename
 
-  $profile->empty($filename)
   $filename = $profile->filename();
 
 Get or set the filename.

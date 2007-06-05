@@ -1426,9 +1426,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 	my @attr_keys = $attr ? sort keys %$attr : ();
 	my $key = do { local $^W; # silence undef warnings
-	    join "~~", $dsn, $user||'', $auth||'', $attr ? (@attr_keys,@{$attr}{@attr_keys}) : ()
+	    join "~~", $dsn, $user, $auth, $attr ? (@attr_keys,@{$attr}{@attr_keys}) : ()
 	};
 	my $dbh = $cache->{$key};
+        $drh->trace_msg(sprintf("    connect_cached: key '$key', cached dbh $dbh\n", DBI::neat($key), DBI::neat($dbh)))
+            if $DBI::dbi_debug >= 4;
         my $cb = $attr->{Callbacks}; # take care not to autovivify
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
             # If the caller has provided a callback then call it

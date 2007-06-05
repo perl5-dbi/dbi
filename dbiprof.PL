@@ -38,7 +38,7 @@ sub usage {
     print <<EOS;
 dbiprof [options] [files]
 
-Merges DBI profile data contain in files and prints a summary.
+Reads and merges DBI profile data from files and prints a summary.
 
 files: defaults to $filename
 
@@ -50,6 +50,7 @@ options:
     -match=K=V       for filtering, see docs
     -exclude=K=V     for filtering, see docs
     -case_sensitive  for -match and -exclude
+    -delete          rename files before reading then delete afterwards
     -version         print version number and exit
     -help            print this help
 
@@ -62,8 +63,12 @@ my @files = @ARGV ? @ARGV : ('dbi.prof');
 
 
 # instantiate ProfileData object
-my $prof;
-eval { $prof = DBI::ProfileData->new(Files => \@files) };
+my $prof = eval {
+    $prof = DBI::ProfileData->new(
+        Files => \@files,
+        DeleteFiles => $opt_delete,
+    );
+};
 die "Unable to load profile data: $@\n" if $@;
 
 if (%match) { # handle matches
@@ -225,6 +230,11 @@ this can be changed with the --case-sensitive option.
 
 Using this option causes --match and --exclude to work
 case-sensitively.  Defaults to off.
+
+=item --delete
+
+Sets the C<DeleteFiles> option to L<DBI::ProfileData> which causes the
+files to be deleted after reading. See L<DBI::ProfileData> for more details.
 
 =item --dumpnodes
 
