@@ -192,7 +192,6 @@ sub _read_files {
             # will clobber an existing $newfilename
             rename($filename, $newfilename)
                 or croak "Can't rename($filename, $newfilename): $!";
-            warn 42;
             $filename = $newfilename;
         }
 

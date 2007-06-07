@@ -43,12 +43,16 @@ XXX Add a DBI_REVISION macro that drivers can use
 
   Fixed XS versions of select*_*() methods to call execute()
     fetch() etc., with inner handle instead of outer.
+  Fixed execute_for_fetch() to not cache errstr values
+    thanks to Bart Degryse.
   Fixed unused var compiler warning thanks to JDHEDDEN.
+  Fixed t/86gofer_fail tests to be less likely to fail falsely.
 
   Corrected timeout example in docs thanks to Egmont Koblinger.
 
   Added support for !Time and !Time~N to DBI::Profile Path.
   Added extra trace info to connect_cached thanks to Walery Studennikov.
+  Added non-random (deterministic) mode to DBI_GOFER_RANDOM mechanism.
 
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.

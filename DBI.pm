@@ -1921,7 +1921,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
 
         my $rc_total = 0;
-	my ($err_count, %errstr_cache);
+	my $err_count;
 	while ( my $tuple = &$fetch_tuple_sub() ) {
 	    if ( my $rc = $sth->execute(@$tuple) ) {
 		push @$tuple_status, $rc;
@@ -1929,10 +1929,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    }
 	    else {
 		$err_count++;
-		my $err = $sth->err;
-		push @$tuple_status, [ $err, $errstr_cache{$err} ||= $sth->errstr, $sth->state ];
+		push @$tuple_status, [ $sth->err, $sth->errstr, $sth->state ];
                 # XXX drivers implementing execute_for_fetch could opt to "last;" here
-                # if the know the error code means no further executes will work.
+                # if they know the error code means no further executes will work.
 	    }
 	}
         my $tuples = @$tuple_status;
