@@ -111,10 +111,10 @@ print "Testing random delay\n";
 $ENV{DBI_GOFER_RANDOM} = "delay0.1=51%,do"; # odd percentage to force warn()s
 @warns = ();
 ok my $dbh = dbi_connect("policy=rush;retry_limit=0");
-is precentage_exceptions(10, sub { $dbh->do("set foo=1") }),
+is precentage_exceptions(20, sub { $dbh->do("set foo=1") }),
     0, "should not fail for DBI_GOFER_RANDOM='$ENV{DBI_GOFER_RANDOM}'";
 my $delays = grep { m/delaying execution/ } @warns;
-between_ok $delays, 2, 9, 'should be delayed around 5 times';
+between_ok $delays, 2, 19, 'should be delayed around 5 times';
 
 exit 0;
 

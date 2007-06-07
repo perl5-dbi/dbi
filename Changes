@@ -41,6 +41,8 @@ and prepends them to any error message.
 
 XXX Add a DBI_REVISION macro that drivers can use
 
+  Fixed XS versions of select*_*() methods to call execute()
+    fetch() etc., with inner handle instead of outer.
   Fixed unused var compiler warning thanks to JDHEDDEN.
 
   Corrected timeout example in docs thanks to Egmont Koblinger.

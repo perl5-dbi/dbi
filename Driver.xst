@@ -124,6 +124,8 @@ selectall_arrayref(...)
         SPAGAIN; SP -= items; /* because stack might have been realloc'd */
 	if (!SvROK(sth))
 	    XSRETURN_UNDEF;
+        /* switch to inner handle */
+        sth = mg_find(SvRV(sth),'P')->mg_obj;
     }
     imp_sth = (imp_sth_t*)(DBIh_COM(sth));
     /* --- bind_param --- */
@@ -162,6 +164,8 @@ selectrow_arrayref(...)
 	if (!SvROK(sth)) {
 	    if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
 	}
+        /* switch to inner handle */
+        sth = mg_find(SvRV(sth),'P')->mg_obj;
     }
     imp_sth = (imp_sth_t*)(DBIh_COM(sth));
     /* --- bind_param --- */
