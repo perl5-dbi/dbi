@@ -84,6 +84,8 @@ and prepends them to any error message.
   Changed tests to workaround Math::BigInt broken versions.
   Changed dbi_profile_merge() to dbi_profile_merge_nodes()
     old name still works as an alias for the new one.
+  Removed old DBI internal sanity check that's no longer valid
+    causing "panic: DESTROY (dbih_clearcom)" when tracing enabled
 
   Added DBI_GOFER_RANDOM env var that can be use to trigger random
     failures and delays when executing gofer requests. Designed to help
