@@ -37,9 +37,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.57 (svn rev XXX),  XX May 2007
-
-XXX Add a DBI_REVISION macro that drivers can use
+=head2 Changes in DBI 1.57 (svn rev XXX),  XX June 2007
 
   Fixed XS versions of select*_*() methods to call execute()
     fetch() etc., with inner handle instead of outer.
@@ -53,6 +51,7 @@ XXX Add a DBI_REVISION macro that drivers can use
   Added support for !Time and !Time~N to DBI::Profile Path.
   Added extra trace info to connect_cached thanks to Walery Studennikov.
   Added non-random (deterministic) mode to DBI_GOFER_RANDOM mechanism.
+  Added DBIXS_REVISION macro that drivers can use.
 
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.

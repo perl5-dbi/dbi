@@ -18,6 +18,8 @@ dbilogstrip.PL                  Utility to normalise DBI logs so they can be com
 dbiprof.PL
 dbiproxy.PL			Frontend for DBI::ProxyServer
 dbivport.h			DBI version portability macros (for drivers to copy)
+dbixs_rev.h			Defines DBIXS_REVISION macro holding DBIXS.h subversion revision number
+dbixs_rev.pl			Utility to write dbixs_rev.h
 ex/perl_dbi_nulls_test.pl	A test script for forms of IS NULL qualification in SQL
 ex/profile.pl                   A test script for DBI::Profile
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
@@ -94,3 +96,4 @@ t/86gofer_fail.t
 t/pod.t
 test.pl			Assorted informal tests, including tests for memory leaks
 typemap
+META.yml                                 Module meta-data (added by MakeMaker)

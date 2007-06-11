@@ -297,6 +297,9 @@ sub post_constants {
     my $xst = main::dbd_postamble();
     $xst =~ s/\$\(BASEEXT\)/Perl/g;
     $xst .= '
+dbixs_rev.h: DBIXS.h Driver_xst.h dbipport.h dbivport.h dbixs_rev.pl
+	$(PERL) dbixs_rev.pl
+
 DBI.c: Perl$(OBJ_EXT)
 
 # make Changes file available as installed pod docs "perldoc DBI::Changes"
