@@ -53,12 +53,13 @@ and prepends them to any error message.
   Added non-random (deterministic) mode to DBI_GOFER_RANDOM mechanism.
   Added DBIXS_REVISION macro that drivers can use.
 
+  DBI::Profile changes:
+    Don't profile DESTROY during global destruction.
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
     Uses full natural precision when saving data (was using %.6f)
     Optimized flush_to_disk().
     Locks the data file while writing.
-    Added $profile->filename method.
     Enabled filename to be a code ref for dynamic names.
   DBI::ProfileDumper::Apache changes:
     Added Quiet=>1 to avoid write to STDERR in flush_to_disk().
