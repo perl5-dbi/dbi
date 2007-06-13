@@ -37,7 +37,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.57 (svn rev XXX),  XX June 2007
+=head2 Changes in DBI 1.57 (svn rev 9639),  13th June 2007
 
   Fixed XS versions of select*_*() methods to call execute()
     fetch() etc., with inner handle instead of outer.
