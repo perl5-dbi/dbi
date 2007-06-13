@@ -57,7 +57,7 @@ and prepends them to any error message.
 
   DBI::Profile changes:
     Don't profile DESTROY during global destruction.
-    Added as_node_path_list() method.
+    Added as_node_path_list() and as_text() methods and tests.
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
     Uses full natural precision when saving data (was using %.6f)

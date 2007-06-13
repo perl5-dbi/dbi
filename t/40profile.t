@@ -323,7 +323,9 @@ sub run_test1 {
     $sth->fetchrow_hashref;
     $sth->finish;
     undef $sth; # DESTROY
-    return sanitize_profile_data_nodes($dbh->{Profile}{Data});
+    my $data = sanitize_profile_data_nodes($dbh->{Profile}{Data}, 1);
+    return ($data, $dbh) if wantarray;
+    return $data;
 }
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'bar' }, 'baz' ] });
@@ -368,6 +370,24 @@ ok(-s $LOG_FILE, 'output should go to log file');
 
 # -----------------------------------------------------------------------------------
 
+print "testing as_text\n";
+
+($tmp, $dbh) = run_test1( { Path => [ 'foo', '!MethodName', 'baz' ] });
+my $as_text = $dbh->{Profile}->as_text();
+$as_text =~ s/\.00+/.0/g;
+#warn "[$as_text]";
+is $as_text, q{foo > DESTROY > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > FETCH > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > STORE > baz: 0.0s / 5 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > connected > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > execute > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > fetchrow_hashref > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > finish > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+foo > prepare > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
+};
+
+# -----------------------------------------------------------------------------------
+
 print "dbi_profile_merge_nodes\n";
 my $total_time = dbi_profile_merge_nodes(
     my $totals=[],
@@ -393,8 +413,9 @@ exit 0;
 
 sub sanitize_tree {
     my $data = shift;
+    my $skip_clone = shift;
     return $data unless ref $data;
-    $data = dclone($data);
+    $data = dclone($data) unless $skip_clone;
     sanitize_profile_data_nodes($data->{Data}) if $data->{Data};
     return $data;
 }

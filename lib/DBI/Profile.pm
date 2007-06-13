@@ -479,6 +479,45 @@ The $path argument can be used to specify a list of path elements that will be
 added to each element of the returned list. If not specified it defaults to a a
 ref to an empty array.
 
+=head2 as_text
+
+  @txt = $dbh->{Profile}->as_text();
+  $txt = $dbh->{Profile}->as_text({
+      node      => undef,
+      path      => [],
+      separator => " > ",
+      format    => '%1$s: %11$fs / %10$d = %2$fs avg (first %12$fs, min %13$fs, max %14$fs)'."\n";
+      sortsub   => sub { ... },
+  );
+
+Returns the collected data ($dbh->{Profile}{Data}) reformatted into a list of formatted strings.
+In scalar context the list is returned as a single contatenated string.
+
+A hashref can be used to pass in arguments, the default values are shown in the example above.
+
+The C<node> and <path> arguments are passed to as_node_path_list().
+
+The C<separator> argument is used to join the elemets of the path for each leaf node.
+
+The C<sortsub> argument is used to pass in a ref to a sub that will order the list.
+The subroutine will be passed a reference to the array returned by as_node_path_list().
+
+The C<format> argument is a C<sprintf> format string that specifies the format
+to use for each leaf node.  It uses the explicit format parameter index
+mechanism to specify which of the arguments should appear where in the string.
+The arguments to sprintf are:
+
+     1:  path to node, joined with the separator
+     2:  average duration (total/count)
+         (3 thru 9 are currently unused)
+    10:  count
+    11:  total duration
+    12:  first_duration
+    13:  smallest duration
+    14:  largest duration
+    15:  time of first call
+    16:  time of first call
+
 =head1 CUSTOM DATA MANIPULATION
 
 Recall that C<$h->{Profile}->{Data}> is a reference to the collected data.
@@ -741,6 +780,36 @@ sub as_node_path_list {
     }
     return [ $node, @$path ];
 }
+
+
+sub as_text {
+    my ($self, $args_ref) = @_;
+    my $separator = $args_ref->{separator} || " > ";
+    my $format    = $args_ref->{format}
+        || '%1$s: %11$fs / %10$d = %2$fs avg (first %12$fs, min %13$fs, max %14$fs)'."\n";
+    
+    my @node_path_list = $self->as_node_path_list(undef, $args_ref->{path});
+
+    $args_ref->{sortsub}->(\@node_path_list) if $args_ref->{sortsub};
+
+    my $eval = "qr/".quotemeta($separator)."/";
+    my $separator_re = eval($eval) || quotemeta($separator);
+    #warn "[$eval] = [$separator_re]";
+    my @text;
+    for my $node_path (@node_path_list) {
+        my ($node, @path) = @$node_path;
+        s/[\r\n]+/ /g for @path;
+        s/$separator_re/ /g for @path;
+        my $path_str = join($separator, @path);
+        push @text, sprintf $format,
+            $path_str,                                # 1=path
+            ($node->[0] ? $node->[4]/$node->[0] : 0), # 2=avg
+            (undef) x 7,                              # spare slots
+            @$node; # 10=count, 11=dur, 12=first_dur, 13=min, 14=max, 15=first_called, 16=last_called
+    }       
+    return @text if wantarray;
+    return join "", @text;
+}   
 
 
 sub format {
