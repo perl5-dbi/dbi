@@ -22,7 +22,7 @@ BEGIN {
     # tie methods (STORE/FETCH etc) get called different number of times
     plan skip_all => "test results assume perl >= 5.8.2"
         if $] <= 5.008001;
-    plan tests => 52;
+    plan tests => 54;
 }
 
 $Data::Dumper::Indent = 1;
@@ -214,22 +214,38 @@ is_deeply $tmp, bless {
         },
 	'usrnam' => {
 	    '' => {
-		    'foo' => { },
+                'foo' => { },
 	    },
 	    'select name from .' => {
-		    'foo' => {
-			'execute' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
-		    },
-		    'bar' => {
-			'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
-			'finish' => [ 1, 0, 0, 0, 0, 0, 0 ],
-		    },
+                'foo' => {
+                    'execute' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                    'fetchrow_hashref' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                    'prepare' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                },
+                'bar' => {
+                    'DESTROY' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                    'finish' => [ 1, 0, 0, 0, 0, 0, 0 ],
+                },
 	    },
 	},
     },
 } => 'DBI::Profile';
+
+$tmp = [ $dbh->{Profile}->as_node_path_list() ];
+is @$tmp, 9, 'should have 9 nodes';
+sanitize_profile_data_nodes($_->[0]) for @$tmp;
+#warn Dumper($dbh->{Profile}->{Data});
+is_deeply $tmp, [
+  [ [ 3, 0, 0, 0, 0, 0, 0 ], '', '', 'foo', 'STORE' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'FETCH' ],
+  [ [ 2, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'STORE' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'connected' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'bar', 'DESTROY' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'bar', 'finish' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'foo', 'execute' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'foo', 'fetchrow_hashref' ],
+  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'foo', 'prepare' ]
+];
 
 
 print "testing '!File', '!Caller' and their variants in Path\n";

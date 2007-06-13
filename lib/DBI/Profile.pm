@@ -440,6 +440,45 @@ then by default the statement handles created from it all contribute
 to the same merged profile data tree.
 
 
+=head1 PROFILE OBJECT METHODS
+
+=head2 format
+
+See L</REPORTING>.
+
+=head2 as_node_path_list
+
+  @ary = $dbh->{Profile}->as_node_path_list();
+  @ary = $dbh->{Profile}->as_node_path_list($node, $path);
+
+Returns the collected data ($dbh->{Profile}{Data}) restructured into a list of
+array refs, one for each leaf node in the Data tree. This 'flat' structure is
+often much simpler for applications to work with.
+
+The first element of each array ref is a reference to the leaf node.
+The remaining elements are the 'path' through the data tree to that node.
+
+For example, given a data tree like this:
+
+    {key1a}{key2a}[node1]
+    {key1a}{key2b}[node2]
+    {key1b}{key2a}{key3a}[node3]
+
+The as_node_path_list() method  will return this list:
+
+    [ [node1], 'key1a', 'key2a' ]
+    [ [node2], 'key1a', 'key2b' ]
+    [ [node3], 'key1b', 'key2a', 'key3a' ]
+
+The nodes are ordered by key, depth-first.
+
+The $node argument can be used to focus on a sub-tree.
+If not specified it defaults to $dbh->{Profile}{Data}.
+
+The $path argument can be used to specify a list of path elements that will be
+added to each element of the returned list. If not specified it defaults to a a
+ref to an empty array.
+
 =head1 CUSTOM DATA MANIPULATION
 
 Recall that C<$h->{Profile}->{Data}> is a reference to the collected data.
@@ -676,6 +715,31 @@ sub _auto_new {
     $package ||= $class;
 
     return $package->new(Path => \@Path, @args);
+}
+
+
+sub as_node_path_list {
+    my ($self, $node, $path) = @_;
+    # convert the tree into an array of arrays
+    # from 
+    #   {key1a}{key2a}[node1]
+    #   {key1a}{key2b}[node2]
+    #   {key1b}{key2a}{key3a}[node3]
+    # to
+    #   [ [node1], 'key1a', 'key2a' ]
+    #   [ [node2], 'key1a', 'key2b' ]
+    #   [ [node3], 'key1b', 'key2a', 'key3a' ]
+
+    $node ||= $self->{Data} or return;
+    $path ||= [];
+    if (ref $node eq 'HASH') {    # recurse
+        $path = [ @$path, undef ];
+        return map {
+            $path->[-1] = $_;
+            ($node->{$_}) ? $self->as_node_path_list($node->{$_}, $path) : ()
+        } sort keys %$node;
+    }
+    return [ $node, @$path ];
 }
 
 

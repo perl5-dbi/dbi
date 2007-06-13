@@ -47,6 +47,8 @@ and prepends them to any error message.
   Fixed t/86gofer_fail tests to be less likely to fail falsely.
 
   Corrected timeout example in docs thanks to Egmont Koblinger.
+  Changed t/01basic.t to warn instead of failing when it detects
+    a problem with Math::BigInt (some recent versions have been buggy).
 
   Added support for !Time and !Time~N to DBI::Profile Path.
   Added extra trace info to connect_cached thanks to Walery Studennikov.
@@ -55,6 +57,7 @@ and prepends them to any error message.
 
   DBI::Profile changes:
     Don't profile DESTROY during global destruction.
+    Added as_node_path_list() method.
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
     Uses full natural precision when saving data (was using %.6f)
