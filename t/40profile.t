@@ -22,7 +22,7 @@ BEGIN {
     # tie methods (STORE/FETCH etc) get called different number of times
     plan skip_all => "test results assume perl >= 5.8.2"
         if $] <= 5.008001;
-    plan tests => 55;
+    plan tests => 58;
 }
 
 $Data::Dumper::Indent = 1;
@@ -97,13 +97,19 @@ print "dbi_profile\n";
 my $t1 = DBI::dbi_time() . ""; 
 my $dummy_statement = "Hi mom";
 my $dummy_methname  = "my_method_name";
-dbi_profile($dbh, $dummy_statement, $dummy_methname, $t1, $t1 + 1);
+my $leaf = dbi_profile($dbh, $dummy_statement, $dummy_methname, $t1, $t1 + 1);
 print Dumper($dbh->{Profile});
 cmp_ok(keys %{ $dbh->{Profile}{Data} }, '==', 2);
 cmp_ok(keys %{ $dbh->{Profile}{Data}{$dummy_statement} }, '==', 1);
-ok(        ref $dbh->{Profile}{Data}{$dummy_statement}{$dummy_methname}    );
+is(        ref($dbh->{Profile}{Data}{$dummy_statement}{$dummy_methname}), 'ARRAY');
+
+ok $leaf, "should return ref to leaf node";
+is ref $leaf, 'ARRAY', "should return ref to leaf node";
 
 my $mine = $dbh->{Profile}{Data}{$dummy_statement}{$dummy_methname};
+
+is $leaf, $mine, "should return ref to correct leaf node";
+
 print "@$mine\n";
 is_deeply $mine, [ 1, 1, 1, 1, 1, $t1, $t1 ];
 

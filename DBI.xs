@@ -2295,7 +2295,7 @@ _profile_next_node(SV *node, const char *name)
 }
 
 
-static void
+static SV*
 dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t2)
 {
 #define DBIprof_MAX_PATH_ELEM	100
@@ -2324,10 +2324,10 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     const int parent_call_depth = DBIc_PARENT_COM(imp_xxh) ? DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) : 0;
     /* Only count calls originating from the application code	*/
     if (call_depth > 1 || parent_call_depth > 0)
-	return;
+	return &sv_undef;
 
     if (!DBIc_has(imp_xxh, DBIcf_Profile))
-	return;
+	return &sv_undef;
 
     method_pv = (SvTYPE(method)==SVt_PVCV)
         ? GvNAME(CvGV(method))
@@ -2335,7 +2335,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 
     /* we don't profile DESTROY during global destruction */
     if (dirty && instr(method_pv, "DESTROY"))
-        return;
+        return &sv_undef;
 
     h_hv = (HV*)SvRV(dbih_inner(aTHX_ h, "dbi_profile"));
 
@@ -2346,7 +2346,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 	DBIc_set(imp_xxh, DBIcf_Profile, 0); /* disable */
 	if (!dirty)
 	    warn("Profile attribute isn't a hash ref (%s,%ld)", neatsvpv(profile,0), (long)SvTYPE(profile));
-	return;
+	return &sv_undef;
     }
 
     /* statement_sv: undef = use $h->{Statement}, "" (&sv_no) = use empty string */
@@ -2404,7 +2404,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 }
                 PUTBACK;
                 if (items == -2) /* this profile data was vetoed */
-                    return;
+                    return &sv_undef;
 	    }
             else if (SvROK(pathsv)) {
                 /* only meant for refs to scalars currently */
@@ -2476,10 +2476,10 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 			imp_dbh_t *imp_dbh = (DBIc_TYPE(imp_xxh) <= DBIt_DB) ? (imp_dbh_t*)imp_xxh : (imp_dbh_t*)DBIc_PARENT_COM(imp_xxh);
 			dbh_outer_hv = DBIc_MY_H(imp_dbh);
 			if (SvTYPE(dbh_outer_hv) != SVt_PVHV)
-			    return;	/* presumably global destruction - bail */
+			    return &sv_undef;	/* presumably global destruction - bail */
 			dbh_inner_hv = (HV*)SvRV(dbih_inner(aTHX_ (SV*)dbh_outer_hv, "profile"));
 			if (SvTYPE(dbh_inner_hv) != SVt_PVHV)
-			    return;	/* presumably global destruction - bail */
+			    return &sv_undef;	/* presumably global destruction - bail */
 		    }
 		    /* fetch from inner first, then outer if key doesn't exist */
 		    /* (yes, this is an evil premature optimization) */
@@ -2514,11 +2514,9 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     }
 
 
-    /* this walk-down-the-tree code should be merged into the loop above */
-    tmp = dest_node;
-    if (!SvOK(tmp)) {
+    if (!SvOK(dest_node)) {
 	av = newAV();
-	sv_setsv(tmp, newRV_noinc((SV*)av));
+	sv_setsv(dest_node, newRV_noinc((SV*)av));
 	av_store(av, DBIprof_COUNT,		newSViv(1));
 	av_store(av, DBIprof_TOTAL_TIME,	newSVnv(ti));
 	av_store(av, DBIprof_FIRST_TIME,	newSVnv(ti));
@@ -2528,6 +2526,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 	av_store(av, DBIprof_LAST_CALLED,	newSVnv(t1));
     }
     else {
+        tmp = dest_node;
 	if (SvROK(tmp))
 	    tmp = SvRV(tmp);
 	if (SvTYPE(tmp) != SVt_PVAV)
@@ -2543,8 +2542,9 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 	if (ti > SvNV(tmp)) sv_setnv(tmp, ti);
 	sv_setnv( *av_fetch(av, DBIprof_LAST_CALLED, 1), t1);
     }
-    return;
+    return dest_node; /* use with caution - copy first, ie sv_mortalcopy() */
 }
+
 
 static void
 dbi_profile_merge_nodes(SV *dest, SV *increment)
@@ -4159,7 +4159,7 @@ NV
 dbi_time()
 
 
-SV *
+void
 dbi_profile(h, statement, method, t1, t2)
     SV *h
     SV *statement
@@ -4168,14 +4168,15 @@ dbi_profile(h, statement, method, t1, t2)
     NV t2
     CODE:
     D_imp_xxh(h);
-    (void)cv;
-    dbi_profile(h, imp_xxh, statement,
+    SV *leaf = dbi_profile(h, imp_xxh, statement,
 	SvROK(method) ? SvRV(method) : method,
 	t1, t2
     );
-    RETVAL = &sv_undef;
-    OUTPUT:
-    RETVAL
+    (void)cv;
+    if (GIMME_V == G_VOID)
+        ST(0) = &sv_undef;  /* skip sv_mortalcopy if not needed */
+    else
+        ST(0) = sv_mortalcopy(leaf);
 
 
 SV *

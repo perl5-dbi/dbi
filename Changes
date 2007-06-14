@@ -56,6 +56,7 @@ and prepends them to any error message.
   Added DBIXS_REVISION macro that drivers can use.
 
   DBI::Profile changes:
+    dbi_profile() now returns ref to relevant leaf node.
     Don't profile DESTROY during global destruction.
     Added as_node_path_list() and as_text() methods and tests.
   DBI::ProfileDumper changes:
