@@ -22,7 +22,7 @@ BEGIN {
     # tie methods (STORE/FETCH etc) get called different number of times
     plan skip_all => "test results assume perl >= 5.8.2"
         if $] <= 5.008001;
-    plan tests => 54;
+    plan tests => 55;
 }
 
 $Data::Dumper::Indent = 1;
