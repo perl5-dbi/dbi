@@ -757,6 +757,21 @@ sub _auto_new {
 }
 
 
+sub empty {             # empty out profile data
+    my $self = shift;
+    DBI->trace_msg("profile data discarded\n",0) if $self->{Trace};
+    $self->{Data} = undef;
+}   
+
+sub filename {          # baseclass method, see DBI::ProfileDumper
+    return undef;
+}
+
+sub flush_to_disk {     # baseclass method, see DBI::ProfileDumper
+    return undef;
+}
+
+
 sub as_node_path_list {
     my ($self, $node, $path) = @_;
     # convert the tree into an array of arrays

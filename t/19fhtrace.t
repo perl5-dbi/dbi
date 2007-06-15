@@ -106,10 +106,12 @@ sub CLOSE {
 
 package MyFancyLogger;
 
+use Symbol qw(gensym);
+
 sub new
 {
 	my $self = {};
-	my $fh;
+	my $fh = gensym();
 	open $fh, '>', 'fancylog.log';
 	$self->{_fh} = $fh;
 	$self->{_buf} = '';

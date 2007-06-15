@@ -3234,8 +3234,27 @@ The parse_trace_flag() method was added in DBI 1.42.
   $hash_ref = $h->private_attribute_info();
 
 Returns a reference to a hash whose keys are the names of driver-private
-attributes available for that kind of handle (driver, database, statement).
-(The values should be undef. Meanings may be assigned to particular values in future.)
+attributes available for the kind of handle (driver, database, statement)
+that the method was called on.
+
+For example, the return value when called with a DBD::Sybase $dbh could look like this:
+
+  {
+      syb_dynamic_supported => undef,
+      syb_oc_version => undef,
+      syb_server_version => undef,
+      syb_server_version_string => undef,
+  }
+
+and when called with a DBD::Sybase $sth they could look like this:
+
+  {
+      syb_types => undef,
+      syb_proc_status => undef,
+      syb_result_type => undef,
+  }
+
+The values should be undef. Meanings may be assigned to particular values in future.
 
 =head3 C<swap_inner_handle>
 

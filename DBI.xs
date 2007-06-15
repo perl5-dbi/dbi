@@ -2344,7 +2344,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 	mg_get(profile); /* FETCH */
     if (!profile || !SvROK(profile)) {
 	DBIc_set(imp_xxh, DBIcf_Profile, 0); /* disable */
-	if (!dirty)
+	if (SvOK(profile) && !dirty)
 	    warn("Profile attribute isn't a hash ref (%s,%ld)", neatsvpv(profile,0), (long)SvTYPE(profile));
 	return &sv_undef;
     }
@@ -4396,7 +4396,7 @@ take_imp_data(h)
     dbih_getcom2(aTHX_ h, &mg);	/* get the MAGIC so we can change it	*/
     imp_xxh_sv = mg->mg_obj;	/* take local copy of the imp_data pointer */
     mg->mg_obj = Nullsv;	/* sever the link from handle to imp_xxh */
-    if (DBIc_TRACE_LEVEL(imp_xxh))
+    if (DBIc_TRACE_LEVEL(imp_xxh) >= 9)
 	sv_dump(imp_xxh_sv);
     /* --- housekeeping */
     DBIc_ACTIVE_off(imp_xxh);	/* silence warning from dbih_clearcom */

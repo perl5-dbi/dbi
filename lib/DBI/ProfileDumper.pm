@@ -256,14 +256,6 @@ sub flush_to_disk {
 }
 
 
-# empty out profile data
-sub empty {
-    my $self = shift;
-    DBI->trace_msg("profile data discarded\n",0) if $self->{Trace};
-    $self->{Data} = undef;
-}
-
-
 # write header to a filehandle
 sub write_header {
     my ($self, $fh) = @_;

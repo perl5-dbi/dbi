@@ -54,6 +54,7 @@ and prepends them to any error message.
   Added extra trace info to connect_cached thanks to Walery Studennikov.
   Added non-random (deterministic) mode to DBI_GOFER_RANDOM mechanism.
   Added DBIXS_REVISION macro that drivers can use.
+  Added more docs for private_attribute_info() method.
 
   DBI::Profile changes:
     dbi_profile() now returns ref to relevant leaf node.
