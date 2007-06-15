@@ -6,7 +6,7 @@ use strict;
 
 
 use DBI;
-require Config;
+use Config;
 require VMS::Filespec if $^O eq 'VMS';
 require Cwd;
 
@@ -90,7 +90,7 @@ else {
     # local $ENV{PERLDB_OPTS} = "AutoTrace NonStop=1 LineInfo=dbiproxy.dbg";
 
     # pass our @INC to children (e.g., so -Mblib passes through)
-    $ENV{PERL5LIB} = join(':', @INC);
+    $ENV{PERL5LIB} = join($Config{path_sep}, @INC);
 
     my $dbi_trace_level = DBI->trace(0);
     my @child_args = (

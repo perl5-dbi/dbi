@@ -28,7 +28,7 @@ You can also activate DBI::ProfileDumper from within your code:
   $dbh->{Profile} = "!Statement/DBI::ProfileDumper/File:dbi.prof";
 
   # another way to say it
-  use DBI::Profile;
+  use DBI::ProfileDumper;
   $dbh->{Profile} = DBI::ProfileDumper->new(
                         Path => [ '!Statement' ]
                         File => 'dbi.prof' );
@@ -61,7 +61,7 @@ This will write out profile data by statement into a file called
 F<dbi.prof>.  If you want to modify either of these properties, you
 can construct the DBI::ProfileDumper object yourself:
 
-  use DBI::Profile;
+  use DBI::ProfileDumper;
   $dbh->{Profile} = DBI::ProfileDumper->new(
       Path => [ '!Statement' ],
       File => 'dbi.prof'
@@ -175,9 +175,9 @@ it under the same terms as Perl 5 itself.
 # inherit from DBI::Profile
 use DBI::Profile;
 
-our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
-
 our @ISA = ("DBI::Profile");
+
+our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
 
 use Carp qw(croak);
 use Fcntl qw(:flock);

@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Cwd;
+use Config;
 use Data::Dumper;
 use Test::More;
 
@@ -52,7 +53,7 @@ if ($ENV{DBI_AUTOPROXY}) {
 }
 
 # ensure subprocess (for pipeone and stream transport) will use the same modules as us, ie ./blib
-local $ENV{PERL5LIB} = join ":", @INC;
+local $ENV{PERL5LIB} = join $Config{path_sep}, @INC;
 
 
 my $getcwd = getcwd();
