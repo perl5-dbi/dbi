@@ -414,7 +414,7 @@ struct dbistate_st {
     AV        * (*get_fbav)	_((imp_sth_t *imp_sth));
     SV        * (*make_fdsv)	_((SV *sth, const char *imp_class, STRLEN imp_size, const char *col_name));
     int         (*bind_as_num)	_((int sql_type, int p, int s, int *t, void *v));
-    int         (*hash)		_((const char *string, long i));
+    I32         (*hash)		_((const char *string, long i));
     SV        * (*preparse)	_((SV *sth, char *statement, IV ps_return, IV ps_accept, void *foo));
 
     SV *neatsvpvlen;		/* only show dbgpvlen chars when debugging pv's	*/

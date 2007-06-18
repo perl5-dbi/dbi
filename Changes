@@ -39,6 +39,11 @@ and prepends them to any error message.
 
 =head2 Changes in DBI 1.57 (svn rev 9639),  13th June 2007
 
+  Note: this release includes a change to the DBI::hash() function which will
+  now produce different values than before *if* your perl was built with 64-bit
+  'int' type (i.e. "perl -V:intsize" says intsize='4').  It's relatively rare
+  for perl to be configured that way, even on 64-bit systems.
+
   Fixed XS versions of select*_*() methods to call execute()
     fetch() etc., with inner handle instead of outer.
   Fixed execute_for_fetch() to not cache errstr values
@@ -46,11 +51,13 @@ and prepends them to any error message.
   Fixed unused var compiler warning thanks to JDHEDDEN.
   Fixed t/86gofer_fail tests to be less likely to fail falsely.
 
+  Changed DBI::hash to return 'I32' type instead of 'int' so results are
+    portable/consistent regardless of size of the int type.
   Corrected timeout example in docs thanks to Egmont Koblinger.
   Changed t/01basic.t to warn instead of failing when it detects
-    a problem with Math::BigInt (some recent versions have been buggy).
+    a problem with Math::BigInt (some recent versions had problems).
 
-  Added support for !Time and !Time~N to DBI::Profile Path.
+  Added support for !Time and !Time~N to DBI::Profile Path. See docs.
   Added extra trace info to connect_cached thanks to Walery Studennikov.
   Added non-random (deterministic) mode to DBI_GOFER_RANDOM mechanism.
   Added DBIXS_REVISION macro that drivers can use.
@@ -59,7 +66,7 @@ and prepends them to any error message.
   DBI::Profile changes:
     dbi_profile() now returns ref to relevant leaf node.
     Don't profile DESTROY during global destruction.
-    Added as_node_path_list() and as_text() methods and tests.
+    Added as_node_path_list() and as_text() methods.
   DBI::ProfileDumper changes:
     Don't write file if there's no profile data.
     Uses full natural precision when saving data (was using %.6f)
@@ -72,7 +79,7 @@ and prepends them to any error message.
     Enabled DBI_PROFILE_APACHE_LOG_DIR for mod_perl 1 as well as 2.
     Added parent pid to default data file name.
   DBI::ProfileData changes:
-    Added DeleteFiles option to delete files once read.
+    Added DeleteFiles option to rename & delete files once read.
     Locks the data files while reading.
     Added ability to sort by Path elements.
   dbiprof changes:

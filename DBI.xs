@@ -78,7 +78,7 @@ static int	 dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
 static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method));
 static int	set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int	quote_type _((int sql_type, int p, int s, int *base_type, void *v));
-static int	dbi_hash _((const char *string, long i));
+static I32	dbi_hash _((const char *string, long i));
 static void	dbih_dumphandle _((pTHX_ SV *h, const char *msg, int level));
 static int 	dbih_dumpcom _((pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level));
 char *neatsvpv _((SV *sv, STRLEN maxlen));
@@ -571,8 +571,10 @@ mkvname(pTHX_ HV *stash, const char *item, int uplevel)	/* construct a variable 
     return SvPV_nolen(sv);
 }
 
+/* 32 bit magic FNV-0 and FNV-1 prime */
+#define FNV_32_PRIME ((UV)0x01000193)
 
-static int
+static I32
 dbi_hash(const char *key, long type)
 {
     if (type == 0) {
@@ -582,14 +584,14 @@ dbi_hash(const char *key, long type)
 	    hash = hash * 33 + *key++;
 	hash &= 0x7FFFFFFF;	/* limit to 31 bits		*/
 	hash |= 0x40000000;	/* set bit 31			*/
-	return -(int)hash;	/* return negative int	*/
+	return -(I32)hash;	/* return negative int	*/
     }
     else if (type == 1) {	/* Fowler/Noll/Vo hash	*/
 	/* see http://www.isthe.com/chongo/tech/comp/fnv/ */
 	U32 hash = 0x811c9dc5;
 	const unsigned char *s = (unsigned char *)key;    /* unsigned string */
 	while (*s) {
-	    /* multiply by the 32 bit FNV magic prime mod 2^64 */
+	    /* multiply by the 32 bit FNV magic prime mod 2^32 */
 	    hash *= FNV_32_PRIME;
 	    /* xor the bottom with the current octet */
 	    hash ^= (U32)*s++;
@@ -3999,7 +4001,7 @@ neat(sv, maxlen=0)
     (void)cv;
 
 
-int
+I32
 hash(key, type=0)
     const char *key
     long type
@@ -4172,7 +4174,11 @@ dbi_profile(h, statement, method, t1, t2)
 	SvROK(method) ? SvRV(method) : method,
 	t1, t2
     );
-    (void)cv;
+    if (DBIc_TRACE_LEVEL(imp_xxh) >= 9)
+        warn("dbi_profile(%s, %s, %f, %f) =%s, gimme=%d",
+                neatsvpv(statement,0), neatsvpv(method,0), t1, t2,
+                neatsvpv(leaf,0), GIMME_V);
+    (void)cv;   /* avoid unused var warnings */
     if (GIMME_V == G_VOID)
         ST(0) = &sv_undef;  /* skip sv_mortalcopy if not needed */
     else

@@ -1,2 +1,3 @@
 /* Mixed revision working copy */
-#define DBIXS_REVISION 9632
+/* Code modified since last checkin */
+#define DBIXS_REVISION 9640
