@@ -37,6 +37,12 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
+=head2 Changes in DBI 1.58 (svn rev XXXX),  XXth June 2007
+
+  Fixed code that triggered fatal error in bleadperl
+    thanks to Steve Hay.
+  Fixed compiler warning thanks to Jerry D. Hedden.
+
 =head2 Changes in DBI 1.57 (svn rev 9639),  13th June 2007
 
   Note: this release includes a change to the DBI::hash() function which will
@@ -86,7 +92,7 @@ and prepends them to any error message.
     Added --dumpnodes and --delete options.
   Added/updated docs for both DBI::ProfileDumper && ::Apache.
 
-=head2 Changes in DBI 1.56 (svn rev 9561),  13th May 2007
+=head2 Changes in DBI 1.56 (svn rev 9660),  18th June 2007
 
   Fixed printf arg warnings thanks to JDHEDDEN.
   Fixed returning driver-private sth attributes via gofer.   

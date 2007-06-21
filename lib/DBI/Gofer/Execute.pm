@@ -596,8 +596,9 @@ my %_mk_rand_callback_seqn;
 
 sub _mk_rand_callback {
     my ($self, $method, $fail_percent, $delay_percent, $delay_duration) = @_;
-    $fail_percent  ||= 0;  my $fail_modrate  = int(1/(-$fail_percent )*100) if $fail_percent;
-    $delay_percent ||= 0;  my $delay_modrate = int(1/(-$delay_percent)*100) if $delay_percent;
+    my ($fail_modrate, $delay_modrate);
+    $fail_percent  ||= 0;  $fail_modrate  = int(1/(-$fail_percent )*100) if $fail_percent;
+    $delay_percent ||= 0;  $delay_modrate = int(1/(-$delay_percent)*100) if $delay_percent;
     # note that $method may be "*"
     return sub {
         my ($h) = @_;

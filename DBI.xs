@@ -4175,9 +4175,9 @@ dbi_profile(h, statement, method, t1, t2)
 	t1, t2
     );
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 9)
-        warn("dbi_profile(%s, %s, %f, %f) =%s, gimme=%d",
+        warn("dbi_profile(%s, %s, %f, %f) =%s, gimme=%ld",
                 neatsvpv(statement,0), neatsvpv(method,0), t1, t2,
-                neatsvpv(leaf,0), GIMME_V);
+                neatsvpv(leaf,0), (long)GIMME_V);
     (void)cv;   /* avoid unused var warnings */
     if (GIMME_V == G_VOID)
         ST(0) = &sv_undef;  /* skip sv_mortalcopy if not needed */
