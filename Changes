@@ -42,12 +42,14 @@ and prepends them to any error message.
   Fixed code that triggered fatal error in bleadperl
     thanks to Steve Hay.
   Fixed compiler warning thanks to Jerry D. Hedden.
+  Fixed t/40profile.t to use int(dbi_time()) for systems like Cygwin where
+    time() seems to be rounded not truncated from the high resolution time.
 
 =head2 Changes in DBI 1.57 (svn rev 9639),  13th June 2007
 
   Note: this release includes a change to the DBI::hash() function which will
   now produce different values than before *if* your perl was built with 64-bit
-  'int' type (i.e. "perl -V:intsize" says intsize='4').  It's relatively rare
+  'int' type (i.e. "perl -V:intsize" says intsize='8').  It's relatively rare
   for perl to be configured that way, even on 64-bit systems.
 
   Fixed XS versions of select*_*() methods to call execute()

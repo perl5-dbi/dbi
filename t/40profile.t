@@ -9,7 +9,7 @@ use strict;
 
 use Config;
 use DBI::Profile;
-use DBI;
+use DBI qw(dbi_time);
 use Data::Dumper;
 use File::Spec;
 use Storable qw(dclone);
@@ -149,7 +149,7 @@ ok($longest > $shortest);
 ok($time1 >= $^T);
 ok($time2 >= $^T);
 ok($time1 <= $time2);
-my $next = time + 1;
+my $next = int(dbi_time()) + 1;
 ok($next > $time1) or warn "next $next > first $time1: failed\n";
 ok($next > $time2) or warn "next $next > last $time2: failed\n";
 if ($shortest < 0) {
@@ -286,15 +286,16 @@ my $factor = 100_000; # ~27 hours
 $dbh->{Profile}->{Path} = [ '!Time', "!Time~$factor", '!MethodName' ];
 $dbh->{Profile}->{Data} = undef;
 
-$t1 = time()+1; 1 while time() < $t1; # spin till new second starts
-$sth = $dbh->prepare("select name from .");
+$t1 = int(dbi_time())+1; 1 while int(dbi_time()) < $t1; # spin till new second starts
 $t2 = int($t1/$factor)*$factor;
 
+$sth = $dbh->prepare("select name from .");
+
 $tmp = sanitize_profile_data_nodes($dbh->{Profile}{Data});
-#warn Dumper($tmp);
 is_deeply $tmp, {
     $t1 => { $t2 => { prepare => [ 1, 0, 0, 0, 0, 0, 0 ] }}
-}, "!Time and !Time~$factor should work";
+}, "!Time and !Time~$factor should work"
+  or print Dumper($tmp);
 
 
 print "testing &norm_std_n3 in Path\n";
