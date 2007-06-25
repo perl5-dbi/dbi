@@ -37,13 +37,13 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.58 (svn rev XXXX),  XXth June 2007
+=head2 Changes in DBI 1.58 (svn rev 9677),  25th June 2007
 
-  Fixed code that triggered fatal error in bleadperl
-    thanks to Steve Hay.
+  Fixed code triggering fatal error in bleadperl, thanks to Steve Hay.
   Fixed compiler warning thanks to Jerry D. Hedden.
   Fixed t/40profile.t to use int(dbi_time()) for systems like Cygwin where
     time() seems to be rounded not truncated from the high resolution time.
+  Removed dump_results() test from t/80proxy.t.
 
 =head2 Changes in DBI 1.57 (svn rev 9639),  13th June 2007
 

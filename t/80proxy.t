@@ -319,21 +319,6 @@ print "Trying warnings.\n";
 }
 $csr_c->finish();
 
-print "Trying dump.\n";
-Test($csr_a = $dbh->prepare("select mode,size,name from ?"));
-Test($csr_a->execute('/'));
-my $dump_file = ($ENV{TMP} || $ENV{TEMP} || "/tmp")."/dumpcsr.tst";
-unlink $dump_file;
-if (open(DUMP_RESULTS, ">$dump_file")) {
-	Test($csr_a->dump_results("4", "\n", ",\t", \*DUMP_RESULTS));
-	close(DUMP_RESULTS);
-	Test(-s $dump_file > 0);
-} else {
-        Test(1, " # Skip");
-        Test(1, " # Skip");
-}
-unlink $dump_file;
-
 
 print "Trying type_info_all.\n";
 my $array = $dbh->type_info_all();
