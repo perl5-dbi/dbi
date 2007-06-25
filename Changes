@@ -37,7 +37,7 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
-=head2 Changes in DBI 1.58 (svn rev 9677),  25th June 2007
+=head2 Changes in DBI 1.58 (svn rev 9678),  25th June 2007
 
   Fixed code triggering fatal error in bleadperl, thanks to Steve Hay.
   Fixed compiler warning thanks to Jerry D. Hedden.

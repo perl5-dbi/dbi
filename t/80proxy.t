@@ -71,7 +71,7 @@ unlink $config_file;
     or die "Failed to create config file $config_file: $!";
 
 my($handle, $port);
-my $numTests = 135;
+my $numTests = 131;
 
 if (@ARGV) {
     $port = $ARGV[0];
