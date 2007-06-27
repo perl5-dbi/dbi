@@ -37,6 +37,12 @@ Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
 
+=head2 Changes in DBI 1.59 (svn rev XXX),  XXth June 2007
+
+  Fixed DBI::ProfileData to unescape headers lines read from data file.
+  Fixed DBI::PurePerl to return undef for ChildHandles if weaken not available.
+  Fixed t/03handle.t to skip some tests if ChildHandles not available.
+
 =head2 Changes in DBI 1.58 (svn rev 9678),  25th June 2007
 
   Fixed code triggering fatal error in bleadperl, thanks to Steve Hay.

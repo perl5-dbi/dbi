@@ -272,10 +272,6 @@ SKIP: {
 SKIP: {
     skip "take_imp_data test not supported under DBD::Gofer", 19 if $using_dbd_gofer;
 
-    # XXX because we use Kids, ActiveKids and ChildHandles in the tests
-    # if PurePerl supported those then we'd be able to run these tests
-#    skip "take_imp_data test not supported under DBI::PurePerl", 19 if $DBI::PurePerl;
-
     my $dbh = DBI->connect("dbi:$driver:", '', '');
     isa_ok($dbh, "DBI::db");
     my $drh = $dbh->{Driver}; # (re)get drh here so tests can work using_dbd_gofer
@@ -292,6 +288,9 @@ SKIP: {
         unless $DBI::PurePerl && pass();
 
     my $ChildHandles = $dbh->{ChildHandles};
+
+    skip "take_imp_data test needs weakrefs", 15 if not $ChildHandles;
+
     ok $ChildHandles, 'we need weakrefs for take_imp_data to work safely with child handles';
     is @$ChildHandles, 3, 'should have 3 entries (implementation detail)';
     is grep({ defined } @$ChildHandles), 2, 'should have 2 defined handles';

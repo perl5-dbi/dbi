@@ -740,7 +740,7 @@ sub FETCH {
 	return ($h->FETCH('TaintIn') && $h->FETCH('TaintOut')) if $key eq'Taint';
 	return (1==0) if $is_flag_attribute{$key}; # return perl-style sv_no, not undef
 	return $DBI::dbi_debug if $key eq 'TraceLevel';
-        return [] if $key eq 'ChildHandles';
+        return [] if $key eq 'ChildHandles' && $HAS_WEAKEN;
         if ($key eq 'Type') {
             return "dr" if $h->isa('DBI::dr');
             return "db" if $h->isa('DBI::db');

@@ -236,9 +236,19 @@ sub _read_header {
           or croak("Syntax error in header in $filename line $.: $_");
         # XXX should compare new with existing (from previous file)
         # and warn if they differ (diferent program or path)
-        $self->{_header}{$1} = $2 if $keep;
+        $self->{_header}{$1} = unescape_key($2) if $keep;
     }
 }
+
+
+sub unescape_key {  # inverse of escape_key() in DBI::ProfileDumper
+    local $_ = shift;
+    s/(?<!\\)\\n/\n/g; # expand \n, unless it's a \\n
+    s/(?<!\\)\\r/\r/g; # expand \r, unless it's a \\r
+    s/\\\\/\\/g;       # \\ to \
+    return $_;
+}
+
 
 # reads the body of the profile data
 sub _read_body {
@@ -249,20 +259,15 @@ sub _read_body {
 
     # build up node array
     my @path = ("");
-    my (@data, $index, $key, $path_key);
+    my (@data, $path_key);
     while (<$fh>) {
         chomp;
         if (/^\+\s+(\d+)\s?(.*)/) {
             # it's a key
-            ($key, $index) = ($2, $1 - 1);
-
-            # unmangle key
-            $key =~ s/(?<!\\)\\n/\n/g; # expand \n, unless it's a \\n
-            $key =~ s/(?<!\\)\\r/\r/g; # expand \r, unless it's a \\r
-            $key =~ s/\\\\/\\/g;       # \\ to \
+            my ($key, $index) = ($2, $1 - 1);
 
             $#path = $index;      # truncate path to new length
-            $path[$index] = $key; # place new key at end
+            $path[$index] = unescape_key($key); # place new key at end
 
         }
 	elsif (s/^=\s+//) {
