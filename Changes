@@ -472,7 +472,7 @@ and prepends them to any error message.
   Changed DBI::Profile header to include the date and time.
 
   Added DBI->parse_dsn($dsn) method.
-  Added warning if build directory path contains whitespace.
+  Added warning if build directory path contains white space.
   Added docs for parse_trace_flags() and parse_trace_flag().
   Removed "may change" warnings from the docs for table_info(),
     primary_key_info(), and foreign_key_info() methods.
