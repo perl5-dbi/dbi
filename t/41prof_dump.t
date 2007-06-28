@@ -18,7 +18,7 @@ BEGIN {
         plan skip_all => 'profiling not supported for DBI::PurePerl';
     }
     else {
-        plan tests => 16;
+        plan tests => 15;
     }
 }
 
@@ -59,6 +59,7 @@ undef $dbh;
 # wrote the profile to disk?
 ok( -s "dbi.prof", 'Profile is on disk and nonzero size' );
 
+# XXX We're breaking encapsulation here
 open(PROF, "dbi.prof") or die $!;
 my @prof = <PROF>;
 close PROF;
@@ -75,8 +76,6 @@ is( $1, DBI::ProfileDumper->VERSION, "Version numbers match in $prof[0]" );
 
 like( $prof[1], qr{^Path\s+=\s+\[\s+\]}, 'Found the Path');
 ok( $prof[2] =~ m{^Program\s+=\s+(\S+)}, 'Found the Program');
-
-is( $1, $0, 'Program matches' );
 
 # check that expected key is there
 like(join('', @prof), qr/\+\s+1\s+\Q$sql\E/m);

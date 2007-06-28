@@ -322,6 +322,12 @@ $(roadmap_pm): Roadmap.pod
 	$(RM_F) $(roadmap_pm)
 	$(CP) Roadmap.pod $(roadmap_pm)
 
+faq:
+	: checkin any local changes not already checked in before overwriting
+	svn commit --message "dbi.tiddlyspot.com FAQ update" dbi.tiddlyspot.com.html
+	wget --ignore-length --output-document=dbi.tiddlyspot.com.html --timestamping http://dbi.tiddlyspot.com/download
+	svn commit --message "dbi.tiddlyspot.com FAQ update" dbi.tiddlyspot.com.html
+
 checkkeywords:
 	$(RM_RF) blib
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
