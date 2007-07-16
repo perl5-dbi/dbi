@@ -862,8 +862,7 @@ If that doesn't shed enough light on your question then see [[Get More Help]].
 <pre>[[Welcome to the DBI FAQ]]</pre>
 </div>
 <div title="Edit This FAQ" modifier="TimBunce" modified="200706272115" created="200706232129" changecount="3">
-<pre>
-You're welcome to edit this FAQ to add your own notes.
+<pre>You're welcome to edit this FAQ to add your own notes.
 
 To share your DBI knowledge you'll need to upload your modified FAQ. For now we're not giving out the password because there's little revision control and there's a risk of concurrent edits being lost. So, after making your changes, just &quot;Save As&quot; this page to a file and send it to RobertHicks or myself TimBunce.
 
@@ -920,36 +919,45 @@ $dbh1-&gt;disconnect or warn &quot;DB1 disconnection failed: $DBI::errstr\n&quot
 $dbh2-&gt;disconnect or warn &quot;DB2 disconnection failed: $DBI::errstr\n&quot;;
 }}}</pre>
 </div>
-<div title="Installing DBI" modifier="TimBunce" modified="200706272039" created="200706272036" changecount="6">
-<pre>
-You have several options for fetching and installing DBI:
+<div title="Install DBI from CPAN" modifier="RobertHicks" created="200706281232" changecount="2">
+<pre>If you are installing DBI on a UNIX like system you can do the following to install the DBI module:
 
-You can [[Install DBI from CPAN]], which is what most people do.
+{{{
+perl -MCPAN -e install DBI
+}}}
 
-If you're using ~ActiveState's perl you can [[Install DBI using PPM]].
+Or from within the cpan shell started with &quot;perl -MCPAN -e shell&quot; or &quot;cpan&quot; ^^[1]^^:
 
-If you want to stay on the //bleading edge//, or submit patches, then you should [[Install DBI from Subversion]].
+{{{
+cpan&gt; install DBI
+}}}
 
-(Temp link to [[Installing DBI (old)]])</pre>
+^^[1]^^ Starting with the 5.8 series, Perl has a shortcut to start cpan so you don't have to use the &quot;perl -MCPAN -e shell&quot; command.</pre>
 </div>
-<div title="Installing DBI (old)" modifier="TimBunce" modified="200706272033" created="200706271229" changecount="1">
-<pre>!Where can I get if from?
+<div title="Install DBI from Source" modifier="RobertHicks" modified="200706281342" created="200706281258" changecount="3">
+<pre>The DBI source can be downloaded from:
 
-The Comprehensive Perl Archive Network resources should be used for retrieving up-to-date versions of the DBI and drivers. CPAN may be accessed via Tom Christiansen's splendid CPAN multiplexer program located at:
+[[DBI|http://search.cpan.org/~timb/DBI/DBI.pm]]
 
-[[CPAN|http://www.perl.com/CPAN/]]
+Once you have staged that source then Build/test/install the DBI by doing:
 
-The DBI source can be downloaded from:
+{{{
+perl Makefile.PL
+make
+make test
+make install
+}}}
 
-[[DBI| http://search.cpan.org/~timb/DBI-1.58/DBI.pm]]
-
-The DBI source code is maintained using Subversion (see [[http://subversion.tigris.org/]]). To access the source you'll need to install a Subversion client. Then, to get the source code, do:
+Then delete the source directory tree since it's no longer needed.</pre>
+</div>
+<div title="Install DBI from Subversion" modifier="RobertHicks" modified="200706281256" created="200706281251" changecount="3">
+<pre>The DBI source code is maintained using Subversion (see http://subversion.tigris.org/). To access the source you'll need to install a Subversion client. Then, to get the source code, do:
 
 {{{
 svn checkout http://svn.perl.org/modules/dbi/trunk
 }}}
 
-If it prompts for a username and password use your perl.org account if you have one, else just 'guest' and 'guest'. The source code will be in a new subdirectory called trunk.
+If it prompts for a //username// and //password// use your perl.org account if you have one, else just 'guest' and 'guest'. The source code will be in a new subdirectory called trunk.
 
 @@TODO: describe how to install from the source@@
 
@@ -967,36 +975,35 @@ If you get any conflicts reported you'll need to fix them first. Then generate t
 svn diff &gt; foo.patch
 }}}
 
-Read the patch file, as a sanity check, and then email it to @@dbi-dev@perl.org@@.
-
-If you are installing DBI on a UNIX like system you can do the following to install the DBI module:
-
-{{{
-perl -MCPAN -e install DBI
-}}}
-
-Or from within the cpan shell started with //&quot;perl -MCPAN -e shell&quot;// or //&quot;cpan&quot;// ^^[1]^^:
-
-{{{
-cpan&gt; install DBI
-}}}
-
-If you are using the [[ActiveState|http://www.activestate.com/Products/activeperl/]] version of Perl then you can install the DBI 2 ways:
+Read the patch file, as a sanity check, and then email it to @@dbi-dev@perl.org@@.</pre>
+</div>
+<div title="Install DBI using PPM" modifier="RobertHicks" created="200706281234" changecount="1">
+<pre>If you are using the ActiveState version of Perl then you can install the DBI 2 ways:
 
 From a command prompt:
+
 {{{
 ppm install DBI
 }}}
 
-From the PPM shell ^^[2]^^ itself:
+From the PPM shell ^^[1]^^ itself:
 
 {{{
 install DBI
 }}}
 
-^^[1]^^ Starting with the 5.8 series, Perl has a shortcut to start cpan so you don't have to use the //&quot;perl -MCPAN -e shell&quot;// command.
+^^[1]^^ The latest version of PPM from Activestate includes a graphical user interface to their ppm repository. If you use this gui then installing the DBI is simple a matter of searching, selecting and installing the DBI module.</pre>
+</div>
+<div title="Installing DBI" modifier="RobertHicks" modified="200706281259" created="200706272036" changecount="9">
+<pre>You have several options for fetching and installing DBI:
 
-^^[2]^^ The latest version of PPM from Activestate includes a graphical user interface to their ppm repository. If you use this gui then installing the DBI is simple a matter of searching, selecting and installing the DBI module.</pre>
+You can [[Install DBI from CPAN]], which is what most people do.
+
+If you're using ~ActiveState's perl you can [[Install DBI using PPM]].
+
+If you want to stay on the //bleading edge//, or submit patches, then you should [[Install DBI from Subversion]].
+
+Last but not least, you can [[Install DBI from Source]].</pre>
 </div>
 <div title="MainMenu" modifier="TimBunce" modified="200706272111" created="200706211226" changecount="15">
 <pre>[[Installing DBI]]
@@ -1084,18 +1091,18 @@ merge(config.shadowTiddlers,{
 //}}}
 </pre>
 </div>
-<div title="UploadLog" modifier="TimBunce" modified="200706272116" created="200706192053">
+<div title="UploadLog" modifier="RobertHicks" modified="200706281342" created="200706192053">
 <pre>| !date | !user | !location | !storeUrl | !uploadDir | !toFilename | !backupdir | !origin |
-| 22/06/2007 08:33:49 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 22/06/2007 08:37:42 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 22/06/2007 08:38:20 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 23/06/2007 22:33:50 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 23/06/2007 22:45:29 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 23/06/2007 23:03:20 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 23/06/2007 23:10:14 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 27/06/2007 09:31:04 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 27/06/2007 21:40:17 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . | ok |
-| 27/06/2007 22:16:26 | TimBunce | [[/|http://dbi.tiddlyspot.com/#%5B%5BHelp%20save%20the%20world!%20Add%20to%20and%20edit%20this%20FAQ.%20It's%20quick%20and%20simple%20and%20helps%20everyone.%20%5D%5D]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
+| 27/06/2007 22:16:26 | TimBunce | [[/|http://dbi.tiddlyspot.com/#%5B%5BHelp%20save%20the%20world!%20Add%20to%20and%20edit%20this%20FAQ.%20It's%20quick%20and%20simple%20and%20helps%20everyone.%20%5D%5D]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 28/06/2007 08:53:59 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 28/06/2007 09:02:09 | RobertHicks | [[/|http://dbi.tiddlyspot.com/#%5B%5BInstalling%20DBI%5D%5D%20%5B%5BInstall%20DBI%20from%20Source%5D%5D%20%5B%5BInstall%20DBI%20from%20Subversion%5D%5D%20%5B%5BInstall%20DBI%20from%20CPAN%5D%5D%20%5B%5BWelcome%20to%20the%20DBI%20FAQ%5D%5D]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 28/06/2007 09:03:24 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 28/06/2007 09:41:40 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 28/06/2007 09:42:26 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
 </div>
 <div title="UploadPlugin" modifier="YourName" modified="200706192051" created="200706061221" tags="systemConfig">
 <pre>/***
