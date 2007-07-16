@@ -66,4 +66,6 @@ if (!(open(FILE, ">$file"))  ||
 }
 chmod 0755, $file;
 print "Extracted $file from ",__FILE__," with variable substitutions.\n";
+# syntax check resulting file
+exit 1 unless system($^X, '-wc', $file) == 0;
 
