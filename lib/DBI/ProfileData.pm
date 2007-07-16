@@ -229,6 +229,7 @@ sub _read_header {
     $self->{_profiler} = $first if $keep;
 
     # collect variables from the header
+    local $_;
     while (<$fh>) {
         chomp;
         last unless length $_;
@@ -260,6 +261,7 @@ sub _read_body {
     # build up node array
     my @path = ("");
     my (@data, $path_key);
+    local $_;
     while (<$fh>) {
         chomp;
         if (/^\+\s+(\d+)\s?(.*)/) {

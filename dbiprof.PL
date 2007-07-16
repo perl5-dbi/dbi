@@ -32,6 +32,7 @@ GetOptions(
            'match=s'        => \%match,
            'exclude=s'      => \%exclude,
            'case-sensitive' => \$case_sensitive,
+           'delete!'        => \my $opt_delete,
 ) or exit usage();
 
 sub usage {
@@ -64,7 +65,7 @@ my @files = @ARGV ? @ARGV : ('dbi.prof');
 
 # instantiate ProfileData object
 my $prof = eval {
-    $prof = DBI::ProfileData->new(
+    DBI::ProfileData->new(
         Files => \@files,
         DeleteFiles => $opt_delete,
     );

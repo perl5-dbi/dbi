@@ -133,7 +133,7 @@ sub parse_coldef_list  {                # check column definitions
     return \@col_defs;
 }
 sub parse_comma_list  {[map{clean_parse_str($_)} split(',',shift)]}
-sub clean_parse_str { $_ = shift; s/\(//;s/\)//;s/^\s+//; s/\s+$//; $_; }
+sub clean_parse_str { local $_ = shift; s/\(//;s/\)//;s/^\s+//; s/\s+$//; $_; }
 sub parse_values_list {
     my($self,$str) = @_;
     [map{$self->parse_value(clean_parse_str($_))}split(',',$str)]
