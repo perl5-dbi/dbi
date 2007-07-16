@@ -6209,6 +6209,9 @@ Some attributes, like NAME, are not appropriate to some types of
 statement, like SELECT. Typically the attribute will be C<undef>
 in these situations.
 
+For drivers which support stored procedures and multiple result sets
+(see L</more_results>) these attributes relate to the I<current> result set.
+
 See also L</finish> to learn more about the effect it
 may have on some attributes.
 
