@@ -3204,8 +3204,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    else
 		PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
 	    if (items >= 3)
-		PerlIO_printf(logfp," %s", neatsvpv(st2,0));
-	    PerlIO_printf(logfp,"%s)", (items > 3) ? " ..." : "");
+		PerlIO_printf(logfp,", %s", neatsvpv(st2,0));
+	    PerlIO_printf(logfp,"%s)", (items > 3) ? ", ..." : "");
 	}
 
 	if (gimme & G_ARRAY)
