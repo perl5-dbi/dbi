@@ -496,6 +496,17 @@ Also see AdvancedOptions</pre>
 </div>
 <!--POST-SHADOWAREA-->
 <div id="storeArea">
+<div title="Contributing" modifier="TimBunce" modified="200707181223" created="200707181150" changecount="10">
+<pre>Many people have contributed to the DBI and its database drivers in many ways over many years.
+
+Perhaps you'd like to find a way contribute yourself...
+*Contribute help on the [[DBI Mailing Lists]].
+*Contribute your experience to the community by [[Editing This FAQ]].
+*Contributing fixes and enhancements by [[Patching the Source]].
+*Or perhaps you're interested in [[Implementing a Driver]].
+See also http://dbi.perl.org/contributing
+</pre>
+</div>
 <div title="DBI FAQ 1.1 What is DBI, DBperl, Oraperl and *perl?" modifier="RobertHicks" modified="200707172221" created="200706211220" changecount="6">
 <pre>To quote Tim Bunce, the architect and author of DBI:
 
@@ -743,12 +754,14 @@ Searchable hypermail archives of the three mailing lists, and some of the much o
 As per the US archive above.
 </pre>
 </div>
-<div title="DBI Mailing Lists" modifier="TimBunce" modified="200707171133" created="200707171127" changecount="6">
+<div title="DBI Mailing Lists" modifier="TimBunce" modified="200707181157" created="200707171127" changecount="8">
 <pre>There are three DBI mailing lists:
 ![[dbi-announce@perl.org|http://lists.cpan.org/showlist.cgi?name=dbi-announce]]
 This is a very low traffic list (typically well under one email per week) just for announcements of new releases and significant issues. All DBI users should be subscribed to it.
 ![[dbi-users@perl.org|http://lists.cpan.org/showlist.cgi?name=dbi-users]]
-This is the main DBI mailing list. Typically a few messages each day. This is the place to ask for help [[smartly|http://www.catb.org/~esr/faqs/smart-questions.html]].
+This mailing list is the heart of the DBI user community. There are typically over two thousand users subscribed, ranging from novices to experienced users and driver developers. Typically there are just a few messages each day. Messages are on-topic and the list is widely regarded as being of very high quality. It's a great way to learn about the DBI and, as you learn from the list and your own experience, you can help others along their path.
+
+This is the place to ask for help [[smartly|http://www.catb.org/~esr/faqs/smart-questions.html]].
 ![[dbi-dev@perl.org|http://lists.cpan.org/showlist.cgi?name=dbi-dev]]
 This list is for developers who work on the source code of the DBI and drivers. Questions about installation issues or usage of the DBI or drivers should be posted to dbi-users, //not// here. </pre>
 </div>
@@ -839,8 +852,10 @@ If you want to implement your own driver [[Implementing a Driver]] should help y
 <div title="DefaultTiddlers" modifier="TimBunce" modified="200706232130" created="200706221222" changecount="2">
 <pre>[[Welcome to the DBI FAQ]]</pre>
 </div>
-<div title="Edit This FAQ" modifier="TimBunce" modified="200707171250" created="200706232129" changecount="8">
-<pre>You're welcome to edit this FAQ to add your own notes. It uses [[TiddlyWiki|http://www.tiddlywiki.com/]] so the FAQ runs in your browser using JavaScript.
+<div title="Editing This FAQ" modifier="TimBunce" modified="200707181202" created="200706232129" changecount="1">
+<pre>You're welcome to edit this FAQ to add your own notes. It uses [[TiddlyWiki|http://www.tiddlywiki.com/]] so the FAQ runs in your browser using ~JavaScript.
+
+Before your first edit, click on 'options&gt;' on the right and give yourself a username that'll be used to sign your edits.
 
 To edit an entry (known as a 'tiddler') just click the 'edit' button to the right of the title, make your changes, then click on 'done'. Simple.
 
@@ -936,7 +951,7 @@ Then delete the source directory tree since it's no longer needed.
 
 If you're using Windows then you probably want to [[Install DBI using PPM]] instead.</pre>
 </div>
-<div title="Install DBI from Subversion" modifier="TimBunce" modified="200707171142" created="200706281251" changecount="5">
+<div title="Install DBI from Subversion" modifier="TimBunce" modified="200707181212" created="200706281251" changecount="6">
 <pre>The DBI source code is maintained using Subversion (see http://subversion.tigris.org/). To access the source you'll need to install a Subversion client. Then, to get the source code, do:
 {{{
 svn checkout http://svn.perl.org/modules/dbi/trunk
@@ -947,17 +962,7 @@ If it prompts for a //username// and //password// use your perl.org account if y
 
 To keep informed about changes to the source you can send an empty email to @@svn-commit-modules-dbi-subscribe@perl.org@@ after which you'll get an email with the change log message and diff of each change checked-in to the source.
 
-After making your changes you can generate a patch file, but before you do, make sure your source is still upto date using:
-{{{
-svn update
-}}}
-If you get any conflicts reported you'll need to fix them first. Then generate the patch file from within the trunk directory using:
-{{{
-svn diff &gt; foo.patch
-}}}
-Read the patch file, as a sanity check, and then email it to @@dbi-dev@perl.org@@.
-
-Thank you!</pre>
+Since you've installed using Subversion then you're probably interested in [[Patching the Source]].</pre>
 </div>
 <div title="Install DBI using PPM" modifier="TimBunce" modified="200707171141" created="200706281234" changecount="3">
 <pre>If you are using the ActiveState version of Perl then you can install the DBI using the PPM utility:
@@ -983,12 +988,28 @@ If you want to stay on the //bleading edge//, or submit patches, then you should
 
 Last but not least, you can [[Install DBI from Source]].</pre>
 </div>
-<div title="MainMenu" modifier="TimBunce" modified="200706272111" created="200706211226" changecount="15">
+<div title="MainMenu" modifier="TimBunce" modified="200707181201" created="200706211226" changecount="17">
 <pre>[[Installing DBI]]
 [[Using DBI]]
 [[Database Drivers]]
+[[Contributing]]
 [[Get More Help]]
-[[Edit This FAQ]]</pre>
+[[Editing This FAQ]]</pre>
+</div>
+<div title="Patching the Source" modifier="TimBunce" created="200707181214" changecount="2">
+<pre>First you need to [[Install DBI from Subversion]].
+
+After making your changes you can generate a patch file, but before you do, make sure your source is still upto date using:
+{{{
+svn update
+}}}
+If you get any conflicts reported you'll need to fix them first. Then generate the patch file from within the trunk directory using:
+{{{
+svn diff &gt; foo.patch
+}}}
+Read the patch file, as a sanity check, and then email it to @@dbi-dev@perl.org@@.
+
+Thank you!</pre>
 </div>
 <div title="RobertHicks" modifier="RobertHicks" created="200707171808" changecount="1">
 <pre>If you would like me to add your content instead of you directly editing the wiki send you work to the following:  //sigzero@gmail.com//</pre>
@@ -1069,9 +1090,8 @@ merge(config.shadowTiddlers,{
 //}}}
 </pre>
 </div>
-<div title="UploadLog" modifier="RobertHicks" modified="200707172222" created="200706192053">
+<div title="UploadLog" modifier="TimBunce" modified="200707181223" created="200706192053">
 <pre>| !date | !user | !location | !storeUrl | !uploadDir | !toFilename | !backupdir | !origin |
-| 17/07/2007 11:51:31 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . | ok |
 | 17/07/2007 11:57:01 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . | ok |
 | 17/07/2007 12:47:12 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 13:54:10 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
@@ -1080,7 +1100,8 @@ merge(config.shadowTiddlers,{
 | 17/07/2007 14:18:02 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:19:25 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:20:45 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 17/07/2007 18:22:47 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
+| 17/07/2007 18:22:47 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 18/07/2007 13:23:40 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
 </div>
 <div title="UploadPlugin" modifier="YourName" modified="200706192051" created="200706061221" tags="systemConfig">
 <pre>/***
