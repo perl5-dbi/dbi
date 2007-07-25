@@ -58,7 +58,7 @@ sub transmit_request {
         if ($@) {
             return $self->transport_timedout("transmit_request", $to)
                 if $@ eq "TIMEOUT\n";
-            return self->new_response({ err => 1, errstr => $@ });
+            return $self->new_response({ err => 1, errstr => $@ });
         }
 
         return $response;
