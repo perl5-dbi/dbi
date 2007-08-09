@@ -348,6 +348,7 @@ my $dbd_prefix_registry = {
   tmplss_  => { class => 'DBD::TemplateSS',	},
   tuber_   => { class => 'DBD::Tuber',		},
   uni_     => { class => 'DBD::Unify',		},
+  vt_      => { class => 'DBD::Vt',		},
   wmi_     => { class => 'DBD::WMI',		},
   x_       => { }, # for private use
   xbase_   => { class => 'DBD::XBase',		},
@@ -3400,14 +3401,13 @@ statement handles:
 
     sub show_child_handles {
         my ($h, $level) = @_;
-        $level ||= 0;
         printf "%sh %s %s\n", $h->{Type}, "\t" x $level, $h;
         show_child_handles($_, $level + 1)
             for (grep { defined } @{$h->{ChildHandles}});
     }
 
     my %drivers = DBI->installed_drivers();
-    show_child_handles($_) for (values %drivers);
+    show_child_handles($_, 0) for (values %drivers);
 
 =head3 C<CompatMode> (boolean, inherited)
 

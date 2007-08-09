@@ -306,10 +306,12 @@ sub disconnect ($) {
 
     # Drop database connection at remote end
     my $rdbh = $dbh->{'proxy_dbh'};
-    local $SIG{__DIE__} = 'DEFAULT';
-    local $@;
-    eval { $rdbh->disconnect() };
-    DBD::Proxy::proxy_set_err($dbh, $@) if $@;
+    if ( $rdbh ) {
+        local $SIG{__DIE__} = 'DEFAULT';
+        local $@;
+	eval { $rdbh->disconnect() } ;
+        DBD::Proxy::proxy_set_err($dbh, $@) if $@;
+    }
     
     # Close TCP connect to remote
     # XXX possibly best left till DESTROY? Add a config attribute to choose?

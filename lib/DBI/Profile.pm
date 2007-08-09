@@ -667,7 +667,7 @@ many forward references.  (Patches welcome!)
 
 
 use strict;
-use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION $ON_DESTROY_DUMP);
+use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
 use Exporter ();
 use UNIVERSAL ();
 use Carp;
@@ -695,7 +695,8 @@ use constant DBIprofile_Statement	=> '!Statement';
 use constant DBIprofile_MethodName	=> '!MethodName';
 use constant DBIprofile_MethodClass	=> '!MethodClass';
 
-$ON_DESTROY_DUMP = sub { DBI->trace_msg(shift, 0) };
+our $ON_DESTROY_DUMP = sub { DBI->trace_msg(shift, 0) };
+our $ON_FLUSH_DUMP   = sub { DBI->trace_msg(shift, 0) };
 
 sub new {
     my $class = shift;
@@ -767,8 +768,12 @@ sub filename {          # baseclass method, see DBI::ProfileDumper
     return undef;
 }
 
-sub flush_to_disk {     # baseclass method, see DBI::ProfileDumper
-    return undef;
+sub flush_to_disk {     # baseclass method, see DBI::ProfileDumper & DashProfiler::Core
+    my $self = shift;
+    return unless $ON_FLUSH_DUMP;
+    return unless $self->{Data};
+    my $detail = $self->format();
+    $ON_FLUSH_DUMP->($detail) if $detail;
 }
 
 

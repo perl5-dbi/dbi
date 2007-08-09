@@ -41,6 +41,7 @@ my %configuration_attributes = (
     forced_connect_attributes  => {},
     track_recent => 1,
     check_request_sub => sub {},
+    check_response_sub => sub {},
     forced_single_resultset => 1,
     max_cached_dbh_per_drh => 1,
     max_cached_sth_per_dbh => 1,
@@ -286,6 +287,12 @@ sub execute_request {
             : $self->execute_dbh_request($request);
     };
     $response ||= $self->new_response_with_err(undef, $@, $current_dbh);
+
+    if (my $check_response_sub = $self->check_response_sub) {
+        eval { $check_response_sub->($response, $self, $request) };
+        warn "check_response_sub failed: $@" if $@;
+    }
+
     undef $current_dbh;
 
     $response->warnings(\@warnings) if @warnings;
@@ -678,13 +685,22 @@ Examples include: L<DBI::Gofer::Transport::stream> and L<DBI::Gofer::Transport::
 =head2 check_request_sub
 
 If defined, it must be a reference to a subroutine that will 'check' the request.
-It is pass the request object and the executor as its only arguments.
+It is passed the request object and the executor as its only arguments.
 
 The subroutine can either return the original request object or die with a
 suitable error message (which will be turned into a Gofer response).
 
 It can also construct and return a new request that should be executed instead
 of the original request.
+
+=head2 check_response_sub
+
+If defined, it must be a reference to a subroutine that will 'check' the response.
+It is passed the response object, the executor, and the request object.
+The return value is ignored, though the sub may alter the response object.
+
+This mechanism can be used to, for example, terminate the service if specific
+database errors are seen.
 
 =head2 forced_connect_dsn
 
