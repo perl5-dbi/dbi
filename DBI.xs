@@ -2586,7 +2586,7 @@ dbi_profile_merge_nodes(SV *dest, SV *increment)
     }
 
     if (!SvROK(increment) || SvTYPE(SvRV(increment)) != SVt_PVAV)
-	croak("dbi_profile_merge_nodes: increment not an array or hash ref");
+	croak("dbi_profile_merge_nodes: increment %s not an array or hash ref", neatsvpv(increment,0));
     i_av = (AV*)SvRV(increment);
 
     tmp = *av_fetch(d_av, DBIprof_COUNT, 1);
@@ -4193,7 +4193,7 @@ dbi_profile_merge_nodes(dest, ...)
     CODE:
     {
 	if (!SvROK(dest) || SvTYPE(SvRV(dest)) != SVt_PVAV)
-	    croak("dbi_profile_merge_nodes(%s,...) not an array reference", neatsvpv(dest,0));
+	    croak("dbi_profile_merge_nodes(%s,...) destination is not an array reference", neatsvpv(dest,0));
 	if (items <= 1) {
 	    (void)cv;   /* avoid unused var warnings */
 	    (void)ix;

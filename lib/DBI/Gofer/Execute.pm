@@ -308,7 +308,7 @@ sub execute_dbh_request {
     my $dbh;
     my $rv_ref = eval {
         $dbh = $self->_connect($request);
-        my $args = $request->dbh_method_call; # [ 'method_name', @args ]
+        my $args = $request->dbh_method_call; # [ wantarray, 'method_name', @args ]
         my $wantarray = shift @$args;
         my $meth      = shift @$args;
         $stats->{method_calls_dbh}->{$meth}++;
@@ -617,7 +617,7 @@ sub _mk_rand_callback {
         #no warnings 'uninitialized';
         #warn "_mk_rand_callback($fail_percent:$fail_modrate, $delay_percent:$delay_modrate): seqn=$seqn fail=$fail delay=$delay";
         if ($delay) {
-            my $msg = "DBI_GOFER_RANDOM delaying execution of $method by $delay_duration seconds\n";
+            my $msg = "DBI_GOFER_RANDOM delaying execution of $method() by $delay_duration seconds\n";
             # Note what's happening in a trace message. If the delay percent is an odd
             # number then use warn() so it's sent back to the client
             ($delay_percent % 2 == 0) ? $h->trace_msg($msg) : warn($msg);
@@ -625,7 +625,7 @@ sub _mk_rand_callback {
         }
         if ($fail) {
             undef $_; # tell DBI to not call the method
-            return $h->set_err(1, "fake error induced by DBI_GOFER_RANDOM env var");
+            return $h->set_err(1, "fake error from $method method induced by DBI_GOFER_RANDOM env var ($fail_percent%)");
         }
         return;
     }
