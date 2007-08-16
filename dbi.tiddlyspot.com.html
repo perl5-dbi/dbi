@@ -921,8 +921,8 @@ $dbh1-&gt;disconnect or warn &quot;DB1 disconnection failed: $DBI::errstr\n&quot
 $dbh2-&gt;disconnect or warn &quot;DB2 disconnection failed: $DBI::errstr\n&quot;;
 }}}</pre>
 </div>
-<div title="Implementing a Driver" modifier="RobertHicks" modified="200707172220" created="200707172217" changecount="2">
-<pre>// add information on implementing a driver for the DBI //</pre>
+<div title="Implementing a Driver" modifier="RobertHicks" modified="200707182139" created="200707172217" changecount="8">
+<pre> Some wisdom of this dark art has been distilled into: [[ DBD Driver Voodoo|http://search.cpan.org/perldoc?DBI::DBD]]</pre>
 </div>
 <div title="Install DBI from CPAN" modifier="TimBunce" modified="200707171143" created="200706281232" changecount="4">
 <pre>If you are installing DBI on a UNIX like system you can do the following to install the DBI module:
@@ -1014,6 +1014,22 @@ Thank you!</pre>
 <div title="RobertHicks" modifier="RobertHicks" created="200707171808" changecount="1">
 <pre>If you would like me to add your content instead of you directly editing the wiki send you work to the following:  //sigzero@gmail.com//</pre>
 </div>
+<div title="ShowErrorStatement" modifier="YourName" created="200708151707" changecount="2">
+<pre>ShowErrorStatement just adds information to the message produced by [[RaiseError]] and [[PrintError]].
+
+{{{
+I recommend RaiseError. 
+I recommend ShowErrorStatement.
+I don't recommend &quot;or die ...&quot;, generally.
+If you're using RaiseError then &quot;or die ...&quot; is redundant.
+If you're not using RaiseError then ShowErrorStatement is redundant
+(unless PrintError is on).
+
+Hopefully that helps.
+
+Tim.
+}}}</pre>
+</div>
 <div title="SiteSubtitle" modifier="TimBunce" modified="200706192113" created="200706192111" changecount="4">
 <pre>Gain DBI experience. Share DBI experience.</pre>
 </div>
@@ -1090,18 +1106,18 @@ merge(config.shadowTiddlers,{
 //}}}
 </pre>
 </div>
-<div title="UploadLog" modifier="TimBunce" modified="200707181223" created="200706192053">
+<div title="UploadLog" modifier="RobertHicks" modified="200708151711" created="200706192053">
 <pre>| !date | !user | !location | !storeUrl | !uploadDir | !toFilename | !backupdir | !origin |
-| 17/07/2007 11:57:01 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . | ok |
-| 17/07/2007 12:47:12 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 17/07/2007 13:54:10 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 14:08:46 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 14:15:31 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 14:18:02 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:19:25 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:20:45 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:22:47 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 18/07/2007 13:23:40 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
+| 18/07/2007 13:23:40 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 18/07/2007 17:32:51 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 18/07/2007 17:39:56 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 15/08/2007 13:11:08 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
 </div>
 <div title="UploadPlugin" modifier="YourName" modified="200706192051" created="200706061221" tags="systemConfig">
 <pre>/***
@@ -1736,10 +1752,12 @@ config.backstageTasks.push(&quot;uploadOptions&quot;);
 
 </pre>
 </div>
-<div title="Using DBI" modifier="TimBunce" created="200707171146" changecount="1">
+<div title="Using DBI" modifier="YourName" modified="200708151705" created="200707171146" changecount="2">
 <pre>First you need to know about [[Getting Connected]], then you might want to know about [[Selecting and Fetching Data]].
 
-You may also want help [[Using Transactions]].</pre>
+You may also want help [[Using Transactions]].
+
+What does [[ShowErrorStatement]] do?</pre>
 </div>
 <div title="Welcome to the DBI FAQ" modifier="TimBunce" modified="200706232205" created="200706232133" changecount="6">
 <pre>!Got a DBI question?
