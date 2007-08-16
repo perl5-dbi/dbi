@@ -28,43 +28,75 @@ sub _init_trace { (split(/=/,$ENV{DBI_GOFER_TRACE}||0))[0] }
 sub new {
     my ($class, $args) = @_;
     $args->{trace} ||= $class->_init_trace;
-    $args->{serializer_obj} ||= DBI::Gofer::Serializer->new();
+    $args->{serializer_obj} ||= DBI::Gofer::Serializer::Storable->new();
     my $self = bless {}, $class;
     $self->$_( $args->{$_} ) for keys %$args;
     $self->trace_msg("$class->new({ @{[ %$args ]} })\n") if $self->trace;
     return $self;
 }
 
-{   package DBI::Gofer::Serializer;
+{   package DBI::Gofer::Serializer::Storable;
     # a very minimal subset of Data::Serializer
     use Storable qw(nfreeze thaw);
     sub new {
         return bless {} => shift;
     }
-    sub serializer {
+    sub serialize {
         my $self = shift;
         local $Storable::forgive_me = 1; # for CODE refs etc
         return nfreeze(shift);
     }
-    sub deserializer {
+    sub deserialize {
         my $self = shift;
         return thaw(shift);
     }
 }
 
+{   package DBI::Gofer::Serializer::DataDumper;
+    # a very minimal subset of Data::Serializer
+    require Data::Dumper;
+    sub new {
+        local $Data::Dumper::Indent    = 1;
+        local $Data::Dumper::Terse     = 1;
+        local $Data::Dumper::Useqq     = 0; # enabling this disables xs
+        local $Data::Dumper::Sortkeys  = 1;
+        local $Data::Dumper::Quotekeys = 0;
+        local $Data::Dumper::Deparse   = 0;
+        local $Data::Dumper::Purity    = 0;
+        return bless {
+	    dumper => Data::Dumper->new([], undef),
+	} => shift;
+    }
+    sub serialize {
+        my $dumper = shift->{dumper};
+        local $Data::Dumper::Indent    = 1;
+        local $Data::Dumper::Terse     = 1;
+        local $Data::Dumper::Useqq     = 0; # enabling this disables xs
+        local $Data::Dumper::Sortkeys  = 1;
+        local $Data::Dumper::Quotekeys = 0;
+        local $Data::Dumper::Deparse   = 0;
+        local $Data::Dumper::Purity    = 0;
+        return Data::Dumper::Dumper(shift);
+    }
+    sub deserialize {
+	Carp::croak("deserialize not supported for ".__PACKAGE__);
+    }
+}
+
 
 my $packet_header_text  = "GoFER1:";
-my $packet_header_regex = qr/^GoFER(\d):/;
+my $packet_header_regex = qr/^GoFER(\d+):/;
 
 
 sub _freeze_data {
-    my ($self, $data, $skip_trace) = @_;
+    my ($self, $data, $serializer, $skip_trace) = @_;
     my $frozen = eval {
         $self->_dump("freezing $self->{trace} ".ref($data), $data)
             if !$skip_trace and $self->trace;
 
         local $data->{meta}; # don't include _meta in serialization
-        my $data = $self->{serializer_obj}->serializer($data);
+	$serializer ||= $self->{serializer_obj};
+        my $data = $serializer->serialize($data);
 
         $packet_header_text . $data;
     };
@@ -80,14 +112,15 @@ sub _freeze_data {
 
 
 sub _thaw_data {
-    my ($self, $frozen_data, $skip_trace) = @_;
+    my ($self, $frozen_data, $serializer, $skip_trace) = @_;
     my $data;
     eval {
         # check for and extract our gofer header and the info it contains
         $frozen_data =~ s/$packet_header_regex//o
             or die "does not have gofer header\n";
         my ($t_version) = $1;
-        $data = $self->{serializer_obj}->deserializer($frozen_data)
+	$serializer ||= $self->{serializer_obj};
+        $data = $serializer->deserialize($frozen_data)
             and $data->{_transport}{version} = $t_version;
     };
     if ($@) {
@@ -115,7 +148,7 @@ sub _dump {
         require Data::Dumper;
         local $Data::Dumper::Indent    = 1;
         local $Data::Dumper::Terse     = 1;
-        local $Data::Dumper::Useqq     = 1;
+        local $Data::Dumper::Useqq     = 0;
         local $Data::Dumper::Sortkeys  = 1;
         local $Data::Dumper::Quotekeys = 0;
         local $Data::Dumper::Deparse   = 0;

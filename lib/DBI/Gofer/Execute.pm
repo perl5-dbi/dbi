@@ -633,7 +633,7 @@ sub _mk_rand_callback {
 
 
 sub update_stats {
-    my ($self, $request, $response, $frozen_request, $frozen_response, $time_received) = @_;
+    my ($self, $request, $response, $frozen_request, $frozen_response, $time_received, $meta) = @_;
 
     my $stats = $self->{stats};
     $stats->{frozen_request_max_bytes} = length($frozen_request)
@@ -648,6 +648,7 @@ sub update_stats {
             response => $frozen_response,
             time_received => $time_received,
             duration => dbi_time()-$time_received,
+	    ($meta) ? (meta => $meta) : (), # for any other info
         };
         shift @$recent_requests if @$recent_requests > $track_recent;
     }
