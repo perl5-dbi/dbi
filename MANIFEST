@@ -62,7 +62,6 @@ lib/DBI/SQL/Nano.pm		A 'smaller than micro' SQL parser
 lib/DBI/Util/_accessor.pm       A cut-down version of Class::Accessor::Fast
 lib/DBI/W32ODBC.pm		An experimental DBI emulation layer for Win32::ODBC
 lib/Win32/DBIODBC.pm		An experimental Win32::ODBC emulation layer for DBI
-goferperf.pl                    A performance test utility for DBD::Gofer
 t/01basics.t
 t/02dbidrv.t
 t/03handle.t

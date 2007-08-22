@@ -43,7 +43,7 @@ $SIG{__WARN__} = sub { ("@_" =~ /^DBI_GOFER_RANDOM/) ? push(@warns, @_) : warn @
 ($fails, $dbh) = trial_impact("fail=100%,do", 10, "", sub { $_->do("set foo=1") });
 is $fails, 100, 'should fail 100% of the time';
 ok   $@, '$@ should be set';
-like $@, '/fake error induced by DBI_GOFER_RANDOM/';
+like $@, '/fake error from do method induced by DBI_GOFER_RANDOM/';
 ok   $dbh->errstr, 'errstr should be set';
 like $dbh->errstr, '/DBI_GOFER_RANDOM/', 'errstr should contain DBI_GOFER_RANDOM';
 ok !$dbh->{go_response}->executed_flag_set, 'go_response executed flag should be false';
@@ -53,11 +53,11 @@ ok !$dbh->{go_response}->executed_flag_set, 'go_response executed flag should be
 srand(42); # try to limit occasional failures (effect will vary by platform etc)
 
 sub trial_impact {
-    my ($spec, $count, $dsn_attr, $code) = @_;
+    my ($spec, $count, $dsn_attr, $code, $verbose) = @_;
     local $ENV{DBI_GOFER_RANDOM} = $spec;
     my $dbh = dbi_connect("policy=rush;$dsn_attr");
     local $_ = $dbh;
-    my $fail_percent = percentage_exceptions(200, $code);
+    my $fail_percent = percentage_exceptions(200, $code, $verbose);
     return $fail_percent unless wantarray;
     return ($fail_percent, $dbh);
 }
@@ -150,15 +150,19 @@ sub dbi_connect {
 }
 
 sub percentage_exceptions {
-    my ($count, $sub) = @_;
+    my ($count, $sub, $verbose) = @_;
     my $i = $count;
     my $exceptions = 0;
     while ($i--) {
         eval { $sub->() };
+        warn sprintf("percentage_exceptions $i: %s\n", $@|| $DBI::errstr || '')  if $verbose;
         if ($@) {
             die "Unexpected failure: $@" unless $@ =~ /DBI_GOFER_RANDOM/;
             ++$exceptions;
         }
     }
+    warn sprintf "percentage_exceptions %f/%f*100 = %f\n",
+        $exceptions, $count, $exceptions/$count*100
+        if $verbose;
     return $exceptions/$count*100;
 }

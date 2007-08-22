@@ -135,7 +135,7 @@ sub response_needs_retransmit {
 
     if (not defined $retry) {
         my $errstr = $response->errstr || '';
-        $retry = 1 if $errstr =~ m/fake error induced by DBI_GOFER_RANDOM/;
+        $retry = 1 if $errstr =~ m/induced by DBI_GOFER_RANDOM/;
     }
 
     if (not defined $retry) {
