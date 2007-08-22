@@ -282,11 +282,11 @@ is_deeply $tmp, {
 print "testing '!Time' and variants in Path\n";
 
 undef $sth;
-my $factor = 100_000; # ~27 hours
+my $factor = 1_000_000;
 $dbh->{Profile}->{Path} = [ '!Time', "!Time~$factor", '!MethodName' ];
 $dbh->{Profile}->{Data} = undef;
 
-$t1 = int(dbi_time())+1; 1 while int(dbi_time()) < $t1; # spin till new second starts
+$t1 = int(dbi_time())+1; 1 while int(dbi_time()-0.01) < $t1; # spin till just after second starts
 $t2 = int($t1/$factor)*$factor;
 
 $sth = $dbh->prepare("select name from .");

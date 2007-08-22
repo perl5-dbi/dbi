@@ -66,7 +66,9 @@ sub testing {
 # load up the threads
 
 my @thr;
-push @thr, threads_sub->create( \&testing ) foreach (1..$threads);
+push @thr, threads_sub->create( \&testing )
+    or die "thread->create failed ($!)"
+    foreach (1..$threads);
 
 # join all the threads
 

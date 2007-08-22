@@ -512,6 +512,7 @@ sub execute ($@) {
 
     # new execute, so delete any cached rows from previous execute
     undef $sth->{'proxy_data'};
+    undef $sth->{'proxy_rows'};
 
     my $rsth = $sth->{proxy_sth};
     my $dbh = $sth->FETCH('Database');
@@ -592,6 +593,9 @@ sub fetch ($) {
 
     my $data = $sth->{'proxy_data'};
 
+    defined($sth->{'proxy_rows'}) ||
+      ( $sth->{'proxy_rows'} = 0 );
+
     if(!$data || !@$data) {
 	return undef unless $sth->SUPER::FETCH('Active');
 
@@ -615,13 +619,14 @@ sub fetch ($) {
     my $row = shift @$data;
 
     $sth->SUPER::STORE(Active => 0) if ( $sth->{proxy_cache_only} and !@$data );
+    $sth->{'proxy_rows'}++;
     return $sth->_set_fbav($row);
 }
 *fetchrow_arrayref = \&fetch;
 
 sub rows ($) {
     my($sth) = @_;
-    $sth->{'proxy_rows'};
+    $sth->{'proxy_rows'} || -1;
 }
 
 sub finish ($) {

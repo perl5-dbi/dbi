@@ -2331,9 +2331,10 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     if (!DBIc_has(imp_xxh, DBIcf_Profile))
 	return &sv_undef;
 
-    method_pv = (SvTYPE(method)==SVt_PVCV)
-        ? GvNAME(CvGV(method))
-        : (isGV(method) ? GvNAME(method) : SvPV_nolen(method));
+    method_pv = (SvTYPE(method)==SVt_PVCV) ? GvNAME(CvGV(method))
+                : isGV(method) ? GvNAME(method)
+                : SvOK(method) ? SvPV_nolen(method)
+                : "";
 
     /* we don't profile DESTROY during global destruction */
     if (dirty && instr(method_pv, "DESTROY"))

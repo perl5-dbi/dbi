@@ -9,18 +9,26 @@ DBI::Changes - List of significant changes to the DBI
 Assorted TODO notes:
 
 Protect trace_msg from SIGPIPE?
+prepare(...,{ Err=>\my $isolated_err, ...})
+Move _new_sth to DBI::db::_new_sth (leave alias) and implement in C
+Implement FETCH_many() in C
+Or call _new_child and move to DBI::common?
+Add trace modules that just records the last N trace messages into an array
+and prepends them to any error message.
+
+Gofo TODOs:
 
 Add count of identical frozen_request (plus sum(results size)) to Gofer status
-Highlight those seen before.
-
+    Highlight those seen before.
 Move post-request cleanup into separate method and enable hooks so
     it can be done after the response has been sent
-
 Gofer - allow dbh attrib changes after connect?
-
+    note them and pass in request as STORE method calls
+    but then gofer server need to reset them to restore dbh to original state
+    Or, change the attr in the connect() call, but that risks
+    bloating the number of cache dbh in the server.
 Gofer request flags:
     return current executor stats as an attribute - handy for tests
-    only fetch one result set - handy for Sybase/MSSQL users
     will accept streamed resultsets
 Add attr-passthru to prepare()? ie for gofer cache control & ReadOnly
 Terminology for client and server ends
@@ -30,15 +38,7 @@ Policy for dbh attr FETCH (ie example_driver_path)
     or piggyback on skip_connect_check
     could also remember which attr have been returned to us
     so not bother FETCHing them (unless pedantic)
-Call method on transport failure so transport can cleanup/reset it it wants
-
-prepare(...,{ Err=>\my $isolated_err, ...})
-Move _new_sth to DBI::db::_new_sth (leave alias) and implement in C
-Implement FETCH_many() in C
-Or call _new_child and move to DBI::common?
-Add trace modules that just records the last N trace messages into an array
-and prepends them to any error message.
-
+Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 =head2 Changes in DBI 1.59 (svn rev XXX),  XXth June 2007
@@ -48,9 +48,10 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
   Fixed DBI::SQL::Nano to not clobber $_, thanks to Alexey Tourbin.
   Fixed DBI::PurePerl to return undef for ChildHandles if weaken not available.
   Fixed DBD::Proxy disconnect error thanks to Philip Dye.
+  Fixed DBD::Gofer::Transport::Base bug (typo) in timeout code.
+  Fixed DBD::Proxy rows method thanks to Philip Dye.
   Fixed dbiprof compile errors, thanks to Alexey Tourbin.
   Fixed t/03handle.t to skip some tests if ChildHandles not available.
-  Fixed DBD::Gofer::Transport::Base bug (typo) in timeout code.
 
   Added check_response_sub to DBI::Gofer::Execute
 
