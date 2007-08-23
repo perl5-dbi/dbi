@@ -83,8 +83,12 @@ I<The synopsis above only lists the major methods and parameters.>
 =head2 GETTING HELP
 
 If you have questions about DBI, or DBD driver modules, you can get
-help from the I<dbi-users@perl.org> mailing list.  You can get help
-on subscribing and using the list by emailing I<dbi-users-help@perl.org>.
+help from the I<dbi-users@perl.org> mailing list.  You don't have to subscribe
+to the list in order to post, though I'd recommend it. You can get help on
+subscribing and using the list by emailing I<dbi-users-help@perl.org>.
+
+I don't recommend the DBI cpanform (at http://www.cpanforum.com/dist/DBI)
+because relatively few people read it compared with dbi-users@perl.org.
 
 To help you make the best use of the dbi-users mailing list,
 and any other lists or forums you may use, I I<strongly>
