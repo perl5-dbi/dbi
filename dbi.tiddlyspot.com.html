@@ -507,6 +507,41 @@ Perhaps you'd like to find a way contribute yourself...
 See also http://dbi.perl.org/contributing
 </pre>
 </div>
+<div title="DBD::ODBC" modifier="RobertHicks" created="200708201159" changecount="1">
+<pre>[[DBD::ODBC for MySQL V 5 under MS Windows]]</pre>
+</div>
+<div title="DBD::ODBC for MySQL V 5 under MS Windows" modifier="RobertHicks" modified="200708201202" created="200708201200" changecount="7">
+<pre>These notes refer to ~MySQL V 5.0.45 and ~MySQL Connector ODBC V 3.51.19.
+
+When installing ~MySQL, a dialog asks for a password. The user corresponding to this password is 'root'. Assume the value of this password is 'serverpassword'. Make a note of this username/password pair. Also: All single quotes herein are just for clarity. Don't type them in.
+
+After installing the Connector, use Start/Settings/Control Panel/Administrative Tools/Data Sources (ODBC) to define a Data Source Name (DSN). The menu sequence just given is for ~WinXP. Other versions of Windows will be slightly different.
+
+Choose System DSN rather than User DSN when creating a new DSN. System ~DSNs are visible to all users. A User DSN will only be visible to the user defining the DSN. This means, for instance, that if a web server running under a special user runs a CGI script, that CGI script will not have access to User ~DSNs other than those defined by that special user.
+
+For your new DSN, create one of type ~MySQL (this is just a sample for testing):
+* Call the DSN 'my-dsn', say
+* There is no default server, so specify 'localhost'
+* There is no default database, so specify 'mysql'
+* The default username is 'root1'. Enter 'root'
+* The default password is empty. Enter 'serverpassword'
+* There is no default character set, so try 'latin1'
+* Test the connection by clicking the button. Presumably it works...
+* Save the DSN and test it from Perl, but be warned. The username and password in the Perl code to generate a database handle, , are discarded (sic) by ~MySQL Connector. That's why they need to be explicitly specified as below:
+{{{
+$dbh = DBI-&gt;connect('dbi:ODBC:my-dsn', $username, $password)
+}}}
+Once you can connect from Perl, you can run mysql.exe to create new databases and (~MySQL) users. Let's create a database called 'modules', for the username/password combination 'a.username'/'a.password', all of which will be used later in a new DSN:
+From the command line: 
+{{{
+mysql -uroot -p mysql
+(Enter 'serverpassword' when prompted)
+mysql&gt; create database modules;
+mysql&gt; grant all privileges on *.* to 'a.username'@'localhost' identified by 'a.password' with grant option;
+mysql&gt; \q
+}}}
+Now you can return to define a corresponding DSN, and to delete that sample DSN my-dsn.</pre>
+</div>
 <div title="DBI FAQ 1.1 What is DBI, DBperl, Oraperl and *perl?" modifier="RobertHicks" modified="200707172221" created="200706211220" changecount="6">
 <pre>To quote Tim Bunce, the architect and author of DBI:
 
@@ -1106,9 +1141,8 @@ merge(config.shadowTiddlers,{
 //}}}
 </pre>
 </div>
-<div title="UploadLog" modifier="RobertHicks" modified="200708151711" created="200706192053">
+<div title="UploadLog" modifier="RobertHicks" modified="200708201203" created="200706192053">
 <pre>| !date | !user | !location | !storeUrl | !uploadDir | !toFilename | !backupdir | !origin |
-| 17/07/2007 14:08:46 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 14:15:31 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 14:18:02 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 17/07/2007 18:19:25 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
@@ -1117,7 +1151,8 @@ merge(config.shadowTiddlers,{
 | 18/07/2007 13:23:40 | TimBunce | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 18/07/2007 17:32:51 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
 | 18/07/2007 17:39:56 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
-| 15/08/2007 13:11:08 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
+| 15/08/2007 13:11:08 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |
+| 20/08/2007 08:03:24 | RobertHicks | [[/|http://dbi.tiddlyspot.com/]] | [[store.cgi|http://dbi.tiddlyspot.com/store.cgi]] | . | [[index.html | http://dbi.tiddlyspot.com/index.html]] | . |</pre>
 </div>
 <div title="UploadPlugin" modifier="YourName" modified="200706192051" created="200706061221" tags="systemConfig">
 <pre>/***
