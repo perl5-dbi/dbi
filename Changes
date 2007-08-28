@@ -15,6 +15,7 @@ Implement FETCH_many() in C
 Or call _new_child and move to DBI::common?
 Add trace modules that just records the last N trace messages into an array
 and prepends them to any error message.
+Document DBI_PROFILE_FLOCK and LockFile attrib in DBI::ProfileData and DBI::ProfileDumper
 
 Gofo TODOs:
 

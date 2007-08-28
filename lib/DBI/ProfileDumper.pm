@@ -183,13 +183,20 @@ use Carp qw(croak);
 use Fcntl qw(:flock);
 use Symbol;
 
+my $HAS_FLOCK = (defined $ENV{DBI_PROFILE_FLOCK})
+    ? $ENV{DBI_PROFILE_FLOCK}
+    : do { local $@; eval { flock STDOUT, 0; 1 } };
+
 my $program_header;
 
 
 # validate params and setup default
 sub new {
     my $pkg = shift;
-    my $self = $pkg->SUPER::new(@_);
+    my $self = $pkg->SUPER::new(
+        LockFile => $HAS_FLOCK,
+        @_,
+    );
 
     # provide a default filename
     $self->filename("dbi.prof") unless $self->filename;
@@ -234,7 +241,7 @@ sub flush_to_disk {
           or croak("Unable to open '$filename' for $class output: $!");
     }
     # lock the file (before checking size and writing the header)
-    flock($fh, LOCK_EX);
+    flock($fh, LOCK_EX) if $self->{LockFile};
     # write header if file is empty - typically because we just opened it
     # in '>' mode, or perhaps we used '>>' but the file had been truncated externally.
     if (-s $fh == 0) {
