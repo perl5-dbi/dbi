@@ -120,8 +120,10 @@ sub _thaw_data {
             or die "does not have gofer header\n";
         my ($t_version) = $1;
 	$serializer ||= $self->{serializer_obj};
-        $data = $serializer->deserialize($frozen_data)
-            and $data->{_transport}{version} = $t_version;
+        $data = $serializer->deserialize($frozen_data);
+        die ref($serializer)."->deserialize didn't return a reference"
+            unless ref $data;
+        $data->{_transport}{version} = $t_version;
     };
     if ($@) {
         chomp(my $err = $@);
