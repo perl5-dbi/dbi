@@ -18,24 +18,14 @@ BEGIN {
 }
 
 my $threads = 10;
-
-plan tests => 3 + 4 * $threads;
-
-# Something about DBD::Gofer causes a problem. Older versions didn't leak. It
-# started at some point in development but I didn't track it down at the time
-# so the exact change that made it start is now lost in the mists of time.
-# XXX doesn't seem to be happening any more
-warn " You can ignore the $threads 'Scalars leaked' messages you may see here (or send me a patch to fix the underlying problem)\n"
-    if 0 && $ENV{DBI_AUTOPROXY} && not $ENV{DBI_PUREPERL};
+plan tests => 4 + 4 * $threads;
 
 {
     package threads_sub;
     use base qw(threads);
 }
 
-BEGIN {
-	use_ok('DBI');
-}
+use_ok('DBI');
 
 $DBI::neat_maxlen = 12345;
 cmp_ok($DBI::neat_maxlen, '==', 12345, '... assignment of neat_maxlen was successful');

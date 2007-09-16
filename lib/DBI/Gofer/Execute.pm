@@ -289,8 +289,9 @@ sub execute_request {
     $response ||= $self->new_response_with_err(undef, $@, $current_dbh);
 
     if (my $check_response_sub = $self->check_response_sub) {
-        eval { $check_response_sub->($response, $self, $request) };
-        warn "check_response_sub failed: $@" if $@;
+        # not protected with an eval so it can choose to throw an exception
+        my $new = $check_response_sub->($response, $self, $request);
+        $response = $new if ref $new;
     }
 
     undef $current_dbh;
@@ -698,7 +699,7 @@ of the original request.
 
 If defined, it must be a reference to a subroutine that will 'check' the response.
 It is passed the response object, the executor, and the request object.
-The return value is ignored, though the sub may alter the response object.
+The sub may alter the response object and return undef, or return a new response object.
 
 This mechanism can be used to, for example, terminate the service if specific
 database errors are seen.
