@@ -48,6 +48,9 @@ lib/DBI/FAQ.pm			The DBI FAQ in module form for perldoc
 lib/DBI/Gofer/Execute.pm        Execution logic for DBD::Gofer server
 lib/DBI/Gofer/Request.pm        Request object from DBD::Gofer
 lib/DBI/Gofer/Response.pm       Response object for DBD::Gofer
+lib/DBI/Gofer/Serializer/Base.pm
+lib/DBI/Gofer/Serializer/DataDumper.pm
+lib/DBI/Gofer/Serializer/Storable.pm
 lib/DBI/Gofer/Transport/Base.pm Base class for DBD::Gofer server transport classes
 lib/DBI/Gofer/Transport/pipeone.pm  DBD::Gofer transport for single requests
 lib/DBI/Gofer/Transport/stream.pm   DBI::Gofer transport for ssh etc

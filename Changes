@@ -42,6 +42,12 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
+=head2 Changes in DBI 1.601 (svn rev XXX),  XXX
+
+  Fixed t/05thrclone.t to work with Test::More >= 0.71
+    thanks to Jerry D. Hedden and Michael G Schwern.
+
+
 =head2 Changes in DBI 1.59 (svn rev 9874),  23rd August 2007
 
   Fixed DBI::ProfileData to unescape headers lines read from data file.

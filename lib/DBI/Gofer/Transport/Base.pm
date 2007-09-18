@@ -14,6 +14,10 @@ use DBI;
 
 use base qw(DBI::Util::_accessor);
 
+use DBI::Gofer::Serializer::Storable;
+use DBI::Gofer::Serializer::DataDumper;
+
+
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 
@@ -37,55 +41,6 @@ sub new {
     return $self;
 }
 
-{   package DBI::Gofer::Serializer::Storable;
-    # a very minimal subset of Data::Serializer
-    use Storable qw(nfreeze thaw);
-    sub new {
-        return bless {} => shift;
-    }
-    sub serialize {
-        my $self = shift;
-        local $Storable::forgive_me = 1; # for CODE refs etc
-        return nfreeze(shift);
-    }
-    sub deserialize {
-        my $self = shift;
-        return thaw(shift);
-    }
-}
-
-{   package DBI::Gofer::Serializer::DataDumper;
-    # a very minimal subset of Data::Serializer
-    require Data::Dumper;
-    sub new {
-        local $Data::Dumper::Indent    = 1;
-        local $Data::Dumper::Terse     = 1;
-        local $Data::Dumper::Useqq     = 0; # enabling this disables xs
-        local $Data::Dumper::Sortkeys  = 1;
-        local $Data::Dumper::Quotekeys = 0;
-        local $Data::Dumper::Deparse   = 0;
-        local $Data::Dumper::Purity    = 0;
-        return bless {
-	    dumper => Data::Dumper->new([], undef),
-	} => shift;
-    }
-    sub serialize {
-        my $dumper = shift->{dumper};
-        local $Data::Dumper::Indent    = 1;
-        local $Data::Dumper::Terse     = 1;
-        local $Data::Dumper::Useqq     = 0; # enabling this disables xs
-        local $Data::Dumper::Sortkeys  = 1;
-        local $Data::Dumper::Quotekeys = 0;
-        local $Data::Dumper::Deparse   = 0;
-        local $Data::Dumper::Purity    = 0;
-        return Data::Dumper::Dumper(shift);
-    }
-    sub deserialize {
-	Carp::croak("deserialize not supported for ".__PACKAGE__);
-    }
-}
-
-
 my $packet_header_text  = "GoFER1:";
 my $packet_header_regex = qr/^GoFER(\d+):/;
 
@@ -98,7 +53,7 @@ sub _freeze_data {
 
         local $data->{meta}; # don't include _meta in serialization
 	$serializer ||= $self->{serializer_obj};
-        my $data = $serializer->serialize($data);
+        my ($data, $deserializer_class)  = $serializer->serialize($data);
 
         $packet_header_text . $data;
     };
