@@ -817,7 +817,7 @@ namespace) C<connect()> method:
       # here, that is, the DSN looks like var1=val1;...;varN=valN
       foreach my $var ( split /;/, $dr_dsn ) {
           my ($attr_name, $attr_value) = split '=', $var, 2;
-	  return $drh->set_err(1, "Can't parse DSN part '$var'")
+	  return $drh->set_err($DBI::stderr, "Can't parse DSN part '$var'")
               unless defined $attr_value;
 
           # add driver prefix to attribute name if it doesn't have it already
@@ -832,13 +832,13 @@ namespace) C<connect()> method:
       # Get the attributes we'll use to connect.
       # We use delete here because these no need to STORE them
       my $db = delete $attr->{drv_database} || delete $attr->{drv_db}
-          or return $drh->set_err(1, "No database name given in DSN '$dr_dsn'");
+          or return $drh->set_err($DBI::stderr, "No database name given in DSN '$dr_dsn'");
       my $host = delete $attr->{drv_host} || 'localhost';
       my $port = delete $attr->{drv_port} || 123456;
 
       # Assume you can attach to your database via drv_connect:
       my $connection = drv_connect($db, $host, $port, $user, $auth)
-          or return $drh->set_err(1, "Can't connect to $dr_dsn: ...");
+          or return $drh->set_err($DBI::stderr, "Can't connect to $dr_dsn: ...");
 
       # create a 'blank' dbh (call superclass constructor)
       my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dr_dsn });
@@ -1136,7 +1136,7 @@ attribute from above:
       my $params = (@bind_values) ?
           \@bind_values : $sth->{drv_params};
       my $numParam = $sth->FETCH('NUM_OF_PARAMS');
-      return $sth->set_err(1, "Wrong number of parameters")
+      return $sth->set_err($DBI::stderr, "Wrong number of parameters")
           if @$params != $numParam;
       my $statement = $sth->{'Statement'};
       for (my $i = 0;  $i < $numParam;  $i++) {

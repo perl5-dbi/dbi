@@ -626,7 +626,7 @@ sub _mk_rand_callback {
         }
         if ($fail) {
             undef $_; # tell DBI to not call the method
-            return $h->set_err(1, "fake error from $method method induced by DBI_GOFER_RANDOM env var ($fail_percent%)");
+            return $h->set_err($DBI::stderr, "fake error from $method method induced by DBI_GOFER_RANDOM env var ($fail_percent%)");
         }
         return;
     }

@@ -106,7 +106,7 @@
                 $sub = sub { return shift->go_dbh_method(undef, $method, @_) };
             }
             else {
-                $sub = sub { shift->set_err(1, "Can't call \$${type}h->$method when using DBD::Gofer"); return; };
+                $sub = sub { shift->set_err($DBI::stderr, "Can't call \$${type}h->$method when using DBD::Gofer"); return; };
             }
             no strict 'refs';
             *$driver_method = $sub;
@@ -136,7 +136,7 @@
 
         # first remove dsn= and everything after it
         my $remote_dsn = ($dsn =~ s/;?\bdsn=(.*)$// && $1)
-            or return $drh->set_err(1, "No dsn= argument in '$orig_dsn'");
+            or return $drh->set_err($DBI::stderr, "No dsn= argument in '$orig_dsn'");
 
         if ($attr->{go_bypass}) { # don't use DBD::Gofer for this connection
             # useful for testing with DBI_AUTOPROXY, e.g., t/03handle.t
@@ -159,10 +159,10 @@
             $policy_class = "DBD::Gofer::Policy::$policy_class"
                 unless $policy_class =~ /::/;
             _load_class($policy_class)
-                or return $drh->set_err(1, "Can't load $policy_class: $@");
+                or return $drh->set_err($DBI::stderr, "Can't load $policy_class: $@");
             # replace policy name in %go_attr with policy object
             $go_attr{go_policy} = eval { $policy_class->new(\%go_attr) }
-                or return $drh->set_err(1, "Can't instanciate $policy_class: $@");
+                or return $drh->set_err($DBI::stderr, "Can't instanciate $policy_class: $@");
         }
         # policy object is left in $go_attr{go_policy} so transport can see it
         my $go_policy = $go_attr{go_policy};
@@ -171,13 +171,13 @@
         my $go_connect_method = delete $go_attr{go_connect_method};
 
         my $transport_class = delete $go_attr{go_transport}
-            or return $drh->set_err(1, "No transport= argument in '$orig_dsn'");
+            or return $drh->set_err($DBI::stderr, "No transport= argument in '$orig_dsn'");
         $transport_class = "DBD::Gofer::Transport::$transport_class"
             unless $transport_class =~ /::/;
         _load_class($transport_class)
-            or return $drh->set_err(1, "Can't load $transport_class: $@");
+            or return $drh->set_err($DBI::stderr, "Can't load $transport_class: $@");
         my $go_transport = eval { $transport_class->new(\%go_attr) }
-            or return $drh->set_err(1, "Can't instanciate $transport_class: $@");
+            or return $drh->set_err($DBI::stderr, "Can't instanciate $transport_class: $@");
 
         my $request_class = "DBI::Gofer::Request";
         my $go_request = eval {
@@ -196,7 +196,7 @@
             $request_class->new({
                 dbh_connect_call => [ $go_connect_method, $remote_dsn, $user, $auth, $go_attr ],
             })
-        } or return $drh->set_err(1, "Can't instanciate $request_class: $@");
+        } or return $drh->set_err($DBI::stderr, "Can't instanciate $request_class: $@");
 
         my ($dbh, $dbh_inner) = DBI::_new_dbh($drh, {
             'Name' => $dsn,
@@ -215,7 +215,7 @@
         if (not $skip_connect_check) {
             if (not $dbh->go_dbh_method(undef, 'ping')) {
                 return undef if $dbh->err; # error already recorded, typically
-                return $dbh->set_err(1, "ping failed");
+                return $dbh->set_err($DBI::stderr, "ping failed");
             }
         }
 
@@ -264,7 +264,7 @@
             if $meta->{go_last_insert_id_args};
 
         my $transport = $dbh->{go_transport}
-            or return $dbh->set_err(1, "Not connected (no transport)");
+            or return $dbh->set_err($DBI::stderr, "Not connected (no transport)");
 
         my ($response, $retransmit_sub) = $transport->transmit_request($request);
         $response ||= $transport->receive_response($request, $retransmit_sub);
@@ -408,7 +408,7 @@
         begin_work commit rollback
     )) {
         no strict 'refs';
-        *$method = sub { return shift->set_err(1, "$method not available with DBD::Gofer") }
+        *$method = sub { return shift->set_err($DBI::stderr, "$method not available with DBD::Gofer") }
     }
 
 
@@ -478,7 +478,7 @@
 
         # dbh attributes are set at connect-time - see connect()
         carp("Can't alter \$dbh->{$attrib} after handle created with DBD::Gofer") if $dbh->FETCH('Warn');
-        return $dbh->set_err(1, "Can't alter \$dbh->{$attrib} after handle created with DBD::Gofer");
+        return $dbh->set_err($DBI::stderr, "Can't alter \$dbh->{$attrib} after handle created with DBD::Gofer");
     }
 
     sub disconnect {
@@ -490,7 +490,7 @@
     sub prepare {
         my ($dbh, $statement, $attr)= @_;
 
-        return $dbh->set_err(1, "Can't prepare when disconnected")
+        return $dbh->set_err($DBI::stderr, "Can't prepare when disconnected")
             unless $dbh->FETCH('Active');
 
         $attr = { %$attr } if $attr; # copy so we can edit
@@ -582,7 +582,7 @@
             or $dbh->{go_request_count}==1;
 
         my $transport = $sth->{go_transport}
-            or return $sth->set_err(1, "Not connected (no transport)");
+            or return $sth->set_err($DBI::stderr, "Not connected (no transport)");
 
         my ($response, $retransmit_sub) = $transport->transmit_request($request);
         $response ||= $transport->receive_response($request, $retransmit_sub);
@@ -645,7 +645,7 @@
         };
 
         my $resultset_list = $response->sth_resultsets
-            or return $sth->set_err(1, "No sth_resultsets");
+            or return $sth->set_err($DBI::stderr, "No sth_resultsets");
 
         my $meta = shift @$resultset_list
             or return undef; # no more result sets
@@ -746,7 +746,7 @@
         # do the store locally anyway, just in case
         $sth->SUPER::STORE($attrib => $value);
 
-        return $sth->set_err(1, $msg);
+        return $sth->set_err($DBI::stderr, $msg);
     }
 
     # sub bind_param_array

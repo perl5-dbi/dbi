@@ -163,7 +163,7 @@ sub STORE ($$$) {
     #
     if ( $attrib ne 'dbm_valid_attrs'          # gotta start somewhere :-)
      and !$dbh->{dbm_valid_attrs}->{$attrib} ) {
-        return $dbh->set_err( 1,"Invalid attribute '$attrib'!");
+        return $dbh->set_err( $DBI::stderr,"Invalid attribute '$attrib'!");
     }
     else {
 
@@ -186,7 +186,7 @@ sub FETCH ($$) {
     #
     if ( $attrib ne 'dbm_valid_attrs'          # gotta start somewhere :-)
      and !$dbh->{dbm_valid_attrs}->{$attrib} ) {
-        return $dbh->set_err( 1,"Invalid attribute '$attrib'");
+        return $dbh->set_err( $DBI::stderr,"Invalid attribute '$attrib'");
     }
     else {
 
@@ -243,8 +243,8 @@ $DBD::DBM::st::imp_data_size = 0;
 
 sub dbm_schema {
     my($sth,$tname)=@_;
-    return $sth->set_err(1,'No table name supplied!') unless $tname;
-    return $sth->set_err(1,"Unknown table '$tname'!")
+    return $sth->set_err($DBI::stderr,'No table name supplied!') unless $tname;
+    return $sth->set_err($DBI::stderr,"Unknown table '$tname'!")
        unless $sth->{Database}->{dbm_tables}
           and $sth->{Database}->{dbm_tables}->{$tname};
     return $sth->{Database}->{dbm_tables}->{$tname}->{schema};

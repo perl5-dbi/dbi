@@ -95,7 +95,7 @@
 			: split(/\s*,\s*/, $fields);
 	}
 	else {
-	    return $dbh->set_err(1, "Syntax error in select statement (\"$statement\")")
+	    return $dbh->set_err($DBI::stderr, "Syntax error in select statement (\"$statement\")")
 		unless $statement =~ m/^\s*set\s+/;
 	    # the SET syntax is just a hack so the ExampleP driver can
 	    # be used to test non-select statements.
@@ -110,7 +110,7 @@
 	my @bad = map {
 	    defined $DBD::ExampleP::statnames{$_} ? () : $_
 	} @fields;
-	return $dbh->set_err(1, "Unknown field names: @bad")
+	return $dbh->set_err($DBI::stderr, "Unknown field names: @bad")
 		if @bad;
 
 	$outer->STORE('NUM_OF_FIELDS' => scalar(@fields));
@@ -356,7 +356,7 @@
 	}
 	else {			# normal mode
             my $dh  = $sth->{dbd_datahandle}
-                or return $sth->set_err(1, "fetch without successful execute");
+                or return $sth->set_err($DBI::stderr, "fetch without successful execute");
 	    my $f = readdir($dh);
 	    unless ($f) {
 		$sth->finish;

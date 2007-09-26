@@ -129,7 +129,7 @@ sub data_sources ($;$) {
 	$attr->{'f_dir'} : $haveFileSpec ? File::Spec->curdir() : '.';
     my($dirh) = Symbol::gensym();
     if (!opendir($dirh, $dir)) {
-        $drh->set_err(1, "Cannot open directory $dir: $!");
+        $drh->set_err($DBI::stderr, "Cannot open directory $dir: $!");
 	return undef;
     }
     my($file, @dsns, %names, $driver);
@@ -195,7 +195,7 @@ sub prepare ($$;@) {
 	    $stmt = eval { $class->new($statement) };
 	}
 	if ($@) {
-	    $dbh->set_err(1, $@);
+	    $dbh->set_err($DBI::stderr, $@);
 	    undef $sth;
 	} else {
 	    $sth->STORE('f_stmt', $stmt);
@@ -259,14 +259,14 @@ sub STORE ($$$) {
         # if ( !$dbh->{f_valid_attrs}->{$attrib}
         # and !$dbh->{sql_valid_attrs}->{$attrib}
         # ) {
-	#    return $dbh->set_err( 1,"Invalid attribute '$attrib'");
+	#    return $dbh->set_err( $DBI::stderr,"Invalid attribute '$attrib'");
         # }
         # else {
   	#    $dbh->{$attrib} = $value;
 	# }
 
         if ($attrib eq 'f_dir') {
-  	    return $dbh->set_err( 1,"No such directory '$value'")
+  	    return $dbh->set_err( $DBI::stderr,"No such directory '$value'")
                 unless -d $value;
 	}
 	$dbh->{$attrib} = $value;
@@ -332,7 +332,7 @@ sub type_info_all ($) {
 	my($dir) = $dbh->{f_dir};
 	my($dirh) = Symbol::gensym();
 	if (!opendir($dirh, $dir)) {
-	    $dbh->set_err(1, "Cannot open directory $dir: $!");
+	    $dbh->set_err($DBI::stderr, "Cannot open directory $dir: $!");
 	    return undef;
 	}
 	my($file, @tables, %names);
@@ -343,7 +343,7 @@ sub type_info_all ($) {
 	    }
 	}
 	if (!closedir($dirh)) {
-	    $dbh->set_err(1, "Cannot close directory $dir: $!");
+	    $dbh->set_err($DBI::stderr, "Cannot close directory $dir: $!");
 	    return undef;
 	}
 
@@ -351,7 +351,7 @@ sub type_info_all ($) {
 	if (!$dbh2) {
 	    $dbh2 = $dbh->{'csv_sponge_driver'} = DBI->connect("DBI:Sponge:");
 	    if (!$dbh2) {
-	        $dbh->set_err(1, $DBI::errstr);
+	        $dbh->set_err($DBI::stderr, $DBI::errstr);
 		return undef;
 	    }
 	}
@@ -362,7 +362,7 @@ sub type_info_all ($) {
 	my $sth = $dbh2->prepare("TABLE_INFO", { 'rows' => \@tables,
 						 'NAMES' => $names });
 	if (!$sth) {
-	    $dbh->set_err(1, $dbh2->errstr);
+	    $dbh->set_err($DBI::stderr, $dbh2->errstr);
 	}
 	$sth;
     }
@@ -439,7 +439,7 @@ sub execute {
     $sth->finish;
     my $stmt = $sth->{'f_stmt'};
     my $result = eval { $stmt->execute($sth, $params); };
-    return $sth->set_err(1,$@) if $@;
+    return $sth->set_err($DBI::stderr,$@) if $@;
     if ($stmt->{'NUM_OF_FIELDS'}) { # is a SELECT statement
 	$sth->STORE(Active => 1);
 	$sth->STORE('NUM_OF_FIELDS', $stmt->{'NUM_OF_FIELDS'})
@@ -457,7 +457,7 @@ sub fetch ($) {
     my $sth = shift;
     my $data = $sth->{f_stmt}->{data};
     if (!$data  ||  ref($data) ne 'ARRAY') {
-	$sth->set_err(1, "Attempt to fetch row from a Non-SELECT statement");
+	$sth->set_err($DBI::stderr, "Attempt to fetch row from a Non-SELECT statement");
 	return undef;
     }
     my $dav = shift @$data;

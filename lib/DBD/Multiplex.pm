@@ -319,7 +319,7 @@ sub connect {
     push @dsn_list, @{ delete $attr->{mx_dsns} }  if $attr->{mx_dsns};
     push @dsn_list, @dsn_list                     if $attr->{mx_double};
     push @dsn_list, @dsn_list, @dsn_list          if $attr->{mx_triple};
-    return $drh->set_err(1, "No dsn given") unless @dsn_list;
+    return $drh->set_err($DBI::stderr, "No dsn given") unless @dsn_list;
     my @orig_dsn_list = @dsn_list; # @dsn_list gets edited below
 
     # exit_mode decides when to exit the foreach loop.
