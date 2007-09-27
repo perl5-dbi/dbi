@@ -3,6 +3,7 @@ $|=1;
 
 use strict;
 use File::Path;
+use File::Spec;
 use Test::More;
 use Cwd;
 use Config qw(%Config);
@@ -64,7 +65,7 @@ BEGIN {
     }
 }
 
-my $dir = getcwd().'/test_output';
+my $dir = File::Spec->catdir(getcwd(),'test_output');
 
 rmtree $dir;
 mkpath $dir;

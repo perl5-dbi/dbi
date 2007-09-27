@@ -196,9 +196,15 @@ sub _read_files {
 
         if ($self->{DeleteFiles}) {
             my $newfilename = $filename . ".deleteme";
+	    if ($^O eq 'VMS') {
+		# VMS default filesystem can only have one period
+		$newfilename = $filename . 'deleteme';
+	    }
             # will clobber an existing $newfilename
             rename($filename, $newfilename)
                 or croak "Can't rename($filename, $newfilename): $!";
+	    # On a versioned filesystem we want old versions to be removed
+	    1 while (unlink $filename);
             $filename = $newfilename;
         }
 
@@ -219,7 +225,13 @@ sub _read_files {
         push @files_to_delete, $filename
             if $self->{DeleteFiles};
     }
-    unlink $_ or warn "Can't delete '$_': $!" for @files_to_delete;
+    for (@files_to_delete){
+	# for versioned file systems
+	1 while (unlink $_);
+	if(-e $_){
+	    warn "Can't delete '$_': $!";
+	}
+    }
     
     # discard node_lookup now that all files are read
     delete $self->{_node_lookup};

@@ -139,6 +139,11 @@ sub data_sources ($;$) {
 	$driver = 'File';
     }
     while (defined($file = readdir($dirh))) {
+        if ($^O eq 'VMS') {
+            # if on VMS then avoid warnings from catdir if you use a file
+            # (not a dir) as the file below
+            next if $file !~ /\.dir$/oi;
+        }
 	my $d = $haveFileSpec ?
 	    File::Spec->catdir($dir, $file) : "$dir/$file";
         # allow current dir ... it can be a data_source too

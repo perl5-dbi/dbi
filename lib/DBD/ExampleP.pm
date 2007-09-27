@@ -152,6 +152,11 @@
 	    opendir($dh, $dir)
 		or return $dbh->set_err(int($!), "Failed to open directory $dir: $!");
 	    while (defined(my $item = readdir($dh))) {
+                if ($^O eq 'VMS') {
+                    # if on VMS then avoid warnings from catdir if you use a file
+                    # (not a dir) as the item below
+                    next if $item !~ /\.dir$/oi;
+                }
                 my $file = ($haveFileSpec) ? File::Spec->catdir($dir,$item) : $item;
 		next unless -d $file;
 		my($dev, $ino, $mode, $nlink, $uid) = lstat($file);

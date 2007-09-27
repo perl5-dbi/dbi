@@ -188,7 +188,10 @@ $dbh->trace_msg("First logline\n", 1);
 #	read new file size and verify its different
 #
 my $newfsz = (stat $tracefd)[7];
-ok(($filesz != $newfsz), '... regular fh: trace_msg');
+SKIP: {
+    skip 'on VMS autoflush using select does not work', 1 if $^O eq 'VMS';
+    ok(($filesz != $newfsz), '... regular fh: trace_msg');
+}
 
 $dbh->trace(undef, "STDOUT");	# close $trace_file
 ok(-f $trace_file, '... regular fh: file successfully changed');

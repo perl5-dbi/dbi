@@ -80,7 +80,7 @@ for my $trial (sort keys %trials) {
         or next;
 
     # XXX temporary restrictions, hopefully
-    if ($^O eq 'MSWin32') {
+    if ( ($^O eq 'MSWin32') || ($^O eq 'VMS') ) {
        # stream needs Fcntl macro F_GETFL for non-blocking
        # and pipe seems to hang on some windows systems
         next if $transport eq 'stream' or $transport eq 'pipeone';

@@ -27,6 +27,7 @@ plan tests => 4 + 4 * $threads;
 
 use_ok('DBI');
 
+$DBI::PurePerl = $DBI::PurePerl; # just to silence used only once warning
 $DBI::neat_maxlen = 12345;
 cmp_ok($DBI::neat_maxlen, '==', 12345, '... assignment of neat_maxlen was successful');
 
