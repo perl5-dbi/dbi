@@ -35,6 +35,8 @@ __PACKAGE__->mk_accessors_using(make_accessor_autoviv_hashref => qw(
 sub new {
     my ($class, $args) = @_;
     $args->{$_} = 0 for (qw(cache_hit cache_miss cache_store));
+    $args->{keep_meta_frozen} ||= 1 if $args->{go_cache};
+    #warn "args @{[ %$args ]}\n";
     return $class->SUPER::new($args);
 }   
 
@@ -141,12 +143,15 @@ sub receive_response {
         }
     } while ( $self->response_needs_retransmit($request, $response) );
 
-    my $frozen_response = delete $response->{meta}{frozen}
-        or warn "No meta frozen in request";
+    my $frozen_response = delete $response->{meta}{frozen};
 
-    if ($frozen_response and my $go_cache = $self->{go_cache}) {
+    if (my $go_cache = $self->{go_cache}) {
+
+	# new() ensures that enabling go_cache also enabled keep_meta_frozen
+        warn "No meta frozen in request" if !$frozen_response;
+
         my $request_key = $self->get_cache_key_for_request($request);
-        if ($request_key) {
+        if ($frozen_response && $request_key) {
             $self->trace_msg("receive_response added response to cache\n");
             $go_cache->set($request_key, $frozen_response);
             ++$self->{cache_store};

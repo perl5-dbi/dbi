@@ -36,7 +36,6 @@ sub new {
     my ($class, $args) = @_;
     $args->{trace} ||= $class->_init_trace;
     $args->{serializer_obj} ||= DBI::Gofer::Serializer::Storable->new();
-    $args->{keep_meta_frozen} ||= 1 if $args->{go_cache};
     my $self = bless {}, $class;
     $self->$_( $args->{$_} ) for keys %$args;
     $self->trace_msg("$class->new({ @{[ %$args ]} })\n") if $self->trace;

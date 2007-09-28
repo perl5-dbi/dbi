@@ -50,11 +50,12 @@ sub run_tests {
     ok my $rows1 = $dbh->selectall_arrayref("select name from ?", {}, ".");
     cmp_ok $cache_obj->count, '>', 0, 'cache should not be empty after select';
 
+    my $expected = ($ENV{DBI_AUTOPROXY}) ? 2 : 1;
     is $go_transport->cache_hit, 0;
-    is $go_transport->cache_miss, 1;
-    is $go_transport->cache_store, 1;
+    is $go_transport->cache_miss, $expected;
+    is $go_transport->cache_store, $expected;
 
-    is $go_transport->transmit_count, 1, 'should make 1 round trip';
+    is $go_transport->transmit_count, $expected, 'should make 1 round trip';
     $go_transport->transmit_count(0);
     is $go_transport->transmit_count, 0, 'transmit_count should be 0';
 
@@ -63,8 +64,10 @@ sub run_tests {
     is_deeply $rows2, $rows1;
     is $go_transport->transmit_count, 0, 'should make 1 round trip';
 
-    is $go_transport->cache_hit, 1;
-    is $go_transport->cache_miss, 1;
-    is $go_transport->cache_store, 1;
+    is $go_transport->cache_hit, $expected;
+    is $go_transport->cache_miss, $expected;
+    is $go_transport->cache_store, $expected;
 
 }
+
+1;
