@@ -18,6 +18,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     pending_response
+    transmit_count
 )); 
 
 my $executor = DBI::Gofer::Execute->new();
@@ -25,6 +26,7 @@ my $executor = DBI::Gofer::Execute->new();
 
 sub transmit_request_by_transport {
     my ($self, $request) = @_;
+    $self->transmit_count( ($self->transmit_count()||0) + 1 ); # just for tests
 
     my $frozen_request = $self->freeze_request($request);
 

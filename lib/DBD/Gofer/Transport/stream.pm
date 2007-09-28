@@ -148,7 +148,7 @@ sub receive_response_by_transport {
     my ($pid, $rfh, $efh, $cmd) = @{$connection}{qw(pid rfh efh cmd)};
 
     my $errno = 0;
-    my $frozen_response;
+    my $encoded_response;
     my $stderr_msg;
 
     $self->read_response_from_fh( {
@@ -160,14 +160,14 @@ sub receive_response_by_transport {
         $rfh => {
             error => sub { warn "error reading response: $!"; $errno||=$!; 1 },
             eof   => sub { warn "eof on stdout" if 0; 1 },
-            read  => sub { $frozen_response .= $_; ($frozen_response=~s/\015\012$//) ? 1 : 0 },
+            read  => sub { $encoded_response .= $_; ($encoded_response=~s/\015\012$//) ? 1 : 0 },
         },
     });
 
     # if we got no output on stdout at all then the command has
     # probably exited, possibly with an error to stderr.
     # Turn this situation into a reasonably useful DBI error.
-    if (not $frozen_response) {
+    if (not $encoded_response) {
         my $msg = "No response received";
         if (chomp $stderr_msg && $stderr_msg) {
             $msg .= sprintf ", error reported by \"%s\" (pid %d%s): %s",
@@ -181,14 +181,16 @@ sub receive_response_by_transport {
         die "$msg\n";
     }
 
-    $self->trace_msg("Response received: $frozen_response\n",0)
+    $self->trace_msg("Response received: $encoded_response\n",0)
         if $trace >= 4;
 
     $self->trace_msg("Gofer stream stderr message: $stderr_msg\n",0)
         if $stderr_msg && $trace;
 
+    my $frozen_response = pack("H*", $encoded_response);
+
     # XXX need to be able to detect and deal with corruption
-    my $response = $self->thaw_response(pack("H*",$frozen_response));
+    my $response = $self->thaw_response($frozen_response);
 
     if ($stderr_msg) {
         # add stderr messages as warnings (for PrintWarn)

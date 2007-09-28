@@ -23,6 +23,7 @@ our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     trace
+    keep_meta_frozen
     serializer_obj
 ));
 
@@ -35,6 +36,7 @@ sub new {
     my ($class, $args) = @_;
     $args->{trace} ||= $class->_init_trace;
     $args->{serializer_obj} ||= DBI::Gofer::Serializer::Storable->new();
+    $args->{keep_meta_frozen} ||= 1 if $args->{go_cache};
     my $self = bless {}, $class;
     $self->$_( $args->{$_} ) for keys %$args;
     $self->trace_msg("$class->new({ @{[ %$args ]} })\n") if $self->trace;
@@ -61,6 +63,11 @@ sub _freeze_data {
         chomp $@;
         die "Error freezing ".ref($data)." object: $@";
     }
+
+    # stash the frozen data into the data structure itself
+    # to make life easy for the client caching code in DBD::Gofer::Transport::Base
+    $data->{meta}{frozen} = $frozen if $self->keep_meta_frozen;
+
     return $frozen;
 }
 # public aliases used by subclasses
@@ -73,14 +80,16 @@ sub _thaw_data {
     my $data;
     eval {
         # check for and extract our gofer header and the info it contains
-        $frozen_data =~ s/$packet_header_regex//o
+        (my $frozen = $frozen_data) =~ s/$packet_header_regex//o
             or die "does not have gofer header\n";
         my ($t_version) = $1;
 	$serializer ||= $self->{serializer_obj};
-        $data = $serializer->deserialize($frozen_data);
+        $data = $serializer->deserialize($frozen);
         die ref($serializer)."->deserialize didn't return a reference"
             unless ref $data;
         $data->{_transport}{version} = $t_version;
+
+        $data->{meta}{frozen} = $frozen_data if $self->keep_meta_frozen;
     };
     if ($@) {
         chomp(my $err = $@);
@@ -92,6 +101,7 @@ sub _thaw_data {
     }
     $self->_dump("thawing $self->{trace} ".ref($data), $data)
         if !$skip_trace and $self->trace;
+
     return $data;
 }
 # public aliases used by subclasses
@@ -103,6 +113,10 @@ sub _thaw_data {
 # and the tace level passed in
 sub _dump {
     my ($self, $label, $data) = @_;
+
+    # don't dump the binary
+    local $data->{meta}{frozen} if $data->{meta} && $data->{meta}{frozen};
+
     if ($self->trace >= 2) {
         require Data::Dumper;
         local $Data::Dumper::Indent    = 1;

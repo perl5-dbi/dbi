@@ -22,10 +22,21 @@ __PACKAGE__->mk_accessors(qw(
     go_timeout
     go_retry_hook
     go_retry_limit
+    go_cache
+    cache_hit
+    cache_miss
+    cache_store
 ));
 __PACKAGE__->mk_accessors_using(make_accessor_autoviv_hashref => qw(
     meta
 ));
+
+
+sub new {
+    my ($class, $args) = @_;
+    $args->{$_} = 0 for (qw(cache_hit cache_miss cache_store));
+    return $class->SUPER::new($args);
+}   
 
 
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
@@ -39,8 +50,24 @@ sub new_response {
 
 sub transmit_request {
     my ($self, $request) = @_;
-    my $to = $self->go_timeout;
+    my $response;
 
+    if (my $go_cache = $self->{go_cache}) {
+        my $request_key = $self->get_cache_key_for_request($request);
+        my $frozen_response = $go_cache->get($request_key) if $request_key;
+        if ($frozen_response) {
+            $response = $self->thaw_response($frozen_response);
+            my $trace = $self->trace;
+            $self->_dump("cached response found for ".ref($request), $request) if $trace;
+            $self->_dump("cached response is ".ref($response), $response) if $trace;
+            $self->trace_msg("transmit_request is returing a response from cache\n");
+            ++$self->{cache_hit};
+            return $response;
+        }
+        ++$self->{cache_miss} if $request_key;
+    }
+
+    my $to = $self->go_timeout;
     my $transmit_sub = sub {
         $self->trace_msg("transmit_request\n");
         local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
@@ -64,7 +91,7 @@ sub transmit_request {
         return $response;
     };
 
-    my $response = $self->_transmit_request_with_retries($request, $transmit_sub);
+    $response = $self->_transmit_request_with_retries($request, $transmit_sub);
 
     $self->trace_msg("transmit_request is returing a response itself\n") if $response;
 
@@ -93,7 +120,7 @@ sub receive_response {
 
         my $response = eval {
             alarm($to) if $to;
-            $self->receive_response_by_transport();
+            $self->receive_response_by_transport($request);
         };
         alarm(0) if $to;
 
@@ -113,6 +140,18 @@ sub receive_response {
             $response ||= $receive_sub->();
         }
     } while ( $self->response_needs_retransmit($request, $response) );
+
+    my $frozen_response = delete $response->{meta}{frozen}
+        or warn "No meta frozen in request";
+
+    if ($frozen_response and my $go_cache = $self->{go_cache}) {
+        my $request_key = $self->get_cache_key_for_request($request);
+        if ($request_key) {
+            $self->trace_msg("receive_response added response to cache\n");
+            $go_cache->set($request_key, $frozen_response);
+            ++$self->{cache_store};
+        }
+    }
 
     return $response;
 }
@@ -170,6 +209,23 @@ sub transport_timedout {
     my ($self, $method, $timeout) = @_;
     $timeout ||= $self->go_timeout;
     return $self->new_response({ err => 1, errstr => "DBD::Gofer $method timed-out after $timeout seconds" });
+}
+
+
+# return undef if we don't want to cache this request
+sub get_cache_key_for_request {
+    my ($self, $request) = @_;
+
+    # we only want to cache idempotent requests
+    # is_idempotent() is true if GOf_REQUEST_IDEMPOTENT or GOf_REQUEST_READONLY set
+    return undef if not $request->is_idempotent;
+
+    # XXX would be nice to avoid the extra freeze here
+    my $key = $self->freeze_request($request, undef, 1);
+
+    #use Digest::MD5; warn "get_cache_key_for_request: ".Digest::MD5::md5_base64($key)."\n";
+
+    return $key;
 }
 
 

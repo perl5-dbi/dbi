@@ -48,6 +48,11 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
     thanks to Jerry D. Hedden and Michael G Schwern.
   Fixed DBI for VMS thanks to Peter (Stig) Edwards.
 
+  Added client-side caching to DBD::Gofer. Can use any cache
+    object compatible with the Cache module interface.
+  Added DBI::Util::Cache for use with DBD::Gofer
+    It's a very fast and small strict subset of Cache::Memory.
+
 =head2 Changes in DBI 1.59 (svn rev 9874),  23rd August 2007
 
   Fixed DBI::ProfileData to unescape headers lines read from data file.

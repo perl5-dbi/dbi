@@ -62,7 +62,8 @@ lib/DBI/ProfileSubs.pm
 lib/DBI/ProxyServer.pm		The proxy drivers server
 lib/DBI/PurePerl.pm		A DBI.xs emulation in Perl
 lib/DBI/SQL/Nano.pm		A 'smaller than micro' SQL parser
-lib/DBI/Util/_accessor.pm       A cut-down version of Class::Accessor::Fast
+lib/DBI/Util/_accessor.pm       A very¬cut-down version of Class::Accessor::Fast
+lib/DBI/Util/Cache.pm           A very cut-down version of Cache::Memory
 lib/DBI/W32ODBC.pm		An experimental DBI emulation layer for Win32::ODBC
 lib/Win32/DBIODBC.pm		An experimental Win32::ODBC emulation layer for DBI
 t/01basics.t
@@ -95,6 +96,7 @@ t/72childhandles.t
 t/80proxy.t
 t/85gofer.t
 t/86gofer_fail.t
+t/87gofer_cache.t
 t/pod.t
 test.pl			Assorted informal tests, including tests for memory leaks
 typemap
