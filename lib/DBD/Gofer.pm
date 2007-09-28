@@ -167,6 +167,10 @@
         # policy object is left in $go_attr{go_policy} so transport can see it
         my $go_policy = $go_attr{go_policy};
 
+        if ($go_attr{go_cache} and not ref $go_attr{go_cache}) { # if not a cache object already
+            $go_attr{go_cache} = eval { require DBI::Util::Cache; DBI::Util::Cache->new() };
+        }
+
         # but delete any other attributes that don't appy to transport
         my $go_connect_method = delete $go_attr{go_connect_method};
 

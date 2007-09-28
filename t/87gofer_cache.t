@@ -14,9 +14,10 @@ plan 'no_plan';
 
 my @cache_classes = qw(DBI::Util::Cache);
 push @cache_classes, "Cache::Memory" if eval { require Cache::Memory };
+push @cache_classes, "1";
 
 for my $cache_class (@cache_classes) {
-    my $cache_obj = $cache_class->new();
+    my $cache_obj = ($cache_class eq "1") ? $cache_class : $cache_class->new();
     run_tests($cache_obj);
 }
 
@@ -27,17 +28,16 @@ sub run_tests {
     my $dsn = "dbi:Gofer:transport=null;policy=classic;dsn=dbi:ExampleP:";
     print " using $cache_obj for $dsn\n";
 
-    is $cache_obj->count, 0, 'cache should be empty to start';
-
     my $dbh = DBI->connect($dsn, undef, undef, {
         go_cache => $cache_obj,
         RaiseError => 1, PrintError => 0, ShowErrorStatement => 1,
     } );
     ok my $go_transport = $dbh->{go_transport};
+    ok my $go_cache = $go_transport->go_cache;
 
     # setup
-    $cache_obj->clear;
-    is $cache_obj->count, 0, 'cache should be empty after clear';
+    $go_cache->clear;
+    is $go_cache->count, 0, 'cache should be empty after clear';
 
     $go_transport->transmit_count(0);
     is $go_transport->transmit_count, 0, 'transmit_count should be 0';
@@ -48,7 +48,7 @@ sub run_tests {
 
     # request 1
     ok my $rows1 = $dbh->selectall_arrayref("select name from ?", {}, ".");
-    cmp_ok $cache_obj->count, '>', 0, 'cache should not be empty after select';
+    cmp_ok $go_cache->count, '>', 0, 'cache should not be empty after select';
 
     my $expected = ($ENV{DBI_AUTOPROXY}) ? 2 : 1;
     is $go_transport->cache_hit, 0;

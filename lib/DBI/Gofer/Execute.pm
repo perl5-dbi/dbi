@@ -19,7 +19,7 @@ use base qw(DBI::Util::_accessor);
 our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
 
 our @all_dbh_methods = sort map { keys %$_ } $DBI::DBI_methods{db}, $DBI::DBI_methods{common};
-our %all_dbh_methods = map { $_ => DBD::_::db->can($_) } @all_dbh_methods;
+our %all_dbh_methods = map { $_ => (DBD::_::db->can($_)||undef) } @all_dbh_methods;
 
 our $local_log = $ENV{DBI_GOFER_LOCAL_LOG}; # do extra logging to stderr
 
