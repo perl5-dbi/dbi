@@ -7486,7 +7486,7 @@ You can use I<perldoc> to read it by executing the C<perldoc DBI::FAQ> command.
 
 =head1 AUTHORS
 
-DBI by Tim Bunce, L<http://www.linkedin.com/in/timbunce>
+DBI by Tim Bunce, L<http://www.tim.bunce.name>
 
 This pod text by Tim Bunce, J. Douglas Dunlop, Jonathan Leffler and others.
 Perl by Larry Wall and the C<perl5-porters>.
