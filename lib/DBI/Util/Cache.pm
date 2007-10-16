@@ -12,13 +12,19 @@ use warnings;
 
 =head1 NAME
 
-DBI::Util::Cache - a fast but very minimal subset of Cache::Memory
+DBI::Util::Cache - a very fast but very minimal subset of Cache::Memory
 
 =head1 DESCRIPTION
 
 Like Cache::Memory (part of the Cache distribution) but doesn't support any fancy features.
 
-This module aims to be a very fast compatible strict sub-set for simple cases.
+This module aims to be a very fast compatible strict sub-set for simple cases,
+such as basic client-side caching for DBD::Gofer.
+
+Like Cache::Memory, and other caches in the Cache and Cache::Cache
+distributions, the data will remain in the cache until cleared, it expires,
+or the process dies. The cache object simply going out of scope will I<not>
+destroy the data.
 
 =head1 METHODS WITH CHANGES
 
@@ -62,10 +68,10 @@ sub new {
     my ($class, %options ) = @_;
     $options{namespace} ||= 'Default';
     my $self =  bless {
-        #_cache => \%cache, # canbe handy for debugging/dumping
+        #_cache => \%cache, # can be handy for debugging/dumping
         %options,
     } => $class;
-    $self->clear;
+    $self->clear; # init
     return $self;
 }
 
