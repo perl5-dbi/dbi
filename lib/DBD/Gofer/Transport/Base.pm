@@ -105,7 +105,7 @@ sub transmit_request {
     if ($response) {
         my $frozen_response = delete $response->{meta}{frozen};
         $self->_store_response_in_cache($frozen_response, $request_cache_key)
-            if $go_cache;
+            if $request_cache_key;
     }
 
     $self->trace_msg("transmit_request is returing a response itself\n") if $response;
@@ -158,8 +158,9 @@ sub receive_response {
 
     if ($response) {
         my $frozen_response = delete $response->{meta}{frozen};
-        $self->_store_response_in_cache($frozen_response, $request->{meta}{request_cache_key})
-            if $self->{go_cache};
+        my $request_cache_key = $request->{meta}{request_cache_key};
+        $self->_store_response_in_cache($frozen_response, $request_cache_key)
+            if $request_cache_key && $self->{go_cache};
     }
 
     return $response;
