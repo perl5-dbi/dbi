@@ -54,19 +54,26 @@ sub transmit_request {
     my ($self, $request) = @_;
     my $response;
 
-    if (my $go_cache = $self->{go_cache}) {
-        my $request_key = $self->get_cache_key_for_request($request);
-        my $frozen_response = $go_cache->get($request_key) if $request_key;
-        if ($frozen_response) {
-            $response = $self->thaw_response($frozen_response);
-            my $trace = $self->trace;
-            $self->_dump("cached response found for ".ref($request), $request) if $trace;
-            $self->_dump("cached response is ".ref($response), $response) if $trace;
-            $self->trace_msg("transmit_request is returing a response from cache\n");
-            ++$self->{cache_hit};
-            return $response;
+    my ($go_cache, $request_cache_key);
+    if ($go_cache = $self->{go_cache}) {
+        $request_cache_key
+            = $request->{meta}{request_cache_key}
+            = $self->get_cache_key_for_request($request);
+        if ($request_cache_key) {
+            my $frozen_response = eval { $go_cache->get($request_cache_key) };
+            if ($frozen_response) {
+                $response = $self->thaw_response($frozen_response);
+                if (my $trace = $self->trace) {
+                    $self->_dump("cached response found for ".ref($request), $request);
+                    $self->_dump("cached response is ".ref($response), $response);
+                    $self->trace_msg("transmit_request is returing a response from cache\n");
+                }
+                ++$self->{cache_hit};
+                return $response;
+            }
+            warn $@ if $@;
+            ++$self->{cache_miss};
         }
-        ++$self->{cache_miss} if $request_key;
     }
 
     my $to = $self->go_timeout;
@@ -94,6 +101,12 @@ sub transmit_request {
     };
 
     $response = $self->_transmit_request_with_retries($request, $transmit_sub);
+
+    if ($response) {
+        my $frozen_response = delete $response->{meta}{frozen};
+        $self->_store_response_in_cache($frozen_response, $request_cache_key)
+            if $go_cache;
+    }
 
     $self->trace_msg("transmit_request is returing a response itself\n") if $response;
 
@@ -143,19 +156,10 @@ sub receive_response {
         }
     } while ( $self->response_needs_retransmit($request, $response) );
 
-    my $frozen_response = delete $response->{meta}{frozen};
-
-    if (my $go_cache = $self->{go_cache}) {
-
-	# new() ensures that enabling go_cache also enabled keep_meta_frozen
-        warn "No meta frozen in request" if !$frozen_response;
-
-        my $request_key = $self->get_cache_key_for_request($request);
-        if ($frozen_response && $request_key) {
-            $self->trace_msg("receive_response added response to cache\n");
-            $go_cache->set($request_key, $frozen_response);
-            ++$self->{cache_store};
-        }
+    if ($response) {
+        my $frozen_response = delete $response->{meta}{frozen};
+        $self->_store_response_in_cache($frozen_response, $request->{meta}{request_cache_key})
+            if $self->{go_cache};
     }
 
     return $response;
@@ -218,6 +222,7 @@ sub transport_timedout {
 
 
 # return undef if we don't want to cache this request
+# subclasses may use more specialized rules
 sub get_cache_key_for_request {
     my ($self, $request) = @_;
 
@@ -233,6 +238,23 @@ sub get_cache_key_for_request {
     return $key;
 }
 
+
+sub _store_response_in_cache {
+    my ($self, $frozen_response, $request_cache_key) = @_;
+    my $go_cache = $self->{go_cache}
+        or return;
+
+    # new() ensures that enabling go_cache also enables keep_meta_frozen
+    warn "No meta frozen in response" if !$frozen_response;
+    warn "No request_cache_key" if !$request_cache_key;
+
+    if ($frozen_response && $request_cache_key) {
+        $self->trace_msg("receive_response added response to cache\n");
+        eval { $go_cache->set($request_cache_key, $frozen_response) };
+        warn $@ if $@;
+        ++$self->{cache_store};
+    }
+}
 
 1;
 

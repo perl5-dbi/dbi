@@ -1,4 +1,4 @@
-package DBI::Util::Cache;
+package DBI::Util::CacheMemory;
 
 #   $Id$
 #
@@ -12,7 +12,7 @@ use warnings;
 
 =head1 NAME
 
-DBI::Util::Cache - a very fast but very minimal subset of Cache::Memory
+DBI::Util::CacheMemory - a very fast but very minimal subset of Cache::Memory
 
 =head1 DESCRIPTION
 

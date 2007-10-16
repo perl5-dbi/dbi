@@ -741,7 +741,7 @@ DBD::Proxy - A proxy driver for the DBI
 =head1 DESCRIPTION
 
 DBD::Proxy is a Perl module for connecting to a database via a remote
-DBI driver.
+DBI driver. See L<DBD::Gofer> for an alternative with different trade-offs.
 
 This is of course not needed for DBI drivers which already
 support connecting to a remote database, but there are engines which

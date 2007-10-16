@@ -85,12 +85,14 @@ sub is_idempotent {
         return 1 if $flags & (GOf_REQUEST_IDEMPOTENT|GOf_REQUEST_READONLY);
     }
 
-    # else check if all statements are select statement
+    # else check if all statements are SELECT statement that don't include FOR UPDATE
     my @statements = $self->statements;
     # XXX this is very minimal for now, doesn't even allow comments before the select
     # (and can't ever work for "exec stored_procedure_name" kinds of statements)
     # XXX it also doesn't deal with multiple statements: prepare("select foo; update bar")
-    return 1 if @statements == grep { m/^ \s* SELECT \b/xmsi } @statements;
+    return 1 if @statements == grep {
+                m/^ \s* SELECT \b /xmsi && !m/ \b FOR \s+ UPDATE \b /xmsi
+             } @statements;
 
     return 0;
 }
