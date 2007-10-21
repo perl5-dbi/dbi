@@ -388,7 +388,7 @@ for (my $i = 0;  $i < 300;  $i += 100) {
     Test($csr_a = $dbh->prepare("SELECT name, mode FROM long_list_$i"));
     Test($csr_a->execute(), $DBI::errstr);
     my $ary = $csr_a->fetchall_arrayref;
-    Test(@$ary == $i);
+    Test(@$ary == $i, "expected $i got ".@$ary);
     if ($i) {
         my @n1 = map { $_->[0] } @$ary;
         my @n2 = reverse map { "file$_" } 1..$i;

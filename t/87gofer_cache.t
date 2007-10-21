@@ -10,7 +10,7 @@ use Data::Dumper;
 use Test::More;
 use DBI::Util::CacheMemory;
 
-plan skip_all => "Gofer DBI_AUTOPROXY" if $ENV{DBI_AUTOPROXY} =~ /^dbi:Gofer/i;
+plan skip_all => "Gofer DBI_AUTOPROXY" if (($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer/i);
 
 plan 'no_plan';
 

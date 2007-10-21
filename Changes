@@ -28,9 +28,9 @@ Gofer - allow dbh attrib changes after connect?
     but then gofer server need to reset them to restore dbh to original state
     Or, change the attr in the connect() call, but that risks
     bloating the number of cache dbh in the server.
-Gofer request flags:
-    return current executor stats as an attribute - handy for tests
-    will accept streamed resultsets
+Gofer request flags for:
+    - return current executor stats as an attribute - handy for tests
+    - will accept streamed resultsets
 Add attr-passthru to prepare()? ie for gofer cache control & ReadOnly
 Terminology for client and server ends
 Document user/passwd issues at the various levels of the gofer stack
@@ -42,7 +42,7 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
-=head2 Changes in DBI 1.601 (svn rev XXX),  XXX
+=head2 Changes in DBI 1.601 (svn rev 10103),  21st October 2007
 
   Fixed t/05thrclone.t to work with Test::More >= 0.71
     thanks to Jerry D. Hedden and Michael G Schwern.
@@ -53,7 +53,7 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
     distribution modules plus Cache::Memcached, Cache::FastMmap etc.
     Works for all transports. Overridable per handle.
 
-  Added DBI::Util::CacheMemory for use with DBD::Gofer
+  Added DBI::Util::CacheMemory for use with DBD::Gofer caching.
     It's a very fast and small strict subset of Cache::Memory.
 
 =head2 Changes in DBI 1.59 (svn rev 9874),  23rd August 2007

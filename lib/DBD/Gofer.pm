@@ -1186,6 +1186,12 @@ specify no caching for a particular query, you could use
 
 This can be used to implement different caching policies for different statements.
 
+It's interesting to note that DBD::Gofer can be used to add client-side caching
+to any (gofer compatible) application, with no code changes and no need for a
+gofer server.  Just set the DBI_AUTOPROXY environment variable like this:
+
+    DBI_AUTOPROXY='dbi:Gofer:transport=null;cache=1'
+
 =head1 CONFIGURING BEHAVIOUR POLICY
 
 DBD::Gofer supports a 'policy' mechanism that allows you to fine-tune the number of round-trips to the Gofer server.
