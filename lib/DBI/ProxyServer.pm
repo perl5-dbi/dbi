@@ -215,7 +215,7 @@ sub CallMethod {
     # $dbh. However, we'd have a reference loop in that case and
     # I would be concerned about garbage collection. :-(
     $dbh->{'private_server'} = $server;
-    $server->Debug("CallMethod: => " . join(",", @_));
+    $server->Debug("CallMethod: => " . do { local $^W; join(",", @_)});
     my @result = eval { $server->SUPER::CallMethod(@_) };
     my $msg = $@;
     undef $dbh->{'private_server'};
@@ -223,7 +223,7 @@ sub CallMethod {
 	$server->Debug("CallMethod died with: $@");
 	die $msg;
     } else {
-	$server->Debug("CallMethod: <= " . join(",", @result));
+	$server->Debug("CallMethod: <= " . do { local $^W; join(",", @result) });
     }
     @result;
 }
