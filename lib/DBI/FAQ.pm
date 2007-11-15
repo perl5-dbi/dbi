@@ -50,6 +50,8 @@ DBI Frequently Asked Questions v.0.38
 
 This document is currently at version I<0.38>, as of I<February 8th, 2000>.
 
+That's B<very> old. A newer FAQ can be found at L<http://faq.dbi-support.com/>
+
 =head1 DESCRIPTION
 
 This document serves to answer the most frequently asked questions on both

@@ -140,7 +140,8 @@ When you get the go ahead, you will need to establish the name of the
 driver and a prefix for the driver. Typically, the name is based on the
 name of the database software it uses, and the prefix is a contraction
 of that. Hence, B<DBD::Oracle> has the name I<Oracle> and the prefix
-'I<ora_>'.
+'I<ora_>'. The prefix must be lowercase and contain no underscores other
+than the one at the end.
 
 This information will be recorded in the B<DBI> module. Apart from
 documentation purposes, registration is a prerequisite for

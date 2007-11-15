@@ -140,7 +140,7 @@ my %opts = (
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
     clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zv*_*.t dbi__null_test_tmp*"
-                ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbitrace.log dbi.prof ndtest.prt" },
+                ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbiproxy.*log dbitrace.log dbi.prof ndtest.prt" },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',

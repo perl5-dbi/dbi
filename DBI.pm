@@ -99,16 +99,13 @@ If you think you've found a bug then please also read
 "How to Report Bugs Effectively" by Simon Tatham:
 L<http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
 
-The DBI home page at L<http://dbi.perl.org/> is always worth a visit
-and includes an FAQ and links to other resources.
+The DBI home page at L<http://dbi.perl.org/> and the DBI FAQ
+at L<http://faq.dbi-support.com/> are always worth a visit.
+They include links to other resources.
 
 Before asking any questions, reread this document, consult the
 archives and read the DBI FAQ. The archives are listed
 at the end of this document and on the DBI home page.
-An FAQ is installed as a L<DBI::FAQ> module so
-you can read it by executing C<perldoc DBI::FAQ>.
-However the DBI::FAQ module is currently (2004) outdated relative
-to the online FAQ on the DBI home page.
 
 This document often uses terms like I<references>, I<objects>,
 I<methods>.  If you're not familar with those terms then it would
@@ -334,6 +331,7 @@ my $dbd_prefix_registry = {
   jdbc_    => { class => 'DBD::JDBC',		},
   monetdb_ => { class => 'DBD::monetdb',	},
   msql_    => { class => 'DBD::mSQL',		},
+  mvsftp_  => { class => 'DBD::MVS_FTPSQL',	},
   mysql_   => { class => 'DBD::mysql',		},
   mx_      => { class => 'DBD::Multiplex',	},
   nullp_   => { class => 'DBD::NullP',		},
@@ -7481,8 +7479,7 @@ Recommended Perl Programming Links
 
 =head2 FAQ
 
-Please also read the DBI FAQ which is installed as a DBI::FAQ module.
-You can use I<perldoc> to read it by executing the C<perldoc DBI::FAQ> command.
+See L<http://faq.dbi-support.com/>
 
 =head1 AUTHORS
 
