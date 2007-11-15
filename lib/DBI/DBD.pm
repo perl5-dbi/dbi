@@ -185,6 +185,8 @@ Assuming that your driver is called B<DBD::Driver>, these files are:
 
 =item * F<Makefile.PL>
 
+=item * F<META.yml>
+
 =item * F<README>
 
 =item * F<MANIFEST>
@@ -207,6 +209,15 @@ standard Perl module distribution mechanism. It lists all the source
 files that need to be distributed with your module. F<Driver.pm> is what
 is loaded by the B<DBI> code; it contains the methods peculiar to your
 driver.
+
+Although the F<META.yml> file is not B<required> you are advised to
+create one. Of particular importance are the I<build_requires> and
+I<configure_requires> attributes which newer CPAN modules understand.
+You use these to tell the CPAN module (and CPANPLUS) that your build
+and configure mechanisms require DBI. The best reference for META.yml
+(at the time of writing) is
+L<http://module-build.sourceforge.net/META-spec-v1.2.html>. You can find
+a reasonable example of a F<META.yml> in DBD::ODBC.
 
 The F<lib/Bundle/DBD/Driver.pm> file allows you to specify other Perl
 modules on which yours depends in a format that allows someone to type a
@@ -379,24 +390,32 @@ your driver's name:
 
   # -*- perl -*-
 
-  use DBI 1.03;
-  use DBI::DBD;
   use ExtUtils::MakeMaker;
 
   WriteMakefile(
       dbd_edit_mm_attribs( {
           'NAME'         => 'DBD::Driver',
           'VERSION_FROM' => 'Driver.pm',
-          'INC'          => $DBI_INC_DIR,
+          'INC'          => '',
           'dist'         => { 'SUFFIX'   => '.gz',
                               'COMPRESS' => 'gzip -9f' },
           'realclean'    => { FILES => '*.xsi' },
+          'PREREQ_PM'    => '1.03',
+          CONFIGURE      => sub {
+              use DBI::DBD;
+              my $dbi_arch_dir = dbd_dbi_arch_dir();
+              if (exists($opts{INC})) {
+                  return {INC => "$opts{INC} -I$dbi_arch_dir"};
+              } else {
+                  return {INC => "-I$dbi_arch_dir"};
+              }
+          }
       },
       { create_pp_tests => 1})
   );
 
   package MY;
-  sub postamble { return main::dbd_postamble(@_); }
+  sub postamble { use DBI::DBD; return main::dbd_postamble(@_); }
   sub libscan {
       my ($self, $path) = @_;
       ($path =~ m/\~$/) ? undef : $path;
@@ -414,21 +433,43 @@ hash reference containing NAME etc as the only argument to C<WriteMakefile()>.
 Note that the C<dbd_edit_mm_attribs()> code will fail if you do not have a
 F<t> sub-directory containing at least one test case.
 
+I<PREREQ_PM> tells MakeMaker that DBI (version 1.03 in this case) is
+required for this module. This will stop someone installing your DBD
+unless DBI 1.03 is installed and stop cpan testers from reporting
+errors if they do not have DBI installed.
+
+I<CONFIGURE> is a subroutine called by MakeMaker after WriteMakeFile
+is called and after I<PREREQ_PM> is checked but before the F<Makefile>
+is written. By putting the C<use DBI::DBD> in this section we allow
+MakeMaker to report a missing DBI but allow ourselves to use
+C<dbd_dbi_arch_dir()> when DBI is already installed. If we had just
+put C<use DBI> in the main perl for F<Makefile.PL> it would fail if
+DBI was not installed but would prevent MakeMaker from detecting the
+problem and hence cpan testers will report a fail.
+
 All drivers must use C<dbd_postamble()> or risk running into problems.
 
-Note the specification of I<VERSION_FROM>; the named file (F<Driver.pm>) will
-be scanned for the first line that looks like an assignment to I<$VERSION>,
-and the subsequent text will be used to determine the version number.
-Note the commentary in L<ExtUtils::MakeMaker> on the subject of
-correctly formatted version numbers.
+Note the specification of I<VERSION_FROM>; the named file
+(F<Driver.pm>) will be scanned for the first line that looks like an
+assignment to I<$VERSION>, and the subsequent text will be used to
+determine the version number.  Note the commentary in
+L<ExtUtils::MakeMaker> on the subject of correctly formatted version
+numbers.
 
 If your driver depends upon external software (it usually will), you
-will need to add code to ensure that your environment is workable before
-the call to C<WriteMakefile()>.
+will need to add code to ensure that your environment is workable
+before the call to C<WriteMakefile()>. If you need to check for the
+existance of an external library and perhaps modify I<INC> to include
+the paths to where the external library header files are located and
+you cannot find the library or header files make sure you output a
+message saying they cannot be found but C<exit 0> (success) B<before>
+calling C<WriteMakefile> or CPAN testers will fail your module if the
+external library is not found.
 
-A full-fledged I<Makefile.PL> can be quite large (for example, the files
-for B<DBD::Oracle> and B<DBD::Informix> are both over 1000 lines long, and the
-Informix one uses - and creates - auxilliary modules too).
+A full-fledged I<Makefile.PL> can be quite large (for example, the
+files for B<DBD::Oracle> and B<DBD::Informix> are both over 1000 lines
+long, and the Informix one uses - and creates - auxilliary modules
+too).
 
 See also L<ExtUtils::MakeMaker> and L<ExtUtils::MM_Unix>. Consider using
 L<CPAN::MakeMaker> in place of I<ExtUtils::MakeMaker>.
@@ -1413,6 +1454,9 @@ F<DBD/Informix/TestHarness.pm> which is used throughout the
 B<DBD::Informix> tests in the F<t> sub-directory.
 
 =head1 CREATING A C/XS DRIVER
+
+Please also see the section under L<CREATING A PURE PERL DRIVER>
+regarding the creation of the F<Makefile.PL>.
 
 Creating a new C/XS driver from scratch will always be a daunting task.
 You can and should greatly simplify your task by taking a good
