@@ -3117,11 +3117,9 @@ sub dbd_edit_mm_attribs {
 	#   }
 	);
 
-	opendir DIR, 't' or die "Can't create variants of tests in 't' directory: $!";
+	opendir DIR, 't' or die "Can't read 't' directory: $!";
 	my @tests = grep { /\.t$/ } readdir DIR;
 	closedir DIR;
-
-	# XXX one day we may try combinations here, ie pp+mx!
 
         while ( my ($v_type, $v_info) = each %test_variants ) {
             printf "Creating test wrappers for $v_info->{name}:\n";
