@@ -116,6 +116,8 @@ sub run_tests {
     my ($transport, $trans_attr, $policy_name) = @_;
 
     my $policy = get_policy($policy_name);
+    my $skip_gofer_checks = ($transport eq 'no');
+
 
     my $test_run_tag = "Testing $transport transport with $policy_name policy";
     print "\n$test_run_tag\n";
@@ -157,7 +159,8 @@ sub run_tests {
     is_deeply($rowset, [ [ '1', 'oranges' ], [ '2', 'oranges' ] ]);
 
     ok $dbh->do("UPDATE fruit SET dVal='apples' WHERE dVal='oranges'");
-    ok $dbh->{go_response}->executed_flag_set, 'go_response executed flag should be true';
+    ok $dbh->{go_response}->executed_flag_set, 'go_response executed flag should be true'
+        unless $skip_gofer_checks && pass();
 
     ok $sth = $dbh->prepare("SELECT dKey, dVal FROM fruit");
     ok $sth->execute;
@@ -178,16 +181,14 @@ sub run_tests {
         $durations{insert}{"$transport+$policy_name"} = dbi_time() - $start;
     }
 
-    my $skip_go_request_count_check = ($transport eq 'no');
-
     print "Testing go_request_count and caching of simple values\n";
     my $go_request_count = $dbh->{go_request_count};
     ok $go_request_count
-        unless $skip_go_request_count_check && pass();
+        unless $skip_gofer_checks && pass();
 
     ok $dbh->do("DROP TABLE fruit");
     is ++$go_request_count, $dbh->{go_request_count}
-        unless $skip_go_request_count_check && pass();
+        unless $skip_gofer_checks && pass();
 
     # tests go_request_count, caching, and skip_default_methods policy
     my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
@@ -196,7 +197,7 @@ sub run_tests {
 
 SKIP: {
     skip "skip_default_methods checking doesn't work with Gofer over Gofer", 3
-        if $ENV{DBI_AUTOPROXY} or $skip_go_request_count_check;
+        if $ENV{DBI_AUTOPROXY} or $skip_gofer_checks;
     $dbh->data_sources({ foo_bar => $go_request_count });
     is $dbh->{go_request_count}, $go_request_count + 1*$use_remote;
     $dbh->data_sources({ foo_bar => $go_request_count }); # should use cache

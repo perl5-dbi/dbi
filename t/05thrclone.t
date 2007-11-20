@@ -11,8 +11,8 @@ use Config qw(%Config);
 use Test::More;
 
 BEGIN {
-    if (!$Config{useithreads} || $] < 5.008) {
-	plan skip_all => "this $^O perl $] not configured to support iThreads";
+    if (!$Config{useithreads} || $] < 5.008001) {
+	plan skip_all => "this $^O perl $] not supported for DBI iThreads";
     }
     die $use_threads_err if $use_threads_err; # need threads
 }
