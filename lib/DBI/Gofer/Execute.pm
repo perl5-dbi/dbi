@@ -158,6 +158,7 @@ sub _connect {
 
     my ($connect_method, $dsn, $username, $password, $attr) = @{ $request->dbh_connect_call };
     $connect_method ||= 'connect_cached';
+    $stats->{method_calls_dbh}->{$connect_method}++;
 
     # delete attributes we don't want to affect the server-side
     # (Could just do this on client-side and trust the client. DoS?)
@@ -641,17 +642,22 @@ sub update_stats {
         if length($frozen_request)  > ($stats->{frozen_request_max_bytes}||0);
     $stats->{frozen_response_max_bytes} = length($frozen_response)
         if length($frozen_response) > ($stats->{frozen_response_max_bytes}||0);
+
     my $recent;
     if (my $track_recent = $self->{track_recent}) {
-        my $recent_requests = $stats->{recent_requests} ||= [];
-        push @$recent_requests, $recent = {
+        $recent = {
             request  => $frozen_request,
             response => $frozen_response,
             time_received => $time_received,
             duration => dbi_time()-$time_received,
-	    ($meta) ? (meta => $meta) : (), # for any other info
+            ($meta) ? (meta => $meta) : (), # for any other info
         };
-        shift @$recent_requests if @$recent_requests > $track_recent;
+        my @queues =  ($stats->{recent_requests} ||= []);
+        push @queues, ($stats->{recent_errors}   ||= []) if $response->err;
+        for my $queue (@queues) {
+            push @$queue, $recent;
+            shift @$queue if @$queue > $track_recent;
+        }
     }
     return $recent;
 }

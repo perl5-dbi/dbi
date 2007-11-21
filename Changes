@@ -48,6 +48,10 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
   Improvements to t/80proxy.t test script.
   Improvements to t/85gofer.t test script thanks to Stig.
 
+  Gofer changes:
+    track_recent now also keeps track of N most recent errors.
+    The connect method is now also counted in stats.
+
 =head2 Changes in DBI 1.601 (svn rev 10103),  21st October 2007
 
   Fixed t/05thrclone.t to work with Test::More >= 0.71
