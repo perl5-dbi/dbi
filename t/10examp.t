@@ -421,26 +421,16 @@ ok(!$dbh->{HandleError});
 	  ok($sth->execute('../'));
 	}
 	
-	my $dump_dir = ($ENV{TMP}           || 
-					$ENV{TEMP}          || 
-					$ENV{TMPDIR}        || 
-					$ENV{'SYS$SCRATCH'} || 
-					'/tmp');
-	my $dump_file = ($haveFileSpec) ? 
-						File::Spec->catfile($dump_dir, 'dumpcsr.tst')
-						: 
-						"$dump_dir/dumpcsr.tst";
-        #($dump_file) = ($dump_file =~ m/^(.*)$/);	# untaint
-
+	my $dump_file = 'dumpcsr.tst';
 	SKIP: {
-		skip "# dump_results test skipped: unable to open $dump_file: $!\n", 2 unless (open(DUMP_RESULTS, ">$dump_file"));
-		ok($sth->dump_results("10", "\n", ",\t", \*DUMP_RESULTS));
-		close(DUMP_RESULTS);
-		ok(-s $dump_file > 0);
+            skip "# dump_results test skipped: unable to open $dump_file: $!\n", 4
+                unless open(DUMP_RESULTS, ">$dump_file");
+            ok($sth->dump_results("10", "\n", ",\t", \*DUMP_RESULTS));
+            close(DUMP_RESULTS) or warn "close $dump_file: $!";
+            ok(-s $dump_file > 0);
+            is( unlink( $dump_file ), 1, "Remove $dump_file" );
+            ok( !-e $dump_file, "Actually gone" );
 	}
-
-	is( unlink( $dump_file ), 1, "Remove $dump_file" );
-	ok( !-e $dump_file, "Actually gone" );
 
 }
 

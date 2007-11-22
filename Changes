@@ -47,6 +47,7 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
   Expanded DBI::DBD docs for driver authors thanks to Martin Evans.
   Improvements to t/80proxy.t test script.
   Improvements to t/85gofer.t test script thanks to Stig.
+  Improvements to t/10examp.t test script thanks to David Cantrell.
 
   Gofer changes:
     track_recent now also keeps track of N most recent errors.
