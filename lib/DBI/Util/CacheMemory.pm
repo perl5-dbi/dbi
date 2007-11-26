@@ -66,12 +66,10 @@ my %cache;
 
 sub new {
     my ($class, %options ) = @_;
-    $options{namespace} ||= 'Default';
-    my $self =  bless {
-        #_cache => \%cache, # can be handy for debugging/dumping
-        %options,
-    } => $class;
-    $self->clear; # init
+    my $namespace = $options{namespace} ||= 'Default';
+    #$options{_cache} = \%cache; # can be handy for debugging/dumping
+    my $self =  bless \%options => $class;
+    $cache{ $namespace } ||= {}; # init - ensure it exists
     return $self;
 }
 

@@ -66,7 +66,7 @@ sub transmit_request {
                 if (my $trace = $self->trace) {
                     $self->_dump("cached response found for ".ref($request), $request);
                     $self->_dump("cached response is ".ref($response), $response);
-                    $self->trace_msg("transmit_request is returing a response from cache\n");
+                    $self->trace_msg("transmit_request is returning a response from cache $go_cache\n");
                 }
                 ++$self->{cache_hit};
                 return $response;
@@ -250,7 +250,7 @@ sub _store_response_in_cache {
     warn "No request_cache_key" if !$request_cache_key;
 
     if ($frozen_response && $request_cache_key) {
-        $self->trace_msg("receive_response added response to cache\n");
+        $self->trace_msg("receive_response added response to cache $go_cache\n");
         eval { $go_cache->set($request_cache_key, $frozen_response) };
         warn $@ if $@;
         ++$self->{cache_store};
