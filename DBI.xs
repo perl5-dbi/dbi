@@ -4276,6 +4276,7 @@ FETCH(sv)
 	}
 	PUSHMARK(mark);  /* reset mark (implies one arg as we were called with one arg?) */
 	perl_call_sv((SV*)GvCV(imp_gv), GIMME);
+        SPAGAIN;
 #ifdef DBI_save_hv_fetch_ent
 	PL_hv_fetch_ent_mh = save_mh;
 #endif
@@ -4617,6 +4618,7 @@ fetch(sth)
     XPUSHs(sth);
     PUTBACK;
     num_fields = perl_call_method("fetchrow", G_ARRAY);	/* XXX change the name later */
+    SPAGAIN;
     if (num_fields == 0) {
 	ST(0) = &sv_undef;
     } else {

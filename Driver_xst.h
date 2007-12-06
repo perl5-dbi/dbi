@@ -11,6 +11,7 @@
  * It would be better if we setup perl's context so SUPER:: did the right thing
  * (borrowing the relevant magic from pp_entersub in perl pp_hot.c).
  * Then we could just use call_method("SUPER::foo") instead.
+ * XXX remember to call SPAGAIN in the calling code after calling this!
  */
 static SV *
 dbixst_bounce_method(char *methname, int params)

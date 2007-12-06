@@ -111,7 +111,9 @@ selectall_arrayref(...)
 		(DBD_ATTRIB_TRUE(attr,"Slice",5,tmp_svp) || DBD_ATTRIB_TRUE(attr,"Columns",7,tmp_svp))
 	) {
 	    /* fallback to perl implementation */
-	    ST(0) =dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::selectall_arrayref", items);
+	    SV *tmp =dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::selectall_arrayref", items);
+	    SPAGAIN;
+	    ST(0) = tmp;
 	    XSRETURN(1);
 	}
     }
@@ -380,9 +382,13 @@ take_imp_data(h)
      * would be &sv_undef for error or an SV holding the imp_data.
      */
     SV *sv = dbd_take_imp_data(h, imp_xxh, NULL);
-    ST(0) = (SvOK(sv) && !SvTRUE(sv))
-	? dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::take_imp_data", items)
-	: sv_2mortal(sv);
+    if (SvOK(sv) && !SvTRUE(sv)) {
+	SV *tmp = dbixst_bounce_method("DBD::~DRIVER~::db::SUPER::take_imp_data", items);
+	SPAGAIN;
+	ST(0) = tmp;
+    } else {
+	ST(0) = sv_2mortal(sv);
+    }
 
 #endif
 
@@ -630,7 +636,9 @@ fetchall_arrayref(sth, slice=&PL_sv_undef, batch_row_count=&PL_sv_undef)
     SV *	batch_row_count
     CODE:
     if (SvOK(slice)) {  /* fallback to perl implementation */
-        ST(0) = dbixst_bounce_method("DBD::~DRIVER~::st::SUPER::fetchall_arrayref", 3);
+	SV *tmp = dbixst_bounce_method("DBD::~DRIVER~::st::SUPER::fetchall_arrayref", 3);
+	SPAGAIN;
+        ST(0) = tmp;
     }
     else {
 	ST(0) = dbdxst_fetchall_arrayref(sth, slice, batch_row_count);

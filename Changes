@@ -42,6 +42,8 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 =head2 Changes in DBI ...
 
+  Fixed potential coredump if stack reallocated while calling back
+    into perl from XS code. Thanks to John Gardiner Myers.
   Fixed DBI::Util::CacheMemory->new to not clear the cache.
   Expanded DBI::DBD docs for driver authors thanks to Martin Evans.
   Enhanced t/80proxy.t test script.
