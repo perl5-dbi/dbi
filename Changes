@@ -19,8 +19,6 @@ Document DBI_PROFILE_FLOCK and LockFile attrib in DBI::ProfileData and DBI::Prof
 
 Gofo TODOs:
 
-Add count of identical frozen_request (plus sum(results size)) to Gofer status
-    Highlight those seen before.
 Move post-request cleanup into separate method and enable hooks so
     it can be done after the response has been sent
 Gofer - allow dbh attrib changes after connect?
@@ -49,6 +47,7 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
   Enhanced t/80proxy.t test script.
   Enhanced t/85gofer.t test script thanks to Stig.
   Enhanced t/10examp.t test script thanks to David Cantrell.
+  Documented $DBI::stderr as the default value of err for internal errors.
 
   Gofer changes:
     track_recent now also keeps track of N most recent errors.

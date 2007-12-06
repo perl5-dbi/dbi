@@ -3052,6 +3052,9 @@ If you need to test for specific error conditions I<and> have your program be
 portable to different database engines, then you'll need to determine what the
 corresponding error codes are for all those engines and test for all of them.
 
+The DBI uses the value of $DBI::stderr as the C<err> value for internal errors.
+Drivers should also do likewise.  The default value for $DBI::stderr is 2000000000.
+
 A driver may return C<0> from err() to indicate a warning condition
 after a method call. Similarly, a driver may return an empty string
 to indicate a 'success with information' condition. In both these

@@ -62,12 +62,12 @@ sub transmit_request {
         if ($request_cache_key) {
             my $frozen_response = eval { $go_cache->get($request_cache_key) };
             if ($frozen_response) {
+                my $trace = $self->trace;
+                $self->_dump("cached response found for ".ref($request), $request)
+                    if $trace;
                 $response = $self->thaw_response($frozen_response);
-                if (my $trace = $self->trace) {
-                    $self->_dump("cached response found for ".ref($request), $request);
-                    $self->_dump("cached response is ".ref($response), $response);
-                    $self->trace_msg("transmit_request is returning a response from cache $go_cache\n");
-                }
+                $self->trace_msg("transmit_request is returning a response from cache $go_cache\n")
+                    if $trace;
                 ++$self->{cache_hit};
                 return $response;
             }
