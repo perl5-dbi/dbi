@@ -401,8 +401,12 @@ your driver's name:
                               'COMPRESS' => 'gzip -9f' },
           'realclean'    => { FILES => '*.xsi' },
           'PREREQ_PM'    => '1.03',
-          CONFIGURE      => sub {
-              use DBI::DBD;
+          'CONFIGURE'    => sub {
+              eval {require DBI::DBD;};
+              if ($@) {
+                  warn $@;
+                  exit 0;
+              }
               my $dbi_arch_dir = dbd_dbi_arch_dir();
               if (exists($opts{INC})) {
                   return {INC => "$opts{INC} -I$dbi_arch_dir"};
@@ -415,7 +419,7 @@ your driver's name:
   );
 
   package MY;
-  sub postamble { use DBI::DBD; return main::dbd_postamble(@_); }
+  sub postamble { return main::dbd_postamble(@_); }
   sub libscan {
       my ($self, $path) = @_;
       ($path =~ m/\~$/) ? undef : $path;
@@ -434,18 +438,20 @@ Note that the C<dbd_edit_mm_attribs()> code will fail if you do not have a
 F<t> sub-directory containing at least one test case.
 
 I<PREREQ_PM> tells MakeMaker that DBI (version 1.03 in this case) is
-required for this module. This will stop someone installing your DBD
-unless DBI 1.03 is installed and stop cpan testers from reporting
-errors if they do not have DBI installed.
+required for this module. This will issue a warning that DBI 1.03 is
+missing if someone attempts to install your DBD without DBI 1.03. See
+I<CONFIGURE> below for why this does not work reliably in stopping cpan
+testers failing your module if DBI is not installed.
 
-I<CONFIGURE> is a subroutine called by MakeMaker after WriteMakeFile
-is called and after I<PREREQ_PM> is checked but before the F<Makefile>
-is written. By putting the C<use DBI::DBD> in this section we allow
-MakeMaker to report a missing DBI but allow ourselves to use
-C<dbd_dbi_arch_dir()> when DBI is already installed. If we had just
-put C<use DBI> in the main perl for F<Makefile.PL> it would fail if
-DBI was not installed but would prevent MakeMaker from detecting the
-problem and hence cpan testers will report a fail.
+I<CONFIGURE> is a subroutine called by MakeMaker during
+C<WriteMakefile>.  By putting the C<require DBI::DBD> in this section
+we can attempt to load DBI::DBD but if it is missing we exit with
+success. As we exit successfully without creating a Makefile when
+DBI::DBD is missing cpan testers will not report a failure. This may
+seem at odds with I<PREREQ_PM> but I<PREREQ_PM> does not cause
+C<WriteMakefile> to fail (unless you also specify PREREQ_FATAL which
+is strongly discouraged by MakeMaker) so C<WriteMakefile> would
+continue to call C<dbd_dbi_arch_dir> and fail.
 
 All drivers must use C<dbd_postamble()> or risk running into problems.
 
