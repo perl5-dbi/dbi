@@ -3716,7 +3716,7 @@ A value of 0 means not to automatically fetch any long data.
 Drivers may return undef or an empty string for long fields when
 C<LongReadLen> is 0.
 
-The default is typically 0 (zero) bytes but may vary between drivers.
+The default is typically 0 (zero) or 80 bytes but may vary between drivers.
 Applications fetching long fields should set this value to slightly
 larger than the longest long field value to be fetched.
 
