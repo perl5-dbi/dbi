@@ -500,7 +500,12 @@ The C<node> and <path> arguments are passed to as_node_path_list().
 The C<separator> argument is used to join the elemets of the path for each leaf node.
 
 The C<sortsub> argument is used to pass in a ref to a sub that will order the list.
-The subroutine will be passed a reference to the array returned by as_node_path_list().
+The subroutine will be passed a reference to the array returned by
+as_node_path_list() and should sort the contents of the array in place.
+The return value from the sub is ignored. For example, to sort the nodes by the
+second level key you could use:
+
+  sortsub => sub { my $ary=shift; @$ary = sort { $a->[2] cmp $b->[2] } @$ary }
 
 The C<format> argument is a C<sprintf> format string that specifies the format
 to use for each leaf node.  It uses the explicit format parameter index
@@ -508,11 +513,11 @@ mechanism to specify which of the arguments should appear where in the string.
 The arguments to sprintf are:
 
      1:  path to node, joined with the separator
-     2:  average duration (total/count)
+     2:  average duration (total duration/count)
          (3 thru 9 are currently unused)
     10:  count
     11:  total duration
-    12:  first_duration
+    12:  first duration
     13:  smallest duration
     14:  largest duration
     15:  time of first call
@@ -818,6 +823,7 @@ sub as_text {
     my $separator_re = eval($eval) || quotemeta($separator);
     #warn "[$eval] = [$separator_re]";
     my @text;
+    my @spare_slots = (undef) x 7;
     for my $node_path (@node_path_list) {
         my ($node, @path) = @$node_path;
         my $idx = 0;
@@ -828,8 +834,8 @@ sub as_text {
         }
         push @text, sprintf $format,
             join($separator, @path),                  # 1=path
-            ($node->[0] ? $node->[4]/$node->[0] : 0), # 2=avg
-            (undef) x 7,                              # spare slots
+            ($node->[0] ? $node->[1]/$node->[0] : 0), # 2=avg
+            @spare_slots,
             @$node; # 10=count, 11=dur, 12=first_dur, 13=min, 14=max, 15=first_called, 16=last_called
     }       
     return @text if wantarray;

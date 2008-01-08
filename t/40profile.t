@@ -22,7 +22,7 @@ BEGIN {
     # tie methods (STORE/FETCH etc) get called different number of times
     plan skip_all => "test results assume perl >= 5.8.2"
         if $] <= 5.008001;
-    plan tests => 58;
+    plan tests => 60;
 }
 
 $Data::Dumper::Indent = 1;
@@ -379,8 +379,30 @@ ok(-s $LOG_FILE, 'output should go to log file');
 
 print "testing as_text\n";
 
+# check %N$ indices
+$dbh->{Profile}->{Data} = { P1 => { P2 => [ 100, 400, 42, 43, 44, 45, 46, 47 ] } };
+my $as_text = $dbh->{Profile}->as_text({
+    path => [ 'top' ],
+    separator => ':',
+    format    => '%1$s %2$d [ %10$d %11$d %12$d %13$d %14$d %15$d %16$d %17$d ]',
+});
+is($as_text, "top:P1:P2 4 [ 100 400 42 43 44 45 46 47 ]");
+
+# test sortsub
+$dbh->{Profile}->{Data} = {
+    A => { Z => [ 101, 1, 2, 3, 4, 5, 6, 7 ] },
+    B => { Y => [ 102, 1, 2, 3, 4, 5, 6, 7 ] },
+};
+$as_text = $dbh->{Profile}->as_text({
+    separator => ':',
+    format    => '%1$s %10$d ',
+    sortsub   => sub { my $ary=shift; @$ary = sort { $a->[2] cmp $b->[2] } @$ary }
+});
+is($as_text, "B:Y 102 A:Z 101 ");
+
+# general test, including defaults
 ($tmp, $dbh) = run_test1( { Path => [ 'foo', '!MethodName', 'baz' ] });
-my $as_text = $dbh->{Profile}->as_text();
+$as_text = $dbh->{Profile}->as_text();
 $as_text =~ s/\.00+/.0/g;
 #warn "[$as_text]";
 is $as_text, q{foo > DESTROY > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
