@@ -46,6 +46,8 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
     into perl from XS code. Thanks to John Gardiner Myers.
   Fixed DBI::Util::CacheMemory->new to not clear the cache.
   Fixed avg in DBI::Profile as_text() thanks to Abe Ingersoll.
+  Fixed DBD::DBM bug in push_names thanks to J M Davitt.
+  Fixed take_imp_data for some platforms thanks to Jeffrey Klein.
   Expanded DBI::DBD docs for driver authors thanks to Martin Evans.
   Enhanced t/80proxy.t test script.
   Enhanced t/85gofer.t test script thanks to Stig.
