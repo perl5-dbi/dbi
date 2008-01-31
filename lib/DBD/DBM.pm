@@ -525,7 +525,7 @@ sub push_names ($$$) {
     my($self, $data, $row_aryref) = @_;
     $data->{Database}->{dbm_tables}->{$self->{table_name}}->{c_cols}
        = $row_aryref;
-    next unless $self->{store_metadata};
+    return unless $self->{store_metadata};
     my $stmt = $data->{f_stmt};
     my $col_names = join ',', @{$row_aryref};
     my $schema = $data->{Database}->{Statement};
