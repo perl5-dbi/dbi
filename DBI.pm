@@ -4317,8 +4317,9 @@ If you'd like the cache to managed intelligently, you can tie the
 hashref returned by C<CachedKids> to an appropriate caching module,
 such as L<Tie::Cache::LRU>:
 
-  my $cache = $dbh->{CachedKids};
+  my $cache;
   tie %$cache, 'Tie::Cache::LRU', 500;
+  $dbh->{CachedKids} = $cache;
 
 =head3 C<commit>
 

@@ -48,6 +48,8 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
   Fixed avg in DBI::Profile as_text() thanks to Abe Ingersoll.
   Fixed DBD::DBM bug in push_names thanks to J M Davitt.
   Fixed take_imp_data for some platforms thanks to Jeffrey Klein.
+  Fixed docs tie'ing CacheKids (ie LRU cache) thanks to Peter John Edwards.
+
   Expanded DBI::DBD docs for driver authors thanks to Martin Evans.
   Enhanced t/80proxy.t test script.
   Enhanced t/85gofer.t test script thanks to Stig.
