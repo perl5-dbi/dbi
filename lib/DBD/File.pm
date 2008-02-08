@@ -462,7 +462,7 @@ sub fetch ($) {
     my $sth = shift;
     my $data = $sth->{f_stmt}->{data};
     if (!$data  ||  ref($data) ne 'ARRAY') {
-	$sth->set_err($DBI::stderr, "Attempt to fetch row from a Non-SELECT statement");
+	$sth->set_err($DBI::stderr, "Attempt to fetch row without a preceeding execute() call or from a non-SELECT statement");
 	return undef;
     }
     my $dav = shift @$data;
