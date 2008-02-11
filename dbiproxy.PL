@@ -54,7 +54,7 @@ Available options include:
 =item B<--chroot=dir>
 
 (UNIX only)  After doing a bind(), change root directory to the given
-directory by doing a chroot(). This is usefull for security, but it
+directory by doing a chroot(). This is useful for security, but it
 restricts the environment a lot. For example, you need to load DBI
 drivers in the config file or you have to create hard links to Unix
 sockets, if your drivers are using them. For example, with MySQL, a
@@ -99,7 +99,7 @@ B<daemon>.
 =item B<--group=gid>
 
 After doing a bind(), change the real and effective GID to the given.
-This is usefull, if you want your server to bind to a privileged port
+This is useful, if you want your server to bind to a privileged port
 (<1024), but don't want the server to execute as root. See also
 the --user option.
 
@@ -140,7 +140,7 @@ you use the "--mode=fork" option.
 Finally there's a single-connection mode: If the server has accepted a
 connection, he will enter the Run() method. No other connections are
 accepted until the Run() method returns (if the client disconnects).
-This operation mode is usefull if you have neither threads nor fork(),
+This operation mode is useful if you have neither threads nor fork(),
 for example on the Macintosh. For debugging purposes you can force this
 mode with "--mode=single".
 
@@ -152,7 +152,7 @@ given location. Default is to not create a pidfile.
 =item B<--user=uid>
 
 After doing a bind(), change the real and effective UID to the given.
-This is usefull, if you want your server to bind to a privileged port
+This is useful, if you want your server to bind to a privileged port
 (<1024), but don't want the server to execute as root. See also
 the --group and the --chroot options.
 
