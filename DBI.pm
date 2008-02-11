@@ -1949,7 +1949,12 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub fetchall_arrayref {	# ALSO IN Driver.xst
 	my ($sth, $slice, $max_rows) = @_;
-	$max_rows = -1 unless defined $max_rows;
+
+        # when batch fetching with $max_rows were very likely to try to
+        # fetch the 'next batch' after the previous batch returned
+        # <=$max_rows. So don't treat that as an error.
+        return undef if $max_rows and not $sth->{Active};
+
 	my $mode = ref($slice) || 'ARRAY';
 	my @rows;
 	my $row;
@@ -1957,17 +1962,16 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    # we copy the array here because fetch (currently) always
 	    # returns the same array ref. XXX
 	    if ($slice && @$slice) {
-		$max_rows = -1 unless defined $max_rows;
+                $max_rows = -1 unless defined $max_rows;
 		push @rows, [ @{$row}[ @$slice] ]
 		    while($max_rows-- and $row = $sth->fetch);
 	    }
 	    elsif (defined $max_rows) {
-		$max_rows = -1 unless defined $max_rows;
 		push @rows, [ @$row ]
 		    while($max_rows-- and $row = $sth->fetch);
 	    }
 	    else {
-		push @rows, [ @$row ]          while($row = $sth->fetch);
+		push @rows, [ @$row ] while($row = $sth->fetch);
 	    }
 	}
 	elsif ($mode eq 'HASH') {
@@ -1975,6 +1979,8 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    if (keys %$slice) {
 		my @o_keys = keys %$slice;
 		my @i_keys = map { lc } keys %$slice;
+                # XXX this could be made faster by pre-binding a local hash
+                # using bind_columns and then copying it per row
 		while ($max_rows-- and $row = $sth->fetchrow_hashref('NAME_lc')) {
 		    my %hash;
 		    @hash{@o_keys} = @{$row}{@i_keys};
@@ -5941,7 +5947,9 @@ is used to limit the number of rows fetched before returning.
 fetchall_arrayref() can then be called again to fetch more rows.
 This is especially useful when you need the better performance of
 fetchall_arrayref() but don't have enough memory to fetch and return
-all the rows in one go. Here's an example:
+all the rows in one go.
+
+Here's an example (assumes RaiseError is enabled):
 
   my $rows = []; # cache for batches of rows
   while( my $row = ( shift(@$rows) || # get row from cache, or reload cache:
@@ -5950,7 +5958,7 @@ all the rows in one go. Here's an example:
     ...
   }
 
-That can be the fastest way to fetch and process lots of rows using the DBI,
+That I<might> be the fastest way to fetch and process lots of rows using the DBI,
 but it depends on the relative cost of method calls vs memory allocation.
 
 A standard C<while> loop with column binding is often faster because
