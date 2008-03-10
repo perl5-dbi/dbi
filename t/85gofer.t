@@ -9,6 +9,7 @@ use Cwd;
 use Config;
 use Data::Dumper;
 use Test::More;
+use Getopt::Long;
 
 use DBI qw(dbi_time);
 
@@ -23,22 +24,27 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
 # next line forces use of Nano rather than default behaviour
 $ENV{DBI_SQL_NANO}=1;
 
-my $perf_count = (@ARGV && $ARGV[0] =~ s/^-c=//) ? shift : (-t STDOUT) ? 100 : 0;
-my %durations;
+GetOptions(
+    'c|count=i' => \(my $opt_count = (-t STDOUT ? 100 : 0)),
+    'dbm=s'     => \my $opt_dbm,
+    'v|verbose!' => \my $opt_verbose,
+    't|transport=s' => \my $opt_transport,
+    'p|policy=s'    => \my $opt_policy,
+) or exit 1;
+
 
 # so users can try others from the command line
-my $dbm = $ARGV[0];
-if (!$dbm) {
+if (!$opt_dbm) {
     # pick first available, starting with SDBM_File
     for (qw( SDBM_File GDBM_File DB_File BerkeleyDB )) {
         if (eval { local $^W; require "$_.pm" }) {
-            $dbm = ($_);
+            $opt_dbm = ($_);
             last;
         }
     }
-    plan skip_all => 'No DBM modules available' if !$dbm;
+    plan skip_all => 'No DBM modules available' if !$opt_dbm;
 }
-my $remote_driver_dsn = "dbm_type=$dbm;lockfile=0";
+my $remote_driver_dsn = "dbm_type=$opt_dbm;lockfile=0";
 my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
 my $timeout = 10;
 
@@ -55,7 +61,7 @@ if ($ENV{DBI_AUTOPROXY}) {
 # ensure subprocess (for pipeone and stream transport) will use the same modules as us, ie ./blib
 local $ENV{PERL5LIB} = join $Config{path_sep}, @INC;
 
-
+my %durations;
 my $getcwd = getcwd();
 my $username = eval { getpwuid($>) } || ''; # fails on windows
 my $can_ssh = ($username && $username eq 'timbo' && -d '.svn');
@@ -74,7 +80,13 @@ my %trials = (
 # too dependant on local config to make a standard test
 delete $trials{http} unless $username eq 'timbo' && -d '.svn';
 
-for my $trial (sort keys %trials) {
+my @transports = ($opt_transport) ? ($opt_transport) : (sort keys %trials);
+print "Transports: @transports\n";
+my @policies = ($opt_policy) ? ($opt_policy) : qw(pedantic classic rush);
+print "Policies: @policies\n";
+print "Count: $opt_count\n";
+
+for my $trial (@transports) {
     (my $transport = $trial) =~ s/_.*//;
     my $trans_attr = $trials{$trial}
         or next;
@@ -86,7 +98,7 @@ for my $trial (sort keys %trials) {
         next if $transport eq 'stream' or $transport eq 'pipeone';
     }
 
-    for my $policy_name (qw(pedantic classic rush)) {
+    for my $policy_name (@policies) {
 
         eval { run_tests($transport, $trans_attr, $policy_name) };
         ($@) ? fail("$trial: $@") : pass();
@@ -95,7 +107,7 @@ for my $trial (sort keys %trials) {
 }
 
 # to get baseline for comparisons if doing performance testing
-run_tests('no', {}, 'pedantic') if $perf_count;
+run_tests('no', {}, 'pedantic') if $opt_count;
 
 while ( my ($activity, $stats_hash) = each %durations ) {
     print "\n";
@@ -103,9 +115,9 @@ while ( my ($activity, $stats_hash) = each %durations ) {
     for my $perf_tag (reverse sort keys %$stats_hash) {
         my $dur = $stats_hash->{$perf_tag} || 0.0000001;
         printf "  %6s %-16s: %.6fsec (%5d/sec)",
-            $activity, $perf_tag, $dur/$perf_count, $perf_count/$dur;
+            $activity, $perf_tag, $dur/$opt_count, $opt_count/$dur;
         my $baseline_dur = $stats_hash->{'~baseline~'};
-        printf " %+5.1fms", (($dur-$baseline_dur)/$perf_count)*1000
+        printf " %+5.1fms", (($dur-$baseline_dur)/$opt_count)*1000
             unless $perf_tag eq '~baseline~';
         print "\n";
     }
@@ -167,17 +179,17 @@ sub run_tests {
     ok $rowset = $sth->fetchall_hashref('dKey');
     is_deeply($rowset, { '1' => { dKey=>1, dVal=>'apples' }, 2 => { dKey=>2, dVal=>'apples' } });
 
-    if ($perf_count and $transport ne 'pipeone') {
-        print "performance check - $perf_count selects and inserts\n";
+    if ($opt_count and $transport ne 'pipeone') {
+        print "performance check - $opt_count selects and inserts\n";
         my $start = dbi_time();
         $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit")
-            for (1000..1000+$perf_count);
+            for (1000..1000+$opt_count);
         $durations{select}{"$transport+$policy_name"} = dbi_time() - $start;
 
         # some rows in to get a (*very* rough) idea of overheads
         $start = dbi_time();
         $ins_sth->execute($_, 'speed')
-            for (1000..1000+$perf_count);
+            for (1000..1000+$opt_count);
         $durations{insert}{"$transport+$policy_name"} = dbi_time() - $start;
     }
 
