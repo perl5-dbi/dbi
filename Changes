@@ -46,6 +46,11 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
     to not error when fetching after all rows already fetched.
     (Was fixed for compiled drivers back in DBI 1.31.)
     Thanks to Mark Overmeer.
+  Fixed C sprintf formats and casts, fixing compiler warnings.
+
+  Changed gofer stream transport to improve error reporting.
+
+  Added options to t/85gofer.t so it's more useful for manual testing.
 
 =head2 Changes in DBI 1.602 (svn rev 10706)  8th February 2008
 
