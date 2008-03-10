@@ -949,7 +949,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    dbih_make_com(%s, %p, %s, %ld, %p) thr#%p\n",
-	    neatsvpv(p_h,0), (void*)p_imp_xxh, imp_class, (long)imp_size, (void*)imp_templ, PERL_GET_THX);
+	    neatsvpv(p_h,0), (void*)p_imp_xxh, imp_class, (long)imp_size, (void*)imp_templ, (void*)PERL_GET_THX);
 
     if (imp_templ && SvOK(imp_templ)) {
 	U32  imp_templ_flags;
@@ -1287,7 +1287,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     if (DBIc_THR_USER(imp_xxh) != my_perl) { /* don't clear handle that belongs to another thread */
 	if (debug >= 3) {
 	    PerlIO_printf(DBILOGFP,"    skipped dbih_clearcom: DBI handle (type=%d, %s) is owned by thread %p not current thread %p\n",
-		  DBIc_TYPE(imp_xxh), HvNAME(DBIc_IMP_STASH(imp_xxh)), DBIc_THR_USER(imp_xxh), my_perl) ;
+		  DBIc_TYPE(imp_xxh), HvNAME(DBIc_IMP_STASH(imp_xxh)), (void*)DBIc_THR_USER(imp_xxh), (void*)my_perl) ;
 	    PerlIO_flush(DBILOGFP);
 	}
 	return;
@@ -2781,7 +2781,7 @@ XS(XS_DBI_dispatch)
 	    if (trace_level >= 2) {
 		PerlIO_printf(DBILOGFP,"    DESTROY ignored because DBI %sh handle (%s) is owned by thread %p not current thread %p\n",
 		      dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)),
-		      (PerlInterpreter *)DBIc_THR_USER(imp_xxh), my_perl) ;
+		      (void*)DBIc_THR_USER(imp_xxh), (void*)my_perl) ;
 		PerlIO_flush(DBILOGFP);
 	    }
 	    XSRETURN(0); /* don't DESTROY handle, if it is not our's !*/
@@ -3093,7 +3093,7 @@ XS(XS_DBI_dispatch)
 		    (ima && i==ima->hidearg) ? "****" : neatsvpv(ST(i),0));
 	    }
 #ifdef DBI_USE_THREADS
-	    PerlIO_printf(logfp, ") thr#%p\n", DBIc_THR_USER(imp_xxh));
+	    PerlIO_printf(logfp, ") thr#%p\n", (void*)DBIc_THR_USER(imp_xxh));
 #else
 	    PerlIO_printf(logfp, ")\n");
 #endif
