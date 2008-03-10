@@ -227,13 +227,13 @@ check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int
     static const char msg[] = "you probably need to rebuild the DBD driver (or possibly the DBI)";
     (void)need_dbixs_cv;
     if (dbis_cv != DBISTATE_VERSION || dbis_cs != sizeof(*DBIS))
-	croak("DBI/DBD internal version mismatch (DBI is v%d/s%d, DBD %s expected v%d/s%d) %s.\n",
+	croak("DBI/DBD internal version mismatch (DBI is v%d/s%lu, DBD %s expected v%d/s%d) %s.\n",
 	    DBISTATE_VERSION, sizeof(*DBIS), name, dbis_cv, dbis_cs, msg);
     /* Catch structure size changes - We should probably force a recompile if the DBI	*/
     /* runtime version is different from the build time. That would be harsh but safe.	*/
     if (drc_s != sizeof(dbih_drc_t) || dbc_s != sizeof(dbih_dbc_t) ||
 	stc_s != sizeof(dbih_stc_t) || fdc_s != sizeof(dbih_fdc_t) )
-	    croak("%s (dr:%d/%d, db:%d/%d, st:%d/%d, fd:%d/%d), %s.\n",
+	    croak("%s (dr:%d/%lu, db:%d/%lu, st:%d/%lu, fd:%d/%lu), %s.\n",
 		"DBI/DBD internal structure mismatch",
 		drc_s, sizeof(dbih_drc_t), dbc_s, sizeof(dbih_dbc_t),
 		stc_s, sizeof(dbih_stc_t), fdc_s, sizeof(dbih_fdc_t), msg);
@@ -906,8 +906,8 @@ dbih_make_fdsv(SV *sth, const char *imp_class, STRLEN imp_size, const char *col_
     imp_fdh_t *imp_fdh;
     SV *fdsv;
     if (imp_size < sizeof(imp_fdh_t) || cn_len<10 || strNE("::fd",&col_name[cn_len-4]))
-	croak("panic: dbih_makefdsv %s '%s' imp_size %d invalid",
-		imp_class, col_name, imp_size);
+	croak("panic: dbih_makefdsv %s '%s' imp_size %ld invalid",
+		imp_class, col_name, (long)imp_size);
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    dbih_make_fdsv(%s, %s, %ld, '%s')\n",
 		neatsvpv(sth,0), imp_class, (long)imp_size, col_name);
@@ -949,14 +949,14 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
     if (DBIS_TRACE_LEVEL >= 3)
 	PerlIO_printf(DBILOGFP,"    dbih_make_com(%s, %p, %s, %ld, %p) thr#%p\n",
-	    neatsvpv(p_h,0), p_imp_xxh, imp_class, (long)imp_size, imp_templ, PERL_GET_THX);
+	    neatsvpv(p_h,0), (void*)p_imp_xxh, imp_class, (long)imp_size, (void*)imp_templ, PERL_GET_THX);
 
     if (imp_templ && SvOK(imp_templ)) {
 	U32  imp_templ_flags;
 	/* validate the supplied dbi_imp_data looks reasonable,	*/
 	if (SvCUR(imp_templ) != imp_size)
-	    croak("Can't use dbi_imp_data of wrong size (%d not %d)",
-		SvCUR(imp_templ), imp_size);
+	    croak("Can't use dbi_imp_data of wrong size (%ld not %ld)",
+		(long)SvCUR(imp_templ), (long)imp_size);
 
 	/* copy the whole template */
 	dbih_imp_sv = newSVsv(imp_templ);
@@ -2630,7 +2630,8 @@ dbi_profile_merge_nodes(SV *dest, SV *increment)
 /* ----------------------------------------------------------------- */
 /* ---   The DBI dispatcher. The heart of the perl DBI.          --- */
 
-XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
+XS(XS_DBI_dispatch);            /* prototype to pass -Wmissing-prototypes */
+XS(XS_DBI_dispatch)
 {
     dXSARGS;
     dPERINTERP;
@@ -2812,8 +2813,8 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 		    }
 		    if (trace_level >= 3) {
 			PerlIO *logfp = DBILOGFP;
-			PerlIO_printf(logfp,"    <- %s(%s) = %p (%s %p)\n", meth_name, can_meth, dbi_msv,
-				(imp_msv && isGV(imp_msv)) ? HvNAME(GvSTASH(imp_msv)) : "?", imp_msv);
+			PerlIO_printf(logfp,"    <- %s(%s) = %p (%s %p)\n", meth_name, can_meth, (void*)dbi_msv,
+				(imp_msv && isGV(imp_msv)) ? HvNAME(GvSTASH(imp_msv)) : "?", (void*)imp_msv);
 		    }
 		    ST(0) = (dbi_msv) ? sv_2mortal(newRV(dbi_msv)) : &PL_sv_undef;
 		    XSRETURN(1);
@@ -3204,7 +3205,7 @@ XS(XS_DBI_dispatch)         /* prototype must match XS produced code */
 	    if (is_DESTROY) /* show handle as first arg to DESTROY */
 		/* want to show outer handle so trace makes sense	*/
 		/* but outer handle has been destroyed so we fake it	*/
-		PerlIO_printf(logfp,"(%s=HASH(%p)", HvNAME(SvSTASH(SvRV(orig_h))), DBIc_MY_H(imp_xxh));
+		PerlIO_printf(logfp,"(%s=HASH(%p)", HvNAME(SvSTASH(SvRV(orig_h))), (void*)DBIc_MY_H(imp_xxh));
 	    else
 		PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
 	    if (items >= 3)
