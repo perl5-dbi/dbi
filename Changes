@@ -42,8 +42,6 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 =head2 Changes in DBI 1.603
 
-Fix occasional errors reported via cpan testers
-
   Fixed pure-perl fetchall_arrayref with $max_rows argument
     to not error when fetching after all rows already fetched.
     (Was fixed for compiled drivers back in DBI 1.31.)
@@ -52,6 +50,7 @@ Fix occasional errors reported via cpan testers
 
   Changed gofer stream transport to improve error reporting.
   Changed dbi_profile() to accept a hash of profiles and apply to all.
+  Changed gofer test timeout to avoid spurious failures on slow systems.
 
   Added options to t/85gofer.t so it's more useful for manual testing.
 
