@@ -306,7 +306,7 @@ is_deeply $dbh->{Profile}{Path}, [
 ];
 $dbh->{Profile}->{Data} = undef;
 $sql = qq{insert into foo20060726 (a,b) values (42,"foo")};
-dbi_profile($dbh, $sql, 'mymethod', 100000000, 100000002);
+dbi_profile( { foo => $dbh, bar => undef }, $sql, 'mymethod', 100000000, 100000002);
 $tmp = $dbh->{Profile}{Data};
 #warn Dumper($tmp);
 is_deeply $tmp, {

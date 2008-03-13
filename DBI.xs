@@ -746,7 +746,8 @@ set_trace(SV *h, SV *level_sv, SV *file)
 
 static SV *
 dbih_inner(pTHX_ SV *orv, const char *what)
-{   /* convert outer to inner handle else croak(what) if what is not null */
+{   /* convert outer to inner handle else croak(what) if what is not NULL */
+    /* if what is NULL then return NULL for invalid handles */
     dPERINTERP;
     MAGIC *mg;
     SV *ohv;		/* outer HV after derefing the RV	*/
@@ -766,6 +767,8 @@ dbih_inner(pTHX_ SV *orv, const char *what)
 	croak("%s handle %s is not a DBI handle", what, neatsvpv(orv,0));
     }
     if (!SvMAGICAL(ohv)) {
+	if (!what)
+	    return NULL;
 	sv_dump(orv);
 	croak("%s handle %s is not a DBI handle (has no magic)",
 		what, neatsvpv(orv,0));
@@ -4174,20 +4177,36 @@ dbi_profile(h, statement, method, t1, t2)
     NV t1
     NV t2
     CODE:
-    D_imp_xxh(h);
-    SV *leaf = dbi_profile(h, imp_xxh, statement,
-	SvROK(method) ? SvRV(method) : method,
-	t1, t2
-    );
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 9)
-        warn("dbi_profile(%s, %s, %f, %f) =%s, gimme=%ld",
-                neatsvpv(statement,0), neatsvpv(method,0), t1, t2,
-                neatsvpv(leaf,0), (long)GIMME_V);
+    SV *leaf = &sv_undef;
     (void)cv;   /* avoid unused var warnings */
+    if (SvROK(method))
+        method = SvRV(method);
+    if (dbih_inner(aTHX_ h, NULL)) {    /* is a DBI handle */
+        D_imp_xxh(h);
+        leaf = dbi_profile(h, imp_xxh, statement, method, t1, t2);
+    }
+    else if (SvROK(h) && SvTYPE(SvRV(h)) == SVt_PVHV) {
+        /* iterate over values %$h */
+        HV *hv = (HV*)SvRV(h);
+        SV *tmp;
+	char *key;
+	I32 keylen = 0;
+	hv_iterinit(hv);
+	while ( (tmp = hv_iternextsv(hv, &key, &keylen)) != NULL ) {
+            if (SvOK(tmp)) {
+                D_imp_xxh(tmp);
+                leaf = dbi_profile(tmp, imp_xxh, statement, method, t1, t2);
+            }
+	};
+    }
+    else {
+        croak("dbi_profile(%s,...) invalid handle argument", neatsvpv(h,0));
+    }
     if (GIMME_V == G_VOID)
         ST(0) = &sv_undef;  /* skip sv_mortalcopy if not needed */
     else
         ST(0) = sv_mortalcopy(leaf);
+
 
 
 SV *

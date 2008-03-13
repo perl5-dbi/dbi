@@ -612,11 +612,10 @@ default value for $method.
 The $h->{Profile}{Path} attribute is processed by dbi_profile() in
 the usual way.
 
-It is recommended that you keep these extra data samples separate
-from the DBI profile data samples by using values for $statement
-and $method that are distinct from any that are likely to appear
-in the profile data normally.
-
+The $h parameter is usually a DBI handle but it can also be a reference to a
+hash, in which case the dbi_profile() acts on each defined value in the hash.
+This is an efficient way to update multiple profiles with a single sample,
+and is used by the L<DashProfiler> module.
 
 =head1 SUBCLASSING
 
