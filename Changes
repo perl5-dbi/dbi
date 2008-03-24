@@ -48,8 +48,8 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
     Thanks to Mark Overmeer.
   Fixed C sprintf formats and casts, fixing compiler warnings.
 
-  Changed gofer stream transport to improve error reporting.
   Changed dbi_profile() to accept a hash of profiles and apply to all.
+  Changed gofer stream transport to improve error reporting.
   Changed gofer test timeout to avoid spurious failures on slow systems.
 
   Added options to t/85gofer.t so it's more useful for manual testing.

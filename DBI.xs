@@ -228,15 +228,15 @@ check_version(const char *name, int dbis_cv, int dbis_cs, int need_dbixs_cv, int
     (void)need_dbixs_cv;
     if (dbis_cv != DBISTATE_VERSION || dbis_cs != sizeof(*DBIS))
 	croak("DBI/DBD internal version mismatch (DBI is v%d/s%lu, DBD %s expected v%d/s%d) %s.\n",
-	    DBISTATE_VERSION, sizeof(*DBIS), name, dbis_cv, dbis_cs, msg);
+	    DBISTATE_VERSION, (long unsigned int)sizeof(*DBIS), name, dbis_cv, dbis_cs, msg);
     /* Catch structure size changes - We should probably force a recompile if the DBI	*/
     /* runtime version is different from the build time. That would be harsh but safe.	*/
     if (drc_s != sizeof(dbih_drc_t) || dbc_s != sizeof(dbih_dbc_t) ||
 	stc_s != sizeof(dbih_stc_t) || fdc_s != sizeof(dbih_fdc_t) )
-	    croak("%s (dr:%d/%lu, db:%d/%lu, st:%d/%lu, fd:%d/%lu), %s.\n",
+	    croak("%s (dr:%d/%ld, db:%d/%ld, st:%d/%ld, fd:%d/%ld), %s.\n",
 		"DBI/DBD internal structure mismatch",
-		drc_s, sizeof(dbih_drc_t), dbc_s, sizeof(dbih_dbc_t),
-		stc_s, sizeof(dbih_stc_t), fdc_s, sizeof(dbih_fdc_t), msg);
+		drc_s, (long)sizeof(dbih_drc_t), dbc_s, (long)sizeof(dbih_dbc_t),
+		stc_s, (long)sizeof(dbih_stc_t), fdc_s, (long)sizeof(dbih_fdc_t), msg);
 }
 
 static void
