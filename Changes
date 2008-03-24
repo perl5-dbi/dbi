@@ -40,6 +40,12 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
+=head2 Changes in DBI 1.604 (svn rev 10994) 24th March 2008
+
+  Fixed fetchall_arrayref with $max_rows argument broken in 1.603,
+    thanks to Greg Sabino Mullane.
+  Fixed a few harmless compiler warnings on cygwin.
+
 =head2 Changes in DBI 1.603
 
   Fixed pure-perl fetchall_arrayref with $max_rows argument

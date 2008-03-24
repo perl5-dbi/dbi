@@ -12,7 +12,7 @@ $| = 1;
 my $haveFileSpec = eval { require File::Spec };
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 205;
+use Test::More tests => 208;
 
 # "globals"
 my ($r, $dbh);
@@ -228,12 +228,17 @@ ok($r);
 ok(keys %{$r->[0]} == 3);
 ok("@{$r->[0]}{qw(MODE SIZE NAME)}" eq "@row_a", "'@{$r->[0]}{qw(MODE SIZE NAME)}' ne '@row_a'");
 
-# use Data::Dumper; warn Dumper([\@row_a, $r]);
-
+print "rows()\n"; # assumes previous fetch fetched all rows
 $rows = $csr_b->rows;
 ok($rows > 0, "row count $rows");
 ok($rows == @$r, "$rows vs ".@$r);
 ok($rows == $DBI::rows, "$rows vs $DBI::rows");
+
+print "fetchall_arrayref array slice and max rows\n";
+ok($csr_b->execute());
+$r = $csr_b->fetchall_arrayref([0], 1);
+ok($r);
+is_deeply($r, [[$row_a[0]]]);
 
 # ---
 
