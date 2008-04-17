@@ -40,6 +40,16 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
+
+Add high-res time for windows - via Time::HiRes glob replace dbi_time().
+
+=head2 Changes in DBI 1.605 XXX
+
+  Fixed the selectall_arrayref, selectrow_arrayref, and selectrow_array
+    methods that get embedded into compiled drivers to use the
+    inner sth handle when passed a $sth instead of an sql string.
+    Drivers will need to be recompiled to pick up this change.
+
 =head2 Changes in DBI 1.604 (svn rev 10994) 24th March 2008
 
   Fixed fetchall_arrayref with $max_rows argument broken in 1.603,
