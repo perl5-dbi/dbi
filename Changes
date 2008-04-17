@@ -50,6 +50,10 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     inner sth handle when passed a $sth instead of an sql string.
     Drivers will need to be recompiled to pick up this change.
 
+  Increased timeout on tests to accomodate very slow systems.
+
+  Added explicit LICENSE specification (perl) to META.yaml
+
 =head2 Changes in DBI 1.604 (svn rev 10994) 24th March 2008
 
   Fixed fetchall_arrayref with $max_rows argument broken in 1.603,

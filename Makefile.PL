@@ -147,6 +147,7 @@ my %opts = (
 	COMPRESS => 'gzip -v9', SUFFIX => 'gz',
     },
 );
+$opts{LICENSE} = 'perl' if $ExtUtils::MakeMaker::VERSION >= 6.3002;
 $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
 if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
