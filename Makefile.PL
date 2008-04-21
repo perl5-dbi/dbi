@@ -39,7 +39,7 @@ GetOptions(qw(v! g! thread!))
 $::opt_g &&= '-g';  # convert to actual string
 
 if ($] < 5.008000) {
-	warn qq{\a
+	warn qq{
 **************************************************************************
   Perl versions below 5.6.1 are no longer supported by the DBI.
   Perl versions 5.6.x may fail during installation with a complaint
@@ -52,17 +52,18 @@ if ($] < 5.008000) {
 
 if (($ENV{LANG}||'') =~ m/utf-?8/i) {
     print "\n";
-    print "*** Your LANG environment variable is set to '$ENV{LANG}'\a\n";
-    print "*** This is known to cause problems for some perl installations.\n";
+    print "*** Your LANG environment variable is set to '$ENV{LANG}'\n";
+    print "*** This may cause problems for some perl installations.\n";
     print "*** If you get test failures, please try again with LANG unset.\n";
-    print "*** Please also email dbi-dev\@perl.org and include the output of 'perl -V'\n";
-    print "\a\n";
+    print "*** If that then works, please email dbi-dev\@perl.org with details\n";
+    print "*** including the output of 'perl -V'\n";
+    print "\n";
     sleep 4;
 }
 
 if ($Config{useithreads}) {
     print "\n";
-    print "*** You are using a perl configured with threading enabled.\a\n";
+    print "*** You are using a perl configured with threading enabled.\n";
     print "*** You should be aware that using multiple threads is\n";
     print "*** not recommended for production environments.\n";
     print "\n";
@@ -93,36 +94,6 @@ else {
     $::opt_thread = 0;
 }
 
-
-my @missing;
-
-eval "use RPC::PlServer 0.2001 ();";
-if ($@) {
-    push @missing, 'RPC::PlServer';
-    print "\a",<<'MSG';
-*** Note:
-    The optional PlRPC-modules (RPC::PlServer etc) are not installed.
-    If you want to use the DBD::Proxy driver and DBI::ProxyServer
-    modules, then you'll need to install the RPC::PlServer, RPC::PlClient,
-    Storable and Net::Daemon modules. The CPAN Bundle::DBI may help you.
-    You can install them any time after installing the DBI.
-    You do *not* need these modules for typical DBI usage.
-
-MSG
-    sleep 1;
-}
-
-if (@missing) {
-    print <<'MSG';
-Optional modules are available from any CPAN mirror, in particular
-    http://search.cpan.org/
-    http://www.perl.com/CPAN/modules/by-module
-    http://www.perl.org/CPAN/modules/by-module
-    ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
-
-MSG
-    sleep 1;
-}
 
  
 my %opts = (

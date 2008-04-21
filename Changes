@@ -51,6 +51,9 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     Drivers will need to be recompiled to pick up this change.
 
   Increased timeout on tests to accomodate very slow systems.
+  Removed the beeps "\a" from Makefile.PL warnings.
+  Removed check for PlRPC-modules from Makefile.PL
+
 
   Added explicit LICENSE specification (perl) to META.yaml
 
