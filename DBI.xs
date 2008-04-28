@@ -378,7 +378,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 	else nsv = newSVpvf("%"NVgf, SvNVX(sv));
 	if (infosv)
 	    sv_catsv(nsv, infosv);
-	return SvPVX(nsv);
+	return SvPVX(sv_2mortal(nsv));
     }
 
     nsv = sv_newmortal();
@@ -2962,7 +2962,7 @@ XS(XS_DBI_dispatch)
         /* we don't use ENTER,SAVETMPS & FREETMPS,LEAVE because we may need mortal
          * results to live long enough to be returned to our caller
          */
-        /* we want to localize $_ for the callback but can't just to that alone
+        /* we want to localize $_ for the callback but can't just do that alone
          * because we're not using SAVETMPS & FREETMPS, so we have to get sneaky.
          * We still localize, so we're safe from the callback dieing,
          * but after the callback we manually restore the original $_.

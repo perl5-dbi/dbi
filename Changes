@@ -32,6 +32,7 @@ Gofer request flags for:
 Add attr-passthru to prepare()? ie for gofer cache control & ReadOnly
 Terminology for client and server ends
 Document user/passwd issues at the various levels of the gofer stack
+    Remove "Password" from connect attr if the same as $password arg
 Policy's from pod
 Policy for dbh attr FETCH (ie example_driver_path)
     or piggyback on skip_connect_check
@@ -49,6 +50,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     methods that get embedded into compiled drivers to use the
     inner sth handle when passed a $sth instead of an sql string.
     Drivers will need to be recompiled to pick up this change.
+  Fixed lean in neat() for some kinds of values thanks to Rudolf Lippan.
 
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
