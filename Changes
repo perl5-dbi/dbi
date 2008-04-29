@@ -55,7 +55,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
   Removed check for PlRPC-modules from Makefile.PL
-
+  Clarified docs re ":N" style placeholders.
 
   Added explicit LICENSE specification (perl) to META.yaml
 

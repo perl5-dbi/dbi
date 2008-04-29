@@ -2314,11 +2314,15 @@ or the following, to select the description for a product:
 The C<?> characters are the placeholders.  The association of actual
 values with placeholders is known as I<binding>, and the values are
 referred to as I<bind values>.
-
 Note that the C<?> is not enclosed in quotation marks, even when the
-placeholder represents a string.  Some drivers also allow placeholders
-like C<:>I<name> and C<:>I<n> (e.g., C<:1>, C<:2>, and so on)
-in addition to C<?>, but their use is not portable.
+placeholder represents a string.
+
+Some drivers also allow placeholders like C<:>I<name> and C<:>I<N> (e.g.,
+C<:1>, C<:2>, and so on) in addition to C<?>, but their use is not portable.
+
+If the C<:>I<N> form of placeholder is supported by the driver you're using,
+then you should be able to use either L</bind_param> or L</execute> to bind
+values. Check your driver documentation.
 
 With most drivers, placeholders can't be used for any element of a
 statement that would prevent the database server from validating the
