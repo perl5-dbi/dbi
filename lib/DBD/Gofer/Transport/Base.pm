@@ -52,6 +52,7 @@ sub new_response {
 
 sub transmit_request {
     my ($self, $request) = @_;
+    my $trace = $self->trace;
     my $response;
 
     my ($go_cache, $request_cache_key);
@@ -62,7 +63,6 @@ sub transmit_request {
         if ($request_cache_key) {
             my $frozen_response = eval { $go_cache->get($request_cache_key) };
             if ($frozen_response) {
-                my $trace = $self->trace;
                 $self->_dump("cached response found for ".ref($request), $request)
                     if $trace;
                 $response = $self->thaw_response($frozen_response);
@@ -73,12 +73,14 @@ sub transmit_request {
             }
             warn $@ if $@;
             ++$self->{cache_miss};
+            $self->trace_msg("transmit_request cache miss\n")
+                if $trace;
         }
     }
 
     my $to = $self->go_timeout;
     my $transmit_sub = sub {
-        $self->trace_msg("transmit_request\n");
+        $self->trace_msg("transmit_request\n") if $trace;
         local $SIG{ALRM} = sub { die "TIMEOUT\n" } if $to;
 
         my $response = eval {
@@ -108,7 +110,8 @@ sub transmit_request {
             if $request_cache_key;
     }
 
-    $self->trace_msg("transmit_request is returing a response itself\n") if $response;
+    $self->trace_msg("transmit_request is returning a response itself\n")
+        if $trace && $response;
 
     return $response unless wantarray;
     return ($response, $transmit_sub);
