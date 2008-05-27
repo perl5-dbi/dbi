@@ -58,6 +58,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 Add note about _concat_hash_sorted once integrated
 
+  Fixed problem with DBIS macro with threads on big-endian machines
+    with 64bit ints but 32bit pointers. Ticket #32309.
   Fixed the selectall_arrayref, selectrow_arrayref, and selectrow_array
     methods that get embedded into compiled drivers to use the
     inner sth handle when passed a $sth instead of an sql string.
