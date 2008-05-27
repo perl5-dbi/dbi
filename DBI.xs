@@ -378,9 +378,17 @@ static void
 dbi_bootinit(dbistate_t * parent_dbis)
 {
     dTHX;
+    dbistate_t* DBISx;
     INIT_PERINTERP;
 
-    DBIS = (struct dbistate_st*)malloc_using_sv(sizeof(struct dbistate_st));
+    DBISx = (struct dbistate_st*)malloc_using_sv(sizeof(struct dbistate_st));
+
+    /* publish address of dbistate so dynaloaded DBD's can find it,
+     * taking care to store the value in the same way it'll be used
+     * to avoid problems on some architectures, for example see
+     * http://rt.cpan.org/Public/Bug/Display.html?id=32309
+     */
+    DBISTATE_ASSIGN(DBISx);
 
     /* store version and size so we can spot DBI/DBD version mismatch	*/
     DBIS->check_version = check_version;
@@ -397,9 +405,6 @@ dbi_bootinit(dbistate_t * parent_dbis)
 #ifdef DBI_USE_THREADS
     DBIS->thr_owner   = PERL_GET_THX;
 #endif
-
-    /* publish address of dbistate so dynaloaded DBD's can find it	*/
-    sv_setiv(perl_get_sv(DBISTATE_PERLNAME,1), PTR2IV(DBIS));
 
     DBISTATE_INIT; /* check DBD code to set DBIS from DBISTATE_PERLNAME	*/
 
