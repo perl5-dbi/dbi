@@ -209,6 +209,141 @@ savepv_using_sv(char *str)
     return buf;
 }
 
+typedef struct num_srt_info {
+    char *key;
+    UV numeric;
+} num_srt_info;
+
+static int
+_cmp_number (val1, val2)
+    const void *val1;
+    const void *val2;
+{
+    int first, second;
+
+    first = ((struct num_srt_info *)val1)->numeric;
+    second = ((struct num_srt_info *)val2)->numeric;
+
+    if (first == second)
+        return 0;
+    else if (first > second)
+	return 1;
+    else 
+	return -1;
+}
+
+static int 
+_cmp_str (val1, val2)
+    const void *val1;
+    const void *val2;
+{
+    return strcmp( *(char **)val1, *(char **)val2);
+}
+
+static char **
+_sort_hash_keys (hash, sort_order, total_length)
+    HV *hash;
+    int sort_order;
+    STRLEN *total_length;
+{
+    dTHX;
+    I32 hv_len, key_len;
+    HE *entry;
+    char **keys;
+    unsigned int idx = 0;
+    STRLEN tot_len = 0;
+    bool numberish = 1;
+    struct num_srt_info *numbers;
+
+    hv_len = hv_iterinit(hash);
+    if (!hv_len)
+        return 0;
+
+    Newx(keys, hv_len, char *);
+    Newx(numbers, hv_len, struct num_srt_info);
+
+    while ((entry = hv_iternext(hash))) {
+        *(keys+idx) = hv_iterkey(entry, &key_len);
+        tot_len += key_len;
+        
+        if (grok_number(*(keys+idx), key_len, &(numbers+idx)->numeric) != IS_NUMBER_IN_UV)
+            numberish = 0;
+
+        (numbers+idx)->key = *(keys+idx);
+        ++idx;
+    }
+
+    if (0 != total_length)
+        *total_length = tot_len;
+
+    if (sort_order <0)
+        sort_order = numberish ? 1 : 0;
+
+    if (0 == sort_order || 0 == numberish ) {
+        qsort(keys, hv_len, sizeof(char*), _cmp_str);
+    } else {
+        qsort(numbers, hv_len, sizeof(struct num_srt_info), _cmp_number);
+        for (idx = 0; idx < hv_len; ++idx)
+            *(keys+idx) = (numbers+idx)->key;
+/* SvPV_nolen(sv_2mortal(newSViv(numbers[idx])));  */
+    }
+
+    Safefree(numbers);
+    return keys;
+}
+
+
+static SV *
+_join_hash_sorted (hash, kv_sep, pair_sep, not_neat, sort)
+    HV *hash;
+    char *kv_sep;
+    char *pair_sep;
+    int not_neat;
+    int sort;
+{
+	dTHX;
+        I32 hv_len;
+        STRLEN kv_sep_len, pair_sep_len, hv_val_len, total_len = 0;
+        char **keys;
+        char *value_string;
+        unsigned int i = 0;
+        SV **hash_svp;
+        SV *return_sv;
+
+        kv_sep_len = strlen(kv_sep);
+        pair_sep_len = strlen(pair_sep);
+
+        keys = _sort_hash_keys(hash, sort, &total_len);
+        if (!keys)
+            return newSVpv("", 0);
+
+        hv_len = hv_iterinit(hash);
+        /* total_len += Separators + quotes + term null */
+        total_len += kv_sep_len*hv_len + pair_sep_len*hv_len+2*hv_len+1;
+	return_sv = newSV(total_len);
+        sv_setpv(return_sv, ""); /* quell undef warnings */
+
+        for (i=0; i<hv_len; ++i) {
+            hash_svp = hv_fetch(hash, keys[i], strlen(keys[i]), 0);
+            if (!hash_svp) {
+                 warn("No Hash entry with key: %s", keys[i]);
+                continue;
+            }
+
+            value_string = (not_neat) ? 
+                (SvOK(*hash_svp) ? SvPV(*hash_svp, hv_val_len) : "") : 
+                neatsvpv(*hash_svp,0);
+            sv_catpvf(return_sv, (not_neat) ? "%s%s'%s'%s" : "%s%s%s%s",
+                keys[i], kv_sep, value_string, (i<hv_len-1) ? pair_sep : "");
+        }
+
+        Safefree(keys);
+
+        return return_sv;
+}
+
+
+
 /* handy for embedding into condition expression for debugging */
 /*
 static int warn1(char *s) { warn(s); return 1; }
@@ -4234,6 +4369,43 @@ dbi_profile_merge_nodes(dest, ...)
     }
     OUTPUT:
     RETVAL
+
+
+SV *
+_concat_hash_sorted (hash, kv_sep_sv, pair_sep_sv, value_format_sv,sort_type_sv)
+    HV *hash
+    SV *kv_sep_sv
+    SV *pair_sep_sv
+    SV *value_format_sv
+    SV *sort_type_sv
+
+    PREINIT:
+
+    STRLEN kv_sep_len, pair_sep_len;
+    char *kv_sep, *pair_sep;
+    int not_neat, sort;
+
+    CODE:
+
+        kv_sep = SvPV(kv_sep_sv, kv_sep_len);
+        pair_sep = SvPV(pair_sep_sv, pair_sep_len);
+
+        if (SvGMAGICAL(value_format_sv))
+            mg_get(value_format_sv);
+        not_neat = SvTRUE(value_format_sv);
+
+
+        sort = (SvOK(sort_type_sv)) ? SvIV(sort_type_sv) : -1;
+
+
+        RETVAL = _join_hash_sorted(hash,kv_sep, pair_sep, not_neat, sort);
+
+    OUTPUT:
+        RETVAL
+
+
+
+
 
 
 MODULE = DBI   PACKAGE = DBI::var
