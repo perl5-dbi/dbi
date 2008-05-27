@@ -259,8 +259,8 @@ _sort_hash_keys (hash, sort_order, total_length)
     if (!hv_len)
         return 0;
 
-    Newx(keys, hv_len, char *);
-    Newx(numbers, hv_len, struct num_srt_info);
+    New(0, keys, hv_len, char *);
+    New(0, numbers, hv_len, struct num_srt_info);
 
     while ((entry = hv_iternext(hash))) {
         *(keys+idx) = hv_iterkey(entry, &key_len);

@@ -637,6 +637,7 @@ sub hash {
         croak("bad hash type $type");
     }
 }
+
 sub looks_like_number {
     my @new = ();
     for my $thing(@_) {
@@ -671,6 +672,51 @@ sub dbi_time {
 }
 
 sub DBI::st::TIEHASH { bless $_[1] => $_[0] };
+
+
+sub _concat_hash_sorted {
+    my ( $hash_ref, $kv_separator, $pair_separator, $value_format, $sort_type ) = @_;
+    # $value_format: false=use neat(), true=dumb quotes
+    # $sort_type: 0=lexical, 1=numeric, undef=try to guess
+    Carp::croak("hash is not a hash reference")
+        unless ref $hash_ref eq 'HASH';
+    my $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
+    my $string = '';
+    for my $key (@$keys) {
+        $string .= $pair_separator if length $string > 0;
+        my $value = $hash_ref->{$key};
+        if ($value_format) {
+            $value = (defined $value) ? "'$value'" : 'undef';
+        }   
+        else {
+            $value = DBI::neat($value,0);
+        }   
+        $string .= $key . $kv_separator . $value;
+    }
+    return $string;
+}
+
+sub _get_sorted_hash_keys {
+    my ($hash_ref, $sort_type) = @_;
+    my $sort_guess = 1;
+    if (not defined $sort_type) {
+        #my $first_key = (each %$hash_ref)[0];
+        #$sort_type = looks_like_number($first_key);
+    
+        $sort_guess = (1!=DBI::looks_like_number($_))
+                ? 0 : $sort_guess
+            for keys %$hash_ref;
+        $sort_type = $sort_guess unless (defined $sort_type);
+    }
+    
+    my @keys = keys %$hash_ref;
+    no warnings 'numeric';
+    return [ ($sort_type && $sort_guess)
+        ? sort {$a <=> $b} @keys
+        : sort    @keys
+    ];  
+}           
+
 
 package
 	DBI::var;

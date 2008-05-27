@@ -56,6 +56,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 =head2 Changes in DBI 1.605 XXX
 
+Add note about _concat_hash_sorted once integrated
+
   Fixed the selectall_arrayref, selectrow_arrayref, and selectrow_array
     methods that get embedded into compiled drivers to use the
     inner sth handle when passed a $sth instead of an sql string.

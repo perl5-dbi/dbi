@@ -5,6 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
+use strict;
 use Test::More tests => 36;
 BEGIN { use_ok('DBI') };
 no warnings 'uninitialized';
@@ -95,9 +96,9 @@ my %hashes = (
     "Float Hash" => $simple_float
 );
 
-for $sort_type (keys %sort_types){
-    for $neat (keys %neats) {
-        for $hash(keys %hashes) {
+for my $sort_type (keys %sort_types){
+    for my $neat (keys %neats) {
+        for my $hash (keys %hashes) {
             test_concat_hash($hash, $neat, $sort_type);
         }
     }
@@ -145,7 +146,7 @@ sub _concat_hash_sorted {
     # $value_format: false=use neat(), true=dumb quotes
     # $sort_type: 0=lexical, 1=numeric, undef=try to guess
 
-    $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
+    my $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
     my $string = '';
     for my $key (@$keys) {
         $string .= $pair_separator if length $string > 0;
@@ -182,10 +183,4 @@ sub _get_sorted_hash_keys {
     ];
 }
 
-
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
-
+1;
