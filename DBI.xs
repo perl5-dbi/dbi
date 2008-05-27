@@ -4312,6 +4312,16 @@ FETCH(sv)
     }
 
 
+MODULE = DBI   PACKAGE = DBD::_::dr
+
+void
+dbixs_revision(h)
+    SV *    h
+    CODE:
+    PERL_UNUSED_VAR(h);
+    ST(0) = sv_2mortal(newSViv(DBIXS_REVISION));
+
+
 MODULE = DBI   PACKAGE = DBD::_::db
 
 void

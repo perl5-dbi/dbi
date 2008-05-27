@@ -1,7 +1,7 @@
 # $Id$
-# vim: ts=8:sw=4
+# vim: ts=8:sw=4:noet
 #
-# Copyright (c) 1994-2007  Tim Bunce  Ireland
+# Copyright (c) 1994-2008  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #
@@ -404,6 +404,7 @@ my $keeperr = { O=>0x0004 };
 	'disconnect_all'=>{ U =>[1,1], O=>0x0800 },
 	data_sources => { U =>[1,2,'[\%attr]' ], O=>0x0800 },
 	default_user => { U =>[3,4,'$user, $pass [, \%attr]' ] },
+	dbixs_revision  => $keeperr,
     },
     db => {		# Database Session Class Interface
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
@@ -7506,7 +7507,7 @@ Perl by Larry Wall and the C<perl5-porters>.
 
 =head1 COPYRIGHT
 
-The DBI module is Copyright (c) 1994-2004 Tim Bunce. Ireland.
+The DBI module is Copyright (c) 1994-2008 Tim Bunce. Ireland.
 All rights reserved.
 
 You may distribute under the terms of either the GNU General Public

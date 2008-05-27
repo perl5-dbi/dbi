@@ -8,16 +8,26 @@ DBI::Changes - List of significant changes to the DBI
 
 Assorted TODO notes:
 
-Protect trace_msg from SIGPIPE?
-prepare(...,{ Err=>\my $isolated_err, ...})
-Move _new_sth to DBI::db::_new_sth (leave alias) and implement in C
-Implement FETCH_many() in C
-Or call _new_child and move to DBI::common?
-Add trace modules that just records the last N trace messages into an array
-and prepends them to any error message.
-Document DBI_PROFILE_FLOCK and LockFile attrib in DBI::ProfileData and DBI::ProfileDumper
+General:
+    Protect trace_msg from SIGPIPE?
+    prepare(...,{ Err=>\my $isolated_err, ...})
+    Add trace modules that just records the last N trace messages into an array
+    and prepends them to any error message.
+    Document DBI_PROFILE_FLOCK and LockFile attrib in DBI::ProfileData and DBI::ProfileDumper
+Performance:
+    Move _new_sth to DBI::db::_new_sth (leave alias) and implement in C
+        Or call _new_child and move to DBI::common?
+    Implement FETCH_many() in C
 
 Gofo TODOs:
+
+Add server-side caching.
+    combine these:
+        my $request = $transport->thaw_request( $frozen_request );
+        my $response = $executor->execute_request( $request );
+        my $frozen_response = $transport->freeze_response($response);
+    into single method that first checks the cache
+    and updates it if appropriate
 
 Move post-request cleanup into separate method and enable hooks so
     it can be done after the response has been sent
@@ -30,10 +40,10 @@ Gofer request flags for:
     - return current executor stats as an attribute - handy for tests
     - will accept streamed resultsets
 Add attr-passthru to prepare()? ie for gofer cache control & ReadOnly
-Terminology for client and server ends
+Define and document terminology for client and server ends
 Document user/passwd issues at the various levels of the gofer stack
     Remove "Password" from connect attr if the same as $password arg
-Policy's from pod
+Extract policy settings by parsing the pod
 Policy for dbh attr FETCH (ie example_driver_path)
     or piggyback on skip_connect_check
     could also remember which attr have been returned to us
@@ -55,6 +65,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
   Removed check for PlRPC-modules from Makefile.PL
+  Added cache miss trace message to DBD::Gofer transport class.
+  Added $drh->dbixs_revision method.
   Clarified docs re ":N" style placeholders.
 
   Added explicit LICENSE specification (perl) to META.yaml

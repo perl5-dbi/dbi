@@ -882,6 +882,13 @@ sub DESTROY {
 }
 
 package
+	DBD::_::dr;
+
+sub dbixs_revision {
+    return 0;
+}
+
+package
 	DBD::_::db;
 
 sub connected {

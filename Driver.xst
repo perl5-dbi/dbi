@@ -30,6 +30,12 @@ BOOT:
 MODULE = DBD::~DRIVER~  PACKAGE = DBD::~DRIVER~::dr
 
 
+void
+dbixs_revision(...)
+    PPCODE:
+    ST(0) = sv_2mortal(newIV(DBIXS_REVISION));
+
+
 #ifdef dbd_discon_all
 
 # disconnect_all renamed and ALIAS'd to avoid length clash on VMS :-(
