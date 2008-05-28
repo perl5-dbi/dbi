@@ -389,7 +389,8 @@ dbi_bootinit(dbistate_t * parent_dbis)
      * http://rt.cpan.org/Public/Bug/Display.html?id=32309
      */
     sv_setiv(perl_get_sv(DBISTATE_PERLNAME, GV_ADDMULTI), 0); /* force SvIOK */
-    DBISTATE_ASSIGN(DBISx);
+    DBIS = DBISx;
+    DBIS_PUBLISHED_LVALUE = DBISx;
 
     /* store version and size so we can spot DBI/DBD version mismatch	*/
     DBIS->check_version = check_version;
