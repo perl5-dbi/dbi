@@ -657,6 +657,10 @@ sub update_stats {
             duration => dbi_time()-$time_received,
             ($meta) ? (meta => $meta) : (), # for any other info
         };
+        $recent->{request_object} = $request
+            if !$frozen_request && $request;
+        $recent->{response_object} = $response
+            if !$frozen_response && $response;
         my @queues =  ($stats->{recent_requests} ||= []);
         push @queues, ($stats->{recent_errors}   ||= []) if $response->err;
         for my $queue (@queues) {
