@@ -233,18 +233,23 @@ sub reset_dbh {
 
 sub new_response_with_err {
     my ($self, $rv, $eval_error, $dbh) = @_;
+    # this is the usual way to create a response for both success and failure
     # capture err+errstr etc and merge in $eval_error ($@)
 
     my ($err, $errstr, $state) = ($DBI::err, $DBI::errstr, $DBI::state);
 
-    # if we caught an exception and there's either no DBI error, or the
-    # exception itself doesn't look like a DBI exception, then append the
-    # exception to errstr
-    if ($eval_error and (!$errstr || $eval_error !~ /^DBD::/)) {
-        chomp $eval_error;
-        $err ||= 1;
-        $errstr = ($errstr) ? "$errstr; $eval_error" : $eval_error;
+    if ($eval_error) {
+        $err ||= $DBI::stderr || 1; # ensure err is true
+        if ($errstr) {
+            $eval_error =~ s/(?: : \s)? \Q$errstr//x if $errstr;
+            chomp $errstr;
+            $errstr .= "; $eval_error";
+        }
+        else {
+            $errstr = $eval_error;
+        }
     }
+    chomp $errstr if $errstr;
 
     my $flags;
     # (XXX if we ever add transaction support then we'll need to take extra
