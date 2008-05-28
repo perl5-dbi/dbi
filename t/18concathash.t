@@ -7,6 +7,7 @@
 
 use strict;
 use Benchmark qw(:all);
+use Scalar::Util qw(looks_like_number);
 no warnings 'uninitialized';
 
 use Test::More tests => 36;
@@ -137,6 +138,7 @@ sub _concat_hash_sorted {
     # $value_format: false=use neat(), true=dumb quotes
     # $sort_type: 0=lexical, 1=numeric, undef=try to guess
 
+    die "hash is not a hash reference" unless ref $hash_ref eq 'HASH';
     my $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
     my $string = '';
     for my $key (@$keys) {
@@ -153,7 +155,6 @@ sub _concat_hash_sorted {
     return $string;
 }
 
-use Scalar::Util qw(looks_like_number);
 sub _get_sorted_hash_keys {
     my ($hash_ref, $sort_type) = @_;
     if (not defined $sort_type) {
@@ -168,7 +169,7 @@ sub _get_sorted_hash_keys {
     my @sorted = ($sort_type)
         ? sort { $a <=> $b or $a cmp $b } @keys
         : sort    @keys;
-    warn "$sort_type = @sorted\n";
+    #warn "$sort_type = @sorted\n";
     return \@sorted;
 }
 
