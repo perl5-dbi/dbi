@@ -640,7 +640,13 @@ sub _mk_rand_callback {
 
 
 sub update_stats {
-    my ($self, $request, $response, $frozen_request, $frozen_response, $time_received, $meta) = @_;
+    my ($self,
+        $request, $response,
+        $frozen_request, $frozen_response,
+        $time_received,
+        $store_meta, $other_meta,
+    ) = @_;
+    # we assume that $response is always a valid response object
 
     my $stats = $self->{stats};
     $stats->{frozen_request_max_bytes} = length($frozen_request)
@@ -657,15 +663,16 @@ sub update_stats {
             response => $frozen_response,
             time_received => $time_received,
             duration => dbi_time()-$time_received,
-            ($meta) ? (meta => $meta) : (), # for any other info
+            # for any other info
+            ($store_meta) ? (meta => $store_meta) : (),
         };
         $recent->{request_object} = $request
             if !$frozen_request && $request;
         $recent->{response_object} = $response
-            if !$frozen_response && $response;
+            if !$frozen_response;
         my @queues =  ($stats->{recent_requests} ||= []);
         push @queues, ($stats->{recent_errors}   ||= [])
-            if eval { $response->err };
+            if $response->err;
         for my $queue (@queues) {
             push @$queue, $recent;
             shift @$queue if @$queue > $track_recent;
