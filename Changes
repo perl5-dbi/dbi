@@ -57,6 +57,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 =head2 Changes in DBI 1.605 XXX
 
 Add note about _concat_hash_sorted once integrated
+Add DBI::Gofer::Serialiser::MIME / Base64
+Add DBI::Gofer::Serialiser::JSON
 
   Fixed problem with DBIS macro with threads on big-endian machines
     with 64bit ints but 32bit pointers. Ticket #32309.

@@ -644,9 +644,11 @@ sub update_stats {
 
     my $stats = $self->{stats};
     $stats->{frozen_request_max_bytes} = length($frozen_request)
-        if length($frozen_request)  > ($stats->{frozen_request_max_bytes}||0);
+        if $frozen_request
+        && length($frozen_request)  > ($stats->{frozen_request_max_bytes}||0);
     $stats->{frozen_response_max_bytes} = length($frozen_response)
-        if length($frozen_response) > ($stats->{frozen_response_max_bytes}||0);
+        if $frozen_response
+        && length($frozen_response) > ($stats->{frozen_response_max_bytes}||0);
 
     my $recent;
     if (my $track_recent = $self->{track_recent}) {
@@ -662,7 +664,8 @@ sub update_stats {
         $recent->{response_object} = $response
             if !$frozen_response && $response;
         my @queues =  ($stats->{recent_requests} ||= []);
-        push @queues, ($stats->{recent_errors}   ||= []) if $response->err;
+        push @queues, ($stats->{recent_errors}   ||= [])
+            if eval { $response->err };
         for my $queue (@queues) {
             push @$queue, $recent;
             shift @$queue if @$queue > $track_recent;
