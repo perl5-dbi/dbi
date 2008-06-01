@@ -209,18 +209,19 @@ savepv_using_sv(char *str)
     return buf;
 }
 
-typedef struct num_srt_info {
+
+/* --- support functions for concat_hash_sorted --- */
+
+typedef struct str_uv_sort_pair_st {
     char *key;
     UV numeric;
-} num_srt_info;
+} str_uv_sort_pair_t;
 
 static int
-_cmp_number (val1, val2)
-    const void *val1;
-    const void *val2;
+_cmp_number(const void *val1, const void *val2)
 {
-    UV first  = ((struct num_srt_info *)val1)->numeric;
-    UV second = ((struct num_srt_info *)val2)->numeric;
+    UV first  = ((str_uv_sort_pair_t *)val1)->numeric;
+    UV second = ((str_uv_sort_pair_t *)val2)->numeric;
 
     if (first > second)
 	return 1;
@@ -229,24 +230,19 @@ _cmp_number (val1, val2)
     /* only likely to reach here if numeric sort forced for non-numeric keys */
     /* fallback to comparing the key strings */
     return strcmp(
-        ((struct num_srt_info *)val1)->key,
-        ((struct num_srt_info *)val2)->key
+        ((str_uv_sort_pair_t *)val1)->key,
+        ((str_uv_sort_pair_t *)val2)->key
     );
 }
 
 static int 
-_cmp_str (val1, val2)
-    const void *val1;
-    const void *val2;
+_cmp_str (const void *val1, const void *val2)
 {
     return strcmp( *(char **)val1, *(char **)val2);
 }
 
 static char **
-_sort_hash_keys (hash, sort_order, total_length)
-    HV *hash;
-    int sort_order;
-    STRLEN *total_length;
+_sort_hash_keys (HV *hash, int sort_order, STRLEN *total_length)
 {
     dTHX;
     I32 hv_len, key_len;
@@ -255,14 +251,14 @@ _sort_hash_keys (hash, sort_order, total_length)
     unsigned int idx = 0;
     STRLEN tot_len = 0;
     bool has_non_numerics = 0;
-    struct num_srt_info *numbers;
+    str_uv_sort_pair_t *numbers;
 
     hv_len = hv_iterinit(hash);
     if (!hv_len)
         return 0;
 
-    Newz(0, keys, hv_len, char *);
-    Newz(0, numbers, hv_len, struct num_srt_info);
+    Newz(0, keys,    hv_len, char *);
+    Newz(0, numbers, hv_len, str_uv_sort_pair_t);
 
     while ((entry = hv_iternext(hash))) {
         *(keys+idx) = hv_iterkey(entry, &key_len);
@@ -277,7 +273,7 @@ _sort_hash_keys (hash, sort_order, total_length)
         ++idx;
     }
 
-    if (0 != total_length)
+    if (total_length)
         *total_length = tot_len;
 
     if (sort_order < 0)
@@ -287,7 +283,7 @@ _sort_hash_keys (hash, sort_order, total_length)
         qsort(keys, hv_len, sizeof(char*), _cmp_str);
     }
     else {
-        qsort(numbers, hv_len, sizeof(struct num_srt_info), _cmp_number);
+        qsort(numbers, hv_len, sizeof(str_uv_sort_pair_t), _cmp_number);
         for (idx = 0; idx < hv_len; ++idx)
             *(keys+idx) = (numbers+idx)->key;
     }
@@ -298,7 +294,7 @@ _sort_hash_keys (hash, sort_order, total_length)
 
 
 static SV *
-_join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STRLEN pair_sep_len, int not_neat, int sort)
+_join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STRLEN pair_sep_len, int use_neat, int sort_type)
 {
 	dTHX;
         I32 hv_len;
@@ -307,7 +303,7 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
         unsigned int i = 0;
         SV *return_sv;
 
-        keys = _sort_hash_keys(hash, sort, &total_len);
+        keys = _sort_hash_keys(hash, sort_type, &total_len);
         if (!keys)
             return newSVpv("", 0);
 
@@ -334,7 +330,7 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
                 continue;
             }
 
-            if (not_neat) {
+            if (use_neat) {
                 if (SvOK(*hash_svp)) {
                      STRLEN hv_val_len;
                      char *hv_val = SvPV(*hash_svp, hv_val_len);
@@ -4401,16 +4397,16 @@ _concat_hash_sorted(hash, kv_sep_sv, pair_sep_sv, value_format_sv, sort_type_sv)
     PREINIT:
     STRLEN kv_sep_len, pair_sep_len;
     char *kv_sep, *pair_sep;
-    int not_neat, sort;
+    int use_neat, sort_type;
     CODE:
         kv_sep = SvPV(kv_sep_sv, kv_sep_len);
         pair_sep = SvPV(pair_sep_sv, pair_sep_len);
         if (SvGMAGICAL(value_format_sv)) /* SvTRUE doesn't handle magic */
             mg_get(value_format_sv);
-        not_neat = SvTRUE(value_format_sv);
-        sort = (SvOK(sort_type_sv)) ? SvIV(sort_type_sv) : -1;
+        use_neat = SvTRUE(value_format_sv);
+        sort_type = (SvOK(sort_type_sv)) ? SvIV(sort_type_sv) : -1;
 
-        RETVAL = _join_hash_sorted(hash, kv_sep, kv_sep_len, pair_sep, pair_sep_len, not_neat, sort);
+        RETVAL = _join_hash_sorted(hash, kv_sep, kv_sep_len, pair_sep, pair_sep_len, use_neat, sort_type);
 
     OUTPUT:
         RETVAL

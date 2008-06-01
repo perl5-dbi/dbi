@@ -10,7 +10,7 @@ use Benchmark qw(:all);
 use Scalar::Util qw(looks_like_number);
 no warnings 'uninitialized';
 
-use Test::More tests => 36;
+use Test::More tests => 40;
 
 BEGIN { use_ok('DBI') };
 
