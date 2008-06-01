@@ -298,27 +298,23 @@ _sort_hash_keys (hash, sort_order, total_length)
 
 
 static SV *
-_join_hash_sorted (hash, kv_sep, pair_sep, not_neat, sort)
-    HV *hash;
-    char *kv_sep;
-    char *pair_sep;
-    int not_neat;
-    int sort;
+_join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STRLEN pair_sep_len, int not_neat, int sort)
 {
 	dTHX;
         I32 hv_len;
-        STRLEN kv_sep_len, pair_sep_len, hv_val_len, total_len = 0;
+        STRLEN total_len = 0;
         char **keys;
         unsigned int i = 0;
-        SV **hash_svp;
         SV *return_sv;
-
-        kv_sep_len = strlen(kv_sep);
-        pair_sep_len = strlen(pair_sep);
 
         keys = _sort_hash_keys(hash, sort, &total_len);
         if (!keys)
             return newSVpv("", 0);
+
+        if (!kv_sep_len)
+            kv_sep_len = strlen(kv_sep);
+        if (!pair_sep_len)
+            pair_sep_len = strlen(pair_sep);
 
         hv_len = hv_iterinit(hash);
         /* total_len += Separators + quotes + term null */
@@ -327,22 +323,31 @@ _join_hash_sorted (hash, kv_sep, pair_sep, not_neat, sort)
         sv_setpv(return_sv, ""); /* quell undef warnings */
 
         for (i=0; i<hv_len; ++i) {
-            hash_svp = hv_fetch(hash, keys[i], strlen(keys[i]), 0);
-            if (!hash_svp) {
-                 warn("No Hash entry with key: %s", keys[i]);
+            SV **hash_svp = hv_fetch(hash, keys[i], strlen(keys[i]), 0);
+
+            sv_catpv(return_sv, keys[i]); /* XXX keys can't contain nul chars */
+            sv_catpvn(return_sv, kv_sep, kv_sep_len);
+
+            if (!hash_svp) {    /* should never happen */
+                warn("No hash entry with key '%s'", keys[i]);
+                sv_catpvn(return_sv, "???", 3);
                 continue;
             }
 
-            sv_catpvf(return_sv, "%s%s", keys[i], kv_sep);
             if (not_neat) {
-                if (SvOK(*hash_svp))
-                     sv_catpvf(return_sv, "'%s'", SvPV(*hash_svp, hv_val_len));
-                else sv_catpv(return_sv, "undef");
+                if (SvOK(*hash_svp)) {
+                     STRLEN hv_val_len;
+                     char *hv_val = SvPV(*hash_svp, hv_val_len);
+                     sv_catpvn(return_sv, "'", 1);
+                     sv_catpvn(return_sv, hv_val, hv_val_len);
+                     sv_catpvn(return_sv, "'", 1);
+                }
+                else sv_catpvn(return_sv, "undef", 5);
             }
             else     sv_catpv(return_sv, neatsvpv(*hash_svp,0));
 
             if (i < hv_len-1)
-                sv_catpv(return_sv, pair_sep);
+                sv_catpvn(return_sv, pair_sep, pair_sep_len);
         }
 
         Safefree(keys);
@@ -4387,7 +4392,7 @@ dbi_profile_merge_nodes(dest, ...)
 
 
 SV *
-_concat_hash_sorted (hash, kv_sep_sv, pair_sep_sv, value_format_sv,sort_type_sv)
+_concat_hash_sorted(hash, kv_sep_sv, pair_sep_sv, value_format_sv, sort_type_sv)
     HV *hash
     SV *kv_sep_sv
     SV *pair_sep_sv
@@ -4397,18 +4402,15 @@ _concat_hash_sorted (hash, kv_sep_sv, pair_sep_sv, value_format_sv,sort_type_sv)
     STRLEN kv_sep_len, pair_sep_len;
     char *kv_sep, *pair_sep;
     int not_neat, sort;
-
     CODE:
         kv_sep = SvPV(kv_sep_sv, kv_sep_len);
         pair_sep = SvPV(pair_sep_sv, pair_sep_len);
-
-        if (SvGMAGICAL(value_format_sv))
+        if (SvGMAGICAL(value_format_sv)) /* SvTRUE doesn't handle magic */
             mg_get(value_format_sv);
         not_neat = SvTRUE(value_format_sv);
-
         sort = (SvOK(sort_type_sv)) ? SvIV(sort_type_sv) : -1;
 
-        RETVAL = _join_hash_sorted(hash,kv_sep, pair_sep, not_neat, sort);
+        RETVAL = _join_hash_sorted(hash, kv_sep, kv_sep_len, pair_sep, pair_sep_len, not_neat, sort);
 
     OUTPUT:
         RETVAL

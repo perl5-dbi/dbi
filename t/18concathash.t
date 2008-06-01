@@ -15,13 +15,23 @@ use Test::More tests => 36;
 BEGIN { use_ok('DBI') };
 
 # null and undefs -- segfaults?;
-is (DBI::_concat_hash_sorted({ }, "=", ":", 0, undef), "");
-eval {DBI::_concat_hash_sorted(undef, "=", ":", 0, undef), undef};
-like ($@ || "", qr/hash is not a hash reference/); #XXX check this
-is (DBI::_concat_hash_sorted({ }, undef, ":", 0, undef), "");
+is (DBI::_concat_hash_sorted({ }, "=",   ":",   0, undef), "");
+eval { DBI::_concat_hash_sorted(undef, "=", ":", 0, undef) };
+like ($@ || "", qr/is not a hash reference/);
+is (DBI::_concat_hash_sorted({ }, undef, ":",   0,     undef), "");
+is (DBI::_concat_hash_sorted({ }, "=",   undef, 0,     undef), "");
+is (DBI::_concat_hash_sorted({ }, "=",   ":",   undef, undef),"");
 
-is (DBI::_concat_hash_sorted({ }, "=", undef, 0, undef), "");
-is (DBI::_concat_hash_sorted({ }, "=", ":", undef, undef),"");
+# simple cases
+is (DBI::_concat_hash_sorted({ 1=>"a", 2=>"b" }, "=", ", ", undef, undef), "1='a', 2='b'");
+# nul byte in key sep and pair sep
+# (nul byte in hash not supported)
+is DBI::_concat_hash_sorted({ 1=>"a", 2=>"b" }, "=\000=", ":\000:", undef, undef),
+    "1=\000='a':\000:2=\000='b'", 'should work with nul bytes in kv_sep and pair_sep';
+is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 0, undef),
+    "1='a.a':2='b'", 'should work with nul bytes in hash value (neat)';
+is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 1, undef),
+    "1='a\000a':2='b'", 'should work with nul bytes in hash value (not neat)';
 
 # Simple stress tests
 ok(DBI::_concat_hash_sorted({bob=>'two', fred=>'one' }, "="x12000, ":", 1, undef));

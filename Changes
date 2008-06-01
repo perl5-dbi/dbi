@@ -57,6 +57,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 =head2 Changes in DBI 1.605 XXX
 
 Add note about _concat_hash_sorted once integrated
+Use _concat_hash_sorted for *_cached() and ShowErrorStatement
 Add DBI::Gofer::Serialiser::MIME / Base64
 Add DBI::Gofer::Serialiser::JSON
 
@@ -66,15 +67,15 @@ Add DBI::Gofer::Serialiser::JSON
     methods that get embedded into compiled drivers to use the
     inner sth handle when passed a $sth instead of an sql string.
     Drivers will need to be recompiled to pick up this change.
-  Fixed lean in neat() for some kinds of values thanks to Rudolf Lippan.
+  Fixed leak in neat() for some kinds of values thanks to Rudolf Lippan.
 
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
   Removed check for PlRPC-modules from Makefile.PL
-  Added cache miss trace message to DBD::Gofer transport class.
-  Added $drh->dbixs_revision method.
   Clarified docs re ":N" style placeholders.
 
+  Added cache miss trace message to DBD::Gofer transport class.
+  Added $drh->dbixs_revision method.
   Added explicit LICENSE specification (perl) to META.yaml
 
 =head2 Changes in DBI 1.604 (svn rev 10994) 24th March 2008
