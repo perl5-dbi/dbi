@@ -543,9 +543,6 @@ $ReturnValues{SQL_ASYNC_MODE} =
   SQL_AM_NONE                               => 0
 , SQL_AM_CONNECTION                         => 1
 , SQL_AM_STATEMENT                          => 2
-, SQL_AM_NONE                               => 0
-, SQL_AM_CONNECTION                         => 1
-, SQL_AM_STATEMENT                          => 2
 };
 $ReturnValues{SQL_ATTR_MAX_ROWS} =
 {
