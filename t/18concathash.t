@@ -10,12 +10,12 @@ use Benchmark qw(:all);
 use Scalar::Util qw(looks_like_number);
 no warnings 'uninitialized';
 
-use Test::More tests => 40;
+use Test::More tests => 41;
 
 BEGIN { use_ok('DBI') };
 
 # null and undefs -- segfaults?;
-is (DBI::_concat_hash_sorted(undef, "=",   ":",   0, undef), "");
+is (DBI::_concat_hash_sorted(undef, "=",   ":",   0, undef), undef);
 is (DBI::_concat_hash_sorted({ },   "=",   ":",   0, undef), "");
 eval { DBI::_concat_hash_sorted([], "=",   ":",   0, undef) };
 like ($@ || "", qr/is not a hash reference/);
