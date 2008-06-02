@@ -3538,19 +3538,10 @@ XS(XS_DBI_dispatch)
                     mg_get(*svp); /* XXX may recurse, may croak. could use eval */
             }
 	    if (svp && SvRV(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV && HvKEYS(SvRV(*svp))>0 ) {
-		HV *bvhv = (HV*)SvRV(*svp);
-		SV *sv;
-		char *key;
-		I32 keylen;
-		I32 param_idx = 0;
-		hv_iterinit(bvhv);
+                SV *param_values_sv = sv_2mortal(_join_hash_sorted((HV*)SvRV(*svp), "=",1, ", ",2, 1, -1));
 		sv_catpv(msg, "\" with ParamValues: ");
-		while ( (sv = hv_iternextsv(bvhv, &key, &keylen)) ) {
-		    sv_catpvf(msg, "%s%s=%s",
-			(param_idx++==0 ? "" : ", "),
-			key, neatsvpv(sv,0));
-		}
-		sv_catpv(msg, "]");
+		sv_catsv(msg, param_values_sv);
+		sv_catpvn(msg, "]", 1);
 	    }
 	    else {
 		sv_catpv(msg, "\"]");

@@ -361,15 +361,15 @@ sub  _install_method {
 			($err eq "0") ? "warning" : "failed", $errstr;
 
 		if ($h->{'ShowErrorStatement'} and my $Statement = $h->{Statement}) {
-		    $msg .= ' for [``' . $Statement . "''";
+		    $msg .= ' [for Statement "' . $Statement;
 		    if (my $ParamValues = $h->FETCH('ParamValues')) {
-			my $pv_idx = 0;
-			$msg .= " with params: ";
-			while ( my($k,$v) = each %$ParamValues ) {
-			    $msg .= sprintf "%s%s=%s", ($pv_idx++==0) ? "" : ", ", $k, DBI::neat($v);
-			}
+			$msg .= '" with ParamValues: ';
+			$msg .= DBI::_concat_hash_sorted($ParamValues, "=", ", ", 1, undef);
+                        $msg .= "]";
 		    }
-		    $msg .= "]";
+                    else {
+                        $msg .= '"]';
+                    }
 		}
 		if ($err eq "0") { # is 'warning' (not info)
 		    carp $msg if $pw;

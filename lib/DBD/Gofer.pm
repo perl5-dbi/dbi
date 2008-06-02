@@ -578,7 +578,7 @@
             # but only works properly for params 1..9
             # (reverse because of the unshift)
             my @params = reverse sort keys %$ParamValues;
-            if (@params > 9 && $sth->{Database}{go_dsn} =~ /dbi:Sybase/) {
+            if (@params > 9 && ($sth->{Database}{go_dsn}||'') =~ /dbi:Sybase/) {
                 # if more than 9 then we need to do a proper numeric sort
                 # also warn to alert user of this issue
                 warn "Sybase param binding order hack in use";

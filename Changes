@@ -19,18 +19,19 @@ Performance:
         Or call _new_child and move to DBI::common?
     Implement FETCH_many() in C
 
-Gofo TODOs:
+Gofer TODOs:
 
 Add server-side caching.
     combine these:
-        my $request = $transport->thaw_request( $frozen_request );
+        my $request = $transport->thaw_request( $frozen_request, $serializer );
         my $response = $executor->execute_request( $request );
-        my $frozen_response = $transport->freeze_response($response);
-    into single method that first checks the cache
-    and updates it if appropriate
+        my $frozen_response = $transport->freeze_response($response, $serializer);
+    into single method that first checks the cache and updates it if appropriate.
+    Different serializations will have different caches
 
-Move post-request cleanup into separate method and enable hooks so
-    it can be done after the response has been sent
+Add DBI::Gofer::Serialiser::MIME / Base64
+Add DBI::Gofer::Serialiser::JSON
+
 Gofer - allow dbh attrib changes after connect?
     note them and pass in request as STORE method calls
     but then gofer server need to reset them to restore dbh to original state
@@ -51,15 +52,9 @@ Policy for dbh attr FETCH (ie example_driver_path)
 Call method on transport failure so transport can cleanup/reset if it wants
 Gofer: gearman - need to disable coallesing for non-idempotent requests
 
-
 Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 =head2 Changes in DBI 1.605 XXX
-
-Add note about _concat_hash_sorted once integrated
-Use _concat_hash_sorted for *_cached() and ShowErrorStatement
-Add DBI::Gofer::Serialiser::MIME / Base64
-Add DBI::Gofer::Serialiser::JSON
 
   Fixed problem with DBIS macro with threads on big-endian machines
     with 64bit ints but 32bit pointers. Ticket #32309.
@@ -69,16 +64,16 @@ Add DBI::Gofer::Serialiser::JSON
     Drivers will need to be recompiled to pick up this change.
   Fixed leak in neat() for some kinds of values thanks to Rudolf Lippan.
   Fixed DBI::PurePerl neat() to behave more like XS neat().
-  Fixed the placeholder values reported by ShowErrorStatement
-    to be shown in sorted order.
 
+  Clarified docs re ":N" style placeholders.
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
   Removed check for PlRPC-modules from Makefile.PL
-  Clarified docs re ":N" style placeholders.
   Changed the format of the key used for $h->{CachedKids}
     (which is undocumented so you shouldn't depend on it anyway)
 
+  Added sorting of ParamValues reported by ShowErrorStatement
+    thanks to to Rudolf Lippan.
   Added cache miss trace message to DBD::Gofer transport class.
   Added $drh->dbixs_revision method.
   Added explicit LICENSE specification (perl) to META.yaml
