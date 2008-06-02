@@ -331,6 +331,9 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
             }
 
             if (use_neat) {
+                sv_catpv(return_sv, neatsvpv(*hash_svp,0));
+            }
+            else {
                 if (SvOK(*hash_svp)) {
                      STRLEN hv_val_len;
                      char *hv_val = SvPV(*hash_svp, hv_val_len);
@@ -340,7 +343,6 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
                 }
                 else sv_catpvn(return_sv, "undef", 5);
             }
-            else     sv_catpv(return_sv, neatsvpv(*hash_svp,0));
 
             if (i < hv_len-1)
                 sv_catpvn(return_sv, pair_sep, pair_sep_len);
@@ -4388,44 +4390,31 @@ dbi_profile_merge_nodes(dest, ...)
 
 
 SV *
-_concat_hash_sorted(hash_sv, kv_sep_sv, pair_sep_sv, use_neat_sv, num_sort_sv, extra_sv=Nullsv)
+_concat_hash_sorted(hash_sv, kv_sep_sv, pair_sep_sv, use_neat_sv, num_sort_sv)
     SV *hash_sv
     SV *kv_sep_sv
     SV *pair_sep_sv
     SV *use_neat_sv
     SV *num_sort_sv
-    SV *extra_sv
     PREINIT:
-    STRLEN kv_sep_len, pair_sep_len;
     char *kv_sep, *pair_sep;
-    int use_neat, num_sort;
+    STRLEN kv_sep_len, pair_sep_len;
     CODE:
         if (!SvOK(hash_sv))
             XSRETURN_UNDEF;
         if (!SvROK(hash_sv) || SvTYPE(SvRV(hash_sv))!=SVt_PVHV)
             croak("hash is not a hash reference");
+
         kv_sep   = SvPV(kv_sep_sv,   kv_sep_len);
         pair_sep = SvPV(pair_sep_sv, pair_sep_len);
-        /* use_neat should be undef, 0 or 1, may allow sprintf format strings later */
-        use_neat = (SvOK(use_neat_sv)) ? SvIV(use_neat_sv) : 0;
-        num_sort = (SvOK(num_sort_sv)) ? SvIV(num_sort_sv) : -1;
 
-        RETVAL = _join_hash_sorted((HV*)SvRV(hash_sv), kv_sep, kv_sep_len, pair_sep, pair_sep_len, use_neat, num_sort);
-
-        /* efficient way for the caller to tack extra info onto the return string */
-        if (extra_sv && SvOK(extra_sv) && SvROK(extra_sv) && SvTYPE(SvRV(extra_sv))==SVt_PVAV) {
-            AV *extra_av = (AV*)SvRV(extra_sv);
-            int i, items = AvFILL(extra_av)+1;
-            for (i=0; i < items; ++i) {
-                SV *e_sv = *av_fetch(extra_av, i, 1);
-                if (SvTRUE(RETVAL))
-                    sv_catsv(RETVAL, kv_sep_sv);
-                if (SvOK(e_sv))
-                     sv_catsv(RETVAL, *av_fetch(extra_av, i, 1));
-                else sv_catpvn(RETVAL, "undef", 5);
-            }
-        }
-
+        RETVAL = _join_hash_sorted( (HV*)SvRV(hash_sv),
+            kv_sep,   kv_sep_len,
+            pair_sep, pair_sep_len,
+            /* use_neat should be undef, 0 or 1, may allow sprintf format strings later */
+            (SvOK(use_neat_sv)) ? SvIV(use_neat_sv) :  0,
+            (SvOK(num_sort_sv)) ? SvIV(num_sort_sv) : -1
+        );
     OUTPUT:
         RETVAL
 

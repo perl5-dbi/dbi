@@ -29,9 +29,9 @@ is (DBI::_concat_hash_sorted({ 1=>"a", 2=>"b" }, "=", ", ", undef, undef), "1='a
 # (nul byte in hash not supported)
 is DBI::_concat_hash_sorted({ 1=>"a", 2=>"b" }, "=\000=", ":\000:", undef, undef),
     "1=\000='a':\000:2=\000='b'", 'should work with nul bytes in kv_sep and pair_sep';
-is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 0, undef),
-    "1='a.a':2='b'", 'should work with nul bytes in hash value (neat)';
 is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 1, undef),
+    "1='a.a':2='b'", 'should work with nul bytes in hash value (neat)';
+is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 0, undef),
     "1='a\000a':2='b'", 'should work with nul bytes in hash value (not neat)';
 
 # Simple stress tests
@@ -144,22 +144,22 @@ if (0) {
 #CatHash::_concat_hash_values({ }, ":-",,"::",1,1);
 
 
-sub _concat_hash_sorted {
-    my ( $hash_ref, $kv_separator, $pair_separator, $value_format, $sort_type ) = @_;
-    # $value_format: false=use neat(), true=dumb quotes
-    # $sort_type: 0=lexical, 1=numeric, undef=try to guess
-
+sub _concat_hash_sorted { 
+    my ( $hash_ref, $kv_separator, $pair_separator, $use_neat, $num_sort ) = @_;
+    # $num_sort: 0=lexical, 1=numeric, undef=try to guess
+        
+    return undef unless defined $hash_ref;
     die "hash is not a hash reference" unless ref $hash_ref eq 'HASH';
-    my $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
+    my $keys = _get_sorted_hash_keys($hash_ref, $num_sort);
     my $string = '';
     for my $key (@$keys) {
         $string .= $pair_separator if length $string > 0;
         my $value = $hash_ref->{$key};
-        if ($value_format) {
-            $value = (defined $value) ? "'$value'" : 'undef';
-        }
+        if ($use_neat) {
+            $value = DBI::neat($value, 0); 
+        } 
         else {
-            $value = DBI::neat($value,0);
+            $value = (defined $value) ? "'$value'" : 'undef';
         }
         $string .= $key . $kv_separator . $value;
     }

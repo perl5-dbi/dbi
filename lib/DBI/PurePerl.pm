@@ -664,6 +664,7 @@ sub neat {
 	$v = substr($v,0,$maxlen-5);
 	$v .= '...';
     }
+    $v =~ s/[^[:print:]]/./g;
     return "$quote$v$quote";
 }
 
@@ -674,21 +675,21 @@ sub dbi_time {
 sub DBI::st::TIEHASH { bless $_[1] => $_[0] };
 
 sub _concat_hash_sorted {
-    my ( $hash_ref, $kv_separator, $pair_separator, $value_format, $sort_type ) = @_;
-    # $value_format: false=use neat(), true=dumb quotes
-    # $sort_type: 0=lexical, 1=numeric, undef=try to guess
+    my ( $hash_ref, $kv_separator, $pair_separator, $use_neat, $num_sort ) = @_;
+    # $num_sort: 0=lexical, 1=numeric, undef=try to guess
 
+    return undef unless defined $hash_ref;
     die "hash is not a hash reference" unless ref $hash_ref eq 'HASH';
-    my $keys = _get_sorted_hash_keys($hash_ref, $sort_type);
+    my $keys = _get_sorted_hash_keys($hash_ref, $num_sort);
     my $string = '';
     for my $key (@$keys) {
         $string .= $pair_separator if length $string > 0;
         my $value = $hash_ref->{$key};
-        if ($value_format) {
-            $value = (defined $value) ? "'$value'" : 'undef';
+        if ($use_neat) {
+            $value = DBI::neat($value, 0);
         }
         else {
-            $value = DBI::neat($value,0);
+            $value = (defined $value) ? "'$value'" : 'undef';
         }
         $string .= $key . $kv_separator . $value;
     }
@@ -696,20 +697,19 @@ sub _concat_hash_sorted {
 }
 
 sub _get_sorted_hash_keys {
-    my ($hash_ref, $sort_type) = @_;
-    if (not defined $sort_type) {
+    my ($hash_ref, $num_sort) = @_;
+    if (not defined $num_sort) {
         my $sort_guess = 1;
         $sort_guess = (not looks_like_number($_)) ? 0 : $sort_guess
             for keys %$hash_ref;
-        $sort_type = $sort_guess;
+        $num_sort = $sort_guess;
     }
     
     my @keys = keys %$hash_ref;
     no warnings 'numeric';
-    my @sorted = ($sort_type)
+    my @sorted = ($num_sort)
         ? sort { $a <=> $b or $a cmp $b } @keys
         : sort    @keys;
-    #warn "$sort_type = @sorted\n";
     return \@sorted;
 }
 

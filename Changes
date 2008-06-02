@@ -68,11 +68,16 @@ Add DBI::Gofer::Serialiser::JSON
     inner sth handle when passed a $sth instead of an sql string.
     Drivers will need to be recompiled to pick up this change.
   Fixed leak in neat() for some kinds of values thanks to Rudolf Lippan.
+  Fixed DBI::PurePerl neat() to behave more like XS neat().
+  Fixed the placeholder values reported by ShowErrorStatement
+    to be shown in sorted order.
 
   Increased timeout on tests to accomodate very slow systems.
   Removed the beeps "\a" from Makefile.PL warnings.
   Removed check for PlRPC-modules from Makefile.PL
   Clarified docs re ":N" style placeholders.
+  Changed the format of the key used for $h->{CachedKids}
+    (which is undocumented so you shouldn't depend on it anyway)
 
   Added cache miss trace message to DBD::Gofer transport class.
   Added $drh->dbixs_revision method.

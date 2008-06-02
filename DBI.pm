@@ -1428,14 +1428,13 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($dsn, $user, $auth, $attr) = @_;
 
 	my $cache = $drh->{CachedKids} ||= {};
-
-	my @attr_keys = $attr ? sort keys %$attr : ();
-	my $key = do { local $^W; # silence undef warnings
-	    join "~~", $dsn, $user, $auth, $attr ? (@attr_keys,@{$attr}{@attr_keys}) : ()
+	my $key = do { local $^W;
+	    join "!\001", $dsn, $user, $auth, DBI::_concat_hash_sorted($attr, "=\001", ",\001", 0, 0)
 	};
 	my $dbh = $cache->{$key};
         $drh->trace_msg(sprintf("    connect_cached: key '$key', cached dbh $dbh\n", DBI::neat($key), DBI::neat($dbh)))
             if $DBI::dbi_debug >= 4;
+
         my $cb = $attr->{Callbacks}; # take care not to autovivify
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
             # If the caller has provided a callback then call it
@@ -1636,13 +1635,16 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub prepare_cached {
 	my ($dbh, $statement, $attr, $if_active) = @_;
+
 	# Needs support at dbh level to clear cache before complaining about
 	# active children. The XS template code does this. Drivers not using
 	# the template must handle clearing the cache themselves.
 	my $cache = $dbh->{CachedKids} ||= {};
-	my @attr_keys = ($attr) ? sort keys %$attr : ();
-	my $key = ($attr) ? join("~~", $statement, @attr_keys, @{$attr}{@attr_keys}) : $statement;
+	my $key = do { local $^W;
+	    join "!\001", $statement, DBI::_concat_hash_sorted($attr, "=\001", ",\001", 0, 0)
+	};
 	my $sth = $cache->{$key};
+
 	if ($sth) {
 	    return $sth unless $sth->FETCH('Active');
 	    Carp::carp("prepare_cached($statement) statement handle $sth still Active")
@@ -1650,8 +1652,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    $sth->finish if $if_active <= 1;
 	    return $sth  if $if_active <= 2;
 	}
+
 	$sth = $dbh->prepare($statement, $attr);
 	$cache->{$key} = $sth if $sth;
+
 	return $sth;
     }
 

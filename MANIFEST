@@ -70,6 +70,7 @@ t/01basics.t
 t/02dbidrv.t
 t/03handle.t
 t/04mods.t
+t/05concathash.t
 t/06attrs.t
 t/07kids.t
 t/08keeperr.t
