@@ -15,12 +15,13 @@ use Test::More tests => 40;
 BEGIN { use_ok('DBI') };
 
 # null and undefs -- segfaults?;
-is (DBI::_concat_hash_sorted({ }, "=",   ":",   0, undef), "");
-eval { DBI::_concat_hash_sorted(undef, "=", ":", 0, undef) };
+is (DBI::_concat_hash_sorted(undef, "=",   ":",   0, undef), "");
+is (DBI::_concat_hash_sorted({ },   "=",   ":",   0, undef), "");
+eval { DBI::_concat_hash_sorted([], "=",   ":",   0, undef) };
 like ($@ || "", qr/is not a hash reference/);
-is (DBI::_concat_hash_sorted({ }, undef, ":",   0,     undef), "");
-is (DBI::_concat_hash_sorted({ }, "=",   undef, 0,     undef), "");
-is (DBI::_concat_hash_sorted({ }, "=",   ":",   undef, undef),"");
+is (DBI::_concat_hash_sorted({ },   undef, ":",   0,     undef), "");
+is (DBI::_concat_hash_sorted({ },   "=",   undef, 0,     undef), "");
+is (DBI::_concat_hash_sorted({ },   "=",   ":",   undef, undef),"");
 
 # simple cases
 is (DBI::_concat_hash_sorted({ 1=>"a", 2=>"b" }, "=", ", ", undef, undef), "1='a', 2='b'");
