@@ -70,7 +70,6 @@ t/01basics.t
 t/02dbidrv.t
 t/03handle.t
 t/04mods.t
-t/05thrclone.t
 t/06attrs.t
 t/07kids.t
 t/08keeperr.t
@@ -84,6 +83,7 @@ t/15array.t
 t/19fhtrace.t
 t/20meta.t
 t/30subclass.t
+t/35thrclone.t
 t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
