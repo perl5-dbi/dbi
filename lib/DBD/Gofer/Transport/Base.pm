@@ -170,11 +170,8 @@ sub receive_response {
 }
 
 
-sub response_needs_retransmit {
+sub response_retry_preference {
     my ($self, $request, $response) = @_;
-
-    my $err = $response->err
-        or return 0; # nothing went wrong
 
     my $retry;
 
@@ -195,25 +192,40 @@ sub response_needs_retransmit {
         $retry = 1 if $idempotent;
     }
 
+    return $retry;
+}
+
+
+sub response_needs_retransmit {
+    my ($self, $request, $response) = @_;
+
+    my $err = $response->err
+        or return 0; # nothing went wrong
+
+    my $retry = $self->response_retry_preference($request, $response);
+
     if (!$retry) {  # false or undef
         $self->trace_msg("response_needs_retransmit: response not suitable for retry\n");
         return 0;
     }
 
+    # we'd like to retry but have we retried too much already?
+
     my $retry_limit = $self->go_retry_limit;
-    # $retry_limit = 2 unless defined $retry_limit; # not safe enough to do this
     if (!$retry_limit) {
         $self->trace_msg("response_needs_retransmit: retries disabled (retry_limit not set)\n");
         return 0;
     }
-    my $meta = $request->meta;
-    if (($meta->{retry_count}||=0) >= $retry_limit) {
-        $self->trace_msg("response_needs_retransmit: $meta->{retry_count} is too many retries\n");
+
+    my $request_meta = $request->meta;
+    if (($request_meta->{retry_count}||=0) >= $retry_limit) {
+        $self->trace_msg("response_needs_retransmit: $request_meta->{retry_count} is too many retries\n");
         return 0;
     }
-    ++$meta->{retry_count};                 # count for this request
+    ++$request_meta->{retry_count};         # count for this request
     ++$self->meta->{request_retry_count};   # cumulative transport stats
-    $self->trace_msg("response_needs_retransmit: retry $meta->{retry_count}\n");
+
+    $self->trace_msg("response_needs_retransmit: retry $request_meta->{retry_count}\n");
     return 1;
 }
 
