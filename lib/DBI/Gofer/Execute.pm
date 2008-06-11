@@ -168,15 +168,9 @@ sub _connect {
     $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
         or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";
 
-    # ensure this connect_cached doesn't have the same args as the client
-    # because that causes subtle issues if in the same process (ie transport=null)
-    # include pid to avoid problems with forking (ie null transport in mod_perl)
-    # include gofer-random to avoid random behaviour leaking to other handles
-    my $extra_cache_key = join "|",
-        __PACKAGE__, "$$", $self->{forced_gofer_random} || $ENV{DBI_GOFER_RANDOM} || '';
+    my $random = $self->{forced_gofer_random} || $ENV{DBI_GOFER_RANDOM} || '';
 
-    # XXX implement our own private connect_cached method? (with rate-limited ping)
-    my $dbh = DBI->$connect_method($dsn, undef, undef, {
+    my $connect_attr = {
 
         # the configured default attributes, if any
         %{ $self->default_connect_attributes },
@@ -203,9 +197,15 @@ sub _connect {
         # if errors happened before the main part of the request was executed
         Executed => 0,
 
-        # ensure connect_cached is sufficiently distinct
-        dbi_go_execute_unique => $extra_cache_key,
-    });
+        # ensure this connect_cached doesn't have the same args as the client
+        # because that causes subtle issues if in the same process (ie transport=null)
+        # include pid to avoid problems with forking (ie null transport in mod_perl)
+        # include gofer-random to avoid random behaviour leaking to other handles
+        dbi_go_execute_unique => join("|", __PACKAGE__, $$, $random),
+    };
+
+    # XXX implement our own private connect_cached method? (with rate-limited ping)
+    my $dbh = DBI->$connect_method($dsn, undef, undef, $connect_attr);
 
     $dbh->{ShowErrorStatement} = 1 if $local_log;
 
@@ -576,8 +576,9 @@ sub _install_rand_callbacks {
     my $prev      = $dbh->{private_gofer_rand_fail_callbacks} || {};
 
     # return if we've already setup this handle with callbacks for these specs
-    return if (($prev->{_dbi_gofer_random_spec}||'') eq $dbi_gofer_random);
-    $prev->{_dbi_gofer_random_spec} = $dbi_gofer_random;
+    return if (($callbacks->{_dbi_gofer_random_spec}||'') eq $dbi_gofer_random);
+    #warn "$dbh # $callbacks->{_dbi_gofer_random_spec}";
+    $callbacks->{_dbi_gofer_random_spec} = $dbi_gofer_random;
 
     my ($fail_percent, $fail_err, $delay_percent, $delay_duration, %spec_part, @spec_note);
     my @specs = split /,/, $dbi_gofer_random;
@@ -604,7 +605,7 @@ sub _install_rand_callbacks {
         }
 
         my $method = $spec;
-        if ($callbacks->{$method} && $callbacks->{$method} != $prev->{$method}) {
+        if ($callbacks->{$method} && $prev->{$method} && $callbacks->{$method} != $prev->{$method}) {
             warn "Callback for $method method already installed so DBI_GOFER_RANDOM callback not installed\n";
             next;
         }
