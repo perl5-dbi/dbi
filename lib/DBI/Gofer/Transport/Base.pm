@@ -137,9 +137,9 @@ sub _dump {
 sub trace_msg {
     my ($self, $msg, $min_level) = @_;
     $min_level = 1 unless defined $min_level;
-    # modeled on DBI's trace_msg method
-    return 0 if $self->trace < $min_level;
-    return DBI->trace_msg($msg, 0); # 0 to force logging even if DBI trace not enabled
+    # transport trace level can override DBI's trace level
+    $min_level = 0 if $self->trace >= $min_level;
+    return DBI->trace_msg($msg, $min_level);
 }
 
 1;
