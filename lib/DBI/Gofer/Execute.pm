@@ -644,11 +644,13 @@ sub _mk_rand_callback {
             my $msg = "DBI_GOFER_RANDOM delaying execution of $method() by $delay_duration seconds\n";
             # Note what's happening in a trace message. If the delay percent is an even
             # number then use warn() instead so it's sent back to the client.
-            ($delay_percent % 2 == 0) ? warn($msg) : $h->trace_msg($msg);
+            ($delay_percent % 2 == 1) ? warn($msg) : $h->trace_msg($msg);
             select undef, undef, undef, $delay_duration; # allows floating point value
         }
         if ($fail) {
             undef $_; # tell DBI to not call the method
+            # the "induced by DBI_GOFER_RANDOM" is special and must be included in errstr
+            # as it's checked for in a few places, such as the gofer retry logic
             return $h->set_err($fail_err || $DBI::stderr,
                 "fake error from $method method induced by DBI_GOFER_RANDOM env var ($fail_percent%)");
         }
@@ -857,7 +859,7 @@ Set the current random delay rate to R where R is a percentage, and set the
 current delay duration to N seconds. The values of R and N can be floating point,
 e.g., C<delay0.5=0.2%>.  Negative values for R have special meaning, see below.
 
-If R is an even number (R % 2 == 0) then a message is logged via warn() which
+If R is an odd number (R % 2 == 1) then a message is logged via warn() which
 will be returned to, and echoed at, the client.
 
 =item methodname
