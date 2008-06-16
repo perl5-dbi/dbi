@@ -175,7 +175,7 @@ A generic 'transparent' callback looks like this:
         return if our $avoid_deep_recursion->{"$h $_"}++;
         my $this = $h->$_(@_);
         undef $_;    # tell DBI not to call original method
-        return $dbh; # tell DBI to return this instead
+        return $this; # tell DBI to return this instead
     };
 
 XXX should add a test for this

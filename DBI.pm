@@ -241,7 +241,7 @@ BEGIN {
 );
 
 $DBI::dbi_debug = 0;
-$DBI::neat_maxlen = 400;
+$DBI::neat_maxlen = 1000;
 $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 
 # If you get an error here like "Can't find loadable object ..."
