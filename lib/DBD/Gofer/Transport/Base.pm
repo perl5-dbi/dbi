@@ -173,26 +173,26 @@ sub receive_response {
 sub response_retry_preference {
     my ($self, $request, $response) = @_;
 
-    my $retry;
-
     # give the user a chance to express a preference (or undef for default)
     if (my $go_retry_hook = $self->go_retry_hook) {
-        $retry = $go_retry_hook->($request, $response, $self);
-        $self->trace_msg(sprintf "response_needs_retransmit: go_retry_hook returned %s\n",
+        my $retry = $go_retry_hook->($request, $response, $self);
+        $self->trace_msg(sprintf "go_retry_hook returned %s\n",
             (defined $retry) ? $retry : 'undef');
+        return $retry if defined $retry;
     }
 
-    if (not defined $retry) {
-        my $errstr = $response->errstr || '';
-        $retry = 1 if $errstr =~ m/induced by DBI_GOFER_RANDOM/;
-    }
+    # This is the main decision point.  We don't retry requests that got as far
+    # as executing because the error is probably from the database (not
+    # transport) so retrying is unlikely to help. But note that any severe
+    # transport error occuring after execute is likely to return a new
+    # response object that doesn't have the execute flag set. Beware!
+    return 0 if $response->executed_flag_set;
 
-    if (not defined $retry) {
-        my $idempotent = $request->is_idempotent; # i.e. is SELECT or ReadOnly was set
-        $retry = 1 if $idempotent;
-    }
+    return 1 if ($response->errstr || '') =~ m/induced by DBI_GOFER_RANDOM/;
 
-    return $retry;
+    return 1 if $request->is_idempotent; # i.e. is SELECT or ReadOnly was set
+
+    return undef; # we couldn't make up our mind
 }
 
 
@@ -219,7 +219,10 @@ sub response_needs_retransmit {
 
     my $request_meta = $request->meta;
     if (($request_meta->{retry_count}||=0) >= $retry_limit) {
-        $self->trace_msg("response_needs_retransmit: $request_meta->{retry_count} is too many retries\n");
+        my $retry_count = $request_meta->{retry_count};
+        $self->trace_msg("response_needs_retransmit: $retry_count is too many retries\n");
+        # XXX should be possible to disable altering the err
+        $response->errstr(sprintf "%s (after %d retries by gofer)", $response->errstr, $retry_count);
         return 0;
     }
     ++$request_meta->{retry_count};         # count for this request
