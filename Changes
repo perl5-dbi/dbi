@@ -66,11 +66,13 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Fixed DBI::PurePerl neat() to behave more like XS neat().
 
   Clarified docs re ":N" style placeholders.
-  Increased timeout on tests to accomodate very slow systems.
-  Removed the beeps "\a" from Makefile.PL warnings.
-  Removed check for PlRPC-modules from Makefile.PL
   Changed the format of the key used for $h->{CachedKids}
     (which is undocumented so you shouldn't depend on it anyway)
+  Increased timeout on tests to accomodate very slow systems.
+  Improved gofer trace output in assorted ways.
+
+  Removed the beeps "\a" from Makefile.PL warnings.
+  Removed check for PlRPC-modules from Makefile.PL
 
   Added sorting of ParamValues reported by ShowErrorStatement
     thanks to to Rudolf Lippan.
