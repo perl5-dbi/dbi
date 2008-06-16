@@ -153,6 +153,42 @@ sub summary_as_text {
 }
 
 
+sub outline_as_text { # one-line version of summary_as_text
+    my $self = shift;
+    my ($context) = @_;
+
+    my ($rv, $err, $errstr, $state) = ($self->{rv}, $self->{err}, $self->{errstr}, $self->{state});
+
+    my $s = sprintf("rv=%s", (ref $rv) ? "[".neat_list($rv)."]" : neat($rv));
+    $s .= sprintf(", err=%s %s", $err, neat($errstr))
+        if defined $err;
+    $s .= sprintf(", flags=0x%x", $self->{flags})
+        if $self->{flags};
+
+    if (my $sth_resultsets = $self->sth_resultsets) {
+        $s .= sprintf(", %d resultsets ", scalar @$sth_resultsets);
+
+        my @rs;
+        for my $rs (@{$self->sth_resultsets || []}) {
+            my $summary = "";
+            my ($rowset, $err, $errstr)
+                = @{$rs}{qw(rowset err errstr)};
+            my $NUM_OF_FIELDS = $rs->{NUM_OF_FIELDS} || 0;
+            my $rows = $rowset ? @$rowset : 0;
+            if ($rowset || $NUM_OF_FIELDS > 0) {
+                $summary .= sprintf "%dr x %dc", $rows, $NUM_OF_FIELDS;
+            }
+            $summary .= sprintf "%serr %s %s", ($summary?", ":""), $err, neat($errstr)
+                if defined $err;
+            push @rs, $summary;
+        }
+        $s .= join "; ", map { "[$_]" } @rs;
+    }
+
+    return $s;
+}
+
+
 1;
 
 =head1 NAME
