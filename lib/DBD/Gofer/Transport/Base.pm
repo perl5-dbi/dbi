@@ -181,11 +181,11 @@ sub response_retry_preference {
         return $retry if defined $retry;
     }
 
-    # This is the main decision point.  We don't retry requests that got as far
-    # as executing because the error is probably from the database (not
-    # transport) so retrying is unlikely to help. But note that any severe
-    # transport error occuring after execute is likely to return a new
-    # response object that doesn't have the execute flag set. Beware!
+    # This is the main decision point.  We don't retry requests that got
+    # as far as executing because the error is probably from the database
+    # (not transport) so retrying is unlikely to help. But note that any
+    # severe transport error occuring after execute is likely to return
+    # a new response object that doesn't have the execute flag set. Beware!
     return 0 if $response->executed_flag_set;
 
     return 1 if ($response->errstr || '') =~ m/induced by DBI_GOFER_RANDOM/;
@@ -218,17 +218,28 @@ sub response_needs_retransmit {
     }
 
     my $request_meta = $request->meta;
-    if (($request_meta->{retry_count}||=0) >= $retry_limit) {
-        my $retry_count = $request_meta->{retry_count};
+    my $retry_count = $request_meta->{retry_count} || 0;
+    if ($retry_count >= $retry_limit) {
         $self->trace_msg("response_needs_retransmit: $retry_count is too many retries\n");
         # XXX should be possible to disable altering the err
         $response->errstr(sprintf "%s (after %d retries by gofer)", $response->errstr, $retry_count);
         return 0;
     }
-    ++$request_meta->{retry_count};         # count for this request
-    ++$self->meta->{request_retry_count};   # cumulative transport stats
 
-    $self->trace_msg("response_needs_retransmit: retry $request_meta->{retry_count}\n");
+    # will retry now, do the admin
+    ++$retry_count;
+    $self->trace_msg("response_needs_retransmit: retry $retry_count\n");
+
+    # hook so response_retry_preference can defer some code execution
+    # until we've checked retry_count and retry_limit.
+    if (ref $retry eq 'CODE') {
+        $retry->($retry_count, $retry_limit)
+            and warn "should return false"; # protect future use
+    }
+
+    ++$request_meta->{retry_count};         # update count for this request object
+    ++$self->meta->{request_retry_count};   # update cumulative transport stats
+
     return 1;
 }
 

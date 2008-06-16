@@ -69,6 +69,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Changed the format of the key used for $h->{CachedKids}
     (which is undocumented so you shouldn't depend on it anyway)
   Increased timeout on tests to accomodate very slow systems.
+  Improved gofer retry-on-error logic and refactored to aid subclassing.
   Improved gofer trace output in assorted ways.
 
   Removed the beeps "\a" from Makefile.PL warnings.
