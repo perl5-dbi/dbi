@@ -75,9 +75,12 @@ So trace level 2 can be used to aid debugging without being flooded by data
 
   Increased default $DBI::neat_maxlen from 400 to 1000.
   Increased timeout on tests to accomodate very slow systems.
-  Clarified docs re ":N" style placeholders.
+  Changed behaviour of trace levels 1..4 to show less information
+    at lower levels.
   Changed the format of the key used for $h->{CachedKids}
     (which is undocumented so you shouldn't depend on it anyway)
+  Changed gofer error handling to avoid duplicate error text in errstr.
+  Clarified docs re ":N" style placeholders.
   Improved gofer retry-on-error logic and refactored to aid subclassing.
   Improved gofer trace output in assorted ways.
 

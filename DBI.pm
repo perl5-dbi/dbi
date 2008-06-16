@@ -6991,16 +6991,17 @@ returns.
 Trace I<levels> are as follows:
 
   0 - Trace disabled.
-  1 - Trace DBI method calls returning with results or errors.
-  2 - Trace method entry with parameters and returning with results.
+  1 - Trace top-level DBI method calls returning with results or errors.
+  2 - As above, adding tracing of top-level method entry with parameters.
   3 - As above, adding some high-level information from the driver
       and some internal information from the DBI.
   4 - As above, adding more detailed information from the driver.
-  5 to 15 - As above but with more and more obscure information.
+      This is the first level to trace all the rows being fetched.
+  5 to 15 - As above but with more and more internal information.
 
 Trace level 1 is best for a simple overview of what's happening.
-Trace level 2 is a good choice for general purpose tracing.
-Levels 3 and above are best reserved for investigating a specific
+Trace levels 2 thru 4 a good choice for general purpose tracing.
+Levels 5 and above are best reserved for investigating a specific
 problem, when you need to see "inside" the driver and DBI.
 
 The trace output is detailed and typically very useful. Much of the
