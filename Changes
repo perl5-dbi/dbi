@@ -54,15 +54,7 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
-=head2 Changes in DBI 1.605 XXX
-
-Make trace level 2 show method entry but not fetched rows, leave that for trace level 3.
-So trace level 2 can be used to aid debugging without being flooded by data
-
-1 = return from top level only, no rows
-2 = +entry to top level, no rows
-3 = +return from nested, no rows
-4 = +entry to nested, with rows
+=head2 Changes in DBI 1.605 (svn r11434) 16th June 2008
 
   Fixed broken DBIS macro with threads on big-endian machines
     with 64bit ints but 32bit pointers. Ticket #32309.
