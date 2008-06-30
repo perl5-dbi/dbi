@@ -1,0 +1,53 @@
+From owner-perl5-porters@perl.org  Fri Sep 11 18:27:22 1998
+Return-Path: <owner-perl5-porters@perl.org>
+Received: from oink by toad.ig.co.uk (SMI-8.6/SMI-SVR4)
+	id SAA05819; Fri, 11 Sep 1998 18:27:22 +0100
+Received: from punt-21.mail.demon.net by oink with SMTP (PP) id <25814-0@oink>;
+          Fri, 11 Sep 1998 18:27:00 +0100
+Received: from punt-2.mail.demon.net by mailstore for timbo@ig.co.uk 
+          id 905534226:20:04429:5; Fri, 11 Sep 98 17:17:06 GMT
+Received: from defender.perl.org ([209.45.167.243]) by punt-2.mail.demon.net 
+          id aa2004125; 11 Sep 98 17:16 GMT
+Received: (from majordomo@localhost) 
+          by defender.perl.org (8.8.8/8.8.8/Debian/GNU) id NAA06399 
+          for perl5-porters-outgoing; Fri, 11 Sep 1998 13:08:59 -0400
+X-Authentication-Warning: defender.perl.org: majordomo set sender to 
+                          owner-perl5-porters@perl.org using -f
+Received: from ns2.brainstorm.net (root@ns2.brainstorm.net [205.164.112.3]) 
+          by defender.perl.org (8.8.8/8.8.8/Debian/GNU) with ESMTP id NAA06393 
+          for <perl5-porters@perl.org>; Fri, 11 Sep 1998 13:08:57 -0400
+Received: from wall.org (kiev.wall.org [205.178.11.135]) 
+          by ns2.brainstorm.net (8.8.8/8.6.9) with SMTP id KAA17751;
+          Fri, 11 Sep 1998 10:08:43 -0700 (PDT)
+Received: by wall.org (SMI-8.6/SMI-SVR4) id KAA28168;
+          Fri, 11 Sep 1998 10:06:48 -0700
+Date: Fri, 11 Sep 1998 10:06:48 -0700
+From: larry@wall.org (Larry Wall)
+Message-Id: <199809111706.KAA28168@wall.org>
+To: Joshua Pritikin <joshua.pritikin@db.com>
+Cc: gsar@engin.umich.edu, perl5-porters@perl.org
+Subject: Re: nice XS utility function
+In-Reply-To: <Pine.GSO.4.02.9809101654310.1288-100000@eq1062.wks.na.deuba.com> (from Joshua Pritikin on Thu, 10 Sep 1998 16:57:22 -0400 (EDT))
+Sender: owner-perl5-porters@perl.org
+Precedence: bulk
+X-Loop: Perl5-Porters
+Status: RO
+Content-Length: 562
+Lines: 15
+
+Joshua Pritikin writes:
+: On Thu, 10 Sep 1998 gsar@engin.umich.edu wrote:
+: > Looks like a candidate for perlguts, but shouldn't you check IOK to save
+: > some cycles?
+: 
+: Like this?  I still don't get the intent of private vs. public *OK macros.
+: Caching?
+
+When mg_get() fetches the magical value of a scalar, it has to put it
+somewhere.  It puts it into the scalar itself, and sets the private
+flags to say what's actually there.  Then subsequent code can examine
+the scalar multiple times without re-invoking magic.  Look at sv_2iv()
+for an example.
+
+Larry
+

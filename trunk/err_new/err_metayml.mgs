@@ -1,0 +1,65 @@
+From timbo@dansat.data-plan.com  Sun Jan 11 07:31:57 2004
+Received: from localhost (localhost [127.0.0.1])
+	by dansat.data-plan.com (8.12.9/8.12.9) with ESMTP id i0B7VTFm020999
+	for <timbo@localhost>; Sun, 11 Jan 2004 07:31:57 GMT
+	(envelope-from timbo@dansat.data-plan.com)
+Received: from pop3.mail.demon.net [194.217.242.253]
+	by localhost with POP3 (fetchmail-5.8.5)
+	for timbo@localhost (single-drop); Sun, 11 Jan 2004 07:31:57 +0000 (GMT)
+Received: from punt-3.mail.demon.net by mailstore
+	for pobox@dbi.demon.co.uk id 1AfRct-0005T6-MY;
+	Sat, 10 Jan 2004 22:30:40 +0000
+Received: from [208.58.1.193] (helo=boggle.pobox.com)
+	by punt-3.mail.demon.net with esmtp id 1AfRct-0005T6-MY
+	for pobox@dbi.demon.co.uk; Sat, 10 Jan 2004 22:30:40 +0000
+Received: from boggle.pobox.com (localhost [127.0.0.1])
+	by boggle.pobox.com (Postfix) with ESMTP id 13BF68C11
+	for <pobox@dbi.demon.co.uk>; Sat, 10 Jan 2004 17:30:39 -0500 (EST)
+Delivered-To: tim.bunce@pobox.com
+Received: from colander (localhost [127.0.0.1])
+	by boggle.pobox.com (Postfix) with ESMTP id E5D238BAE
+	for <Tim.Bunce@pobox.com>; Sat, 10 Jan 2004 17:30:38 -0500 (EST)
+Received: from mail00.svc.cra.dublin.eircom.net (mail00.svc.cra.dublin.eircom.net [159.134.118.16])
+	by boggle.pobox.com (Postfix) with SMTP
+	for <Tim.Bunce@pobox.com>; Sat, 10 Jan 2004 17:30:37 -0500 (EST)
+Received: (qmail 60199 messnum 649403 invoked from network[213.94.228.233/unknown]); 10 Jan 2004 22:30:35 -0000
+Received: from unknown (HELO dansat.data-plan.com) (213.94.228.233)
+  by mail00.svc.cra.dublin.eircom.net (qp 60199) with SMTP; 10 Jan 2004 22:30:35 -0000
+Received: from dansat.data-plan.com (localhost [127.0.0.1])
+	by dansat.data-plan.com (8.12.9/8.12.9) with ESMTP id i0AMUhFO019481;
+	Sat, 10 Jan 2004 22:30:43 GMT
+	(envelope-from timbo@dansat.data-plan.com)
+Received: (from timbo@localhost)
+	by dansat.data-plan.com (8.12.9/8.12.9/Submit) id i0AMUh4c019480;
+	Sat, 10 Jan 2004 22:30:43 GMT
+Date: Sat, 10 Jan 2004 22:30:43 +0000
+From: Tim Bunce <Tim.Bunce@pobox.com>
+To: Andy Hassall <andy@andyh.co.uk>
+Cc: dbi-dev@perl.org, Tim Bunce <Tim.Bunce@pobox.com>
+Subject: Re: DBI 1.40 META.yaml identifies as 1.39
+Message-ID: <20040110223043.GK16156@dansat.data-plan.com>
+References: <002c01c3d7bd$b7ef4d10$6564a8c0@excession>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <002c01c3d7bd$b7ef4d10$6564a8c0@excession>
+User-Agent: Mutt/1.4i
+Content-Length: 428
+Lines: 15
+
+Groan. Thanks!
+
+Tim.
+
+On Sat, Jan 10, 2004 at 09:07:12PM -0000, Andy Hassall wrote:
+> META.yaml in DBI 1.40 hasn't been updated, which causes PPM::Make to think
+> it's building 1.39. This shows up when you install the PPD or search for
+> DBI - it won't see 1.40.
+> 
+> Patch attached.
+> -- 
+> Andy Hassall <andy@andyh.co.uk> / Space: disk usage analysis tool
+> <http://www.andyh.co.uk> / <http://www.andyhsoftware.co.uk/space>
+
+
+
