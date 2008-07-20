@@ -2712,6 +2712,7 @@ dbi_profile_merge_nodes(SV *dest, SV *increment)
     dTHX;
     AV *d_av, *i_av;
     SV *tmp;
+    SV *tmp2;
     NV i_nv;
     int i_is_earlier;
 
@@ -2747,8 +2748,12 @@ dbi_profile_merge_nodes(SV *dest, SV *increment)
 	croak("dbi_profile_merge_nodes: increment %s not an array or hash ref", neatsvpv(increment,0));
     i_av = (AV*)SvRV(increment);
 
-    tmp = *av_fetch(d_av, DBIprof_COUNT, 1);
-    sv_setiv( tmp, SvIV(tmp) + SvIV( *av_fetch(i_av, DBIprof_COUNT, 1)) );
+    tmp  = *av_fetch(d_av, DBIprof_COUNT, 1);
+    tmp2 = *av_fetch(i_av, DBIprof_COUNT, 1);
+    if (SvIOK(tmp) && SvIOK(tmp2))
+        sv_setiv( tmp, SvIV(tmp) + SvIV(tmp2) );
+    else
+        sv_setnv( tmp, SvNV(tmp) + SvNV(tmp2) );
 
     tmp = *av_fetch(d_av, DBIprof_TOTAL_TIME, 1);
     sv_setnv( tmp, SvNV(tmp) + SvNV( *av_fetch(i_av, DBIprof_TOTAL_TIME, 1)) );

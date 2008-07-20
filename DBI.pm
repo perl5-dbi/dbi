@@ -5191,8 +5191,9 @@ quotation marks.
   $sql = sprintf "SELECT foo FROM bar WHERE baz = %s",
                 $dbh->quote("Don't");
 
-For most database types, quote would return C<'Don''t'> (including the
-outer quotation marks).
+For most database types, at least those that conform to SQL standards, quote
+would return C<'Don''t'> (including the outer quotation marks). For others it
+may return something like C<'Don\'t'>
 
 An undefined C<$value> value will be returned as the string C<NULL> (without
 single quotation marks) to match how NULLs are represented in SQL.
@@ -5604,6 +5605,10 @@ bound in this way are usually treated as C<SQL_VARCHAR> types unless
 the driver can determine the correct type (which is rare), or unless
 C<bind_param> (or C<bind_param_inout>) has already been used to
 specify the type.
+
+Note that passing C<execute> an empty array is the same as passing no arguments
+at all, which will execute the statement with previously bound values.
+That's probably not what you want.
 
 If execute() is called on a statement handle that's still active
 ($sth->{Active} is true) then it should effectively call finish()

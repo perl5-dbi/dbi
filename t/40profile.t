@@ -296,7 +296,7 @@ $tmp = sanitize_profile_data_nodes($dbh->{Profile}{Data});
 
 # if actual "!Time" recorded is 'close enough' then we'll pass
 # the test - it's not worth failing just because a system is slow
-$t1 = (keys %$tmp)[0] if (abs($t1 - (keys %$tmp)[0]) <= 2);
+$t1 = (keys %$tmp)[0] if (abs($t1 - (keys %$tmp)[0]) <= 5);
 
 is_deeply $tmp, {
     $t1 => { $t2 => { prepare => [ 1, 0, 0, 0, 0, 0, 0 ] }}
