@@ -3844,8 +3844,9 @@ or any children of it.
 Note that the exact definition of 'read only' is rather fuzzy.
 For more details see the documentation for the driver you're using.
 
-If the driver can make the handle truly read-only (by issuing a statement like
-"C<set transaction read only>" as needed, for example) then it should.
+If the driver can make the handle truly read-only then it should
+(unless doing so would have unpleasant side effect, like changing the
+consistency level from per-statement to per-session).
 Otherwise the attribute is simply advisory.
 
 A driver can set the C<ReadOnly> attribute itself to indicate that the data it
