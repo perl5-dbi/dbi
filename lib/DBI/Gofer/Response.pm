@@ -46,6 +46,10 @@ sub new {
 }   
 
 
+sub err_errstr_state {
+    my $self = shift;
+    return @{$self}{qw(err errstr state)};
+}
 
 sub executed_flag_set {
     my $flags = shift->flags

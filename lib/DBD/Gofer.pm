@@ -91,11 +91,12 @@
 
 
     sub set_err_from_response { # set error/warn/info and propagate warnings
-        my ($h, $response) = @_;
+        my $h = shift;
+        my $response = shift;
         if (my $warnings = $response->warnings) {
             warn $_ for @$warnings;
         }
-        return $h->set_err($response->err, $response->errstr, $response->state);
+        return $h->set_err($response->err_errstr_state);
     }
 
 
