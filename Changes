@@ -56,10 +56,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 =head2 Changes in DBI 1.606
 
-Fix PERL_UNUSED_VAR for 5.6.2 - update ppport.h?
-No longer support 5.6? In future.
-(Access to recent errors in gofer http transport)
-Memory leak?
+  NOTE: Perl 5.8 is now the minimum supported version.
+  If you need perl 5.6 support then send me a patch.
 
   Fixed missing import of carp in DBI::Gofer::Execute.
 

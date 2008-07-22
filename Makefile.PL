@@ -2,12 +2,12 @@
 #
 # $Id$
 #
-#  Copyright (c) 1994-2006  Tim Bunce  Ireland
+#  Copyright (c) 1994-2008  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
 BEGIN {
-    require 5.006_00;
+    require 5.008_01;
     unshift @INC, "lib";
 }
 
@@ -37,17 +37,6 @@ GetOptions(qw(v! g! thread!))
 	or die "Invalid arguments\n";
 
 $::opt_g &&= '-g';  # convert to actual string
-
-if ($] < 5.008000) {
-	warn qq{
-**************************************************************************
-  Perl versions below 5.6.1 are no longer supported by the DBI.
-  Perl versions 5.6.x may fail during installation with a complaint
-  about the use of =head3 in the pod documentation.
-**************************************************************************
-};
-    prompt("Press return to continue...");
-}
 
 
 if (($ENV{LANG}||'') =~ m/utf-?8/i) {

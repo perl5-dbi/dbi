@@ -77,7 +77,7 @@ if (0) {
 if ($::opt_m) {
     #$dbh->trace(9);
     my $level = $::opt_m;
-    my $cnt = 10000;
+    my $cnt = $::opt_n || 10000;
     print "Using $driver, same dbh...\n";
     for (my $i=0; $i<$cnt; ++$i) { mem_test($dbh, undef, $level, undef, undef, undef) }
     print "Using NullP, reconnecting each time...\n";
@@ -141,7 +141,7 @@ sub mem_test {	# harness to help find basic leaks
     my $cursor_a;
 
     my ($dl_count, $dl_handle);
-    if ($$r_develleak++) {
+    if ($has_devel_leak && $$r_develleak++) {
         $dbh->trace(2);
         $dl_count = Devel::Leak::NoteSV($dl_handle);
     }
