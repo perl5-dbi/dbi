@@ -54,7 +54,7 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
-=head2 Changes in DBI 1.606 (svn r11567) 22nd July 2008
+=head2 Changes in DBI 1.607 (svn r11567) 22nd July 2008
 
   NOTE: Perl 5.8.1 is now the minimum supported version.
   If you need support for earlier versions send me a patch.

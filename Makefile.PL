@@ -7,7 +7,7 @@
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
 BEGIN {
-    require 5.008_01;
+    require 5.008_001;
     unshift @INC, "lib";
 }
 
