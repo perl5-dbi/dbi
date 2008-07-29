@@ -87,7 +87,7 @@ help from the I<dbi-users@perl.org> mailing list.  You don't have to subscribe
 to the list in order to post, though I'd recommend it. You can get help on
 subscribing and using the list by emailing I<dbi-users-help@perl.org>.
 
-I don't recommend the DBI cpanform (at http://www.cpanforum.com/dist/DBI)
+I don't recommend the DBI cpanforum (at http://www.cpanforum.com/dist/DBI)
 because relatively few people read it compared with dbi-users@perl.org.
 
 To help you make the best use of the dbi-users mailing list,
@@ -108,7 +108,7 @@ archives and read the DBI FAQ. The archives are listed
 at the end of this document and on the DBI home page.
 
 This document often uses terms like I<references>, I<objects>,
-I<methods>.  If you're not familar with those terms then it would
+I<methods>.  If you're not familiar with those terms then it would
 be a good idea to read at least the following perl manuals first:
 L<perlreftut>, L<perldsc>, L<perllol>, and L<perlboot>.
 
@@ -2750,7 +2750,7 @@ private attribute to a unique value for that place:
 
 By using a private attribute you still get connection caching for
 the individual calls to connect_cached() but, by making separate
-database conections for separate parts of the code, the database
+database connections for separate parts of the code, the database
 handles are isolated from any attribute changes made to other handles.
 
 The cache can be accessed (and cleared) via the L</CachedKids> attribute:
@@ -2777,7 +2777,7 @@ Returns a list of driver name and driver handle pairs for all drivers
 'installed' (loaded) into the current process.  The driver name does not
 include the 'DBD::' prefix.
 
-To get a list of all drivers available in your perl instalation you can use
+To get a list of all drivers available in your perl installation you can use
 L</available_drivers>.
 
 Added in DBI 1.49.
@@ -3236,7 +3236,7 @@ between 0 and 15 and/or trace flag names separated by vertical bar
 ("C<|>") or comma ("C<,>") characters. For example: C<"SQL|3|foo">.
 
 It uses the parse_trace_flag() method, described below, to process
-the individual trage flag names.
+the individual trace flag names.
 
 The parse_trace_flags() method was added in DBI 1.42.
 
@@ -3247,7 +3247,7 @@ The parse_trace_flags() method was added in DBI 1.42.
 Returns the bit flag corresponding to the trace flag name in
 $trace_flag_name.  Drivers are expected to override this method and
 check if $trace_flag_name is a driver specific trace flags and, if
-not, then call the DBIs default parse_trace_flag().
+not, then call the DBI's default parse_trace_flag().
 
 The parse_trace_flag() method was added in DBI 1.42.
 
@@ -3500,7 +3500,7 @@ warning string to, for example: "3 warnings".
 
 The C<PrintError> attribute can be used to force errors to generate warnings (using
 C<warn>) in addition to returning error codes in the normal way.  When set
-"on", any method which results in an error occuring will cause the DBI to
+"on", any method which results in an error occurring will cause the DBI to
 effectively do a C<warn("$class $method failed: $DBI::errstr")> where C<$class>
 is the driver class and C<$method> is the name of the method which failed. E.g.,
 
@@ -3854,7 +3854,7 @@ is connected to cannot be changed for some reason.
 
 Library modules and proxy drivers can use the attribute to influence their behavior.
 For example, the DBD::Gofer driver considers the C<ReadOnly> attribute when
-making a decison about whether to retry an operation that failed.
+making a decision about whether to retry an operation that failed.
 
 The attribute should be set to 1 or 0 (or undef). Other values are reserved.
 
@@ -4399,7 +4399,7 @@ incomplete transactions don't get committed simply because Perl calls
 C<DESTROY> on every object before exiting. Also, do not rely on the order
 of object destruction during "global destruction", as it is undefined.
 
-Generally, if you want your changes to be commited or rolled back when
+Generally, if you want your changes to be committed or rolled back when
 you disconnect, then you should explicitly call L</commit> or L</rollback>
 before disconnecting.
 
@@ -5340,7 +5340,7 @@ If C<AutoCommit> is on, then the effect is the same as if the DBI
 called C<commit> automatically after every successful database
 operation. So calling C<commit> or C<rollback> explicitly while
 C<AutoCommit> is on would be ineffective because the changes would
-have already been commited.
+have already been committed.
 
 Changing C<AutoCommit> from off to on will trigger a L</commit>.
 
@@ -5629,7 +5629,7 @@ Execute the prepared statement once for each parameter tuple
 calls to L</bind_param_array>, or via a reference passed in \%attr.
 
 When called in scalar context the execute_array() method returns the
-number of tuples executed, or C<undef> if an error occured.  Like
+number of tuples executed, or C<undef> if an error occurred.  Like
 execute(), a successful execute_array() always returns true regardless
 of the number of tuples executed, even if it's zero. If there were any
 errors the ArrayTupleStatus array can be used to discover which tuples
@@ -5669,7 +5669,7 @@ each tuple execution. The subroutine should return an reference to
 an array which contains the appropriate number of bind values, or
 return an undef if there is no more data to execute.
 
-As a convienience, the C<ArrayTupleFetch> attribute can also be
+As a convenience, the C<ArrayTupleFetch> attribute can also be
 used to specify a statement handle. In which case the fetchrow_arrayref()
 method will be called on the given statement handle in order to
 provide the bind values for each tuple execution.
@@ -5734,7 +5734,7 @@ provided by DBI only supports non-data returning statements.
 
 Transaction semantics when using array binding are driver and
 database specific.  If C<AutoCommit> is on, the default DBI
-implementation will cause each parameter tuple to be inidividually
+implementation will cause each parameter tuple to be individually
 committed (or rolled back in the event of an error). If C<AutoCommit>
 is off, the application is responsible for explicitly committing
 the entire set of bound parameter tuples.  Note that different
@@ -6013,7 +6013,7 @@ number (counting from 1).  If $key_field doesn't match any column in
 the statement, as a name first then as a number, then an error is
 returned.
 
-For queries returing more than one 'key' column, you can specify
+For queries returning more than one 'key' column, you can specify
 multiple column names by passing $key_field as a reference to an
 array containing one or more key column names (or index numbers).
 For example:
@@ -6164,7 +6164,7 @@ Calls L</bind_col> for each column of the C<SELECT> statement.
 
 The list of references should have the same number of elements as the number of
 columns in the C<SELECT> statement. If it doesn't then C<bind_columns> will
-bind the elements given, upto the number of columns, and then return an error.
+bind the elements given, up to the number of columns, and then return an error.
 
 For maximum portability between drivers, bind_columns() should be called
 after execute() and not before.
@@ -6211,7 +6211,7 @@ prints the results to C<$fh> (defaults to C<STDOUT>) separated by C<$lsep>
 
 This method is designed as a handy utility for prototyping and
 testing queries. Since it uses L</neat_list> to
-format and edit the string for reading by humans, it is not recomended
+format and edit the string for reading by humans, it is not recommended
 for data transfer applications.
 
 
@@ -6694,7 +6694,7 @@ this and croaks on any method call using handles that don't belong
 to the current thread (except for DESTROY).
 
 Because of this (possibly temporary) restriction, newly created
-threads must make their own connctions to the database. Handles
+threads must make their own connections to the database. Handles
 can't be shared across threads.
 
 But BEWARE, some underlying database APIs (the code the DBD driver
@@ -6729,10 +6729,10 @@ of subtle and not-so-subtle problems.  The risk was reduced with
 Beginning in perl 5.8.0 perl implements 'safe' signal handling if
 your system has the POSIX sigaction() routine. Now when a signal
 is delivered perl just makes a note of it but does I<not> run the
-%SIG handler. The handling is 'defered' until a 'safe' moment.
+%SIG handler. The handling is 'deferred' until a 'safe' moment.
 
 Although this change made signal handling safe, it also lead to
-a problem with signals being defered for longer than you'd like.
+a problem with signals being deferred for longer than you'd like.
 If a signal arrived while executing a system call, such as waiting
 for data on a network connection, the signal is noted and then the
 system call that was executing returns with an EINTR error code
@@ -6741,7 +6741,7 @@ to indicate that it was interrupted. All fine so far.
 The problem comes when the code that made the system call sees the
 EINTR code and decides it's going to call it again. Perl doesn't
 do that, but database code sometimes does. If that happens then the
-signal handler doesn't get called untill later. Maybe much later.
+signal handler doesn't get called until later. Maybe much later.
 
 Fortunately there are ways around this which we'll discuss below.
 Unfortunately they make signals unsafe again.
@@ -6954,7 +6954,7 @@ method with the error code and error string, as shown in the example
 above. The error code and error string will be recorded in the
 handle and available via C<$h-E<gt>err> and C<$DBI::errstr> etc.
 The set_err() method always returns an undef or empty list as
-approriate. Since your method should nearly always return an undef
+appropriate. Since your method should nearly always return an undef
 or empty list as soon as an error is detected it's handy to simply
 return what set_err() returns, as shown in the example above.
 
@@ -6989,7 +6989,7 @@ When you call a method the DBI merges the handles settings into its
 own for the duration of the call: the trace flags of the handle are
 OR'd into the trace flags of the DBI, and if the handle has a higher
 trace level then the DBI trace level is raised to match it.
-The previous DBI trace setings are restored when the called method
+The previous DBI trace settings are restored when the called method
 returns.
 
 =head2 Trace Levels
@@ -7022,13 +7022,14 @@ drivers can define others. DBI trace flag names begin with a capital
 letter and driver specific names begin with a lowercase letter, as
 usual.
 
-Curently the DBI only defines two trace flags:
+Currently the DBI only defines two trace flags:
 
   ALL - turn on all DBI and driver flags (not recommended)
-  SQL - trace SQL statements executed (not yet implemented)
+  SQL - trace SQL statements executed
+        (not yet implemented in DBI but implemented in some DBDs)
 
 The L</parse_trace_flags> and L</parse_trace_flag> methods are used
-to convert trace flag names into the coresponding integer bit flags.
+to convert trace flag names into the corresponding integer bit flags.
 
 =head2 Enabling Trace
 
@@ -7055,7 +7056,7 @@ bar ("C<|>") or comma ("C<,>") characters. For example:
 Initially trace output is written to C<STDERR>.  Both the
 C<$h-E<gt>trace> and C<DBI-E<gt>trace> methods take an optional
 $trace_file parameter, which may be either the name of a file to be
-openned by DBI in append mode, or a reference to an existing writable
+opened by DBI in append mode, or a reference to an existing writable
 (possibly layered) filehandle. If $trace_file is a filename,
 and can be opened in append mode, or $trace_file is a writable
 filehandle, then I<all> trace output (currently including that from
@@ -7064,7 +7065,7 @@ if $trace_file can't be opened or is not writable.
 
 Further calls to trace() without $trace_file do not alter where
 the trace output is sent. If $trace_file is undefined, then
-trace output is sent to C<STDERR> and, if the prior trace was openned with
+trace output is sent to C<STDERR> and, if the prior trace was opened with
 $trace_file as a filename, the previous trace file is closed; if $trace_file was
 a filehandle, the filehandle is B<not> closed.
 
@@ -7196,7 +7197,7 @@ log() method.
 
 =head2 Trace Content
 
-Many of the values embeded in trace output are formatted using the neat()
+Many of the values embedded in trace output are formatted using the neat()
 utility function. This means they may be quoted, sanitized, and possibly
 truncated if longer than C<$DBI::neat_maxlen>. See L</neat> for more details.
 
@@ -7320,7 +7321,7 @@ DBI methods, or use the L</RaiseError> attribute.
 =item Can't call method "execute" without a package or object reference
 
 The C<$sth> handle you're using to call C<execute> is probably undefined because
-the preceeding C<prepare> failed. You should always check the return status of
+the preceding C<prepare> failed. You should always check the return status of
 DBI methods, or use the L</RaiseError> attribute.
 
 =item DBI/DBD internal version mismatch
@@ -7617,7 +7618,7 @@ to svn-commit-modules-dbi-subscribe@perl.org after which you'll get an email
 with the change log message and diff of each change checked-in to the source.
 
 After making your changes you can generate a patch file, but before
-you do, make sure your source is still upto date using:
+you do, make sure your source is still up to date using:
 
   svn update
 
@@ -7706,3 +7707,5 @@ See also the L<SQL::Statement> module, SQL parser and engine.
 =back
 
 =cut
+
+#  LocalWords:  DBI
