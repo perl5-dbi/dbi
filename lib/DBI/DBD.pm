@@ -2041,10 +2041,22 @@ which can be up to 12 characters long excluding null terminator:
 
   if ( (svp = DBD_ATTRIB_GET_SVP(attr, "drv_hostname", 12)) && SvTRUE(*svp)) {
       hostname = SvPV(*svp, len);
-      DBD__ATTRIB_DELETE(attr, "drv_hostname", 12); /* avoid later STORE */
+      DBD_ATTRIB_DELETE(attr, "drv_hostname", 12); /* avoid later STORE */
   } else {
       hostname = "localhost";
   }
+
+If you handle any driver specific attributes in the dbd_db_login6
+method you probably want to delete them from C<attr> (as above with
+DBD_ATTRIB_DELETE). If you don't delete your handled attributes DBI
+will call C<STORE> for each attribute after the connect/login and this
+is at best redundant for attributes you have already processed.
+
+B<Note: Until revision 11605 (post DBI 1.607), there was a problem with
+DBD_ATRRIBUTE_DELETE so unless you require a DBI version after 1.607
+you need to replace each DBD_ATTRIBUTE_DELETE call with:>
+
+  hv_delete((HV*)SvRV(attr), key, key_len, G_DISCARD)
 
 Note that you can also obtain standard attributes such as I<AutoCommit> and
 I<ChopBlanks> from the attributes parameter, using C<DBD_ATTRIB_GET_IV> for
