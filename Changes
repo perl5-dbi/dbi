@@ -59,6 +59,8 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Fixed DBD_ATTRIB_DELETE macro for driver authors
     and updated DBI::DBD docs thanks to Martin J. Evans.
 
+  Corrected many typos in DBI docs thanks to Martin J. Evans.
+
 =head2 Changes in DBI 1.607 (svn r11571) 22nd July 2008
 
   NOTE: Perl 5.8.1 is now the minimum supported version.
