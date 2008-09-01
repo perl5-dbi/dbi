@@ -60,6 +60,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     and updated DBI::DBD docs thanks to Martin J. Evans.
 
   Corrected many typos in DBI docs thanks to Martin J. Evans.
+  Improved DBI::DBD docs thanks to H.Merijn Brand.
 
 =head2 Changes in DBI 1.607 (svn r11571) 22nd July 2008
 
