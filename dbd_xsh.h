@@ -21,6 +21,7 @@ SV      *dbd_take_imp_data _((SV *h, imp_xxh_t *imp_xxh, void *foo));
 /* function to get the list of data sources */
 AV	*dbd_dr_data_sources(SV *drh, imp_drh_t *imp_drh, SV *attrs);
 
+int      dbd_db_login6_sv _((SV *dbh, imp_dbh_t *imp_dbh, SV *dbname, SV *uid, SV *pwd, SV*attribs));
 int      dbd_db_login6 _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, char *pwd, SV*attribs));
 int      dbd_db_login  _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, char *pwd)); /* deprecated */
 /* Note: interface of dbd_db_do changed in v1.33 */

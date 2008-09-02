@@ -84,7 +84,7 @@ MODULE = DBD::~DRIVER~    PACKAGE = DBD::~DRIVER~::db
 void
 _login(dbh, dbname, username, password, attribs=Nullsv)
     SV *        dbh
-    char *      dbname
+    SV *        dbname
     SV *        username
     SV *        password
     SV *        attribs
@@ -94,10 +94,12 @@ _login(dbh, dbname, username, password, attribs=Nullsv)
     D_imp_dbh(dbh);
     char *u = (SvOK(username)) ? SvPV(username,lna) : "";
     char *p = (SvOK(password)) ? SvPV(password,lna) : "";
-#ifdef dbd_db_login6
-    ST(0) = dbd_db_login6(dbh, imp_dbh, dbname, u, p, attribs) ? &sv_yes : &sv_no;
+#ifdef dbd_db_login6_sv
+    ST(0) = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs) ? &sv_yes : &sv_no;
+#elif defined(dbd_db_login6)
+    ST(0) = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs) ? &sv_yes : &sv_no;
 #else
-    ST(0) = dbd_db_login( dbh, imp_dbh, dbname, u, p) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p) ? &sv_yes : &sv_no;
 #endif
     }
 
