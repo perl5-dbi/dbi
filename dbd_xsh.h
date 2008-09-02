@@ -38,6 +38,7 @@ SV	*dbd_db_last_insert_id _((SV *dbh, imp_dbh_t *imp_dbh, SV *catalog, SV *schem
 AV      *dbd_db_data_sources _((SV *dbh, imp_dbh_t *imp_dbh, SV *attr));
 
 int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));
+int      dbd_st_prepare_sv _((SV *sth, imp_sth_t *imp_sth, SV *statement, SV *attribs));
 int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
 int      dbd_st_execute _((SV *sth, imp_sth_t *imp_sth));
 AV      *dbd_st_fetch   _((SV *sth, imp_sth_t *imp_sth));
