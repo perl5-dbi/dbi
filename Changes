@@ -56,6 +56,9 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 =head2 Changes in DBI 1.608 (svn rXXX)
 
+  Fixed two small memory leaks when running in mod_perl
+    one in DBI->connect and one in DBI::Gofer::Execute.
+    Both due to "local $ENV{...};" leaking memory.
   Fixed DBD_ATTRIB_DELETE macro for driver authors
     and updated DBI::DBD docs thanks to Martin J. Evans.
 

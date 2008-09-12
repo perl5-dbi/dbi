@@ -157,7 +157,8 @@ sub _connect {
         }
     }
 
-    local $ENV{DBI_AUTOPROXY}; # limit the insanity
+    # local $ENV{...} can leak, so only do it if required
+    local $ENV{DBI_AUTOPROXY} if $ENV{DBI_AUTOPROXY};
 
     my ($connect_method, $dsn, $username, $password, $attr) = @{ $request->dbh_connect_call };
     $connect_method ||= 'connect_cached';
