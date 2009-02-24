@@ -31,6 +31,8 @@ sub run_one_stdio {
     my $frozen_response = $transport->freeze_response($response);
 
     print $frozen_response;
+
+    # no point calling $executor->update_stats(...) for pipeONE
 }
 
 1;

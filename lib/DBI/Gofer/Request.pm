@@ -69,10 +69,10 @@ sub is_sth_request {
 sub statements {
     my $self = shift;
     my @statements;
-    my $statement_method_regex = qr/^(?:do|prepare)$/;
     if (my $dbh_method_call = $self->dbh_method_call) {
+        my $statement_method_regex = qr/^(?:do|prepare)$/;
         my (undef, $method, $arg1) = @$dbh_method_call;
-        push @statements, $arg1 if $method =~ $statement_method_regex;
+        push @statements, $arg1 if $method && $method =~ $statement_method_regex;
     }
     return @statements;
 }

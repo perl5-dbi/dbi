@@ -52,7 +52,7 @@ sub _freeze_data {
         $self->_dump("freezing $self->{trace} ".ref($data), $data)
             if !$skip_trace and $self->trace;
 
-        local $data->{meta}; # don't include _meta in serialization
+        local $data->{meta}; # don't include meta in serialization
 	$serializer ||= $self->{serializer_obj};
         my ($data, $deserializer_class)  = $serializer->serialize($data);
 

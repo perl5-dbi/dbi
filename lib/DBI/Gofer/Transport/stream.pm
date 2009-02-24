@@ -46,7 +46,7 @@ sub run_stdio_hex {
 
         # there's no way to access the stats currently
         # so this just serves as a basic test and illustration of update_stats()
-        $executor->update_stats($request, $response, $frozen_request, $frozen_response, $time_received);
+        $executor->update_stats($request, $response, $frozen_request, $frozen_response, $time_received, 1);
     }
     DBI->trace_msg("$0 ending (pid $$)\n");
 }

@@ -288,6 +288,8 @@ sub _store_response_in_cache {
 
 1;
 
+__END__
+
 =head1 NAME
 
 DBD::Gofer::Transport::Base - base class for DBD::Gofer client transports
@@ -364,13 +366,31 @@ detailed, and voluminous, dump.
 The trace is written using DBI->trace_msg() and so is written to the default
 DBI trace output, which is usually STDERR.
 
+=head1 METHODS
+
+I<This section is currently far from complete.>
+
+=head2 response_retry_preference
+
+  $retry = $transport->response_retry_preference($request, $response);
+
+The response_retry_preference is called by DBD::Gofer when considering if a
+request should be retried after an error.
+
+Returns true (would like to retry), false (must not retry), undef (no preference).
+
+If a true value is returned in the form of a CODE ref then, if DBD::Gofer does
+decide to retry the request, it calls the code ref passing $retry_count, $retry_limit.
+Can be used for logging and/or to implement exponential backoff behaviour.
+Currently the called code must return using C<return;> to allow for future extensions.
+
 =head1 AUTHOR
 
 Tim Bunce, L<http://www.tim.bunce.name>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+Copyright (c) 2007-2008, Tim Bunce, Ireland. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
