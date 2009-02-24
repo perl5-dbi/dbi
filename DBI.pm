@@ -338,6 +338,7 @@ my $dbd_prefix_registry = {
   odbc_    => { class => 'DBD::ODBC',		},
   ora_     => { class => 'DBD::Oracle',		},
   pg_      => { class => 'DBD::Pg',		},
+  pgpp_    => { class => 'DBD::PgPP',		},
   plb_     => { class => 'DBD::Plibdata',	},
   proxy_   => { class => 'DBD::Proxy',		},
   rdb_     => { class => 'DBD::RDB',		},
@@ -4654,7 +4655,7 @@ and not by column number.
 The result set is ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME
 and ORDINAL_POSITION.
 
-Note: There is some overlap with statement attributes (in perl) and
+Note: There is some overlap with statement handle attributes (in perl) and
 SQLDescribeCol (in ODBC). However, SQLColumns provides more metadata.
 
 See also L</"Catalog Methods"> and L</"Standards Reference Information">.
