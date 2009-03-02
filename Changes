@@ -61,6 +61,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     Both due to "local $ENV{...};" leaking memory.
   Fixed DBD_ATTRIB_DELETE macro for driver authors
     and updated DBI::DBD docs thanks to Martin J. Evans.
+  Fixed 64bit issues in trace messages thanks to Charles Jardine.
 
   Corrected many typos in DBI docs thanks to Martin J. Evans.
   Improved DBI::DBD docs thanks to H.Merijn Brand.

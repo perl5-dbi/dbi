@@ -884,7 +884,7 @@ set_trace(SV *h, SV *level_sv, SV *file)
 		neatsvpv(h,0),
 		(long)(level & DBIc_TRACE_FLAGS_MASK),
 		(long)(level & DBIc_TRACE_LEVEL_MASK),
-		DBIc_TRACE_LEVEL(imp_xxh), DBIc_TRACE_FLAGS(imp_xxh),
+		(long)DBIc_TRACE_FLAGS(imp_xxh), (long)DBIc_TRACE_LEVEL(imp_xxh),
 		XS_VERSION, dbi_build_opt, (int)PerlProc_getpid());
 	    if (!PL_dowarn)
 		PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    Note: perl is running without the recommended perl -w option\n");
@@ -1546,14 +1546,14 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
             return av;
         /* we need to adjust the size of the array */
         if (DBIc_TRACE_LEVEL(imp_sth) >= 2)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %ld to %ld fields\n", av_len(av)+1, i);
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %ld to %ld fields\n", (long)(av_len(av)+1), (long)i);
         SvREADONLY_off(av);
         if (i < av_len(av)+1) /* trim to size if too big */
             av_fill(av, i-1);
     }
     else {
         if (DBIc_TRACE_LEVEL(imp_sth) >= 5)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %ld fields\n", i);
+            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %ld fields\n", (long)i);
         av = newAV();
         DBIc_FIELDS_AV(imp_sth) = av;
 
@@ -1567,7 +1567,7 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
     while(i--)			/* field 1 stored at index 0	*/
 	av_store(av, i, newSV(0));
     if (DBIc_TRACE_LEVEL(imp_sth) >= 6)
-        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %ld fields\n", av_len(av)+1);
+        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %ld fields\n", (long)(av_len(av)+1));
     SvREADONLY_on(av);		/* protect against shift @$row etc */
     return av;
 }
