@@ -346,6 +346,7 @@ my $dbd_prefix_registry = {
   solid_   => { class => 'DBD::Solid',		},
   sponge_  => { class => 'DBD::Sponge',		},
   sql_     => { class => 'SQL::Statement',	},
+  sqlite_  => { class => 'DBD::SQLite',  	},
   syb_     => { class => 'DBD::Sybase',		},
   tdat_    => { class => 'DBD::Teradata',	},
   tmpl_    => { class => 'DBD::Template',	},
