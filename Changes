@@ -56,6 +56,10 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
 =head2 Changes in DBI 1.608 (svn rXXX)
 
+  Fixes to DBD::File (H.Merijn Brand)
+    bind_param () now honors the attribute argument
+    added f_ext attribute
+    File::Spec is always required. (CORE since 5.00405)
   Fixed two small memory leaks when running in mod_perl
     one in DBI->connect and one in DBI::Gofer::Execute.
     Both due to "local $ENV{...};" leaking memory.
