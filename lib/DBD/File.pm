@@ -97,11 +97,11 @@ sub file2table
     if ($ext) {
 	if ($req) {
 	    # File extension required
-	    $file =~ s/$ext$//i		or  next;
+	    $file =~ s/$ext$//i			or  return;
 	    }
 	else {
 	    # File extension optional, skip if file with extension exists
-	    grep m/$ext$/i, glob "$fqfn*"	and next;
+	    grep m/$ext$/i, glob "$fqfn*"	and return;
 	    $file =~ s/$ext$//i;
 	    }
 	}
@@ -541,6 +541,11 @@ sub execute
 
     $sth->finish;
     my $stmt = $sth->{f_stmt};
+    unless ((my $req_prm = $stmt->{num_placeholders} || 0) == (my $nparm = @$params)) {
+	$sth->set_err ($DBI::stderr,
+	    "You passed $nparm parameters where $req_prm required");
+	return;
+	}
     my $result = eval { $stmt->execute ($sth, $params); };
     $@ and return $sth->set_err ($DBI::stderr, $@);
 
@@ -672,6 +677,7 @@ sub open_table ($$$$$)
     my ($self, $data, $table, $createMode, $lockMode) = @_;
     my $file;
     ($table, $file) = $self->get_file_name ($data, $table);
+    defined $file && $file ne "" or croak "No filename given";
     require IO::File;
     my $fh;
     my $safe_drop = $self->{ignore_missing_table} ? 1 : 0;
@@ -681,18 +687,18 @@ sub open_table ($$$$$)
 	$fh = IO::File->new ($file, "a+") or
 	    croak "Cannot open $file for writing: $!";
 	$fh->seek (0, 0) or
-	    croak " Error while seeking back: $!";
+	    croak "Error while seeking back: $!";
 	}
     else {
 	unless ($fh = IO::File->new ($file, ($lockMode ? "r+" : "r"))) {
-	    $safe_drop or croak " Cannot open $file: $!";
+	    $safe_drop or croak "Cannot open $file: $!";
 	    }
 	}
     $fh and binmode $fh;
     if ($locking and $fh) {
 	if ($lockMode) {
 	    flock $fh, 2 or
-		croak " Cannot obtain exclusive lock on $file: $!";
+		croak "Cannot obtain exclusive lock on $file: $!";
 	    }
 	else {
 	    flock $fh, 1 or
