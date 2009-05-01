@@ -101,7 +101,7 @@ sub file2table
 	    }
 	else {
 	    # File extension optional, skip if file with extension exists
-	    grep m/$ext$/i, glob "$fqfn*"	and return;
+	    grep m/$ext$/i, glob "$fqfn.*"	and return;
 	    $file =~ s/$ext$//i;
 	    }
 	}
