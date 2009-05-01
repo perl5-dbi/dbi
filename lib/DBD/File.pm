@@ -84,7 +84,7 @@ sub file2table
     my ($ext, $req) = ("", 0, 0);
     if ($data->{f_ext}) {
 	($ext, my $opt) = split m/\//, $data->{f_ext};
-	if ($ext) {
+	if ($ext && $opt) {
 	    $opt =~ m/r/i and $req = 1;
 	    }
 	}
