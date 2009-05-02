@@ -593,12 +593,12 @@ sub FETCH ($$)
 {
     my ($sth, $attrib) = @_;
     exists $unsupported_attrib{$attrib}
-	and return;    # Workaround for a bug in DBI 0.93
+	and return undef;    # Workaround for a bug in DBI 0.93
     $attrib eq "NAME" and
 	return $sth->FETCH ("f_stmt")->{NAME};
     if ($attrib eq "NULLABLE") {
 	my ($meta) = $sth->FETCH ("f_stmt")->{NAME};    # Intentional !
-	$meta or return;
+	$meta or return undef;
 	return [ (1) x @$meta ];
 	}
     if ($attrib eq lc $attrib) {

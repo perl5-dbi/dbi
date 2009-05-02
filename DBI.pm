@@ -1332,7 +1332,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub FETCH_many {    # XXX should move to C one day
         my $h = shift;
-        return map { $h->FETCH($_) } @_;
+        # scalar is needed to workaround drivers that return an empty list
+        # for some attributes
+        return map { scalar $h->FETCH($_) } @_;
     }
 
     *dump_handle = \&DBI::dump_handle;

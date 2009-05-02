@@ -23,6 +23,7 @@ BEGIN {
     # next line forces use of Nano rather than default behaviour
     $ENV{DBI_SQL_NANO}=1;
 
+    push @mldbm_types, '';
     if (eval { require 'MLDBM.pm'; }) {
         push @mldbm_types, 'Data::Dumper' if eval { require 'Data/Dumper.pm' };
         push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
@@ -55,7 +56,10 @@ BEGIN {
     print "Using DBM modules: @dbm_types\n";
     print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
-    my $num_tests = (1+@mldbm_types) * @dbm_types * 12;
+    my $tests_in_group = 14;
+    my $num_tests = @dbm_types * @mldbm_types * $tests_in_group;
+    printf "Test count: %d x %d x %d = %d\n",
+        scalar @dbm_types, 0+@mldbm_types, $tests_in_group, $num_tests;
 	
     if (!$num_tests) {
         plan skip_all => "No DBM modules available";
@@ -72,7 +76,7 @@ mkpath $dir;
 
 my( $two_col_sql,$three_col_sql ) = split /\n\n/,join '',<DATA>;
 
-for my $mldbm ( '', @mldbm_types ) {
+for my $mldbm ( @mldbm_types ) {
     my $sql = ($mldbm) ? $three_col_sql : $two_col_sql;
     my @sql = split /\n/, $sql;
     for my $dbm_type ( @dbm_types ) {
