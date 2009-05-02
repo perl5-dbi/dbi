@@ -541,7 +541,7 @@ sub execute
 
     $sth->finish;
     my $stmt = $sth->{f_stmt};
-    unless ((my $req_prm = $stmt->{num_placeholders} || 0) == (my $nparm = @$params)) {
+    unless ((my $req_prm = scalar($stmt->params())) == (my $nparm = @$params)) {
 	$sth->set_err ($DBI::stderr,
 	    "You passed $nparm parameters where $req_prm required");
 	return;
