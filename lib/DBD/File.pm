@@ -33,7 +33,7 @@ use strict;
 
 use vars qw( @ISA $VERSION $drh $valid_attrs );
 
-$VERSION = "0.36";
+$VERSION = "0.37";
 
 $drh = undef;		# holds driver handle(s) once initialised
 
