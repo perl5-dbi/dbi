@@ -54,6 +54,11 @@ Gofer: gearman - need to disable coallesing for non-idempotent requests
 
 Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
+=head2 Changes in DBI 1.609 (svn rXXX)
+
+  Fixes to DBD::File (H.Merijn Brand)
+    added f_schema attribute
+
 =head2 Changes in DBI 1.608 (svn r12742) 5th May 2009
 
   Fixes to DBD::File (H.Merijn Brand)

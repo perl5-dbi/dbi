@@ -149,10 +149,11 @@ sub connect ($$;$$$)
 		}
 	    }
         $this->{f_valid_attrs} = {
-	    f_version	=> 1,  # DBD::File version
-	    f_dir	=> 1,  # base directory
-	    f_ext	=> "", # file extension
-	    f_tables	=> 1,  # base directory
+	    f_version	=> 1, # DBD::File version
+	    f_dir	=> 1, # base directory
+	    f_ext	=> 1, # file extension
+	    f_schema	=> 1, # schema name
+	    f_tables	=> 1, # base directory
 	    };
         $this->{sql_valid_attrs} = {
 	    sql_handler           => 1, # Nano or S:S
@@ -346,7 +347,7 @@ sub STORE ($$$)
 		return $dbh->set_err ($DBI::stderr, "No such directory '$value'")
 	    }
 	if ($attrib eq "f_ext") {
-	    $value eq "" || $value =~ m{^\.\w+(?:/[iIrR]*)?$}
+	    $value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$}
 		or carp "'$value' doesn't look like a valid file extension attribute\n";
 	    }
 	$dbh->{$attrib} = $value;
@@ -417,10 +418,12 @@ sub type_info_all ($)
 	    }
 
 	my ($file, @tables, %names);
-	my $user = eval { getpwuid ((stat _)[4]) };
+	my $schema = exists $dbh->{f_schema}
+	    ? $dbh->{f_schema}
+	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
 	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0) or next;
-	    push @tables, [ undef, $user, $tbl, "TABLE", undef ];
+	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
 	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
@@ -871,6 +874,34 @@ extension is always case-insensitive. The table names are not.
 In this case the extension is required, and all filenames that do not match
 are ignored.
 
+=item f_schema
+
+This will set the schema name. Default is the owner of the folder in which
+the table file resides.  C<undef> is allowed.
+
+    my $dbh = DBI->connect ("dbi:CSV:", "", "", {
+        f_schema => undef,
+        f_dir    => "data",
+        f_ext    => ".csv/r",
+        }) or die $DBI::errstr;
+
+The effect is that when you get table names from DBI, you can force all
+tables into the same (or no) schema:
+
+    my @tables $dbh->tables ();
+
+    # no f_schema
+    "merijn".foo
+    "merijn".bar
+
+    # f_schema => "dbi"
+    "dbi".foo
+    "dbi".bar
+
+    # f_schema => undef
+    foo
+    bar
+
 =back
 
 =head2 Driver private methods
@@ -913,7 +944,7 @@ MacOS and Windows 95, as there's a single user anyways).
 
 =back
 
-=head1 AUTHOR 
+=head1 AUTHOR
 
 This module is currently maintained by
 
