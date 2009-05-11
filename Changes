@@ -58,6 +58,7 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
 
   Fixes to DBD::File (H.Merijn Brand)
     added f_schema attribute
+    table names case sensitive when quoted, insensitive when unquoted
 
 =head2 Changes in DBI 1.608 (svn r12742) 5th May 2009
 
