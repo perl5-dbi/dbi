@@ -74,12 +74,9 @@ sub CLONE
 
 sub file2table
 {
-    my ($data, $dir, $file, $file_is_tab) = @_;
+    my ($data, $dir, $file, $file_is_tab, $quoted) = @_;
 
     $file eq "." || $file eq ".."	and return;
-
-    # Fully Qualified File Name
-    my $fqfn = File::Spec->catfile ($dir, $file);
 
     my ($ext, $req) = ("", 0, 0);
     if ($data->{f_ext}) {
@@ -90,8 +87,17 @@ sub file2table
 	}
 
     (my $tbl = $file) =~ s/$ext$//i;
+    $file_is_tab and $file = "$tbl$ext";
 
-    $file_is_tab && $file !~ m/$ext$/i and $fqfn .= $ext;
+    # Fully Qualified File Name
+    my $fqfn;
+    unless ($quoted) { # table names are case insensitive in SQL
+	local *DIR;
+	opendir DIR, $dir;
+	my @f = grep { lc $_ eq lc $file } readdir DIR;
+	@f == 1 and $file = $f[0];
+	}
+    $fqfn = File::Spec->catfile ($dir, $file);
 
     $file = $fqfn;
     if ($ext) {
@@ -422,7 +428,7 @@ sub type_info_all ($)
 	    ? $dbh->{f_schema}
 	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
-	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0) or next;
+	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0, 0) or next;
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -544,13 +550,20 @@ sub execute
 
     $sth->finish;
     my $stmt = $sth->{f_stmt};
-    unless ((my $req_prm = scalar($stmt->params())) == (my $nparm = @$params)) {
+    unless ((my $req_prm = $stmt->params ()) == (my $nparm = @$params)) {
 	$sth->set_err ($DBI::stderr,
 	    "You passed $nparm parameters where $req_prm required");
 	return;
 	}
-    my $result = eval { $stmt->execute ($sth, $params); };
-    $@ and return $sth->set_err ($DBI::stderr, $@);
+    my @err;
+    my $result = eval {
+	local $SIG{__WARN__} = sub { push @err, @_ };
+	$stmt->execute ($sth, $params);
+	};
+    if ($@ || @err) {
+	$sth->set_err ($DBI::stderr, $@ || $err[0]);
+	return undef;
+	}
 
     if ($stmt->{NUM_OF_FIELDS}) {    # is a SELECT statement
 	$sth->STORE (Active => 1);
@@ -661,7 +674,8 @@ my $open_table_re = sprintf "(?:%s|%s|%s)",
 sub get_file_name ($$$)
 {
     my ($self, $data, $table) = @_;
-    $table =~ s/^\"//;    # handle quoted identifiers
+    my $quoted = 0;
+    $table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
     $table =~ s/\"$//;
     my $file = $table;
     if (    $file !~ m/^$open_table_re/o
@@ -669,7 +683,8 @@ sub get_file_name ($$$)
 	and $file !~ m{^[a-z]\:}    # drive letter
 	) {
 	exists $data->{Database}{f_map}{$table} or
-	    DBD::File::file2table ($data->{Database}, $data->{Database}{f_dir}, $file, 1);
+	    DBD::File::file2table ($data->{Database},
+		$data->{Database}{f_dir}, $file, 1, $quoted);
 	$file = $data->{Database}{f_map}{$table} || undef;
 	}
     return ($table, $file);
@@ -700,12 +715,10 @@ sub open_table ($$$$$)
     $fh and binmode $fh;
     if ($locking and $fh) {
 	if ($lockMode) {
-	    flock $fh, 2 or
-		croak "Cannot obtain exclusive lock on $file: $!";
+	    flock $fh, 2 or croak "Cannot obtain exclusive lock on $file: $!";
 	    }
 	else {
-	    flock $fh, 1 or
-		croak "Cannot obtain shared lock on $file: $!";
+	    flock $fh, 1 or croak "Cannot obtain shared lock on $file: $!";
 	    }
 	}
     my $columns = {};
