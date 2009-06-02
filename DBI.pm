@@ -5490,9 +5490,10 @@ The SQL_INTEGER and other related constants can be imported using
 
 See L</"DBI Constants"> for more information.
 
-The data type for a placeholder cannot be changed after the first C<bind_param>
-call. The data type is said to be 'sticky'. Bind values passed to execute()
-are bound with the data type specified by earlier bind_param() calls, if any.
+The data type is 'sticky' in that bind values passed to execute() are bound
+with the data type specified by earlier bind_param() calls, if any.
+Portable applications should not rely on being able to change the data type
+after the first C<bind_param> call.
 
 Perl only has string and number scalar data types. All database types
 that aren't numbers are bound as strings and must be in a format the
