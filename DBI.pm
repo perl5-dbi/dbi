@@ -4611,7 +4611,23 @@ The following values are defined:
 
 B<REMARKS>: A description of the column.
 
-B<COLUMN_DEF>: The default value of the column.
+B<COLUMN_DEF>: The default value of the column, in a format that can be used
+directly in an SQL statement.
+
+Note that this may be an expression and not simply the text used for the
+default value in the original CREATE TABLE statement. For example, given:
+
+    col1 char(30) default current_user    -- a 'function'
+    col2 char(30) default 'string'        -- a string literal
+
+where "current_user" is the name of a function, the corresponding C<COLUMN_DEF>
+values would be:
+
+    Database        col1                     col2
+    --------        ----                     ----
+    Oracle:         current_user             'string'
+    Postgres:       "current_user"()         'string'::text
+    MS SQL:         (user_name())            ('string')
 
 B<SQL_DATA_TYPE>: The SQL data type.
 
@@ -5474,11 +5490,9 @@ The SQL_INTEGER and other related constants can be imported using
 
 See L</"DBI Constants"> for more information.
 
-The data type for a placeholder cannot be changed after the first
-C<bind_param> call. In fact the whole \%attr parameter is 'sticky'
-in the sense that a driver only needs to consider the \%attr parameter
-for the first call, for a given $sth and parameter. After that the driver
-may ignore the \%attr parameter for that placeholder.
+The data type for a placeholder cannot be changed after the first C<bind_param>
+call. The data type is said to be 'sticky'. Bind values passed to execute()
+are bound with the data type specified by earlier bind_param() calls, if any.
 
 Perl only has string and number scalar data types. All database types
 that aren't numbers are bound as strings and must be in a format the
@@ -6133,7 +6147,7 @@ SQL_DATETIME, which is 'YYYY-MM-DD HH:MM:SS', rather than the
 native formatting the database would normally use.
 
 There's no $var_to_bind in that example to emphasize the point
-that bind_col() works on the underlying column value and not just
+that bind_col() works on the underlying column and not just
 a particular bound variable.
 
 As a short-cut for the common case, the data type can be passed
@@ -6152,10 +6166,9 @@ The SQL_DATETIME and other related constants can be imported using
 
 See L</"DBI Constants"> for more information.
 
-The data type for a bind variable cannot be changed after the first
-C<bind_col> call. In fact the whole \%attr parameter is 'sticky'
-in the sense that a driver only needs to consider the \%attr parameter
-for the first call for a given $sth and column.
+Few drivers support specifying a data type via a C<bind_col> call (most will
+simply ignore the data type). Fewer still allow the data type to be altered
+once set.
 
 The TYPE attribute for bind_col() was first specified in DBI 1.41.
 

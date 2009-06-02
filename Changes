@@ -60,6 +60,10 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
     added f_schema attribute
     table names case sensitive when quoted, insensitive when unquoted
 
+  Added docs form column_info()'s COLUMN_DEF value.
+  Clarified docs on stickyness of data type via bind_param().
+  Clarified docs on stickyness of data type via bind_col().
+
 =head2 Changes in DBI 1.608 (svn r12742) 5th May 2009
 
   Fixes to DBD::File (H.Merijn Brand)
