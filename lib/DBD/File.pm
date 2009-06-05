@@ -551,14 +551,12 @@ sub execute
     $sth->finish;
     my $stmt = $sth->{f_stmt};
     unless ($sth->{f_params_checked}++) {
+	# bug in SQL::Statement 1.20 and below causes breakage
+	# on all but the first call
 	unless ((my $req_prm = $stmt->params ()) == (my $nparm = @$params)) {
 	    my $msg = "You passed $nparm parameters where $req_prm required";
-	    # The correct action here is to set error and return right away,
-	    # but a bug in SQL::Statement 1.20 and below causes breakage
-	    # $sth->set_err ($DBI::stderr, $msg);
-	    # return;
-
-	    warn "$msg\n";
+	    $sth->set_err ($DBI::stderr, $msg);
+	    return;
 	    }
 	}
     my @err;
