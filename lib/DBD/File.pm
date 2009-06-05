@@ -550,10 +550,16 @@ sub execute
 
     $sth->finish;
     my $stmt = $sth->{f_stmt};
-    unless ((my $req_prm = $stmt->params ()) == (my $nparm = @$params)) {
-	$sth->set_err ($DBI::stderr,
-	    "You passed $nparm parameters where $req_prm required");
-	return;
+    unless ($sth->{f_params_checked}++) {
+	unless ((my $req_prm = $stmt->params ()) == (my $nparm = @$params)) {
+	    my $msg = "You passed $nparm parameters where $req_prm required";
+	    # The correct action here is to set error and return right away,
+	    # but a bug in SQL::Statement 1.20 and below causes breakage
+	    # $sth->set_err ($DBI::stderr, $msg);
+	    # return;
+
+	    warn "$msg\n";
+	    }
 	}
     my @err;
     my $result = eval {
