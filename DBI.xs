@@ -111,7 +111,7 @@ typedef struct dbi_ima_st {
 #define IMA_NO_TAINT_IN   	0x0010	/* don't check for tainted args	*/
 #define IMA_NO_TAINT_OUT   	0x0020	/* don't taint results		*/
 #define IMA_COPY_UP_STMT   	0x0040	/* copy sth Statement to dbh	*/
-#define IMA_END_WORK	   	0x0080	/* set on commit & rollback	*/
+#define IMA_END_WORK	   	0x0080	/* method is commit or rollback	*/
 #define IMA_STUB		0x0100	/* donothing eg $dbh->connected */
 #define IMA_CLEAR_STMT   	0x0200	/* clear Statement before call	*/
 #define IMA_UNRELATED_TO_STMT	0x0400	/* profile as empty Statement	*/

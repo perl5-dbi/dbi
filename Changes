@@ -59,10 +59,11 @@ Add high-res time for windows - via Time::HiRes glob replace dbi_time().
   Fixes to DBD::File (H.Merijn Brand)
     added f_schema attribute
     table names case sensitive when quoted, insensitive when unquoted
-    workaround a bug in SQL::Statement (temporary fix)
-      "You passed x parameters where y required" now only warns if it
-      finds a mismatch on the first execute of the handle
+    workaround a bug in SQL::Statement (temporary fix) related
+      to the "You passed x parameters where y required" error
 
+  Added DBI->visit_handles($coderef) method.
+  Added $h->visit_child_handles($coderef) method.
   Added docs form column_info()'s COLUMN_DEF value.
   Clarified docs on stickyness of data type via bind_param().
   Clarified docs on stickyness of data type via bind_col().

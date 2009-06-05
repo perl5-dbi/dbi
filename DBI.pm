@@ -399,6 +399,7 @@ my $keeperr = { O=>0x0004 };
 	trace_msg	=> { U =>[2,3,'$message_text [, $min_level ]' ],	O=>0x0004, T=>8 },
 	swap_inner_handle => { U =>[2,3,'$h [, $allow_reparent ]'] },
         private_attribute_info => { },
+        visit_child_handles => { U => [2,3,'$coderef [, $info ]'], O=>0x0404, T=>4 },
     },
     dr => {		# Database Driver Interface
 	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000 },
@@ -532,6 +533,18 @@ sub parse_dsn {
     $driver ||= $ENV{DBI_DRIVER} || '';
     $attr_hash = { split /\s*=>?\s*|\s*,\s*/, $attr, -1 } if $attr;
     return ($scheme, $driver, $attr, $attr_hash, $dsn);
+}
+
+sub visit_handles {
+    my ($class, $code, $outer_info) = @_;
+    $outer_info = {} if not defined $outer_info;
+    my %drh = DBI->installed_drivers;
+    for my $h (values %drh) {
+	my $child_info = $code->($h, $outer_info)
+	    or next;
+	$h->visit_child_handles($code, $child_info);
+    }
+    return $outer_info;
 }
 
 
@@ -1399,6 +1412,17 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
         return undef;
     }
 
+    sub visit_child_handles {
+	my ($h, $code, $info) = @_;
+	$info = {} if not defined $info;
+	for my $ch (@{ $h->{ChildHandles} || []}) {
+	    next unless $ch;
+	    my $child_info = $code->($ch, $info)
+		or next;
+	    $ch->visit_child_handles($code, $child_info);
+	}
+	return $info;
+    }
 }
 
 
@@ -2860,6 +2884,31 @@ See the L</TRACING> section for full details about the DBI's powerful
 tracing facilities.
 
 
+=head3 C<visit_handles>
+
+  DBI->visit_handles( $coderef );
+  DBI->visit_handles( $coderef, $info );
+
+Where $coderef is a reference to a subroutine and $info is an arbitrary value
+which, if undefined, defaults to a reference to an empty hash. Returns $info.
+
+For each installed driver handle, if any, $coderef is invoked as:
+
+  $coderef->($driver_handle, $info);
+
+If the execution of $coderef returns a true value then L</visit_child_handles>
+is called on that child handle and passed the returned value as $info.
+
+For example:
+
+  my $info = $dbh->{Driver}->visit_child_handles(sub {
+      my ($h, $info) = @_;
+      ++$info->{ $h->{Type} }; # count types of handles (dr/db/st)
+      return $info; # visit kids
+  });
+
+See also L</visit_child_handles>.
+
 
 =head2 DBI Utility Functions
 
@@ -3327,6 +3376,32 @@ happening:
             dbh1o -> dbh2i
             sthAo -> sthBi(dbh2i)
 
+=head3 C<visit_child_handles>
+
+  $h->visit_child_handles( $coderef );
+  $h->visit_child_handles( $coderef, $info );
+
+Where $coderef is a reference to a subroutine and $info is an arbitrary value
+which, if undefined, defaults to a reference to an empty hash. Returns $info.
+
+For each child handle of $h, if any, $coderef is invoked as:
+
+  $coderef->($child_handle, $info);
+
+If the execution of $coderef returns a true value then C<visit_child_handles>
+is called on that child handle and passed the returned value as $info.
+
+For example:
+
+  # count database connections with names (DSN) matching a pattern
+  my $connections = 0;
+  $dbh->{Driver}->visit_child_handles(sub {
+      my ($h, $info) = @_;
+      ++$connections if $h->{Name} =~ /foo/;
+      return 0; # don't visit kids
+  })
+
+See also L</visit_handles>.
 
 =head1 ATTRIBUTES COMMON TO ALL HANDLES
 
