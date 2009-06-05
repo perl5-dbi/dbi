@@ -1,7 +1,7 @@
 # $Id$
 # vim: ts=8:sw=4:noet
 #
-# Copyright (c) 1994-2008  Tim Bunce  Ireland
+# Copyright (c) 1994-2009  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #
@@ -9,7 +9,7 @@
 require 5.006_00;
 
 BEGIN {
-$DBI::VERSION = "1.608"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.609"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -121,7 +121,7 @@ Tim he's very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.608
+This is the DBI specification that corresponds to the DBI version 1.609
 ($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -7632,11 +7632,11 @@ Perl by Larry Wall and the C<perl5-porters>.
 
 =head1 COPYRIGHT
 
-The DBI module is Copyright (c) 1994-2008 Tim Bunce. Ireland.
+The DBI module is Copyright (c) 1994-2009 Tim Bunce. Ireland.
 All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl README file.
+License or the Artistic License, as specified in the Perl 5.10.0 README file.
 
 =head1 SUPPORT / WARRANTY
 
