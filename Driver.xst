@@ -366,16 +366,16 @@ DESTROY(dbh)
                     This will be harmless if the application has issued a commit,
                     XXX Could add an attribute flag to indicate that the driver
                     doesn't have this problem. Patches welcome.
-                    XXX or could just move the DBIc_is(imp_dbh, DBIcf_Executed) test
-                    to cover the rollback as well. That just needs sanity checking
-                    that DBIcf_Executed is set by any/all possible way to execute a
-                    statement that might start a transaction.
                 */
                 if (DBIc_WARN(imp_dbh)
                 &&  DBIc_is(imp_dbh, DBIcf_Executed) /* has not just called commit/rollback */
                 && (!dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
-                )
-                     warn("Issuing rollback() for database handle being DESTROY'd without explicit disconnect()");
+                ) {
+                    warn("Issuing rollback() due to DESTROY without explicit disconnect() of %s handle %s",
+                        SvPV_nolen(*hv_fetch((HV*)SvRV(dbh), "ImplementorClass", 16, 1)),
+                        SvPV_nolen(*hv_fetch((HV*)SvRV(dbh), "Name", 4, 1))
+                    );
+                }
                 dbd_db_rollback(dbh, imp_dbh);                  /* ROLLBACK! */
             }
             dbd_db_disconnect(dbh, imp_dbh);
