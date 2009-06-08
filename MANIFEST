@@ -11,6 +11,7 @@ README
 Roadmap.pod			Planned changes and enhancements for the DBI
 TASKS.pod                       Want to help? These things need doing...
 TODO_2005.txt			Old (but still mostly relevant) occasional random notes about what's missing
+TODO_gofer.txt                  To-do notes related to gofer
 dbd_xsh.h			Prototypes for standard Driver.xst interface
 dbi_sql.h			Definitions based on SQL CLI / ODBC (#inc'd by DBIXS.h)
 dbipport.h			Perl portability macros (from Devel::PPort)
