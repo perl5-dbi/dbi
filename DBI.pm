@@ -4392,8 +4392,8 @@ is a contrived case where caching would cause a significant problem:
 In this example, since both handles are preparing the exact same statement,
 C<$sth2> will not be its own statement handle, but a duplicate of C<$sth>
 returned from the cache. The results will certainly not be what you expect.
-Typically the the inner fetch loop will work normally, fetching all
-the records and terminating when there are no more, but now $sth
+Typically the inner fetch loop will work normally, fetching all
+the records and terminating when there are no more, but now that $sth
 is the same as $sth2 the outer fetch loop will also terminate.
 
 You'll know if you run into this problem because prepare_cached()
