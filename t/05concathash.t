@@ -35,11 +35,14 @@ is DBI::_concat_hash_sorted({ 1=>"a\000a", 2=>"b" }, "=", ":", 0, undef),
     "1='a\000a':2='b'", 'should work with nul bytes in hash value (not neat)';
 
 # Simple stress tests
-ok(DBI::_concat_hash_sorted({bob=>'two', fred=>'one' }, "="x12000, ":", 1, undef));
-ok(DBI::_concat_hash_sorted({bob=>'two', fred=>'one' }, "=", ":"x12000, 1, undef));
-ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..1000)}, "="x12000, ":", 1, undef));
-ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..1000)}, "=", ":"x12000, 1, undef), 'test');
-ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..100)}, "="x12000, ":"x12000, 1, undef), 'test');
+# limit stress when performing automated testing
+# eg http://www.nntp.perl.org/group/perl.cpan.testers/2009/06/msg4374116.html
+my $stress = $ENV{AUTOMATED_TESTING} ? 1_000 : 10_000;
+ok(DBI::_concat_hash_sorted({bob=>'two', fred=>'one' }, "="x$stress, ":", 1, undef));
+ok(DBI::_concat_hash_sorted({bob=>'two', fred=>'one' }, "=", ":"x$stress, 1, undef));
+ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..1000)}, "="x$stress, ":", 1, undef));
+ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..1000)}, "=", ":"x$stress, 1, undef), 'test');
+ok(DBI::_concat_hash_sorted({map {$_=>undef} (1..100)}, "="x$stress, ":"x$stress, 1, undef), 'test');
 
 my $simple_hash = {
     bob=>"there",
