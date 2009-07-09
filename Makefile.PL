@@ -2,14 +2,11 @@
 #
 # $Id$
 #
-#  Copyright (c) 1994-2008  Tim Bunce  Ireland
+#  Copyright (c) 1994-2009  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
-BEGIN {
-    require 5.008_001;
-    unshift @INC, "lib";
-}
+use 5.008_001;
 
 use ExtUtils::MakeMaker 5.16, qw(WriteMakefile $Verbose prompt);
 use Getopt::Long;
@@ -18,6 +15,7 @@ use File::Find;
 use File::Spec;
 use strict;
 
+use lib 'lib'; # for use DBI::DBD
 use DBI::DBD;
 
 $| = 1;
