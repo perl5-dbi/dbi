@@ -1952,7 +1952,7 @@ which were added in B<DBI> 1.41:
   DBIh_SET_ERR_CHAR(h, imp_xxh, err_c, err_i, errstr, state, method);
 
 For C<DBIh_SET_ERR_SV> the I<err>, I<errstr>, I<state>, and I<method>
-parameters are C<SV*>.
+parameters are C<SV*> (use &sv_undef instead of NULL).
 
 For C<DBIh_SET_ERR_CHAR> the I<err_c>, I<errstr>, I<state>, I<method>
 parameters are C<char*>.
