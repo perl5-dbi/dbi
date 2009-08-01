@@ -52,7 +52,7 @@ See also http://search.cpan.org/
 
 BEFORE BUILDING, TESTING AND INSTALLING this you will need to:
 
-    Build, test and install Perl 5 (5.6 or later).
+    Build, test and install a recent version of Perl 5
     It is very important to test it and actually install it!
     (You can use "Configure -Dprefix=..." to build a private copy.)
 

@@ -620,7 +620,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     if (    DBIc_has(imp_xxh, DBIcf_HandleSetErr)
 	&& (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetErr",12,0))
 	&&  hook_svp
-	&&  ((SvGMAGICAL(*hook_svp) && mg_get(*hook_svp)), SvOK(*hook_svp))
+	&&  ((void)(SvGMAGICAL(*hook_svp) && mg_get(*hook_svp)), SvOK(*hook_svp))
     ) {
 	dSP;
 	IV items;
