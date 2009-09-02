@@ -369,7 +369,7 @@ DESTROY(dbh)
                 */
                 if (DBIc_WARN(imp_dbh) /* only warn if likely to be useful... */
                 &&  DBIc_is(imp_dbh, DBIcf_Executed) /* has not just called commit/rollback */
-                && !DBIc_is(imp_dbh, DBIcf_ReadOnly) /* is not read only */
+            /*  && !DBIc_is(imp_dbh, DBIcf_ReadOnly) -- is not read only */
                 && (!dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
                 ) {
                     warn("Issuing rollback() due to DESTROY without explicit disconnect() of %s handle %s",
