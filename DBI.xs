@@ -814,7 +814,8 @@ set_trace_file(SV *file)
     else {
 	filename = (SvOK(file)) ? SvPV_nolen(file) : Nullch;
 	/* undef arg == reset back to stderr */
-	if (!filename || strEQ(filename,"STDERR")) {
+	if (!filename || strEQ(filename,"STDERR")
+		      || strEQ(filename,"*main::STDERR")) {
 	    close_trace_file(aTHX);
 	    DBILOGFP = PerlIO_stderr();
 	    return 1;
