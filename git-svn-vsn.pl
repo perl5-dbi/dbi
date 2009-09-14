@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use File::Find;
-#use DateTime;
 use DateTime::Format::DateParse;
+
+open my $ml, ">", "git-svn-modlist";
 
 find (sub {
     -f $_ && $_ =~ m/\.pm$/ or return;
@@ -32,4 +33,6 @@ find (sub {
     print $fh $pm;
     close $fh;
     utime $st[8], $st[9], $f;
+
+    print $ml "$File::Find::name\n";
     }, "lib");
