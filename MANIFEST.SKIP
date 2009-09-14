@@ -23,3 +23,4 @@
 ^[oj]dbc/
 ^mail/
 ^t/zz_\w+_pp.t$
+^.git
