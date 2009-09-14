@@ -288,7 +288,7 @@ is(data_diff(pack("C",0xEA), pack("U",0xEA), 1), ""); # no logical difference
 # restrict this test to just developers
 
 SKIP: {
-	skip 'developer tests', 4 unless -d ".svn";
+	skip 'developer tests', 4 unless -d ".svn" || -d ".git";
 
 	print "Test DBI->installed_versions (for @drivers)\n";
 	print "(If one of those drivers, or the configuration for it, is bad\n";

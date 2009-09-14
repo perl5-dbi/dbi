@@ -204,5 +204,5 @@ chmod 0755, $file;
 print "Extracted $file from ",__FILE__," with variable substitutions.\n";
 
 # syntax check resulting file, but only for developers
-exit 1 if -d ".svn" and system($^X, '-wc', '-Mblib', $file) != 0;
+exit 1 if -d ".svn" || -d ".git" and system($^X, '-wc', '-Mblib', $file) != 0;
 

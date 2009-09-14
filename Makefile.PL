@@ -24,7 +24,7 @@ my $os = $^O;
 my $osvers = $Config{osvers};
 $osvers =~ s/^\s*(\d+\.\d+).*/$1/;  # drop sub-sub-version: 2.5.1 -> 2.5
 my $ext_pl = $^O eq 'VMS' ? '.pl' : '';
-my $is_developer = (-d ".svn" && -f "MANIFEST.SKIP");
+my $is_developer = ((-d ".svn" || -d ".git") && -f "MANIFEST.SKIP");
 
 $::opt_v = 0;
 $::opt_thread = 1;	# thread if we can, use "-nothread" to disable
@@ -189,7 +189,7 @@ EOT
 
 sub libscan {
     my($self, $path) = @_;
-    ($path =~ /\~$|\B\.svn\b/) ? undef : $path;
+    ($path =~ /\~$|\B\.(svn|git)\b/) ? undef : $path;
 }
 
 sub const_cccmd {
