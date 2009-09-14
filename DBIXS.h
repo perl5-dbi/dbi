@@ -301,7 +301,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIc_ACTIVE_on(imp)	/* adjust parent's active kid count */	\
     do {								\
 	imp_xxh_t *ph_com = DBIc_PARENT_COM(imp);			\
-	if (!DBIc_ACTIVE(imp) && ph_com && !dirty			\
+	if (!DBIc_ACTIVE(imp) && ph_com && !PL_dirty			\
 		&& ++DBIc_ACTIVE_KIDS(ph_com) > DBIc_KIDS(ph_com))	\
 	    croak("panic: DBI active kids (%ld) > kids (%ld)",		\
 		(long)DBIc_ACTIVE_KIDS(ph_com),				\
@@ -311,7 +311,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define DBIc_ACTIVE_off(imp)	/* adjust parent's active kid count */	\
     do {								\
 	imp_xxh_t *ph_com = DBIc_PARENT_COM(imp);			\
-	if (DBIc_ACTIVE(imp) && ph_com && !dirty			\
+	if (DBIc_ACTIVE(imp) && ph_com && !PL_dirty			\
 		&& (--DBIc_ACTIVE_KIDS(ph_com) > DBIc_KIDS(ph_com)	\
 		   || DBIc_ACTIVE_KIDS(ph_com) < 0) )			\
 	    croak("panic: DBI active kids (%ld) < 0 or > kids (%ld)",	\
@@ -354,7 +354,7 @@ typedef struct {		/* -- FIELD DESCRIPTOR --		*/
 #define D_imp_drh_from_dbh D_imp_from_child(imp_drh, imp_drh_t, imp_dbh)
 #define D_imp_dbh_from_sth D_imp_from_child(imp_dbh, imp_dbh_t, imp_sth)
 
-#define DBI_IMP_SIZE(n,s) sv_setiv(perl_get_sv((n), GV_ADDMULTI), (s)) /* XXX */
+#define DBI_IMP_SIZE(n,s) sv_setiv(get_sv((n), GV_ADDMULTI), (s)) /* XXX */
 
 
 
@@ -440,7 +440,7 @@ struct dbistate_st {
 #define get_attr(h, k)		get_attr_k(h, k, 0)
 
 #define DBISTATE_PERLNAME "DBI::_dbistate"
-#define DBISTATE_ADDRSV   (perl_get_sv(DBISTATE_PERLNAME, 0x05))
+#define DBISTATE_ADDRSV   (get_sv(DBISTATE_PERLNAME, 0x05))
 #define DBILOGFP	(DBIS->logfp)
 #ifdef IN_DBI_XS
 #define DBILOGMSG	(dbih_logmsg)

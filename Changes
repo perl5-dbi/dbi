@@ -13,6 +13,7 @@ XXX needs to be redone to convert ReadOnly to an internal flag:
     tried to open a file named "*main::STDERR" in perl-5.10.x
   Changed "Issuing rollback() due to DESTROY without explicit disconnect"
     warning to not be issued if ReadOnly set for that dbh.
+  Updated dbipport.h to Devel::PPPort 3.19 (H.Merijn Brand)
   Bumped required perl version to 5.8.1 (as announced in DBI 1.607)
 
 =head2 Changes in DBI 1.609 (svn r12816) 8th June 2009
