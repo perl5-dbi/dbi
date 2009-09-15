@@ -811,11 +811,15 @@ set_trace_file(SV *file)
 	SvREFCNT_inc(io);
 	DBIS->logfp_ref = io;
     }
-    else if (0) {
-	/* PVGV -> dup and use that file handle
-	 * SvOK -> use the stringification
-	 * else    close the file handle and revert to the default of PerlIO_stderr()
-	 */
+    else if (isGV_with_GP(file)) {
+	io = GvIO(file);
+	if (!io || !(fp = IoOFP(io))) {
+	    warn("DBI trace filehandle from GLOB is not valid");
+	    return 0;
+	}
+	close_trace_file(aTHX);
+	SvREFCNT_inc(io);
+	DBIS->logfp_ref = io;
     }
     else {
 	filename = (SvOK(file)) ? SvPV_nolen(file) : Nullch;
