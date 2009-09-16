@@ -175,8 +175,9 @@ sub set_versions
 {
     my $this = shift;
     $this->{f_version} = $DBD::File::VERSION;
-    for (qw( nano_version statement_version)) {
-	$this->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "";
+    for (qw( nano_version statement_version )) {
+	# strip development release version part
+	($this->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
 	}
     $this->{sql_handler} = $this->{sql_statement_version}
 	? "SQL::Statement"
