@@ -24,3 +24,5 @@ tmp/*
 t/zv[gpx]*
 valgrind.log
 xx*
+ModList
+git-svn-modlist

@@ -6,7 +6,7 @@ use warnings;
 use File::Find;
 use DateTime::Format::DateParse;
 
-open my $ml, ">", "git-svn-modlist";
+open my $ml, ">>", "git-svn-modlist";
 
 find (sub {
     -f $_ && $_ =~ m/\.pm$/ or return;
