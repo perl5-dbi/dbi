@@ -31,7 +31,7 @@ find (sub {
     $pm =~ s/\$Id\$/\$Id: $f $svn_id $dt $svn_author \$/g;
 
     my @st = stat $f;
-    unlink $f, "b$f";	# Remove both lib and blib version
+    unlink $f, "blib/$f";	# Remove both lib and blib version
     open my $fh, ">", $f or die "Cannot update $File::Find::name: $!\n";
     print $fh $pm;
     close $fh;
