@@ -3,7 +3,7 @@
 
 use strict;
 
-use Test::More tests => 21;
+use Test::More tests => 27;
 
 ## ----------------------------------------------------------------------------
 ## 09trace.t
@@ -207,6 +207,26 @@ ok(($filesz == $newfsz), '... regular fh: trace_msg after changing trace output'
 #1 while unlink $trace_file;
 
 $dbh->trace(0);	# disable trace
+
+{   # Open trace to glob. started failing in perl-5.10
+    my $tf = "foo.log";
+    1 while unlink $tf;
+    1 while unlink "*main::FOO";
+    1 while unlink "*main::STDERR";
+    is (-f $tf, undef, "Tracefile removed");
+    ok (open (FOO, ">", $tf), "Tracefile FOO opened");
+    ok (-f $tf, "Tracefile created");
+    DBI->trace (1, *FOO);
+    is (-f "*main::FOO", undef, "Regression test");
+    DBI->trace_msg ("foo\n", 1);
+    DBI->trace (0, *STDERR);
+    close FOO;
+    open my $fh, "<", $tf;
+    is ((<$fh>)[-1], "foo\n", "Traced message");
+    close $fh;
+    is (-f "*main::STDERR", undef, "Regression test");
+    1 while unlink $tf;
+    }
 
 SKIP: {
 	eval { require 5.008; };
