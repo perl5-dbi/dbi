@@ -48,12 +48,8 @@ git-svn-vsn.pl - fill in the gaps from svn that git doesn't know about
 
 =head1 SYNOPSYS
 
-    test_dynamic :: pure_all
-            perl git-svn-vsn.pl
-            PERL_DL_NONLAZY=1 $(FULLPERLRUN) "-MExtUtils::Command::MM" "-e" "test_harness($(TEST_VERBOSE), '$(INST_LIB)', '$(INST_ARCHLIB)')" $(TEST_FILES)
-            PERL_DL_NONLAZY=1 $(FULLPERLRUN) "-I$(INST_LIB)" "-I$(INST_ARCHLIB)" $(TEST_FILE)
-            git co `cat git-svn-modlist`
-            rm git-svn-modlist
+ $ git-svn-vsn.pl
+ $ git chechout `cat git-svn-modlist`
 
 =head1 DESCRIPTION
 
@@ -77,8 +73,10 @@ effect, the script also drops a list with all the modules it changed, so the
 C<make test> can revert to the actual files from the repository after the tests
 have been run with C<git checkout `cat git-svn-modlist`>.
 
-Future enhancements might include encorporating this into Makefile.PL.Currently
-the changes are handwork after C<perl Makefile.PL> has been run.
+The call to C<git-svn-vsn.pl> is integrated in C<Makefile.PL> Before you can
+push up the committed changes with C<svn dcommit --username committer>, you will
+have te revert the changes to the modules by doing a checkout of the changed
+files. Their names were stored in C<git-svn-modlist>.
 
 =head1 SEE ALSO
 

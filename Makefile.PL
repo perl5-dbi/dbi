@@ -151,6 +151,9 @@ for ( $cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp,
      $_ = '' unless defined $_;
 }
 
+# If working from git-svn, the $Id$'s in the mod's should be completed
+# before any other action is taken
+$is_developer && -d ".git" && -f "git-svn-vsn.pl" and system $^X, "git-svn-vsn.pl";
 
 $Verbose = $::opt_v;
 WriteMakefile(
@@ -244,6 +247,8 @@ Here's a list of probable old files and directories:
 	$self->{PM}->{$_} = File::Spec->catfile($self->{INST_ARCHAUTODIR}, $_)
 	    if '.h' eq substr( $_, -2 ) || '.xst' eq substr( $_, -4 );
         }, '.' );
+
+    delete $self->{$_}{"git-svn-vsn.pl"} for qw( PM MAN3PODS );
 
     return '';
 }
