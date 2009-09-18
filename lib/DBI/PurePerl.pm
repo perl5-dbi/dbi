@@ -562,6 +562,12 @@ sub _set_trace_file {
         $DBI::tfh_needs_close = 0;
         return 1;
     }
+    if ($file && ref \$file eq 'GLOB') {
+	$DBI::tfh = *{$file}{IO};
+        select((select($DBI::tfh), $| = 1)[0]);
+        $DBI::tfh_needs_close = 0;
+        return 1;
+    }
     $DBI::tfh_needs_close = 1;
     if (!$file || $file eq 'STDERR') {
 	open $DBI::tfh, ">&STDERR" or carp "Can't dup STDERR: $!";
