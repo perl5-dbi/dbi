@@ -426,7 +426,7 @@ sub type_info_all ($)
 
 	my ($file, @tables, %names);
 	my $schema = exists $dbh->{f_schema}
-	    ? $dbh->{f_schema}
+	    ? $dbh->{f_schema} eq "" ? undef : $dbh->{f_schema}
 	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
 	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0, 0) or next;
@@ -919,6 +919,9 @@ tables into the same (or no) schema:
     # f_schema => undef
     foo
     bar
+
+Defining f_schema to the empty string is equal to setting it to C<undef>,
+this to enable the DSN to be C<dbi:CSV:f_schema=;f_dir=.>.
 
 =back
 
