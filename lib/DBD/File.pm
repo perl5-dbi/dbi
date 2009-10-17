@@ -426,7 +426,8 @@ sub type_info_all ($)
 
 	my ($file, @tables, %names);
 	my $schema = exists $dbh->{f_schema}
-	    ? $dbh->{f_schema} eq "" ? undef : $dbh->{f_schema}
+	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
+		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
 	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0, 0) or next;
