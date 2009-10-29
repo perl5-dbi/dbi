@@ -1440,7 +1440,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     dPERINTERP;
     dTHR;
     int dump = FALSE;
-    int debug = DBIS_TRACE_LEVEL;
+    int debug = DBIc_TRACE_LEVEL(imp_xxh);
     int auto_dump = (debug >= 6);
     imp_xxh_t * const parent_xxh = DBIc_PARENT_COM(imp_xxh);
     /* Note that we're very much on our own here. DBIc_MY_H(imp_xxh) almost	*/
@@ -4481,7 +4481,7 @@ FETCH(sv)
 	HE save_mh = PL_hv_fetch_ent_mh; /* XXX nested tied FETCH bug17575 workaround */
 #endif
 	profile_t1 = 0.0; /* profile this via dispatch only (else we'll double count) */
-	if (DBIS_TRACE_LEVEL >= 3)
+	if (trace_level >= 3)
 	    PerlIO_printf(DBILOGFP,"    >> %s::%s\n", HvNAME(imp_stash), meth);
 	ST(0) = sv_2mortal(newRV_inc(DBI_LAST_HANDLE));
 	if ((imp_gv = gv_fetchmethod(imp_stash,meth)) == NULL) {
