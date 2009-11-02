@@ -1263,6 +1263,19 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
             dbih_setup_attrib(aTHX_ h,imp,"HandleError",parent,0,1);
             dbih_setup_attrib(aTHX_ h,imp,"ReadOnly",parent,0,1);
             dbih_setup_attrib(aTHX_ h,imp,"Profile",parent,0,1);
+
+            /* setup Callbacks from parents' ChildCallbacks */
+            if (DBIc_has(parent_imp, DBIcf_Callbacks)
+            && (tmp_svp = hv_fetch((HV*)SvRV(parent), "Callbacks", 9, 0))
+            && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
+            && (tmp_svp = hv_fetch((HV*)SvRV(*tmp_svp), "ChildCallbacks", 14, 0))
+            && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
+            ) {
+                /* XXX mirrors behaviour of dbih_set_attr_k() of Callbacks */
+                hv_store((HV*)SvRV(h), "Callbacks", 9, newRV_inc(SvRV(*tmp_svp)), 0);
+                DBIc_set(imp, DBIcf_Callbacks, 1);
+            }
+
             DBIc_LongReadLen(imp) = DBIc_LongReadLen(parent_imp);
 #ifdef sv_rvweaken
             if (1) {
@@ -1868,6 +1881,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (keylen==9 && strEQ(key, "Callbacks")) {
         if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) )
             croak("Can't set Callbacks to '%s'",neatsvpv(valuesv,0));
+        /* see also dbih_setup_handle for ChildCallbacks handling */
         DBIc_set(imp_xxh, DBIcf_Callbacks, on);
         cacheit = 1;
     }

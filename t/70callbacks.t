@@ -9,7 +9,7 @@ use DBI;
 BEGIN {
         plan skip_all => '$h->{Callbacks} attribute not supported for DBI::PurePerl'
                 if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
-        plan tests => 61;
+        plan tests => 63;
 }
 
 $| = 1;
