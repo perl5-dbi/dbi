@@ -844,20 +844,20 @@ Works
 
 =item NUM_OF_FIELDS
 
-Valid after C<$sth->execute>
+Valid after C<< $sth->execute >>
 
 =item NUM_OF_PARAMS
 
-Valid after C<$sth->prepare>
+Valid after C<< $sth->prepare >>
 
 =item NAME
 
-Valid after C<$sth->execute>; undef for Non-Select statements.
+Valid after C<< $sth->execute >>; undef for Non-Select statements.
 
 =item NULLABLE
 
 Not really working, always returns an array ref of one's, as DBD::CSV
-doesn't verify input data. Valid after C<$sth->execute>; undef for
+doesn't verify input data. Valid after C<< $sth->execute >>; undef for
 Non-Select statements.
 
 =back

@@ -525,7 +525,7 @@ The arguments to sprintf are:
 
 =head1 CUSTOM DATA MANIPULATION
 
-Recall that C<$h->{Profile}->{Data}> is a reference to the collected data.
+Recall that C<< $h->{Profile}->{Data} >> is a reference to the collected data.
 Either to a 'leaf' array (when the Path is empty, i.e., DBI_PROFILE env var is 1),
 or a reference to hash containing values that are either further hash
 references or leaf array references.

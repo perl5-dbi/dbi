@@ -18,6 +18,8 @@ XXX needs to be redone to convert ReadOnly to an internal flag:
   Changed "Issuing rollback() due to DESTROY without explicit disconnect"
     warning to not be issued if ReadOnly set for that dbh.
   Updated dbipport.h to Devel::PPPort 3.19 (H.Merijn Brand)
+  Updated DBI::Profile and DBD::File docs to fix pod nits
+    thanks to Frank Wiegand.
 
   Added ChildCallbacks => { ... } to Callbacks as a way to
     specify Callbacks for child handles.
