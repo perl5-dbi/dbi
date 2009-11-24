@@ -8,7 +8,7 @@ use warnings;
 use Cwd;
 use Config;
 use Data::Dumper;
-use Test::More;
+use Test::More 0.84;
 use Getopt::Long;
 
 use DBI qw(dbi_time);
@@ -83,10 +83,10 @@ my %trials = (
 delete $trials{http} unless $username eq 'timbo' && -d '.svn';
 
 my @transports = ($opt_transport) ? ($opt_transport) : (sort keys %trials);
-print "Transports: @transports\n";
+note("Transports: @transports");
 my @policies = ($opt_policy) ? ($opt_policy) : qw(pedantic classic rush);
-print "Policies: @policies\n";
-print "Count: $opt_count\n";
+note("Policies: @policies");
+note("Count: $opt_count");
 
 for my $trial (@transports) {
     (my $transport = $trial) =~ s/_.*//;
@@ -112,16 +112,16 @@ for my $trial (@transports) {
 run_tests('no', {}, 'pedantic') if $opt_count;
 
 while ( my ($activity, $stats_hash) = each %durations ) {
-    print "\n";
+    note("");
     $stats_hash->{'~baseline~'} = delete $stats_hash->{"no+pedantic"};
     for my $perf_tag (reverse sort keys %$stats_hash) {
         my $dur = $stats_hash->{$perf_tag} || 0.0000001;
-        printf "  %6s %-16s: %.6fsec (%5d/sec)",
+        note sprintf "  %6s %-16s: %.6fsec (%5d/sec)",
             $activity, $perf_tag, $dur/$opt_count, $opt_count/$dur;
         my $baseline_dur = $stats_hash->{'~baseline~'};
-        printf " %+5.1fms", (($dur-$baseline_dur)/$opt_count)*1000
+        note sprintf " %+5.1fms", (($dur-$baseline_dur)/$opt_count)*1000
             unless $perf_tag eq '~baseline~';
-        print "\n";
+        note "";
     }
 }
 
@@ -134,7 +134,8 @@ sub run_tests {
 
 
     my $test_run_tag = "Testing $transport transport with $policy_name policy";
-    print "\n$test_run_tag\n";
+    note "=============";
+    note "$test_run_tag";
 
     my $driver_dsn = "transport=$transport;policy=$policy_name";
     $driver_dsn .= join ";", '', map { "$_=$trans_attr->{$_}" } keys %$trans_attr
@@ -142,7 +143,7 @@ sub run_tests {
 
     my $dsn = "dbi:Gofer:$driver_dsn;dsn=$remote_dsn";
     $dsn = $remote_dsn if $transport eq 'no';
-    print " $dsn\n";
+    note " $dsn";
 
     my $dbh = DBI->connect($dsn, undef, undef, { RaiseError => 1, PrintError => 0, ShowErrorStatement => 1 } );
     die "$test_run_tag aborted: $DBI::errstr\n" unless $dbh; # no point continuing
@@ -182,7 +183,7 @@ sub run_tests {
     is_deeply($rowset, { '1' => { dKey=>1, dVal=>'apples' }, 2 => { dKey=>2, dVal=>'apples' } });
 
     if ($opt_count and $transport ne 'pipeone') {
-        print "performance check - $opt_count selects and inserts\n";
+        note "performance check - $opt_count selects and inserts";
         my $start = dbi_time();
         $dbh->selectall_arrayref("SELECT dKey, dVal FROM fruit")
             for (1000..1000+$opt_count);
@@ -195,7 +196,7 @@ sub run_tests {
         $durations{insert}{"$transport+$policy_name"} = dbi_time() - $start;
     }
 
-    print "Testing go_request_count and caching of simple values\n";
+    note "Testing go_request_count and caching of simple values";
     my $go_request_count = $dbh->{go_request_count};
     ok $go_request_count
         unless $skip_gofer_checks && pass();
@@ -206,7 +207,7 @@ sub run_tests {
 
     # tests go_request_count, caching, and skip_default_methods policy
     my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
-    printf "use_remote=%s (policy=%s, transport=%s) %s\n",
+    note sprintf "use_remote=%s (policy=%s, transport=%s) %s",
         $use_remote, $policy_name, $transport, $dbh->{dbi_default_methods}||'';
 
 SKIP: {
@@ -222,7 +223,7 @@ SKIP: {
 
 SKIP: {
     skip "caching of metadata methods returning sth not yet implemented", 2;
-    print "Testing go_request_count and caching of sth\n";
+    note "Testing go_request_count and caching of sth";
     $go_request_count = $dbh->{go_request_count};
     my $sth_ti1 = $dbh->table_info("%", "%", "%", "TABLE", { foo_bar => $go_request_count });
     is $go_request_count + 1, $dbh->{go_request_count};
