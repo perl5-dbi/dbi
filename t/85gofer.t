@@ -64,7 +64,9 @@ local $ENV{PERL5LIB} = join $Config{path_sep}, @INC;
 my %durations;
 my $getcwd = getcwd();
 my $username = eval { getpwuid($>) } || ''; # fails on windows
-my $can_ssh = ($username && $username eq 'timbo' && -d '.svn');
+my $can_ssh = ($username && $username eq 'timbo' && -d '.svn'
+            && system("sh -c 'echo > /dev/tcp/localhost/22' 2>/dev/null")==0
+);
 my $perl = "$^X  -Mblib=$getcwd/blib"; # ensure sameperl and our blib (note two spaces)
 
 my %trials = (
