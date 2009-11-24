@@ -14,6 +14,16 @@ require VMS::Filespec if $^O eq 'VMS';
 
 use Test::More tests => 210;
 
+do {
+    # provide some protection against growth in size of '.' during the test
+    # which was probable cause of this failure
+    # http://www.nntp.perl.org/group/perl.cpan.testers/2009/09/msg5297317.html
+    my $tmpfile = "deleteme";
+    open my $fh, ">$tmpfile";
+    close $fh;
+    unlink $tmpfile;
+};
+
 # "globals"
 my ($r, $dbh);
 
