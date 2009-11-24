@@ -46,7 +46,8 @@ if (!$opt_dbm) {
 }
 my $remote_driver_dsn = "dbm_type=$opt_dbm;lockfile=0";
 my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
-my $timeout = 120; # for slow/overloaded systems (incl virtual machines with low priority)
+# Long timeout for slow/overloaded systems (incl virtual machines with low priority)
+my $timeout = 240;
 
 plan 'no_plan';
 
