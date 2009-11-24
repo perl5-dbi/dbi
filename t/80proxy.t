@@ -206,17 +206,17 @@ my $dir = Cwd::cwd();	# a dir always readable on all platforms
 $dir = VMS::Filespec::unixify($dir) if $^O eq 'VMS';
 
 print "Trying a real select.\n";
-my $csr_a = $dbh->prepare("select mode,size,name from ?");
+my $csr_a = $dbh->prepare("select mode,name from ?");
 Test(ref $csr_a);
 Test($csr_a->execute($dir))
     or print "Execute failed: ", $csr_a->errstr(), "\n";
 
 print "Repeating the select with second handle.\n";
-my $csr_b = $dbh->prepare("select mode,size,name from ?");
+my $csr_b = $dbh->prepare("select mode,name from ?");
 Test(ref $csr_b);
 Test($csr_b->execute($dir));
 Test($csr_a != $csr_b);
-Test($csr_a->{NUM_OF_FIELDS} == 3);
+Test($csr_a->{NUM_OF_FIELDS} == 2);
 if ($DBI::PurePerl) { 
     $csr_a->trace(2);
     use Data::Dumper;
@@ -225,18 +225,17 @@ if ($DBI::PurePerl) {
 Test($csr_a->{Database}->{Driver}->{Name} eq 'Proxy', "Name=$csr_a->{Database}->{Driver}->{Name}");
 $csr_a->trace(0), die if $DBI::PurePerl;
 
-my($col0, $col1, $col2);
+my($col0, $col1);
 my(@row_a, @row_b);
 
 #$csr_a->trace(2);
 print "Trying bind_columns.\n";
-Test($csr_a->bind_columns(undef, \($col0, $col1, $col2)) );
+Test($csr_a->bind_columns(undef, \($col0, $col1)) );
 Test($csr_a->execute($dir));
 @row_a = $csr_a->fetchrow_array;
 Test(@row_a);
 Test($row_a[0] eq $col0);
 Test($row_a[1] eq $col1);
-Test($row_a[2] eq $col2);
 
 print "Trying bind_param.\n";
 Test($csr_b->bind_param(1, $dir));
@@ -257,15 +256,14 @@ Test($row_b);
 print "row_a: @{[ @row_a  ]}\n";
 print "row_b: @{[ %$row_b ]}\n";
 Test($row_b->{mode} == $row_a[0]);
-Test($row_b->{size} == $row_a[1]);
-Test($row_b->{name} eq $row_a[2]);
+Test($row_b->{name} eq $row_a[1]);
 
 print "Trying fetchrow_hashref with FetchHashKeyName.\n";
 do {
 #local $dbh->{TraceLevel} = 9;
 local $dbh->{FetchHashKeyName} = 'NAME_uc';
 Test($dbh->{FetchHashKeyName} eq 'NAME_uc');
-my $csr_c = $dbh->prepare("select mode,size,name from ?");
+my $csr_c = $dbh->prepare("select mode,name from ?");
 Test($csr_c->execute($dir), $DBI::errstr);
 $row_b = $csr_c->fetchrow_hashref;
 Test($row_b);
@@ -288,8 +286,7 @@ my $r = $csr_b->fetchall_arrayref;
 Test($r);
 Test(@$r);
 Test($r->[0]->[0] == $row_a[0]);
-Test($r->[0]->[1] == $row_a[1]);
-Test($r->[0]->[2] eq $row_a[2]);
+Test($r->[0]->[1] eq $row_a[1]);
 
 Test($csr_b->finish);
 
@@ -458,6 +455,7 @@ if ($failed_tests) {
     }
     warn join(", ", map { "$_=$ENV{$_}" } grep { /^LC_|LANG/ } keys %ENV)."\n";
     warn "More info can be found in $dbitracelog\n";
+    #system("cat $dbitracelog");
 }
 
 
