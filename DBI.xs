@@ -78,6 +78,7 @@ static int       dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
 static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method));
 static int      set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
 static int      quote_type _((int sql_type, int p, int s, int *base_type, void *v));
+static int      sql_type_cast_svpv _((pTHX_ SV *sv, int sql_type, U32 flags, void *v));
 static I32      dbi_hash _((const char *string, long i));
 static void     dbih_dumphandle _((pTHX_ SV *h, const char *msg, int level));
 static int      dbih_dumpcom _((pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level));
@@ -434,11 +435,12 @@ dbi_bootinit(dbistate_t * parent_dbis)
     DBIS->get_fbav    = dbih_get_fbav;
     DBIS->make_fdsv   = dbih_make_fdsv;
     DBIS->neat_svpv   = neatsvpv;
-    DBIS->bind_as_num = quote_type;
+    DBIS->bind_as_num = quote_type; /* XXX deprecated */
     DBIS->hash        = dbi_hash;
     DBIS->set_err_sv  = set_err_sv;
     DBIS->set_err_char= set_err_char;
     DBIS->bind_col    = dbih_sth_bind_col;
+    DBIS->sql_type_cast_svpv = sql_type_cast_svpv;
 
 
     /* Remember the last handle used. BEWARE! Sneaky stuff here!        */
@@ -1696,6 +1698,8 @@ quote_type(int sql_type, int p, int s, int *t, void *v)
     (void)s;
     (void)t;
     (void)v;
+    /* looks like it's never been used, and doesn't make much sense anyway */
+    warn("Use of DBI internal bind_as_num/quote_type function is deprecated");
     switch(sql_type) {
     case SQL_INTEGER:
     case SQL_SMALLINT:
@@ -1712,6 +1716,107 @@ quote_type(int sql_type, int p, int s, int *t, void *v)
     }
     return 1;
 }
+
+
+/* Convert a simple string representation of a value into a more specific
+ * perl type based on an sql_type value.
+ * The semantics of SQL standard TYPE values are interpreted _very_ loosely
+ * on the basis of "be liberal in what you accept and let's throw in some
+ * extra semantics while we're here" :)
+ * Returns:
+ *  -2: sql_type isn't handled, value unchanged
+ *  -1: sv is undef, value unchanged
+ *   0: sv couldn't be cast cleanly and DBIstcf_STRICT was used
+ *   1: sv couldn't be cast cleanly and DBIstcf_STRICT was not used
+ *   2: sv was cast ok
+ */
+
+int
+sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, void *v)
+{
+    int cast_ok = 0;
+    int grok_flags;
+    UV uv;
+
+    /* do nothing for undef (NULL) or non-string values */
+    if (!sv || !SvOK(sv))
+        return -1;
+
+    switch(sql_type) {
+
+    default:
+        return -2;   /* not a recognised SQL TYPE, value unchanged */
+
+    case SQL_INTEGER:
+        /* sv_2iv is liberal, may return SvIV, SvUV, or SvNV */
+        sv_2iv(sv);
+        /* SvNOK will be set if value is out of range for IV/UV.
+         * SvIOK should be set but won't if sv is not numeric (in which
+         * case perl would have warn'd already if -w or warnings are in effect)
+         */
+        cast_ok = (SvIOK(sv) && !SvNOK(sv));
+        break;
+
+    case SQL_DOUBLE:
+        sv_2nv(sv);
+        /* SvNOK should be set but won't if sv is not numeric (in which
+         * case perl would have warn'd already if -w or warnings are in effect)
+         */
+        cast_ok = SvNOK(sv);
+        break;
+
+    /* caller would like IV else UV else NV */
+    /* else no error and sv is untouched */
+    case SQL_NUMERIC:
+        /* based on the code in perl's toke.c */
+        uv = 0;
+        grok_flags = grok_number(SvPVX(sv), SvCUR(sv), &uv);
+        cast_ok = 1;
+        if (flags == IS_NUMBER_IN_UV) { /* +ve int */
+            if (uv <= IV_MAX)   /* prefer IV over UV */
+                 sv_2iv(sv);
+            else sv_2uv(sv);
+        }
+        else if (flags == (IS_NUMBER_IN_UV | IS_NUMBER_NEG)
+            && uv <= IV_MAX
+        ) {
+            sv_2iv(sv);
+        }
+        else if (flags) { /* is numeric */
+            sv_2nv(sv);
+        }
+        else if (flags & DBIstcf_STRICT)
+            cast_ok = 0;
+        break;
+
+#if 0 /* XXX future possibilities */
+    case SQL_BIGINT:    /* use Math::BigInt if too large for IV/UV */
+#endif
+    }
+
+    if (cast_ok) {
+
+        if (flags & DBIstcf_DISCARD_STRING
+        && SvNIOK(sv)  /* we set a numeric value */
+        && SvPVX(sv)   /* we have a buffer to discard */
+        ) {
+            SvOOK_off(sv);
+            if (SvLEN(sv)) {
+                Safefree(SvPVX(sv));
+                SvLEN(sv) = 0;
+            }
+            SvPVX(sv) = NULL;
+            SvPOK_off(sv);
+        }
+    }
+
+    if (cast_ok)
+        return 2;
+    else if (flags & DBIstcf_STRICT)
+        return 0;
+    else return 1;
+}
+
 
 
 /* --- Generic Handle Attributes (for all handle types) ---     */
@@ -4007,7 +4112,7 @@ constant()
         SQL_ALL_TYPES                    = SQL_ALL_TYPES
         SQL_ARRAY                        = SQL_ARRAY
         SQL_ARRAY_LOCATOR                = SQL_ARRAY_LOCATOR
-    SQL_BIGINT                       = SQL_BIGINT
+        SQL_BIGINT                       = SQL_BIGINT
         SQL_BINARY                       = SQL_BINARY
         SQL_BIT                          = SQL_BIT
         SQL_BLOB                         = SQL_BLOB
@@ -4081,6 +4186,8 @@ constant()
         DBIpp_st_qq     = DBIpp_st_qq
         DBIpp_st_bs     = DBIpp_st_bs
         DBIpp_st_XX     = DBIpp_st_XX
+        DBIstcf_DISCARD_STRING  = DBIstcf_DISCARD_STRING
+        DBIstcf_STRICT          = DBIstcf_STRICT
     CODE:
     RETVAL = ix;
     OUTPUT:
@@ -4438,7 +4545,15 @@ _concat_hash_sorted(hash_sv, kv_sep_sv, pair_sep_sv, use_neat_sv, num_sort_sv)
         RETVAL
 
 
-
+int
+sql_type_cast(sv, sql_type, flags=0)
+    SV *        sv
+    int         sql_type
+    U32         flags
+    CODE:
+    RETVAL = sql_type_cast_svpv(aTHX_ sv, sql_type, flags, 0);
+    OUTPUT:
+        RETVAL
 
 
 

@@ -342,6 +342,10 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define neatsvpv(sv,len)        (DBIS->neat_svpv(sv,len))
 #endif
 
+/* --- For sql_type_cast_svpv() --- */
+
+#define DBIstcf_DISCARD_STRING  0x0001
+#define DBIstcf_STRICT          0x0002
 
 /* --- Implementors Private Data Support --- */
 
@@ -392,7 +396,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 
 struct dbistate_st {
 
-#define DBISTATE_VERSION  94    /* Must change whenever dbistate_t does */
+#define DBISTATE_VERSION  95    /* Must change whenever dbistate_t does */
 
     /* this must be the first member in structure                       */
     void (*check_version) _((const char *name,
@@ -417,7 +421,7 @@ struct dbistate_st {
     SV        * (*get_attr_k)   _((SV *h, SV *keysv, int dbikey));
     AV        * (*get_fbav)     _((imp_sth_t *imp_sth));
     SV        * (*make_fdsv)    _((SV *sth, const char *imp_class, STRLEN imp_size, const char *col_name));
-    int         (*bind_as_num)  _((int sql_type, int p, int s, int *t, void *v));
+    int         (*bind_as_num)  _((int sql_type, int p, int s, int *t, void *v)); /* XXX deprecated */
     I32         (*hash)         _((const char *string, long i));
     SV        * (*preparse)     _((SV *sth, char *statement, IV ps_return, IV ps_accept, void *foo));
 
@@ -430,11 +434,13 @@ struct dbistate_st {
     int         (*set_err_char) _((SV *h, imp_xxh_t *imp_xxh, const char *err, IV err_i, const char *errstr, const char *state, const char *method));
     int         (*bind_col)     _((SV *sth, SV *col, SV *ref, SV *attribs));
 
-    IO *logfp_ref;      /* DAA keep ptr to filehandle for refcounting */
+    IO *logfp_ref;              /* keep ptr to filehandle for refcounting */
+
+    int         (*sql_type_cast_svpv) _((pTHX_ SV *sv, int sql_type, U32 flags, void *v));
 
     /* WARNING: Only add new structure members here, and reduce pad2 to keep */
     /* the memory footprint exactly the same */
-    void *pad2[4];
+    void *pad2[3];
 };
 
 /* macros for backwards compatibility */
