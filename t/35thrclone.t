@@ -17,7 +17,7 @@ BEGIN {
     die $use_threads_err if $use_threads_err; # need threads
 }
 
-my $threads = 10;
+my $threads = 4;
 plan tests => 4 + 4 * $threads;
 
 {
@@ -65,6 +65,10 @@ push @thr, threads_sub->create( \&testing )
 
 foreach my $thread (@thr) {
     $thread->join;
+
+    # provide a little insurance against thread scheduling issues (hopefully)
+    # http://www.nntp.perl.org/group/perl.cpan.testers/2009/06/msg4369660.html
+    eval { select undef, undef, undef, 0.2 };
 }
 
 pass('... all tests have passed');
