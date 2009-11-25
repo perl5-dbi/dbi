@@ -1772,20 +1772,20 @@ sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, void *v)
         uv = 0;
         grok_flags = grok_number(SvPVX(sv), SvCUR(sv), &uv);
         cast_ok = 1;
-        if (flags == IS_NUMBER_IN_UV) { /* +ve int */
+        if (grok_flags == IS_NUMBER_IN_UV) { /* +ve int */
             if (uv <= IV_MAX)   /* prefer IV over UV */
                  sv_2iv(sv);
             else sv_2uv(sv);
         }
-        else if (flags == (IS_NUMBER_IN_UV | IS_NUMBER_NEG)
+        else if (grok_flags == (IS_NUMBER_IN_UV | IS_NUMBER_NEG)
             && uv <= IV_MAX
         ) {
             sv_2iv(sv);
         }
-        else if (flags) { /* is numeric */
+        else if (grok_flags) { /* is numeric */
             sv_2nv(sv);
         }
-        else if (flags & DBIstcf_STRICT)
+        else
             cast_ok = 0;
         break;
 
