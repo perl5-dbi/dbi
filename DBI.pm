@@ -6244,11 +6244,51 @@ The SQL_DATETIME and other related constants can be imported using
 
 See L</"DBI Constants"> for more information.
 
-Few drivers support specifying a data type via a C<bind_col> call (most will
-simply ignore the data type). Fewer still allow the data type to be altered
-once set.
+Few drivers support specifying a data type via a C<bind_col> call
+(most will simply ignore the data type). Fewer still allow the data
+type to be altered once set.
+
+From DBI 1.611, drivers can use the C<TYPE> attribute to attempt to
+cast the bound scalar to a perl type which more closely matches
+C<TYPE>. At present DBI supports C<SQL_INTEGER>, C<SQL_DOUBLE> and
+C<SQL_NUMERIC>. For C<SQL_INTEGER>, this means the perl scalar will be
+an IV, UV or NV; for C<SQL_DOUBLE> a NV and for C<SQL_NUMERIC> it will
+be an IV, UV or NV. What the bound perl scalar is cast to
+depends on the bound value and whether it fits in an IV, UV or NV.
 
 The TYPE attribute for bind_col() was first specified in DBI 1.41.
+
+B<Other attributes for Column Binding>
+
+The C<\%attr> parameter may also contain the following attributes:
+
+=over
+
+=item StrictlyTyped
+
+If a C<TYPE> attribute is passed to bind_col, then the driver will
+attempt to change the bound perl scalar to match the type more
+closely. If the bound value cannot be cast to the requested C<TYPE>
+then by default it is left untouched and no error is generated. If you
+specify C<StrictlyTyped> as 1 and the cast fails, this will generate
+an error.
+
+This attribute was first added in DBI 1.611. When 1.611 was released
+few drivers actually supported this attribute but DBD::Oracle and
+DBD::ODBC should from versions 1.24.
+
+=item DiscardString
+
+When the C<TYPE> attribute is passed to bind_col and the driver
+successfully casts the bound perl scalar to a non-string type (e.g.,
+IV, UV, NV) then if C<DiscardString> is set to 1, the PV portion of the
+scalar will be discarded. By default, C<DiscardString> is not set.
+
+This attribute was first added in DBI 1.611. When 1.611 was released
+few drivers actually supported this attribute but DBD::Oracle and
+DBD::ODBC should from versions 1.24.
+
+=back
 
 
 =head3 C<bind_columns>
