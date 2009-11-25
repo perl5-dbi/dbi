@@ -79,7 +79,7 @@ my $dbitracelog = "dbiproxy.dbilog";
 
 my ($handle, $port, @child_args);
 
-my $numTests = 139;
+my $numTests = 136;
 
 if (@ARGV) {
     $port = $ARGV[0];
