@@ -529,7 +529,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
         }
         /* we don't use SvPV here since we don't want to alter sv in _any_ way  */
         if (SvUOK(sv))
-             nsv = newSVpvf("%"UVdf, SvUVX(sv));
+             nsv = newSVpvf("%"UVuf, SvUVX(sv));
         else if (SvIOK(sv))
              nsv = newSVpvf("%"IVdf, SvIVX(sv));
         else nsv = newSVpvf("%"NVgf, SvNVX(sv));
