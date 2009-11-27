@@ -32,7 +32,6 @@ XXX awaiting docs for ChildCallbacks from David.
   Added specification of type casting behaviour for bind_column()
     based on DBI::sql_type_cast() and two new bind_column attributes
     StrictlyTyped and DiscardString. Thanks to Martin Evans.
-XXX awaiting docs for sql_type_cast from Martin Evans.
 
 =head2 Changes in DBI 1.609 (svn r12816) 8th June 2009
 
