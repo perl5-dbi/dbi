@@ -74,7 +74,7 @@ if ($Config{longsize} == 4) {
 
 my $tests = @tests;
 $tests *= 2 if $jx;
-
+$tests++;                       # for use_ok
 foreach (@tests) {
     $tests++ if ($dp) && ($_->[3] & DBI::DBIstcf_DISCARD_STRING);
     $tests++ if ($dp) && ($_->[2] == DBI::SQL_DOUBLE);
@@ -88,9 +88,12 @@ BEGIN {
 
 foreach my $test(@tests) {
     my $val = $test->[1];
-    diag(join(",",Data::Peek::DDual($val)));
-    my $result = DBI::sql_type_cast(
-        $val, $test->[2], $test->[3]);
+    #diag(join(",", map {DBI::neat($_)} Data::Peek::DDual($val)));
+    my $result;
+    {
+        no warnings;
+        $result = DBI::sql_type_cast($val, $test->[2], $test->[3]);
+    }
     is($result, $test->[4], "result, $test->[0]");
     if ($jx) {
         my $json = JSON::XS->new->encode([$val]);
@@ -102,13 +105,13 @@ foreach my $test(@tests) {
     ($pv, $iv, $nv, $rv, $hm) = Data::Peek::DDual($val) if $dp;
 
     if ($dp && ($test->[3] & DBI::DBIstcf_DISCARD_STRING)) {
-        diag("D::P ",DBI::neat($pv), ",", DBI::neat($iv), ",", DBI::neat($nv),
-             ",", DBI::neat($rv));
+        #diag("D::P ",DBI::neat($pv), ",", DBI::neat($iv), ",", DBI::neat($nv),
+        #     ",", DBI::neat($rv));
         ok(!defined($pv), "discard works, $test->[0]") if $dp;
     }
     if (($test->[2] == DBI::SQL_DOUBLE) && ($dp)) {
-        diag("D::P ", DBI::neat($pv), ",", DBI::neat($iv), ",", DBI::neat($nv),
-             ",", DBI::neat($rv));
+        #diag("D::P ", DBI::neat($pv), ",", DBI::neat($iv), ",", DBI::neat($nv),
+        #     ",", DBI::neat($rv));
         if ($test->[4] == CAST_OK) {
             ok(defined($nv), "nv defined $test->[0]");
         } else {
