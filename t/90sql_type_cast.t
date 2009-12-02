@@ -3,7 +3,7 @@
 use strict;
 #use warnings; this script generate warnings deliberately as part of the test
 use Test::More;
-use DBI;
+use DBI qw(:sql_types);
 use Config;
 
 my $jx = eval {require JSON::XS;};
