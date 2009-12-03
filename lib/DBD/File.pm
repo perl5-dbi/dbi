@@ -162,6 +162,7 @@ sub connect ($$;$$$)
 	    f_ext	=> 1, # file extension
 	    f_schema	=> 1, # schema name
 	    f_tables	=> 1, # base directory
+	    f_lock	=> 1, # Table locking mode
 	    };
         $this->{sql_valid_attrs} = {
 	    sql_handler           => 1, # Nano or S:S
@@ -725,12 +726,17 @@ sub open_table ($$$$$)
 	}
     $fh and binmode $fh;
     if ($locking and $fh) {
-	if ($lockMode) {
+	my $lm = defined $data->{Database}{f_lock}
+		      && $data->{Database}{f_lock} =~ m/^[012]$/
+		       ? $data->{Database}{f_lock}
+		       : $lockMode ? 2 : 1;
+	if ($lm == 2) {
 	    flock $fh, 2 or croak "Cannot obtain exclusive lock on $file: $!";
 	    }
-	else {
+	elsif ($lm == 1) {
 	    flock $fh, 1 or croak "Cannot obtain shared lock on $file: $!";
 	    }
+	# $lm = 0 is forced no locking at all
 	}
     my $columns = {};
     my $array   = [];
@@ -813,7 +819,6 @@ SQL engine.
 See L<DBI> for details on DBI, L<SQL::Statement> for details on
 SQL::Statement and L<DBD::CSV> or L<DBD::IniFile> for example
 drivers.
-
 
 =head2 Metadata
 
@@ -928,6 +933,31 @@ tables into the same (or no) schema:
 
 Defining f_schema to the empty string is equal to setting it to C<undef>,
 this to enable the DSN to be C<dbi:CSV:f_schema=;f_dir=.>.
+
+=item f_lock
+
+With this attribute, you can force locking mode (if locking is supported
+at all) for opening tables. By default, tables are opened with a shared
+lock for reading, and with an exclusive lock for writing. The supported
+modes are:
+
+=over 2
+
+=item 0
+
+Force no locking at all.
+
+=item 1
+
+Only shared locks will be used.
+
+=item 2
+
+Only exclusive locks will be used.
+
+=back
+
+But see L</"NOWN BUGS"> below.
 
 =back
 

@@ -15,6 +15,7 @@ DBI::Changes - List of significant changes to the DBI
 
 http://perlmonks.org/?node_id=809590
 
+  Added f_lock support to DBD::File (H.Merijn Brand)
 XXX needs to be redone to convert ReadOnly to an internal flag:
   Changed "Issuing rollback() due to DESTROY without explicit disconnect"
     warning to not be issued if ReadOnly set for that dbh.
