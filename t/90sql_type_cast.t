@@ -62,13 +62,13 @@ my @tests = (
      DBI::DBIstcf_STRICT, NO_CAST_STRICT, q{["aa"]}],
    );
 
-if ($Config{longsize} == 4) {
+if ($Config{ivsize} == 4) {
     push @tests,
-        ['4 byte max unsigned int cast to int', "4294967296",
+        ['4 byte max unsigned int cast to int (ivsize=4)', "4294967296",
          DBI::SQL_INTEGER, 0, NO_CAST_NO_STRICT, q{["4294967296"]}];
-} elsif ($Config{longsize} >= 8) {
+} elsif ($Config{ivsize} >= 8) {
     push @tests,
-        ['4 byte max unsigned int cast to int', "4294967296",
+        ['4 byte max unsigned int cast to int (ivsize>8)', "4294967296",
          DBI::SQL_INTEGER, 0, CAST_OK, q{["4294967296"]}];
 }
 
