@@ -32,8 +32,8 @@ XXX awaiting docs for ChildCallbacks from David.
     to an SQL type. e.g. SQL_INTEGER effectively does $value += 0;
     Has other options plus an internal interface for drivers.
 
-  Added specification of type casting behaviour for bind_column()
-    based on DBI::sql_type_cast() and two new bind_column attributes
+  Added specification of type casting behaviour for bind_col()
+    based on DBI::sql_type_cast() and two new bind_col attributes
     StrictlyTyped and DiscardString. Thanks to Martin Evans.
 
 =head2 Changes in DBI 1.609 (svn r12816) 8th June 2009

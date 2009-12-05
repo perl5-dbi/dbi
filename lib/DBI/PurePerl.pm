@@ -130,6 +130,9 @@ use constant IMA_HIDE_ERR_PARAMVALUES => 0x4000; #/* ParamValues are not relevan
 use constant IMA_IS_FACTORY     => 0x8000; #/* new h ie connect & prepare */
 use constant IMA_CLEAR_CACHED_KIDS    => 0x10000; #/* clear CachedKids before call */
 
+use constant DBIstcf_STRICT           => 0x0001;
+use constant DBIstcf_DISCARD_STRING   => 0x0002;
+
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active
 	AutoCommit
@@ -672,6 +675,33 @@ sub neat {
     }
     $v =~ s/[^[:print:]]/./g;
     return "$quote$v$quote";
+}
+
+sub sql_type_cast {
+    my (undef, $sql_type, $flags) = @_;
+
+    return -1 unless defined $_[0];
+
+    my $cast_ok = 0;
+
+    if ($sql_type == SQL_INTEGER) {
+        my $dummy = $_[0] + 0;
+    }
+    elsif ($sql_type == SQL_DOUBLE) {
+        my $dummy = $_[0] + 0.0;
+    }
+    elsif ($sql_type == SQL_NUMERIC) {
+        my $dummy = $_[0] + 0.0;
+    }
+    else {
+        return -2;
+    }
+
+    # DBIstcf_DISCARD_STRING not supported for PurePerl currently
+
+    return 2 if $cast_ok;
+    return 0 if $flags & DBIstcf_STRICT;
+    return 1;
 }
 
 sub dbi_time {
