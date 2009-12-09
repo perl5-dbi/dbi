@@ -682,20 +682,29 @@ sub sql_type_cast {
 
     return -1 unless defined $_[0];
 
-    my $cast_ok = 0;
+    my $cast_ok = 1;
 
-    if ($sql_type == SQL_INTEGER) {
-        my $dummy = $_[0] + 0;
-    }
-    elsif ($sql_type == SQL_DOUBLE) {
-        my $dummy = $_[0] + 0.0;
-    }
-    elsif ($sql_type == SQL_NUMERIC) {
-        my $dummy = $_[0] + 0.0;
-    }
-    else {
-        return -2;
-    }
+    my $evalret = eval {
+        use warnings FATAL => qw(numeric);
+        if ($sql_type == SQL_INTEGER) {
+            my $dummy = $_[0] + 0;
+            return 1;
+        }
+        elsif ($sql_type == SQL_DOUBLE) {
+            my $dummy = $_[0] + 0.0;
+            return 1;
+        }
+        elsif ($sql_type == SQL_NUMERIC) {
+            my $dummy = $_[0] + 0.0;
+            return 1;
+        }
+        else {
+            return -2;
+        }
+    } or warn $@;
+
+    return $evalret if defined($evalret) && ($evalret == -2);
+    $cast_ok = 0 unless $evalret;
 
     # DBIstcf_DISCARD_STRING not supported for PurePerl currently
 
