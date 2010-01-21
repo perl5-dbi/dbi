@@ -1805,9 +1805,10 @@ sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, void *v)
             SvOOK_off(sv);
             if (SvLEN(sv))
                 Safefree(SvPVX(sv));
-            SvLEN(sv) = SvCUR(sv) = 0;
-            SvPVX(sv) = NULL;
             SvPOK_off(sv);
+            SvPV_set(sv, NULL);
+            SvLEN_set(sv, 0);
+            SvCUR_set(sv, 0);
         }
     }
 
