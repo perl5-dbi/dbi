@@ -4033,7 +4033,7 @@ The C<clone> method duplicates the $dbh connection by connecting
 with the same parameters ($dsn, $user, $password) as originally used.
 
 The attributes for the cloned connect are the same as those used
-for the original connect, with some other attribute merged over
+for the original connect, with some other attributes merged over
 them depending on the \%attr parameter.
 
 If \%attr is given then the attributes it contains are merged into
