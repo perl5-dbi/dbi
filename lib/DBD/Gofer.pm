@@ -46,7 +46,7 @@
         dbi_connect_method
     );
 
-    our $drh = undef;    # holds driver handle once initialised
+    our $drh = undef;    # holds driver handle once initialized
     our $methods_already_installed;
 
     sub driver{
@@ -835,7 +835,7 @@ transport module being used.
 =head1 DESCRIPTION
 
 DBD::Gofer is a DBI database driver that forwards requests to another DBI
-driver, usually in a seperate process, often on a separate machine. It tries to
+driver, usually in a separate process, often on a separate machine. It tries to
 be as transparent as possible so it appears that you are using the remote
 driver directly.
 
@@ -915,7 +915,7 @@ They can be set after connect() but the change is only applied locally.
 
 =head2 You can't change statement handle attributes after prepare()
 
-You can't change statment handle attributes after prepare.
+You can't change statement handle attributes after prepare.
 
 An exception is made for attributes with names starting "C<private_>":
 They can be set after prepare() but the change is only applied locally.
@@ -1061,7 +1061,7 @@ driver.
 
 The stream driver also launches a subprocess and writes requests and reads
 responses, like the pipeone transport.  In this case, however, the subprocess
-is expected to handle more that one request. (Though it will be automitically
+is expected to handle more that one request. (Though it will be automatically
 restarted if it exits.)
 
 This is the first transport that is truly useful because it can launch the
@@ -1183,7 +1183,7 @@ $request->is_idempotent is true (i.e., the dbh has the ReadOnly attribute set
 or the SQL statement is obviously a SELECT without a FOR UPDATE clause.)
 
 For even more control you can use the C<go_cache> attribute to pass in an
-instanciated cache object. Individual methods, including prepare(), can also
+instantiated cache object. Individual methods, including prepare(), can also
 specify alternative caches via the C<go_cache> attribute. For example, to
 specify no caching for a particular query, you could use
 
@@ -1247,7 +1247,7 @@ L<DBI>
 
 This section aims to record issues to be aware of when using Gofer with specific drivers.
 It usually only documents issues that are not natural consequences of the limitations
-of the Gofer approach - as documented avove.
+of the Gofer approach - as documented above.
 
 =head1 TODO
 
