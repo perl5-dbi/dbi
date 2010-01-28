@@ -10,6 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Fixed DBI->trace(0, *STDERR); (H.Merijn Brand)
     which tried to open a file named "*main::STDERR" in perl-5.10.x
+  Corrected typos in Gopher documentation. Tipped by Jan Krynicky.
 
   Bumped required perl version to 5.8.1 (as announced in DBI 1.607)
 
