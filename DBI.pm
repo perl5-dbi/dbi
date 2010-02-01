@@ -6038,7 +6038,15 @@ attribute. For historical reasons it defaults to "C<NAME>", however using either
 
 The keys of the hash are the same names returned by C<$sth-E<gt>{$name}>. If
 more than one field has the same name, there will only be one entry in
-the returned hash for those fields.
+the returned hash for those fields, so statements like
+"C<select foo, foo from bar>" are returning only one single entry for
+C<fetchrow_hashref>. In these cases use column aliasses or C<fetchrow_arrayref>.
+Note that is the database server (and thus not of the DBD implementation) that
+returns the I<name> of aggregate fields like "C<count(*)>" or "C<max(c_foo)>",
+which may clash with existing column names. If you want these to return as
+unique names that are the same accross databases, use I<aliasses>, like in
+"C<select count(*) as cnt>" or "C<select max(c_foo) mx_foo, ...>" depending on
+what syntax you DBD supports.
 
 Because of the extra work C<fetchrow_hashref> and Perl have to perform, it
 is not as efficient as C<fetchrow_arrayref> or C<fetchrow_array>.
@@ -6139,7 +6147,8 @@ The C<fetchall_hashref> method can be used to fetch all the data to be
 returned from a prepared and executed statement handle. It returns a reference
 to a hash containing a key for each distinct value of the $key_field column
 that was fetched. For each key the corresponding value is a reference to a hash
-containing all the selected columns and their values, as returned by fetchrow_hashref().
+containing all the selected columns and their values, as returned by
+C<fetchrow_hashref()>.
 
 If there are no rows to return, C<fetchall_hashref> returns a reference
 to an empty hash. If an error occurs, C<fetchall_hashref> returns the
@@ -6452,6 +6461,10 @@ or mixed) as returned by the driver being used. Portable applications
 should use L</NAME_lc> or L</NAME_uc>.
 
   print "First column name: $sth->{NAME}->[0]\n";
+
+Also note that the name returned for aggregate functions like C<count(*)>
+or C<max(c_foo)> is determined by the database server and not by C<DBI> or
+the C<DBD> backend.
 
 =head3 C<NAME_lc>  (array-ref, read-only)
 
