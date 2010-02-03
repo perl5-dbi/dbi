@@ -6033,20 +6033,21 @@ C<RaiseError> attribute) to discover if the C<undef> returned was due to an
 error.
 
 The optional C<$name> parameter specifies the name of the statement handle
-attribute. For historical reasons it defaults to "C<NAME>", however using either
-"C<NAME_lc>" or "C<NAME_uc>" is recomended for portability.
+attribute. For historical reasons it defaults to "C<NAME>", however using
+either "C<NAME_lc>" or "C<NAME_uc>" is recommended for portability.
 
 The keys of the hash are the same names returned by C<$sth-E<gt>{$name}>. If
-more than one field has the same name, there will only be one entry in
-the returned hash for those fields, so statements like
-"C<select foo, foo from bar>" are returning only one single entry for
-C<fetchrow_hashref>. In these cases use column aliasses or C<fetchrow_arrayref>.
-Note that is the database server (and thus not of the DBD implementation) that
-returns the I<name> of aggregate fields like "C<count(*)>" or "C<max(c_foo)>",
-which may clash with existing column names. If you want these to return as
-unique names that are the same accross databases, use I<aliasses>, like in
-"C<select count(*) as cnt>" or "C<select max(c_foo) mx_foo, ...>" depending on
-what syntax you DBD supports.
+more than one field has the same name, there will only be one entry in the
+returned hash for those fields, so statements like "C<select foo, foo from bar>"
+will return only a single key from C<fetchrow_hashref>. In these cases use
+column aliases or C<fetchrow_arrayref>.  Note that it is the database server
+(and not the DBD implementation) which provides the I<name> for fields
+containing functions like "C<count(*)>" or "C<max(c_foo)>" and they may clash
+with existing column names (most databases don't care about duplicate column
+names in a result-set). If you want these to return as unique names that are
+the same across databases, use I<aliases>, as in "C<select count(*) as cnt>"
+or "C<select max(c_foo) mx_foo, ...>" depending on the syntax your database
+supports.
 
 Because of the extra work C<fetchrow_hashref> and Perl have to perform, it
 is not as efficient as C<fetchrow_arrayref> or C<fetchrow_array>.
@@ -6462,7 +6463,7 @@ should use L</NAME_lc> or L</NAME_uc>.
 
   print "First column name: $sth->{NAME}->[0]\n";
 
-Also note that the name returned for aggregate functions like C<count(*)>
+Also note that the name returned for (aggregate) functions like C<count(*)>
 or C<max(c_foo)> is determined by the database server and not by C<DBI> or
 the C<DBD> backend.
 

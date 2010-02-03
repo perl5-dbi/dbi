@@ -8,8 +8,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.611 (svn rXXX)
 
-  Document fetchrow_hashref() behaviour for aggregate functions,
-    aliasses and duplicate names (H.Merijn Brand)
+  Document fetchrow_hashref() behaviour for functions,
+    aliases and duplicate names (H.Merijn Brand)
   Fixed DBI->trace(0, *STDERR); (H.Merijn Brand)
     which tried to open a file named "*main::STDERR" in perl-5.10.x
   Corrected typos in Gopher documentation. Tipped by Jan Krynicky.
