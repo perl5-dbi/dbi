@@ -1655,7 +1655,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	}
 	my @col;
 	if (my $max = $attr->{MaxRows}) {
-	    push @col, @values while @col<$max && $sth->fetch;
+	    push @col, @values while 0 < $max-- && $sth->fetch;
 	}
 	else {
 	    push @col, @values while $sth->fetch;
