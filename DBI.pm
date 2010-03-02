@@ -7019,7 +7019,7 @@ routine to gain low level access to how the signal handler is installed.
 
 The code would look something like this (for the DBD-Oracle connect()):
 
-   use POSIX ':signal_h';
+   use POSIX qw(:signal_h);
 
    my $mask = POSIX::SigSet->new( SIGALRM ); # signals to mask in the handler
    my $action = POSIX::SigAction->new(
@@ -7028,7 +7028,7 @@ The code would look something like this (for the DBD-Oracle connect()):
        # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
    );
    my $oldaction = POSIX::SigAction->new();
-   sigaction( 'ALRM', $action, $oldaction );
+   sigaction( SIGALRM, $action, $oldaction );
    my $dbh;
    eval {
       alarm(5); # seconds before time out
