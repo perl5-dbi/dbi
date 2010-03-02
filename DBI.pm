@@ -1,7 +1,7 @@
 # $Id$
 # vim: ts=8:sw=4:noet
 #
-# Copyright (c) 1994-2009  Tim Bunce  Ireland
+# Copyright (c) 1994-2010  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #

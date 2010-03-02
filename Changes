@@ -6,7 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.611 (svn rXXX)
+XXX awaiting docs for Callbacks and ChildCallbacks from David Wheeler
+
+=head2 Changes in DBI 1.611 (svn r13833) 2nd March 2010
 
   NOTE: minimum perl version is now 5.8.1 (as announced in DBI 1.607)
 
@@ -21,8 +23,7 @@ DBI::Changes - List of significant changes to the DBI
   Added f_lock support to DBD::File (H.Merijn Brand)
   Added ChildCallbacks => { ... } to Callbacks as a way to
     specify Callbacks for child handles.
-    With tests and docs thanks to David E. Wheeler.
-XXX awaiting docs for ChildCallbacks from David.
+    With tests added by David E. Wheeler.
   Added DBI::sql_type_cast($value, $type, $flags) to cast a string value
     to an SQL type. e.g. SQL_INTEGER effectively does $value += 0;
     Has other options plus an internal interface for drivers.
