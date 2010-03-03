@@ -3991,6 +3991,147 @@ making a decision about whether to retry an operation that failed.
 
 The attribute should be set to 1 or 0 (or undef). Other values are reserved.
 
+=head3 C<Callbacks> (hash ref)
+
+The DBI callback mechanism lets you intercept, and optionally replace, any
+method call on a DBI handle. At the extreme, it lets you become a puppet
+master, deceiving the application in any way you want.
+
+The C<Callbacks> attribute is a hash reference where the keys are DBI method
+names and the values are code references. For each key naming a method, the
+DBI will execute the associated code reference before executing the method.
+
+The arguments to the code reference will be the same as to the method,
+including the invocant (a database handle or statement handle). For example,
+say that to callback to some code on a call to C<prepare()>:
+
+  $dbh->{Callbacks} = {
+      prepare => sub {
+          my ($dbh, $query, $attrs) = @_;
+          print "Preparing q{$query}\n"
+      },
+  };
+
+The callback would then be executed when you called the C<prepare()> method:
+
+  $dbh->prepare('SELECT 1');
+
+And the output of course would be:
+
+  Preparing q{SELECT 1}
+
+The cool thing is that, because callbacks are executed before the methods
+they're associated with, you can modify the arguments before they're passed on
+to the method call. For example, to make sure that all calls to C<prepare()>
+are immediately prepared by L<DBD::Pg>, add a callback that makes sure that
+C<pg_prepare_now> is always set:
+
+  my $dbh = DBI->connect($dsn, $username, $auth, {
+      Callbacks => {
+          prepare => sub {
+              if ($_[2]) {
+                  $_[2]->{pg_prepare_now} = 1;
+              } else {
+                  $_[2] = { pg_prepare_now => 1 };
+              }
+              return;
+          },
+      }
+  });
+
+Note that we've created the attributes hash if it's not passed to the
+C<prepare>.
+
+You can also prevent the associated method from ever executing. While a
+callback executes, C<$_> holds the method name. To prevent the method from
+executing, simply C<undef $_>. For example, if you wanted to disable calls to
+C<ping()>, you could do this:
+
+  $dbh->{Callbacks} = {
+      ping => sub {
+          undef $_;   # tell dispatch to not call the method
+          return "42 bells";
+      }
+  };
+
+As with other attributes, Callbacks can be specified on a handle or via the
+attributes to C<connect()>. Callbacks can also be applied to a statement
+methods on a statement handle:
+
+  $sth->{Callbacks} = {
+      execute => sub {
+          print "Executing ", shift->{Statement}, "\n";
+      }
+  };
+
+In addition to the all of the DBI methods, the C<Callbacks> hash reference
+supports three additional keys. The first is the C<ChildCallbacks> keys, which
+allows one to define callbacks for all statement handles created from a
+database handle. For example, if you wanted to count how many times C<execute>
+was called in your application, you could write:
+
+  my $exec_count = 0;
+  my $dbh = DBI->connect('dbi:Pg:dbname=bric', '', '', {
+      Callbacks => {
+          ChildCallbacks => {
+              execute => sub { $exec_count++; return; }
+          }
+      }
+  });
+
+  END {
+      print "Execute was called $exec_count times\n";
+  }
+
+The other two special keys are C<connect_cached.new> and
+C<connect_cached.reused>. These keys define callbacks that are called when
+C<connect_cached()> is called, but allow different behaviors depending on
+whether a new handle is created or a handle is returned. For example, if your
+app uses C<connect_cached()> in a utility method, it might be prudent to
+prevent it from interfering with open transactions. To prevent a cached handle
+from having its transactions committed before it's returned, simply eliminate
+the C<AutoCommit> attribute in a C<connect_cached.reused> callback, like so:
+
+  my $cb = {
+      ‘connect_cached.reused’ => sub { delete $_[4]->{AutoCommit} },
+  };
+
+  sub dbh {
+      my $self = shift;
+      DBI->connect_cached( $dsn $username $auth, {
+          PrintError => 0,
+          RaiseError => 1,
+          AutoCommit => 1,
+          Callbacks  => $cb,
+      });
+  }
+
+The upshot is that new database handles are created with C<AutoCommit>
+enabled, while cached database handles are left in whatever transaction state
+they happened to be in when retrieved from the cache.
+
+One more useful hint: applying callbacks to the C<connected()> method. This
+method is a no-op (unless you subclass the DBI and change it), but you can
+give it a bit of added functionality by applying a callback to it. For
+example, to make sure that MySQL understands your application's ANSI-compliant
+SQL, set it up like so:
+
+  my $dbh = DBI->connect($dsn, $username, $auth, {
+      Callbacks => {
+          connected => sub {
+              my $dbh = shift;
+              $dbh->do(q{
+                  SET SESSION sql_mode='ansi,strict_trans_tables,no_auto_value_on_zero';
+              }) unless exists $dbh->{private_myapp_sql_mode};
+              $dbh->{private_myapp_sql_mode} = 1;
+              return;
+          },
+      }
+  });
+
+The setting of C<< $dbh->{private_myapp_sql_mode} >> ensures that the
+configuration code is called only once.
+
 =head3 C<private_your_module_name_*>
 
 The DBI provides a way to store extra information in a DBI handle as

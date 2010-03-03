@@ -6,8 +6,6 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-XXX awaiting docs for Callbacks and ChildCallbacks from David Wheeler
-
 =head2 Changes in DBI 1.611 (svn r13833) 2nd March 2010
 
   NOTE: minimum perl version is now 5.8.1 (as announced in DBI 1.607)
@@ -37,6 +35,7 @@ XXX awaiting docs for Callbacks and ChildCallbacks from David Wheeler
   Updated DBI::Profile and DBD::File docs to fix pod nits
     thanks to Frank Wiegand.
   Corrected typos in Gopher documentation reported by Jan Krynicky.
+  Documented the Callbacks attribute.
 
   Updated dbipport.h to Devel::PPPort 3.19 (H.Merijn Brand)
 
