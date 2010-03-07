@@ -39,16 +39,7 @@
 #include "dbi_sql.h"
 
 
-/* The DBIXS_VERSION value will be incremented whenever new code is
- * added to the interface (this file) or significant changes are made.
- * It's primary goal is to allow newer drivers to compile against an
- * older installed DBI. This is mainly an issue whilst the API grows
- * and learns from the needs of various drivers.  See also the
- * DBISTATE_VERSION macro below. You can think of DBIXS_VERSION as
- * being a compile time check and DBISTATE_VERSION as a runtime check.
- * By contract, DBIXS_REVISION is a driver source compatibility tool.
- */
-#define DBIXS_VERSION 93
+#define DBIXS_VERSION 93 /* superceeded by DBIXS_REVISION */
 
 #ifdef NEED_DBIXS_VERSION
 #if NEED_DBIXS_VERSION > DBIXS_VERSION
@@ -396,7 +387,14 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 
 struct dbistate_st {
 
-#define DBISTATE_VERSION  95    /* Must change whenever dbistate_t does */
+/* DBISTATE_VERSION is checked at runtime via DBISTATE_INIT and check_version.
+ * It should be incremented on incompatible changes to dbistate_t structure.
+ * Additional function pointers being assigned from spare padding, where the
+ * size of the structure doesn't change, doesn't require an increment.
+ * Incrementing forces all XS drivers to need to be recompiled.
+ * (See also DBIXS_REVISION as a driver source compatibility tool.)
+ */
+#define DBISTATE_VERSION  94   /* ++ on incompatible dbistate_t changes */
 
     /* this must be the first member in structure                       */
     void (*check_version) _((const char *name,

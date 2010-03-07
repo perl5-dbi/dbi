@@ -3233,7 +3233,9 @@ XS(XS_DBI_dispatch)
               /* the "*" fallback callback only applies to non-nested calls
                * and also doesn't apply to the 'set_err' or DESTROY methods.
                * Nor during global destruction.
-               * Other restrictions may be added over time. */
+               * Other restrictions may be added over time.
+               * It's an undocumented hack.
+               */
           || (!is_nested_call && !PL_dirty && strNE(meth_name, "set_err") && strNE(meth_name, "DESTROY") &&
                (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0))
              )
