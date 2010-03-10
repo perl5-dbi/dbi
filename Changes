@@ -36,6 +36,8 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Frank Wiegand.
   Corrected typos in Gopher documentation reported by Jan Krynicky.
   Documented the Callbacks attribute thanks to David E. Wheeler.
+  Corrected the Timeout examples as per rt 50621 (Martin J. Evans).
+  Removed some internal broken links in the pod (Martin J. Evans)
 
   Updated dbipport.h to Devel::PPPort 3.19 (H.Merijn Brand)
 

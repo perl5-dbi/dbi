@@ -4138,7 +4138,7 @@ they happened to be in when retrieved from the cache.
 
 A more common application for callbacks is setting connection state only when a
 new connection is made (by connect() or connect_cached()). Adding a callback to
-the L</connected> method makes this easy.
+the connected method makes this easy.
 This method is a no-op by default (unless you subclass the DBI and change it).
 The DBI calls it to indicate that a new connection has been made and the connection
 attributes have all been set.  You can
@@ -6620,7 +6620,7 @@ statement, like SELECT. Typically the attribute will be C<undef>
 in these situations.
 
 For drivers which support stored procedures and multiple result sets
-(see L</more_results>) these attributes relate to the I<current> result set.
+(see more_results) these attributes relate to the I<current> result set.
 
 See also L</finish> to learn more about the effect it
 may have on some attributes.
@@ -7182,13 +7182,22 @@ arrives and then to call alarm($seconds) to schedule an ALRM signal
 to be delivered $seconds in the future. For example:
 
   eval {
-    local $SIG{ALRM} = sub { die "TIMEOUT\n" };
-    alarm($seconds);
-    ... code to execute with timeout here ...
+    local $SIG{ALRM} = sub { die "TIMEOUT\n" }; # N.B. \n required
+    eval {
+      alarm($seconds);
+      ... code to execute with timeout here (which may die) ...
+    };
     alarm(0);  # cancel alarm (if code ran fast)
+    die "$@\n" if $@;
   };
-  alarm(0);    # cancel alarm (if eval failed)
   if ( $@ eq "TIMEOUT\n" ) { ... }
+  elsif ($@) { ... } # some other error
+
+The second (inner) eval is used to avoid the unlikey but possible
+chance that the "code to execute" dies and the alarm fires before it
+is cancelled. Without the inner eval, if this happened your program
+will die if you have no ALRM handler or a non-local alarm handler
+will be called.
 
 Unfortunately, as described above, this won't always work as expected,
 depending on your perl version and the underlying database code.
@@ -7208,7 +7217,7 @@ The code would look something like this (for the DBD-Oracle connect()):
 
    my $mask = POSIX::SigSet->new( SIGALRM ); # signals to mask in the handler
    my $action = POSIX::SigAction->new(
-       sub { die "connect timeout" },        # the handler code ref
+       sub { die "connect timeout\n" },        # the handler code ref
        $mask,
        # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
    );
@@ -7216,13 +7225,20 @@ The code would look something like this (for the DBD-Oracle connect()):
    sigaction( SIGALRM, $action, $oldaction );
    my $dbh;
    eval {
-      alarm(5); # seconds before time out
-      $dbh = DBI->connect("dbi:Oracle:$dsn" ... );
+      eval {
+        alarm(5); # seconds before time out
+        $dbh = DBI->connect("dbi:Oracle:$dsn" ... );
+      };
       alarm(0); # cancel alarm (if connect worked fast)
+      die "$@\n" if $@; # connect died
    };
-   alarm(0);    # cancel alarm (if eval failed)
-   sigaction( 'ALRM', $oldaction );  # restore original signal handler
-   if ( $@ ) ....
+   sigaction( SIGALRM, $oldaction );  # restore original signal handler
+   if ( $@ ) {
+     if ($@ eq "connect timeout\n") {...}
+     else { # connect died }
+   }
+
+See previous example for the reasoning around the double eval.
 
 Similar techniques can be used for canceling statement execution.
 
