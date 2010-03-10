@@ -4876,6 +4876,11 @@ Note: The support for the selection criteria is driver specific. If the
 driver doesn't support one or more of them then you may get back more
 than you asked for and can do the filtering yourself.
 
+Note: If your driver does not support column_info an undef is
+returned.  This is distinct from asking for something which does not
+exist in a driver which supports column_info as a valid statement
+handle to an empty result-set will be returned in this case.
+
 If the arguments don't match any tables then you'll still get a statement
 handle, it'll just return no rows.
 

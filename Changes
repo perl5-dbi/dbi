@@ -38,7 +38,8 @@ DBI::Changes - List of significant changes to the DBI
   Documented the Callbacks attribute thanks to David E. Wheeler.
   Corrected the Timeout examples as per rt 50621 (Martin J. Evans).
   Removed some internal broken links in the pod (Martin J. Evans)
-
+  Added Note to column_info for drivers which do not
+    support it (Martin J. Evans)
   Updated dbipport.h to Devel::PPPort 3.19 (H.Merijn Brand)
 
 =head2 Changes in DBI 1.609 (svn r12816) 8th June 2009
