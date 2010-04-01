@@ -6,6 +6,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.612 (svn XXX)
+
 =head2 Changes in DBI 1.611 (svn r13833) 2nd March 2010
 
   NOTE: minimum perl version is now 5.8.1 (as announced in DBI 1.607)

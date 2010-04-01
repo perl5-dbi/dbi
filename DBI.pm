@@ -1,5 +1,5 @@
 # $Id$
-# vim: ts=8:sw=4:noet
+# vim: ts=8:sw=4:et
 #
 # Copyright (c) 1994-2010  Tim Bunce  Ireland
 #
@@ -4044,7 +4044,7 @@ created the attributes hash if it's not passed to the C<prepare> call.
 You can also prevent the associated method from ever executing. While a
 callback executes, C<$_> holds the method name. (This allows multiple callbacks
 to share the same code reference and still know what method was called.)
-To prevent the method from 
+To prevent the method from
 executing, simply C<undef $_>. For example, if you wanted to disable calls to
 C<ping()>, you could do this:
 
@@ -4170,7 +4170,7 @@ callback and calling it within your own. For example:
   my $prev_cb = $h->{Callbacks}{method_name};
   $h->{Callbacks}{method_name} = sub {
     if ($prev_cb) {
-	my @result = $prev_cb->(@_);
+        my @result = $prev_cb->(@_);
 	return @result if not $_; # $prev_cb vetoed call
     }
     ... your callback logic here ...
