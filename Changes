@@ -6,9 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.612 (svn XXX)
-
-=head2 Changes in DBI 1.611 (svn r13833) 2nd March 2010
+=head2 Changes in DBI 1.611 (svn r13904) 15th April 2010
 
   NOTE: minimum perl version is now 5.8.1 (as announced in DBI 1.607)
 
@@ -27,6 +25,9 @@ DBI::Changes - List of significant changes to the DBI
   Added DBI::sql_type_cast($value, $type, $flags) to cast a string value
     to an SQL type. e.g. SQL_INTEGER effectively does $value += 0;
     Has other options plus an internal interface for drivers.
+  Added support to DBD::Gofer for Basic HTTP Authentication
+    and GoferConfigVerbose config setting to Gofer mod_perl
+    thanks to Stuart Johnston.
 
   Documentation changes:
   Documented specification of type casting behaviour for bind_col()
