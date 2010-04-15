@@ -7802,17 +7802,12 @@ standard:
  type_info         SQLGetTypeInfo    Page 239
  statistics_info   SQLStatistics
 
-For example, for ODBC information on SQLColumns you'd visit:
+To find documentation on the ODBC function you can use
+the MSDN search facility at:
 
-  http://msdn.microsoft.com/library/en-us/odbc/htm/odbcsqlcolumns.asp
+    http://msdn.microsoft.com/Search
 
-If that URL ceases to work then use the MSDN search facility at:
-
-  http://search.microsoft.com/us/dev/
-
-and search for C<SQLColumns returns> using the exact phrase option.
-The link you want will probably just be called C<SQLColumns> and will
-be part of the Data Access SDK.
+and search for something like C<"SQLColumns returns">.
 
 And for SQL/CLI standard information on SQLColumns you'd read page 124 of
 the (very large) SQL/CLI Working Draft available from:
