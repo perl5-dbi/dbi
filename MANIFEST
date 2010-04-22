@@ -99,6 +99,7 @@ t/80proxy.t
 t/85gofer.t
 t/86gofer_fail.t
 t/87gofer_cache.t
+t/90sql_type_cast.t
 t/pod.t
 t/pod-coverage.t
 test.pl			Assorted informal tests, including tests for memory leaks
