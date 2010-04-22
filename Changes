@@ -19,6 +19,7 @@ DBI::Changes - List of significant changes to the DBI
     warning to not be issued if ReadOnly set for that dbh.
 
   Added f_lock support to DBD::File (H.Merijn Brand)
+  Added f_encoding support to DBD::File (H.Merijn Brand)
   Added ChildCallbacks => { ... } to Callbacks as a way to
     specify Callbacks for child handles.
     With tests added by David E. Wheeler.

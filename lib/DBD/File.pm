@@ -163,6 +163,7 @@ sub connect ($$;$$$)
 	    f_schema	=> 1, # schema name
 	    f_tables	=> 1, # base directory
 	    f_lock	=> 1, # Table locking mode
+	    f_encoding	=> 1, # Encoding of the file
 	    };
         $this->{sql_valid_attrs} = {
 	    sql_handler           => 1, # Nano or S:S
@@ -724,7 +725,14 @@ sub open_table ($$$$$)
 	    $safe_drop or croak "Cannot open $file: $!";
 	    }
 	}
-    $fh and binmode $fh;
+    if ($fh) {
+	if (my $enc = $data->{Database}{f_encoding}) {
+	    binmode $fh, ":encoding($enc)";
+	    }
+	else {
+	    binmode $fh;
+	    }
+	}
     if ($locking and $fh) {
 	my $lm = defined $data->{Database}{f_lock}
 		      && $data->{Database}{f_lock} =~ m/^[012]$/
@@ -960,6 +968,11 @@ Only exclusive locks will be used.
 But see L</"NOWN BUGS"> below.
 
 =back
+
+=item f_encoding
+
+With this attribute, you can set the encoding in which the file is opened.
+This is implemented using C<binmode $fh, ":encoding(<f_encoding>)">.
 
 =head2 Driver private methods
 
