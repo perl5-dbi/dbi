@@ -105,7 +105,8 @@ foreach my $test(@tests) {
     #diag(join(",", map {neat($_)} Data::Peek::DDual($val)));
     my $result;
     {
-        no warnings;
+        no warnings;   # lexical but also affects XS sub
+        local $^W = 0; # needed for PurePerl tests
         $result = sql_type_cast($val, $test->[2], $test->[3]);
     }
     is($result, $test->[4], "result, $test->[0]");

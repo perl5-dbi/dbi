@@ -701,7 +701,7 @@ sub sql_type_cast {
         else {
             return -2;
         }
-    } or warn $@;
+    } or $^W && warn $@; # XXX warnings::warnif("numeric", $@) ?
 
     return $evalret if defined($evalret) && ($evalret == -2);
     $cast_ok = 0 unless $evalret;
