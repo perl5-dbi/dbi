@@ -967,12 +967,12 @@ Only exclusive locks will be used.
 
 But see L</"NOWN BUGS"> below.
 
-=back
-
 =item f_encoding
 
 With this attribute, you can set the encoding in which the file is opened.
 This is implemented using C<binmode $fh, ":encoding(<f_encoding>)">.
+
+=back
 
 =head2 Driver private methods
 
