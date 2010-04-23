@@ -14,12 +14,12 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Vernon Lyon.
   Fixed DBI->trace(0, *STDERR); (H.Merijn Brand)
     which tried to open a file named "*main::STDERR" in perl-5.10.x
+  Fixes in DBD::File and DBD::DBM for use under threads (Jens Rehsack)
 
   Changed "Issuing rollback() due to DESTROY without explicit disconnect"
     warning to not be issued if ReadOnly set for that dbh.
 
-  Added f_lock support to DBD::File (H.Merijn Brand)
-  Added f_encoding support to DBD::File (H.Merijn Brand)
+  Added f_lock and f_encoding support to DBD::File (H.Merijn Brand)
   Added ChildCallbacks => { ... } to Callbacks as a way to
     specify Callbacks for child handles.
     With tests added by David E. Wheeler.
@@ -31,6 +31,7 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Stuart Johnston.
 
   Documentation changes:
+  Small fixes in the documentation of DBD::DBM (H.Merijn Brand)
   Documented specification of type casting behaviour for bind_col()
     based on DBI::sql_type_cast() and two new bind_col attributes
     StrictlyTyped and DiscardString. Thanks to Martin Evans.
