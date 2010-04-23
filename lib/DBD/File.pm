@@ -262,7 +262,7 @@ sub prepare ($$;@)
 
     my $ownerid = $dbh->FETCH ("p_threadid");
     $ownerid == $DBD::File::dr::threadid or
-	croak "database handle is owned by thread $ownerid and this is $DBD::File::dr::threadid"
+	croak "database handle is owned by thread $ownerid and this is $DBD::File::dr::threadid";
 
     # create a 'blank' sth
     my $sth = DBI::_new_sth ($dbh, {Statement => $statement});
