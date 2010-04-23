@@ -727,10 +727,11 @@ sub open_table ($$$$$)
 	}
     if ($fh) {
 	if (my $enc = $data->{Database}{f_encoding}) {
-	    binmode $fh, ":encoding($enc)";
+	    binmode $fh, ":encoding($enc)" or
+                croak "Failed to set encoding layer '$enc' on $file: $!";
 	    }
 	else {
-	    binmode $fh;
+	    binmode $fh or croak "Failed to set binary mode on $file: $!";
 	    }
 	}
     if ($locking and $fh) {
