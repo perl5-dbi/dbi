@@ -9,7 +9,7 @@
 #
 #  The original author is Jochen Wiedmann.
 #
-#  Copyright (C) 2009 by H.Merijn Brand & Jens Rehsack
+#  Copyright (C) 2009,2010 by H.Merijn Brand & Jens Rehsack
 #  Copyright (C) 2004 by Jeff Zucker
 #  Copyright (C) 1998 by Jochen Wiedmann
 #
@@ -123,6 +123,9 @@ sub file2table
 package DBD::File::dr;
 
 use strict;
+use Config;
+
+our $threadid = 0;       # holds private thread id of driver
 
 $DBD::File::dr::imp_data_size = 0;
 
@@ -171,7 +174,8 @@ sub connect ($$;$$$)
 	    sql_statement_version => 1, # S:S version
 	    };
 	}
-    $this->STORE (Active => 1);
+    $this->STORE (Active     => 1);
+    $this->STORE (p_threadid => $threadid);
     return set_versions ($this);
     } # connect
 
@@ -227,6 +231,12 @@ sub disconnect_all
 {
     } # disconnect_all
 
+sub CLONE
+{
+    $Config{usethreads} && $INC{"threads.pm"} and
+	$threadid = threads->tid ();
+    } # CLONE
+
 sub DESTROY
 {
     undef;
@@ -249,6 +259,10 @@ sub ping
 sub prepare ($$;@)
 {
     my ($dbh, $statement, @attribs) = @_;
+
+    my $ownerid = $dbh->FETCH ("p_threadid");
+    $ownerid == $DBD::File::dr::threadid or
+	croak "database handle is owned by thread $ownerid and this is $DBD::File::dr::threadid"
 
     # create a 'blank' sth
     my $sth = DBI::_new_sth ($dbh, {Statement => $statement});
@@ -284,6 +298,7 @@ sub prepare ($$;@)
 	    $sth->STORE ("f_stmt", $stmt);
 	    $sth->STORE ("f_params", []);
 	    $sth->STORE ("NUM_OF_PARAMS", scalar ($stmt->params ()));
+	    $sth->STORE ("p_threadid", $DBD::File::dr::threadid);
 	    }
 	}
     return $sth;
@@ -340,7 +355,7 @@ sub STORE ($$$)
     if ($attrib eq lc $attrib) {
 	# Driver private attributes are lower cased
 
-	# I'm not implementing this yet becuase other drivers may be
+	# I'm not implementing this yet because other drivers may be
 	# setting f_ and sql_ attrs I don't know about
 	# I'll investigate and publicize warnings to DBD authors
 	# then implement this
