@@ -14,7 +14,7 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Vernon Lyon.
   Fixed DBI->trace(0, *STDERR); (H.Merijn Brand)
     which tried to open a file named "*main::STDERR" in perl-5.10.x
-  Fixes in DBD::File and DBD::DBM for use under threads (Jens Rehsack)
+  Fixes in DBD::DBM for use under threads (Jens Rehsack)
 
   Changed "Issuing rollback() due to DESTROY without explicit disconnect"
     warning to not be issued if ReadOnly set for that dbh.

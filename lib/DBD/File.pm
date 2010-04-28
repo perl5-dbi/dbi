@@ -123,9 +123,6 @@ sub file2table
 package DBD::File::dr;
 
 use strict;
-use Config;
-
-our $threadid = 0;       # holds private thread id of driver
 
 $DBD::File::dr::imp_data_size = 0;
 
@@ -174,8 +171,7 @@ sub connect ($$;$$$)
 	    sql_statement_version => 1, # S:S version
 	    };
 	}
-    $this->STORE (Active     => 1);
-    $this->STORE (p_threadid => $threadid);
+    $this->STORE (Active => 1);
     return set_versions ($this);
     } # connect
 
@@ -231,12 +227,6 @@ sub disconnect_all
 {
     } # disconnect_all
 
-sub CLONE
-{
-    $Config{usethreads} && $INC{"threads.pm"} and
-	$threadid = threads->tid ();
-    } # CLONE
-
 sub DESTROY
 {
     undef;
@@ -259,10 +249,6 @@ sub ping
 sub prepare ($$;@)
 {
     my ($dbh, $statement, @attribs) = @_;
-
-    my $ownerid = $dbh->FETCH ("p_threadid");
-    $ownerid == $DBD::File::dr::threadid or
-	croak "database handle is owned by thread $ownerid and this is $DBD::File::dr::threadid";
 
     # create a 'blank' sth
     my $sth = DBI::_new_sth ($dbh, {Statement => $statement});
@@ -298,7 +284,6 @@ sub prepare ($$;@)
 	    $sth->STORE ("f_stmt", $stmt);
 	    $sth->STORE ("f_params", []);
 	    $sth->STORE ("NUM_OF_PARAMS", scalar ($stmt->params ()));
-	    $sth->STORE ("p_threadid", $DBD::File::dr::threadid);
 	    }
 	}
     return $sth;
