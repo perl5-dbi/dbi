@@ -26,9 +26,6 @@ DBI::Changes - List of significant changes to the DBI
   Added DBI::sql_type_cast($value, $type, $flags) to cast a string value
     to an SQL type. e.g. SQL_INTEGER effectively does $value += 0;
     Has other options plus an internal interface for drivers.
-  Added support to DBD::Gofer for Basic HTTP Authentication
-    and GoferConfigVerbose config setting to Gofer mod_perl
-    thanks to Stuart Johnston.
 
   Documentation changes:
   Small fixes in the documentation of DBD::DBM (H.Merijn Brand)
