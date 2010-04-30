@@ -1,0 +1,16 @@
+DBI being maintained by several people now causes a mixture
+of styles. It has been proven that people are most productive
+when they can do things `ther way'.
+
+Tim Bunce is the owner and main maintainer of DBI. He can and
+should veto anything that is forbidden, but for now, you'll
+see different styles for the modules that have a single person
+responsible for development. You might find a perltidyrc file
+for their style in this devel/ directory. When proposing new
+features, additions, fixes or documentation, please try to do
+so in the style of that specific module.
+
+Perltidy might help.
+
+DBD::File   - H.Merijn Brand (Tux)
+   devel/.perltidyrc-tux

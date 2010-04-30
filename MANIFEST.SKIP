@@ -25,3 +25,4 @@
 ^t/zz_\w+_pp.t$
 ^.git
 ^git-
+^devel/

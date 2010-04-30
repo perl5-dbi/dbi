@@ -1,0 +1,40 @@
+# See how far we get in getting perltidy to do the *only* right thing: my way
+
+--noblanks-before-comments
+--block-brace-tightness=0
+--brace-tightness=2
+--brace-vertical-tightness=2
+--closing-token-indentation=3
+--continuation-indentation=4
+--entab-leading-whitespace=8
+#--noindent-block-comments
+--indent-closing-brace
+--indent-columns=4
+# try with and without this:
+#--line-up-parentheses
+--maximum-line-length=80
+--opening-brace-always-on-right
+--opening-hash-brace-right
+--opening-paren-right
+--opening-square-bracket-right
+--opening-sub-brace-on-new-line
+--nooutdent-long-comments
+--nooutdent-long-quotes
+--paren-tightness=2
+--paren-vertical-tightness=2
+--nospace-for-semicolon
+--space-function-paren
+--space-keyword-paren
+--square-bracket-tightness=2
+--square-bracket-vertical-tightness=2
+--stack-closing-hash-brace
+--stack-closing-paren
+--stack-closing-square-bracket
+--stack-opening-hash-brace
+--stack-opening-paren
+--stack-opening-square-bracket
+--static-block-comment-prefix="^#"
+--static-side-comments
+# try with and without some or all of these
+#--want-break-after=". : || && and or"
+
