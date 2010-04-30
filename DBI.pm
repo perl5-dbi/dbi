@@ -7192,15 +7192,16 @@ to be delivered $seconds in the future. For example:
       alarm($seconds);
       ... code to execute with timeout here (which may die) ...
     };
+    # outer eval catches alarm that might fire JUST before this alarm(0)
     alarm(0);  # cancel alarm (if code ran fast)
-    die "$@\n" if $@;
+    die "$@" if $@;
   };
   if ( $@ eq "TIMEOUT\n" ) { ... }
   elsif ($@) { ... } # some other error
 
-The second (inner) eval is used to avoid the unlikey but possible
+The first (outer) eval is used to avoid the unlikey but possible
 chance that the "code to execute" dies and the alarm fires before it
-is cancelled. Without the inner eval, if this happened your program
+is cancelled. Without the outer eval, if this happened your program
 will die if you have no ALRM handler or a non-local alarm handler
 will be called.
 
