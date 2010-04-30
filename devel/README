@@ -12,5 +12,8 @@ so in the style of that specific module.
 
 Perltidy might help.
 
+Default (essentially the same as in Perl Best Practices book):
+   devel/.perltidyrc-timbunce
+
 DBD::File   - H.Merijn Brand (Tux)
    devel/.perltidyrc-tux
