@@ -966,7 +966,7 @@ Only exclusive locks will be used.
 
 =back
 
-But see L</"NOWN BUGS"> below.
+But see L</"KNOWN BUGS"> below.
 
 =item f_encoding
 
