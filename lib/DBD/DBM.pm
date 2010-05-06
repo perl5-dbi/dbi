@@ -24,7 +24,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.04';
+$VERSION     = '0.05';
 $ATTRIBUTION = 'DBD::DBM by Jeff Zucker';
 
 # no need to have driver() unless you need private methods
@@ -418,32 +418,10 @@ sub open_table ($$$$$)
         croak "Cannot tie(%h $tie_class @tie_args): $@" if ($@);
     }
 
-    # COLUMN NAMES
-    #
     my $store = $dbh->{dbm_tables}->{$tname}->{store_metadata};
     $store = $dbh->{dbm_store_metadata} unless ( defined $store );
     $store = 1 unless ( defined $store );
     $dbh->{dbm_tables}->{$tname}->{store_metadata} = $store;
-
-    my ( $meta_data, $schema, $col_names );
-    $meta_data = $col_names = $h{"_metadata \0"} if $store;
-    if ( $meta_data and $meta_data =~ m~<dbd_metadata>(.+)</dbd_metadata>~is )
-    {
-        $schema = $col_names = $1;
-        $schema    =~ s~.*<schema>(.+)</schema>.*~$1~is;
-        $col_names =~ s~.*<col_names>(.+)</col_names>.*~$1~is;
-    }
-    $col_names ||=
-         $dbh->{dbm_tables}->{$tname}->{c_cols}
-      || $dbh->{dbm_tables}->{$tname}->{cols}
-      || $dbh->{dbm_cols}
-      || [ 'k', 'v' ];
-    $col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
-    $dbh->{dbm_tables}->{$tname}->{cols}   = $col_names;
-    $dbh->{dbm_tables}->{$tname}->{schema} = $schema;
-
-    my $i;
-    my %col_nums = map { $_ => $i++ } @$col_names;
 
     my $tbl = {
                 table_name     => $tname,
@@ -456,9 +434,37 @@ sub open_table ($$$$$)
                 lock_fh        => $lock_table->{fh},
                 lock_ext       => $lockext,
                 nolock         => $nolock,
-                col_nums       => \%col_nums,
-                col_names      => $col_names
+		col_names      => {},
+		col_nums       => [],
               };
+
+    # COLUMN NAMES
+    #
+    unless( $createMode )
+    {
+	my ( $meta_data, $schema, $col_names );
+	$meta_data = $col_names = $h{"_metadata \0"} if $store;
+	if ( $meta_data and $meta_data =~ m~<dbd_metadata>(.+)</dbd_metadata>~is )
+	{
+	    $schema = $col_names = $1;
+	    $schema    =~ s~.*<schema>(.+)</schema>.*~$1~is;
+	    $col_names =~ s~.*<col_names>(.+)</col_names>.*~$1~is;
+	}
+	$col_names ||=
+	     $dbh->{dbm_tables}->{$tname}->{c_cols}
+	  || $dbh->{dbm_tables}->{$tname}->{cols}
+	  || $dbh->{dbm_cols}
+	  || [ 'k', 'v' ];
+	$col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
+	$dbh->{dbm_tables}->{$tname}->{cols}   = $col_names;
+	$dbh->{dbm_tables}->{$tname}->{schema} = $schema;
+
+	my $i;
+	my %col_nums = map { $_ => $i++ } @$col_names;
+
+	$tbl->{col_nums} = \%col_nums;
+	$tbl->{col_names} = $col_names;
+    }
 
     my $class = ref($self);
     $class =~ s/::Statement/::Table/;
@@ -505,28 +511,14 @@ sub fetch_row ($$$)
     @ary = each %{ $self->{hash} } if ( $self->{store_metadata} and $ary[0] and $ary[0] eq "_metadata \0" );
 
     my ( $key, $val ) = @ary;
-    return undef unless ($key);
+    unless ($key)
+    {
+	delete $self->{row};
+	return;
+    }
     my @row = ( ref($val) eq 'ARRAY' ) ? ( $key, @$val ) : ( $key, $val );
+    $self->{row} = @row ? \@row : undef;
     return wantarray ? @row : \@row;
-
-    # fetch without %each
-    #
-    # $self->{keys} = [sort keys %{$self->{hash}}] unless $self->{keys};
-    # my $key = shift @{$self->{keys}};
-    # $key = shift @{$self->{keys}} if $self->{store_metadata}
-    #                             and $key
-    #                             and $key eq "_metadata \0";
-    # return undef unless defined $key;
-    # my @ary;
-    # $row = $self->{hash}->{$key};
-    # if (ref $row eq 'ARRAY') {
-    #   @ary = ( $key, @{$row} );
-    # }
-    # else {
-    #    @ary = ($key,$row);
-    # }
-    # return (@ary) if wantarray;
-    # return \@ary;
 }
 
 # you must define push_row
@@ -591,7 +583,7 @@ sub update_one_row ($$$)
 {
     my ( $self, $data, $aryref ) = @_;
     my $key = shift @$aryref;
-    return undef unless defined $key;
+    return unless(defined $key);
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $self->{hash}->{$key} = $self->{mldbm} ? $row : $row->[0];
 }
