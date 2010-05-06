@@ -434,8 +434,8 @@ sub open_table ($$$$$)
                 lock_fh        => $lock_table->{fh},
                 lock_ext       => $lockext,
                 nolock         => $nolock,
-		col_names      => {},
-		col_nums       => [],
+		col_names      => [],
+		col_nums       => {},
               };
 
     # COLUMN NAMES
