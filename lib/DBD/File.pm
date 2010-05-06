@@ -734,7 +734,7 @@ sub open_table ($$$$$)
 	    binmode $fh or croak "Failed to set binary mode on $file: $!";
 	    }
 	}
-    if ($locking and $fh) {
+    if ($locking && $fh) {
 	my $lm = defined $data->{Database}{f_lock}
 		      && $data->{Database}{f_lock} =~ m/^[012]$/
 		       ? $data->{Database}{f_lock}
@@ -776,6 +776,7 @@ sub drop ($)
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
     $self->{fh} and $self->{fh}->close ();
+    undef $self->{fh};
     unlink $self->{file};
     return 1;
     } # drop
@@ -801,6 +802,13 @@ sub truncate ($$)
 	croak "Error while truncating " . $self->{file} . ": $!";
     return 1;
     } # truncate
+
+sub DESTROY
+{
+    my $self = shift;
+    $self->{fh} and $self->{fh}->close ();
+    undef $self->{fh};
+    } # DESTROY
 
 1;
 
@@ -1026,9 +1034,9 @@ The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2009 by H.Merijn Brand & Jens Rehsack
-Copyright (C) 2004 by Jeff Zucker
-Copyright (C) 1998 by Jochen Wiedmann
+Copyright (C) 2009-2010 by H.Merijn Brand & Jens Rehsack
+Copyright (C) 2004-2009 by Jeff Zucker
+Copyright (C) 1998-2004 by Jochen Wiedmann
 
 All rights reserved.
 
