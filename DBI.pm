@@ -1230,13 +1230,13 @@ sub _new_drh {	# called by DBD::<drivername>::driver()
 
     # XXX DBI_PROFILE unless DBI::PurePerl because for some reason
     # it kills the t/zz_*_pp.t tests (they silently exit early)
-    if ($ENV{DBI_PROFILE} && !$DBI::PurePerl) {
+    if (($ENV{DBI_PROFILE} && !$DBI::PurePerl) || $shared_profile) {
 	# The profile object created here when the first driver is loaded
 	# is shared by all drivers so we end up with just one set of profile
 	# data and thus the 'total time in DBI' is really the true total.
 	if (!$shared_profile) {	# first time
-	    $h->{Profile} = $ENV{DBI_PROFILE};
-	    $shared_profile = $h->{Profile};
+	    $h->{Profile} = $ENV{DBI_PROFILE}; # write string
+	    $shared_profile = $h->{Profile};   # read and record object
 	}
 	else {
 	    $h->{Profile} = $shared_profile;
