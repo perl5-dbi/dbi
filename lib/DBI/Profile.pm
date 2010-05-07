@@ -704,7 +704,7 @@ our $ON_FLUSH_DUMP   = sub { DBI->trace_msg(shift, 0) };
 
 sub new {
     my $class = shift;
-    my $profile = { @_ };
+    my $profile = { Trace => 0, @_ };
     return bless $profile => $class;
 }
 
@@ -721,7 +721,7 @@ sub _auto_new {
     $arg =~ s/^DBI::/2\/DBI::/
         and carp "Automatically changed old-style DBI::Profile specification to $arg";
 
-    # it's a path/module/arg/arg/arg list
+    # it's a path/module/k1:v1:k2:v2:... list
     my ($path, $package, $args) = split /\//, $arg, 3;
     my @args = (defined $args) ? split(/:/, $args, -1) : ();
     my @Path;
@@ -926,11 +926,13 @@ sub on_destroy {
     return unless $self->{Data};
     my $detail = $self->format();
     $ON_DESTROY_DUMP->($detail) if $detail;
+    $self->{Data} = undef;
 }
 
 sub DESTROY {
     my $self = shift;
     local $@;
+    DBI->trace_msg("profile data DESTROY\n",0) if $self->{Trace} >= 2;
     eval { $self->on_destroy };
     if ($@) {
         chomp $@;

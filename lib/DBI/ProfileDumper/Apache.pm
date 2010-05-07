@@ -166,53 +166,42 @@ our @ISA = qw(DBI::ProfileDumper);
 use DBI::ProfileDumper;
 use File::Spec;
 
-my $parent_pid = $$; # init to pid because we are currently the parent of the children-to-be
+my $initial_pid = $$;
 
 use constant MP2 => ($ENV{MOD_PERL_API_VERSION} and $ENV{MOD_PERL_API_VERSION} == 2) ? 1 : 0;
 
-my $apache_server;
 my $server_root_dir;
 
 if (MP2) {
-    require Apache2::Const;
-    Apache2::Const->import(-compile => qw(OK DECLINED));
     require Apache2::ServerUtil;
-    $apache_server = Apache2::ServerUtil->server;
     $server_root_dir = Apache2::ServerUtil::server_root();
 }
 else {
     require Apache;
-    require Apache::Constants;
-    Apache::Constants->import(qw(OK DECLINED));
-    $apache_server = "Apache";
     $server_root_dir = eval { Apache->server_root_relative('') } || "/tmp";
 }
 
 
-if (UNIVERSAL::can($apache_server, "push_handlers")) {
-    $apache_server->push_handlers(PerlChildInitHandler => sub {
-        $parent_pid = getppid();
-        #warn "PerlChildInitHandler pid$$ has ppid $parent_pid";
-        OK();
-    });
+sub _dirname {
+    my $self = shift;
+    return $self->{Dir} ||= $ENV{DBI_PROFILE_APACHE_LOG_DIR}
+                        || File::Spec->catdir($server_root_dir, "logs");
 }
 
-sub dirname {
-    my $self = shift;
-    return $self->{Dir} if $self->{Dir};
-    $self->{Dir} ||= $ENV{DBI_PROFILE_APACHE_LOG_DIR};
-    return $self->{Dir} || File::Spec->catdir($server_root_dir, "logs");
-}
 
 sub filename {
     my $self = shift;
     my $filename = $self->SUPER::filename(@_);
+    return $filename if not $filename; # not set yet
+
     # to be able to identify groups of profile files from the same set of
     # apache processes, we include the parent pid in the file name
     # as well as the pid.
-    $filename .= ".$parent_pid.$$";
+    my $group_pid = ($$ eq $initial_pid) ? $$ : getppid();
+    $filename .= ".$group_pid.$$";
+
     return $filename if File::Spec->file_name_is_absolute($filename);
-    return File::Spec->catfile($self->dirname, $filename);
+    return File::Spec->catfile($self->_dirname, $filename);
 }
 
 

@@ -13,6 +13,8 @@ DBI::Changes - List of significant changes to the DBI
 
   Changed DBI::ProfileDumper to rename any existing profile file by
     appending .prev, instead of overwriting it.
+  Changed DBI::ProfileDumper::Apache to work in more configurations
+    including vhosts using PerlOptions +Parent.
 
 =head2 Changes in DBI 1.611 (svn r13935) 29th April 2010
 
