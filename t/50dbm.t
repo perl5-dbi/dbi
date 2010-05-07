@@ -21,7 +21,8 @@ BEGIN {
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
-    $ENV{DBI_SQL_NANO}=1;
+    # $ENV{DBI_SQL_NANO}=1;
+    # This is done in zvn_50dbm.t
 
     push @mldbm_types, '';
     if (eval { require 'MLDBM.pm'; }) {
@@ -155,14 +156,15 @@ sub do_test {
             5 => '15',
         } if $mldbm;
 
-	print " $sql\n";
+	print " $sql ...";
         $sql =~ s/\s*;\s*(?:#(.*))//;
         my $comment = $1;
 
         my $sth = $dbh->prepare($sql) or die $dbh->errstr;
         my @bind;
         @bind = split /,/, $comment if $sth->{NUM_OF_PARAMS};
-        $sth->execute(@bind);
+        my $n = $sth->execute(@bind);
+	print " $n\n";
         die $sth->errstr if $sth->err and $sql !~ /DROP/;
 
         next unless $sql =~ /SELECT/;
@@ -187,8 +189,8 @@ INSERT INTO  fruit VALUES (2,'to_change' );
 INSERT INTO  fruit VALUES (3, NULL       );
 INSERT INTO  fruit VALUES (4,'to delete' );
 INSERT INTO  fruit VALUES (?,?); #5,via placeholders
-UPDATE fruit SET dVal='apples' WHERE dKey=2;
 DELETE FROM  fruit WHERE dVal='to delete';
+UPDATE fruit SET dVal='apples' WHERE dKey=2;
 SELECT * FROM fruit;
 DROP TABLE fruit;
 

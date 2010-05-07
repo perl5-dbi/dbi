@@ -3320,31 +3320,41 @@ sub dbd_edit_mm_attribs {
 	if @_;
     _inst_checks();
 
+    # what can be done
+    my %test_variants = (
+	p => {	name => "DBI::PurePerl",
+		    match => qr/^\d/,
+		    add => [ '$ENV{DBI_PUREPERL} = 2' ],
+	},
+	g => {	name => "DBD::Gofer",
+		    match => qr/^\d/,
+		    add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
+	},
+	xgp => {	name => "PurePerl & Gofer",
+		    match => qr/^\d/,
+		    add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
+	},
+	n => {	name => "DBI::SQL::Nano",
+		    match => qr/^(50dbm|85gofer)\.t$/,
+		    add => [ q{$ENV{DBI_SQL_NANO} = 1; # force use of DBI::SQL::Nano} ],
+	},
+    #   mx => {	name => "DBD::Multiplex",
+    #               add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
+    #   }
+    #   px => {	name => "DBD::Proxy",
+    #		need mechanism for starting/stopping the proxy server
+    #		add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Proxy:XXX';} ],
+    #   }
+    );
+
     # decide what needs doing
+    $dbd_attr->{create_pp_tests} or delete @test_variants{'p','q','xqp'};
+    $dbd_attr->{create_nano_tests} or delete $test_variants{n};
 
     # do whatever needs doing
-    if ($dbd_attr->{create_pp_tests}) {
+    if( keys %test_variants ) {
 	# XXX need to convert this to work within the generated Makefile
 	# so 'make' creates them and 'make clean' deletes them
-	my %test_variants = (
-	    p => {	name => "DBI::PurePerl",
-			add => [ '$ENV{DBI_PUREPERL} = 2' ],
-	    },
-	    g => {	name => "DBD::Gofer",
-			add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
-	    },
-	    xgp => {	name => "PurePerl & Gofer",
-			add => [ q{$ENV{DBI_PUREPERL} = 2; $ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
-	    },
-	#   mx => {	name => "DBD::Multiplex",
-	#               add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Multiplex:';} ],
-	#   }
-	#   px => {	name => "DBD::Proxy",
-	#		need mechanism for starting/stopping the proxy server
-	#		add => [ q{local $ENV{DBI_AUTOPROXY} = 'dbi:Proxy:XXX';} ],
-	#   }
-	);
-
 	opendir DIR, 't' or die "Can't read 't' directory: $!";
 	my @tests = grep { /\.t$/ } readdir DIR;
 	closedir DIR;
@@ -3353,7 +3363,7 @@ sub dbd_edit_mm_attribs {
             printf "Creating test wrappers for $v_info->{name}:\n";
 
             foreach my $test (sort @tests) {
-                next if $test !~ /^\d/;
+                next if $test !~ $v_info->{match};
                 my $usethr = ($test =~ /(\d+|\b)thr/ && $] >= 5.008 && $Config{useithreads});
                 my $v_test = "t/zv${v_type}_$test";
                 my $v_perl = ($test =~ /taint/) ? "perl -wT" : "perl -w";

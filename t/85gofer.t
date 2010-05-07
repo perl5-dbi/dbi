@@ -22,7 +22,8 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
 
 # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
 # next line forces use of Nano rather than default behaviour
-$ENV{DBI_SQL_NANO}=1;
+# $ENV{DBI_SQL_NANO}=1;
+# This is done in zvn_50dbm.t
 
 GetOptions(
     'c|count=i' => \(my $opt_count = (-t STDOUT ? 100 : 0)),

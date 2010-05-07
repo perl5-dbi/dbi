@@ -159,6 +159,7 @@ $Verbose = $::opt_v;
 WriteMakefile(
     dbd_edit_mm_attribs(\%opts, {
 	create_pp_tests => 1,
+	create_nano_tests => 1,
     })
 );
 # WriteMakefile call is last thing executed
