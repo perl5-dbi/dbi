@@ -283,13 +283,13 @@ sub init_valid_attributes
     my $sth = shift;
 
     $sth->{f_valid_attrs} = {
-	f_version	=> 1, # DBD::File version
-	f_dir	=> 1, # base directory
-	f_ext	=> 1, # file extension
-	f_schema	=> 1, # schema name
-	f_tables	=> 1, # base directory
-	f_lock	=> 1, # Table locking mode
-	f_encoding	=> 1, # Encoding of the file
+	f_version  => 1, # DBD::File version
+	f_dir      => 1, # base directory
+	f_ext      => 1, # file extension
+	f_schema   => 1, # schema name
+	f_tables   => 1, # base directory
+	f_lock     => 1, # Table locking mode
+	f_encoding => 1, # Encoding of the file
 	};
     $sth->{sql_valid_attrs} = {
 	sql_handler           => 1, # Nano or S:S
