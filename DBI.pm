@@ -3365,7 +3365,7 @@ The parse_trace_flag() method was added in DBI 1.42.
   $hash_ref = $h->private_attribute_info();
 
 Returns a reference to a hash whose keys are the names of driver-private
-attributes available for the kind of handle (driver, database, statement)
+handle attributes available for the kind of handle (driver, database, statement)
 that the method was called on.
 
 For example, the return value when called with a DBD::Sybase $dbh could look like this:
