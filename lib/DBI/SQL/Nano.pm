@@ -2,6 +2,7 @@
 #
 #  DBI::SQL::Nano - a very tiny SQL engine
 #
+#  Copyright (c) 2010 by Jens Rehsack < rehsack AT cpan.org >
 #  Copyright (c) 2004 by Jeff Zucker < jzucker AT cpan.org >
 #
 #  All rights reserved.
@@ -19,8 +20,12 @@ package DBI::SQL::Nano;
 #######################
 use strict;
 use warnings;
-require DBI; # for looks_like_number()
 use vars qw( $VERSION $versions );
+
+use Carp qw(croak);
+
+require DBI; # for looks_like_number()
+
 BEGIN {
     $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
 
@@ -39,6 +44,8 @@ BEGIN {
 ###################################
 package DBI::SQL::Nano::Statement_;
 ###################################
+
+use Carp qw(croak);
 
 sub new {
     my($class,$sql) = @_;
@@ -59,7 +66,7 @@ sub prepare {
                 $self->{command}      = 'CREATE';
                 $self->{table_name}   = $1;
                 $self->{column_names} = parse_coldef_list($2) if $2;
-                die "Can't find columns\n" unless $self->{column_names};
+                croak "Can't find columns\n" unless $self->{column_names};
             };
         /^\s*DROP\s+TABLE\s+(IF\s+EXISTS\s+)?(.*?)\s*$/is
             &&do{
@@ -71,7 +78,7 @@ sub prepare {
             &&do{
                 $self->{command}      = 'SELECT';
                 $self->{column_names} = parse_comma_list($1) if $1;
-                die "Can't find columns\n" unless $self->{column_names};
+                croak "Can't find columns\n" unless $self->{column_names};
                 $self->{table_name}   = $2;
                 if ( my $clauses = $4) {
 		    if ($clauses =~ /^(.*)\s+ORDER\s+BY\s+(.*)$/is) {
@@ -88,7 +95,7 @@ sub prepare {
                 $self->{table_name}   = $1;
                 $self->{column_names} = parse_comma_list($2) if $2;
                 $self->{values}       = $self->parse_values_list($4) if $4;
-                die "Can't parse values\n" unless $self->{values};
+                croak "Can't parse values\n" unless $self->{values};
             };
         /^\s*DELETE\s+FROM\s+(\S+)((.*))?/is
             &&do{
@@ -104,7 +111,7 @@ sub prepare {
                 $self->{where_clause} = $self->parse_where_clause($3) if $3;
             };
     }
-    die "Couldn't parse\n"
+    croak "Couldn't parse\n"
 	unless $self->{command} and $self->{table_name};
     return $self;
 }
@@ -112,11 +119,11 @@ sub parse_order_clause {
     my($self,$str) = @_;
     my @clause = split /\s+/,$str;
     return { $clause[0] => 'ASC' } if @clause == 1;
-    die "Bad ORDER BY clause '$str'\n" if @clause > 2;
+    croak "Bad ORDER BY clause '$str'\n" if @clause > 2;
     $clause[1] ||= '';
     return { $clause[0] => uc $clause[1] } if $clause[1] =~ /^ASC$/i
                                            or $clause[1] =~ /^DESC$/i;
-    die "Bad ORDER BY clause '$clause[1]'\n";
+    croak "Bad ORDER BY clause '$clause[1]'\n";
 }
 sub parse_coldef_list  {                # check column definitions
     my @col_defs;
@@ -126,7 +133,7 @@ sub parse_coldef_list  {                # check column definitions
             $col = $1;                  # just checks if it exists
 	}
         else {
- 	    die "No column definition for '$_'\n";
+ 	    croak "No column definition for '$_'\n";
 	}
         push @col_defs,$col;
     }
@@ -147,7 +154,7 @@ sub parse_set_clause {
         push @{$self->{column_names}}, $col_name;
         push @{$self->{values}}, $self->parse_value($value);
     }
-    die "Can't parse set clause\n"
+    croak "Can't parse set clause\n"
         unless $self->{column_names}
            and $self->{values};
 }
@@ -172,12 +179,12 @@ sub parse_where_clause {
         $str = $1;
     }
     else {
-        die "Couldn't find WHERE clause in '$str'\n";
+        croak "Couldn't find WHERE clause in '$str'\n";
     }
     my($neg) = $str =~ s/^\s*(NOT)\s+//is;
     my $opexp = '=|<>|<=|>=|<|>|LIKE|CLIKE|IS';
     my($val1,$op,$val2) = $str =~ /^(.+?)\s*($opexp)\s*(.+)\s*$/iso;
-    die "Couldn't parse WHERE expression '$str'\n"
+    croak "Couldn't parse WHERE expression '$str'\n"
        unless defined $val1 and defined $op and defined $val2;
     return {
         arg1 => $self->parse_value($val1),
@@ -194,7 +201,7 @@ sub execute {
     my($self, $data, $params) = @_;
     my $num_placeholders = $self->params;
     my $num_params       = scalar @$params || 0;
-    die "Number of params '$num_params' does not match "
+    croak "Number of params '$num_params' does not match "
       . "number of placeholders '$num_placeholders'\n"
       unless $num_placeholders == $num_params;
     if (scalar @$params) {
@@ -239,7 +246,7 @@ sub INSERT ($$$) {
     $table->seek($data, 0, 2);
     my($array) = [];
     my($val, $col, $i);
-    $self->{column_names}=$table->{col_names} unless $self->{column_names};
+    $self->{column_names}=$table->col_names() unless $self->{column_names};
     my $cNum = scalar(@{$self->{column_names}}) if $self->{column_names};
     my $param_num = 0;
     if ($cNum) {
@@ -248,7 +255,7 @@ sub INSERT ($$$) {
             $array->[$self->column_nums($table,$col)] = $self->row_values($i);
         }
     } else {
-        die "Bad col names in INSERT";
+        croak "Bad col names in INSERT";
     }
     $table->push_row($data, $array);
     (1, 0);
@@ -259,29 +266,32 @@ sub DELETE ($$$) {
     $self->verify_columns($table);
     my($affected) = 0;
     my(@rows, $array);
-    if ( $table->can('delete_one_row') ) {
-        while (my $array = $table->fetch_row($data)) {
-            if ($self->eval_where($table,$array)) {
-                ++$affected;
-                $array = $self->{fetched_value} if $self->{fetched_from_key};
-                $table->delete_one_row($data,$array);
-                return ($affected, 0) if $self->{fetched_from_key};
-            }
-        }
-        return ($affected, 0);
-    }
+    my $can_dor = $table->can('delete_one_row');
     while ($array = $table->fetch_row($data)) {
         if ($self->eval_where($table,$array)) {
             ++$affected;
+	    if( $self->{fetched_from_key} ) {
+                $array = $self->{fetched_value};
+                $table->delete_one_row($data,$array);
+                return ($affected, 0);
+	    }
+            push(@rows, $array) if( $can_dor );
         } else {
-            push(@rows, $array);
+            push(@rows, $array) unless( $can_dor );
         }
     }
-    $table->seek($data, 0, 0);
-    foreach $array (@rows) {
-        $table->push_row($data, $array);
+    if( $can_dor ) {
+	foreach $array (@rows) {
+	    $table->delete_one_row($data, $array);
+	}
     }
-    $table->truncate($data);
+    else {
+	$table->seek($data, 0, 0);
+	foreach $array (@rows) {
+	    $table->push_row($data, $array);
+	}
+	$table->truncate($data);
+    }
     return ($affected, 0);
 }
 sub SELECT ($$$) {
@@ -403,20 +413,20 @@ sub verify_columns {
 }
 sub column_nums {
     my($self,$table,$stmt_col_name,$find_in_stmt)=@_;
-    my %dbd_nums = %{ $table->{col_nums} };
-    my @dbd_cols = @{ $table->{col_names} };
+    my %dbd_nums = %{ $table->col_nums() };
+    my @dbd_cols = @{ $table->col_names() };
     my %stmt_nums;
     if ($stmt_col_name and !$find_in_stmt) {
         while(my($k,$v)=each %dbd_nums) {
             return $v if uc $k eq uc $stmt_col_name;
         }
-        die "No such column '$stmt_col_name'\n";
+        croak "No such column '$stmt_col_name'\n";
     }
     if ($stmt_col_name and $find_in_stmt) {
         for my $i(0..@{$self->{column_names}}) {
             return $i if uc $stmt_col_name eq uc $self->{column_names}->[$i];
         }
-        die "No such column '$stmt_col_name'\n";
+        croak "No such column '$stmt_col_name'\n";
     }
     for my $i(0 .. $#dbd_cols) {
         for my $stmt_col(@{$self->{column_names}}) {
@@ -430,7 +440,7 @@ sub eval_where {
     my $table  = shift;
     my $rowary = shift;
     my $where = $self->{"where_clause"} || return 1;
-    my $col_nums = $table->{"col_nums"} ;
+    my $col_nums = $table->col_nums() ;
     my %cols   = reverse %{ $col_nums };
     my $rowhash;
     for (sort keys %cols) {
@@ -456,9 +466,7 @@ sub process_predicate {
     }
     my $op   = $pred->{op};
     my $neg  = $pred->{neg};
-    my $match;
-    if ( $op eq '=' and !$neg and $table->can('fetch_one_row')
-       ) {
+    if ( $op eq '=' and !$neg and $table->can('fetch_one_row') ) {
         my $key_col = $table->fetch_one_row(1,1);
         if ($pred->{arg1}->{value} =~ /^$key_col$/i) {
             $self->{fetched_from_key}=1;
@@ -468,7 +476,7 @@ sub process_predicate {
             return 1;
 	}
     }
-    $match = $self->is_matched($val1,$op,$val2) || 0;
+    my $match = $self->is_matched($val1,$op,$val2) || 0;
     if ($neg) { $match = $match ? 0 : 1; }
     return $match;
 }
@@ -524,10 +532,10 @@ sub open_tables {
     my $table_name = $self->{table_name};
     my $table;
     eval{$table = $self->open_table($data,$table_name,$createMode,$lockMode)};
-    die $@ if $@;
-    die "Couldn't open table '$table_name'" unless $table;
+    croak $@ if $@;
+    croak "Couldn't open table '$table_name'" unless $table;
     if (!$self->{column_names} or $self->{column_names}->[0] eq '*') {
-        $self->{column_names} = $table->{col_names};
+        $self->{column_names} = $table->col_names();
     }
     return $table;
 }
@@ -549,12 +557,34 @@ sub row_values {
 ###############################
 package DBI::SQL::Nano::Table_;
 ###############################
+
+use Carp qw(croak);
+
 sub new ($$) {
     my($proto, $attr) = @_;
     my($self) = { %$attr };
+
+    defined( $self->{col_nums} ) and "HASH" eq ref( $self->{col_nums} )
+      or croak("attrbute 'col_nums' must be defined as a hash");
+    defined( $self->{col_names} ) and "ARRAY" eq ref( $self->{col_names} )
+      or croak("attrbute 'col_names' must be defined as an array");
+
     bless($self, (ref($proto) || $proto));
-    $self;
+    return $self;
 }
+
+sub row()         { return $_[0]->{row}; }
+sub column($)     { return $_[0]->{row}->[ $_[0]->column_num( $_[1] ) ]; }
+sub column_num($) { $_[0]->{col_nums}->{ $_[1] }; }
+sub col_nums()    { $_[0]->{col_nums} }
+sub col_names()   { $_[0]->{col_names}; }
+
+sub drop ($$)        { croak "Abstract method " . ref($_[0]) . "::drop called" }
+sub fetch_row ($$$)  { croak "Abstract method " . ref($_[0]) . "::fetch_row called" }
+sub push_row ($$$)   { croak "Abstract method " . ref($_[0]) . "::push_row called" }
+sub push_names ($$$) { croak "Abstract method " . ref($_[0]) . "::push_names called" }
+sub truncate ($$)    { croak "Abstract method " . ref($_[0]) . "::truncate called" }
+sub seek ($$$$)      { croak "Abstract method " . ref($_[0]) . "::seek called" }
 
 1;
 __END__
@@ -577,19 +607,34 @@ DBI::SQL::Nano - a very tiny SQL engine
 
 =head1 DESCRIPTION
 
-DBI::SQL::Nano is meant as a *very* minimal SQL engine for use in situations where SQL::Statement is not available.  In most situations you are better off installing SQL::Statement although DBI::SQL::Nano may be faster for some very simple tasks.
+C<< DBI::SQL::Nano >> is meant as a I<very> minimal SQL engine for use in
+situations where SQL::Statement is not available. In most situations you are
+better off installing L<SQL::Statement> although DBI::SQL::Nano may be faster
+for some B<very> simple tasks.
 
-DBI::SQL::Nano, like SQL::Statement is primarily intended to provide a SQL engine for use with some pure perl DBDs including DBD::DBM, DBD::CSV, DBD::AnyData, and DBD::Excel.  It isn't of much use in and of itself.  You can dump out the structure of a parsed SQL statement, but that's about it.
+DBI::SQL::Nano, like SQL::Statement is primarily intended to provide a SQL
+engine for use with some pure perl DBDs including L<DBD::DBM>, L<DBD::CSV>,
+L<DBD::AnyData>, and L<DBD::Excel>. It isn't of much use in and of itself.
+You can dump out the structure of a parsed SQL statement, but that's about
+it.
 
 =head1 USAGE
 
 =head2 Setting the DBI_SQL_NANO flag
 
-By default, when a DBD uses DBI::SQL::Nano, the module will look to see if SQL::Statement is installed.  If it is, SQL::Statement objects are used.  If SQL::Statement is not available, DBI::SQL::Nano objects are used.
+By default, when a C<< DBD >> uses C<< DBI::SQL::Nano >>, the module will
+look to see if C<< SQL::Statement >> is installed. If it is, SQL::Statement
+objects are used.  If SQL::Statement is not available, DBI::SQL::Nano
+objects are used.
 
-In some cases, you may wish to use DBI::SQL::Nano objects even if SQL::Statement is available.  To force usage of DBI::SQL::Nano objects regardless of the availability of SQL::Statement, set the environment variable DBI_SQL_NANO to 1.
+In some cases, you may wish to use DBI::SQL::Nano objects even if
+SQL::Statement is available.  To force usage of DBI::SQL::Nano objects
+regardless of the availability of SQL::Statement, set the environment
+variable DBI_SQL_NANO to 1.
 
-You can set the environment variable in your shell prior to running your script (with SET or EXPORT or whatever), or else you can set it in your script by putting this at the top of the script:
+You can set the environment variable in your shell prior to running your
+script (with SET or EXPORT or whatever), or else you can set it in your
+script by putting this at the top of the script:
 
  BEGIN { $ENV{DBI_SQL_NANO} = 1 }
 
@@ -671,22 +716,57 @@ You can set the environment variable in your shell prior to running your script 
     * as in standard SQL, if neither ASC (ascending) nor
       DESC (descending) is specified, ASC becomes the default
 
+=head1 TABLES
+
+DBI::SQL::Nano::Statement operates on exactly one table. This table will be
+opened by inherit from DBI::SQL::Nano::Statement and implement the
+C<< open_table >> method.
+
+  sub open_table ($$$$$)
+  {
+      ...
+      return Your::Table->new( \%attributes );
+  }
+
+DBI::SQL::Nano::Statement_ expects a rudimentary interface is implemented by
+the table object, as well as SQL::Statement expects.
+
+  package Your::Table;
+
+  use vars qw(@ISA);
+  @ISA = qw(DBI::SQL::Nano::Table);
+
+  sub drop ($$)        { ... }
+  sub fetch_row ($$$)  { ... }
+  sub push_row ($$$)   { ... }
+  sub push_names ($$$) { ... }
+  sub truncate ($$)    { ... }
+  sub seek ($$$$)      { ... }
+
+The base class interfaces are provided by DBI::SQL::Nano::Table_ in case of
+relying on DBI::SQL::Nano or SQL::Eval::Table (see L<SQL::Eval> for details)
+otherwise.
+
 =head1 ACKNOWLEDGEMENTS
 
-Tim Bunce provided the original idea for this module, helped me out of the tangled trap of namespace, and provided help and advice all along the way.  Although I wrote it from the ground up, it is based on Jochen Weidmann's orignal design of SQL::Statement, so much of the credit for the API goes to him.
+Tim Bunce provided the original idea for this module, helped me out of the
+tangled trap of namespace, and provided help and advice all along the way.
+Although I wrote it from the ground up, it is based on Jochen Weidmann's
+orignal design of SQL::Statement, so much of the credit for the API goes
+to him.
 
 =head1 AUTHOR AND COPYRIGHT
 
-This module is written and maintained by
+This module is originally written by Jeff Zucker < jzucker AT cpan.org >
 
-Jeff Zucker < jzucker AT cpan.org >
+This module is currently maintained by Jens Rehsack < jrehsack AT cpan.org >
 
+Copyright (C) 2010 by Jens Rehsack, all rights reserved.
 Copyright (C) 2004 by Jeff Zucker, all rights reserved.
 
-You may freely distribute and/or modify this module under the terms of either the GNU General Public License (GPL) or the Artistic License, as specified in
-the Perl README file.
+You may freely distribute and/or modify this module under the terms of
+either the GNU General Public License (GPL) or the Artistic License,
+as specified in the Perl README file.
 
 =cut
-
-
 
