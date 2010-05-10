@@ -704,7 +704,7 @@ our $ON_FLUSH_DUMP   = sub { DBI->trace_msg(shift, 0) };
 
 sub new {
     my $class = shift;
-    my $profile = { Trace => 0, @_ };
+    my $profile = { @_ };
     return bless $profile => $class;
 }
 
@@ -932,7 +932,8 @@ sub on_destroy {
 sub DESTROY {
     my $self = shift;
     local $@;
-    DBI->trace_msg("profile data DESTROY\n",0) if $self->{Trace} >= 2;
+    DBI->trace_msg("profile data DESTROY\n",0)
+        if (($self->{Trace}||0) >= 2);
     eval { $self->on_destroy };
     if ($@) {
         chomp $@;
