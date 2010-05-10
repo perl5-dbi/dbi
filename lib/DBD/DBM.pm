@@ -76,62 +76,8 @@ sub connect ($$;$$$)
     #    my $this = DBI::_new_dbh($drh, {
     #	Name => $dbname,
     #    });
-    my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
+    my $this = $drh->DBD::File::dr::connect ($dbname, $user, $auth, $attr);
 
-    # parse the connection string for name=value pairs
-    if ($this)
-    {
-        # define valid private attributes
-        #
-        # attempts to set non-valid attrs in connect() or
-        # with $dbh->{attr} will throw errors
-        #
-        # the attrs here *must* start with dbm_ or foo_
-        #
-        # see the STORE methods below for how to check these attrs
-        #
-        $this->{dbm_valid_attrs} = {
-                                     dbm_tables         => 1,    # per-table information
-                                     dbm_type           => 1,    # the global DBM type e.g. SDBM_File
-                                     dbm_mldbm          => 1,    # the global MLDBM serializer
-                                     dbm_cols           => 1,    # the global column names
-                                     dbm_version        => 1,    # verbose DBD::DBM version
-                                     dbm_ext            => 1,    # file extension
-                                     dbm_lockfile       => 1,    # lockfile extension
-                                     dbm_store_metadata => 1,    # column names, etc.
-                                     dbm_berkeley_flags => 1,    # for BerkeleyDB
-                                   };
-
-        my ( $var, $val );
-        $this->{f_dir} = $DBD::File::haveFileSpec ? File::Spec->curdir() : '.';
-        while ( length($dbname) )
-        {
-            if ( $dbname =~ s/^((?:[^\\;]|\\.)*?);//s )
-            {
-                $var = $1;
-            }
-            else
-            {
-                $var    = $dbname;
-                $dbname = '';
-            }
-            if ( $var =~ /^(.+?)=(.*)/s )
-            {
-                $var = $1;
-                ( $val = $2 ) =~ s/\\(.)/$1/g;
-
-                # in the connect string the attr names
-                # can either have dbm_ (or foo_) prepended or not
-                # this will add the prefix if it's missing
-                #
-                $var = 'dbm_' . $var unless ( $var =~ /^dbm_/ or $var eq 'f_dir' );
-                # XXX should pass back to DBI via $attr for connect() to STORE
-                $this->{$var} = $val;
-            }
-        }
-        $this->{f_version}   = $DBD::File::VERSION;
-        $this->{dbm_version} = $DBD::DBM::VERSION;
-    }
     $this->STORE( 'Active', 1 );
     return $this;
 }
@@ -162,7 +108,11 @@ sub STORE ($$$)
 
     # use DBD::File's STORE unless its one of our own attributes
     #
-    return $dbh->SUPER::STORE( $attrib, $value ) unless ( $attrib =~ /^dbm_/ );
+    if( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
+    {
+	$attrib = "dbm_" . $attrib; # backward compatibility - would like to carp here
+    }
+    return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
     # throw an error if it has our prefix but isn't a valid attr name
     #
@@ -190,7 +140,11 @@ sub FETCH ($$)
 {
     my ( $dbh, $attrib ) = @_;
 
-    return $dbh->SUPER::FETCH($attrib) unless $attrib =~ /^dbm_/;
+    if( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
+    {
+	$attrib = "dbm_" . $attrib; # backward compatibility - would like to carp here
+    }
+    return $dbh->SUPER::FETCH($attrib) unless ( 0 == index( $attrib, 'dbm_' ) );
 
     # throw an error if it has our prefix but isn't a valid attr name
     #
@@ -209,6 +163,41 @@ sub FETCH ($$)
         #
         return $dbh->{$attrib};
     }
+}
+
+sub set_versions
+{
+    my $this = $_[0];
+    $this->{dbm_version} = $DBD::DBM::VERSION;
+    return $this->SUPER::set_versions();
+}
+
+sub init_valid_attributes
+{
+    my $sth = shift;
+
+    # define valid private attributes
+    #
+    # attempts to set non-valid attrs in connect() or
+    # with $dbh->{attr} will throw errors
+    #
+    # the attrs here *must* start with dbm_ or foo_
+    #
+    # see the STORE methods below for how to check these attrs
+    #
+    $sth->{dbm_valid_attrs} = {
+				 dbm_tables         => 1,    # per-table information
+				 dbm_type           => 1,    # the global DBM type e.g. SDBM_File
+				 dbm_mldbm          => 1,    # the global MLDBM serializer
+				 dbm_cols           => 1,    # the global column names
+				 dbm_version        => 1,    # verbose DBD::DBM version
+				 dbm_ext            => 1,    # file extension
+				 dbm_lockfile       => 1,    # lockfile extension
+				 dbm_store_metadata => 1,    # column names, etc.
+				 dbm_berkeley_flags => 1,    # for BerkeleyDB
+			       };
+
+    return $sth->SUPER::init_valid_attributes();
 }
 
 # this is an example of a private method
@@ -378,41 +367,42 @@ sub open_table ($$$$$)
         $lock_table = $self->SUPER::open_table( $data, "$table$lockext", $createMode, $lockMode );
     }
 
-    # TIEING
-    #
-    # allow users to pass in a pre-created tied object
-    #
-    my @tie_args;
-    if ( $dbm_type eq 'BerkeleyDB' )
-    {
-        my $DB_CREATE = 1;     # but import constants if supplied
-        my $DB_RDONLY = 16;    #
-        my %flags;
-        if ( my $f = $dbh->{dbm_berkeley_flags} )
-        {
-            $DB_CREATE = $f->{DB_CREATE} if ( $f->{DB_CREATE} );
-            $DB_RDONLY = $f->{DB_RDONLY} if ( $f->{DB_RDONLY} );
-            delete $f->{DB_CREATE};
-            delete $f->{DB_RDONLY};
-            %flags = %$f;
-        }
-        $flags{'-Flags'} = $DB_RDONLY;
-        $flags{'-Flags'} = $DB_CREATE if ( $lockMode or $createMode );
-        my $t = 'BerkeleyDB::Hash';
-        $t = 'MLDBM' if ($serializer);
-        @tie_args = (
-                      $t,
-                      -Filename => $file,
-                      %flags
-                    );
-    }
-    else
-    {
-        @tie_args = ( $tie_type, $file, $open_mode, 0666 );
-    }
     my %h;
     if ( $self->{command} ne 'DROP' )
     {
+	# TIEING
+	#
+	# allow users to pass in a pre-created tied object
+	#
+	my @tie_args;
+	if ( $dbm_type eq 'BerkeleyDB' )
+	{
+	    my $DB_CREATE = 1;     # but import constants if supplied
+	    my $DB_RDONLY = 16;    #
+	    my %flags;
+	    if ( my $f = $dbh->{dbm_berkeley_flags} )
+	    {
+		$DB_CREATE = $f->{DB_CREATE} if ( $f->{DB_CREATE} );
+		$DB_RDONLY = $f->{DB_RDONLY} if ( $f->{DB_RDONLY} );
+		delete $f->{DB_CREATE};
+		delete $f->{DB_RDONLY};
+		%flags = %$f;
+	    }
+	    $flags{'-Flags'} = $DB_RDONLY;
+	    $flags{'-Flags'} = $DB_CREATE if ( $lockMode or $createMode );
+	    my $t = 'BerkeleyDB::Hash';
+	    $t = 'MLDBM' if ($serializer);
+	    @tie_args = (
+			  $t,
+			  -Filename => $file,
+			  %flags
+			);
+	}
+	else
+	{
+	    @tie_args = ( $tie_type, $file, $open_mode, 0666 );
+	}
+
         my $tie_class = shift @tie_args;
         eval { tie %h, $tie_class, @tie_args };
         croak "Cannot tie(%h $tie_class @tie_args): $@" if ($@);
@@ -586,6 +576,17 @@ sub update_one_row ($$$)
     return unless(defined $key);
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $self->{hash}->{$key} = $self->{mldbm} ? $row : $row->[0];
+}
+
+sub update_specific_row ($$$$)
+{
+    my ( $self, $data, $aryref, $origary ) = @_;
+    my $key = shift @$origary;
+    my $newkey = shift @$aryref;
+    return unless(defined $key);
+    delete $self->{hash}->{$key} unless( $key eq $newkey );
+    my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
+    $self->{hash}->{$newkey} = $self->{mldbm} ? $row : $row->[0];
 }
 
 # you may not need to explicitly DESTROY the ::Table

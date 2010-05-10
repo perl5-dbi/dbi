@@ -34,7 +34,7 @@ use strict;
 use Carp;
 use vars qw( @ISA $VERSION $drh $valid_attrs );
 
-$VERSION = "0.38";
+$VERSION = "0.39";
 
 $drh = undef;		# holds driver handle(s) once initialised
 
@@ -138,6 +138,8 @@ sub connect ($$;$$$)
 	});
 
     if ($this) {
+	# must be done first, because setting flags implicitely calls $dbdname::st->STORE
+	$this->func ("init_valid_attributes");
 	my ($var, $val);
 	$this->{f_dir} = File::Spec->curdir ();
 	$this->{f_ext} = "";
@@ -156,38 +158,11 @@ sub connect ($$;$$$)
 		$this->{$var} = $val;
 		}
 	    }
-        $this->{f_valid_attrs} = {
-	    f_version	=> 1, # DBD::File version
-	    f_dir	=> 1, # base directory
-	    f_ext	=> 1, # file extension
-	    f_schema	=> 1, # schema name
-	    f_tables	=> 1, # base directory
-	    f_lock	=> 1, # Table locking mode
-	    f_encoding	=> 1, # Encoding of the file
-	    };
-        $this->{sql_valid_attrs} = {
-	    sql_handler           => 1, # Nano or S:S
-	    sql_nano_version      => 1, # Nano version
-	    sql_statement_version => 1, # S:S version
-	    };
 	}
     $this->STORE (Active => 1);
-    return set_versions ($this);
-    } # connect
-
-sub set_versions
-{
-    my $this = shift;
-    $this->{f_version} = $DBD::File::VERSION;
-    for (qw( nano_version statement_version )) {
-	# strip development release version part
-	($this->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
-	}
-    $this->{sql_handler} = $this->{sql_statement_version}
-	? "SQL::Statement"
-	: "DBI::SQL::Nano";
+    $this->func ('set_versions');
     return $this;
-    } # set_versions
+    } # connect
 
 sub data_sources ($;$)
 {
@@ -288,6 +263,42 @@ sub prepare ($$;@)
 	}
     return $sth;
     } # prepare
+
+sub set_versions
+{
+    my $this = shift;
+    $this->{f_version} = $DBD::File::VERSION;
+    for (qw( nano_version statement_version )) {
+	# strip development release version part
+	($this->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
+	}
+    $this->{sql_handler} = $this->{sql_statement_version}
+	? "SQL::Statement"
+	: "DBI::SQL::Nano";
+    return $this;
+    } # set_versions
+
+sub init_valid_attributes
+{
+    my $sth = shift;
+
+    $sth->{f_valid_attrs} = {
+	f_version	=> 1, # DBD::File version
+	f_dir	=> 1, # base directory
+	f_ext	=> 1, # file extension
+	f_schema	=> 1, # schema name
+	f_tables	=> 1, # base directory
+	f_lock	=> 1, # Table locking mode
+	f_encoding	=> 1, # Encoding of the file
+	};
+    $sth->{sql_valid_attrs} = {
+	sql_handler           => 1, # Nano or S:S
+	sql_nano_version      => 1, # Nano version
+	sql_statement_version => 1, # S:S version
+	};
+
+    return $sth;
+    } # init_valid_attributes
 
 sub csv_cache_sql_parser_object
 {
@@ -759,8 +770,7 @@ sub open_table ($$$$$)
 	};
     my $class = ref $self;
     $class =~ s/::Statement/::Table/;
-    bless $tbl, $class;
-    return $tbl;
+    return $class->new ($tbl);
     } # open_table
 
 package DBD::File::Table;
