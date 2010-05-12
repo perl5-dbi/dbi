@@ -12,6 +12,8 @@ my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
 
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
+my $tests_in_group;
+
 BEGIN {
 
     # Be conservative about what modules we use here.
@@ -57,7 +59,7 @@ BEGIN {
     print "Using DBM modules: @dbm_types\n";
     print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
-    my $tests_in_group = 14;
+    $tests_in_group = 14;
     my $num_tests = @dbm_types * @mldbm_types * $tests_in_group;
     printf "Test count: %d x %d x %d = %d\n",
         scalar @dbm_types, 0+@mldbm_types, $tests_in_group, $num_tests;
@@ -82,7 +84,7 @@ for my $mldbm ( @mldbm_types ) {
     my @sql = split /\n/, $sql;
     for my $dbm_type ( @dbm_types ) {
 	print "\n--- Using $dbm_type ($mldbm) ---\n";
-        eval { do_test( $dbm_type, \@sql, $mldbm ) }
+        eval { do_test( $dbm_type, $mldbm, @sql) }
             or warn $@;
     }
 }
@@ -90,8 +92,13 @@ rmtree $dir;
 
 sub do_test {
     my $dtype = shift;
-    my $stmts = shift;
     my $mldbm = shift;
+    my @sql = @_;
+    my $stmts = \@sql;
+
+    my $test_builder = Test::More->builder;
+    my $starting_test_no = $test_builder->current_test;
+    #diag ("Starting test: " . $starting_test_no);
 
     # The DBI can't test locking here, sadly, because of the risk it'll hang
     # on systems with broken NFS locking daemons.
@@ -163,10 +170,15 @@ sub do_test {
         my $sth = $dbh->prepare($sql) or die $dbh->errstr;
         my @bind;
         @bind = split /,/, $comment if $sth->{NUM_OF_PARAMS};
+        # if execute errors we will handle it, not PrintError:
+        $sth->{PrintError} = 0;
         my $n = $sth->execute(@bind);
-	print " $n\n";
-        die $sth->errstr if $sth->err and $sql !~ /DROP/;
-
+	print DBI::neat($n), "\n"; # execute might fail
+        if ($sth->err and $sql !~ /DROP/) {
+            skip "execute failed",
+                ($starting_test_no + $tests_in_group - $test_builder->current_test);
+            die $sth->errstr if $sth->err and $sql !~ /DROP/;
+        }
         next unless $sql =~ /SELECT/;
         my $results='';
         # Note that we can't rely on the order here, it's not portable,
