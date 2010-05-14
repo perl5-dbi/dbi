@@ -564,22 +564,21 @@ should using the most recent I<DBD::Oracle> version.
 
 Yes, use the I<DBD::ODBC> driver.
 
-=head2 3.5 Is the a DBD for <I<insert favourite database here>>?
+=head2 3.5 Is there a DBD for <I<insert favourite database here>>?
 
-Is is listed on the DBI drivers page?
+First check if a driver is available on CPAN by searching for the name of the
+database (including common abbreviations and aliases).
 
-    http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
+Here's a general query that'll match all distributions:
 
-If not, no. A complete absence of a given database driver from that
-page means that no-one has announced any intention to work on it, not that
-such a driver is impossible to write.
+    http://search.cpan.org/search?query=DBD&mode=dist
 
-A corollary of the above statement implies that if you see an announcement
-for a driver I<not> on the above page, there's a good chance it's not
-actually a I<DBI> driver, and may not conform to the specifications. Therefore,
-questions concerning problems with that code should I<not> really be addressed
-to the DBI Mailing Lists.
+If you can't find a driver that way, you could check if the database supports
+ODBC drivers. If so then you could probably use the DBD::ODBC driver:
+
+    http://search.cpan.org/dist/DBD-ODBC/
+
+If not, then try asking on the dbi-users mailing list.
 
 =head2 3.6 What's DBM? And why should I use DBI instead?
 
