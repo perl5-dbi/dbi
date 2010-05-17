@@ -30,12 +30,14 @@ BEGIN {
     if (eval { require 'MLDBM.pm'; }) {
         push @mldbm_types, 'Data::Dumper' if eval { require 'Data/Dumper.pm' };
         push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
+        push @mldbm_types, 'FreezeThaw'   if eval { require 'FreezeThaw.pm' };
     }
 
     # Potential DBM modules in preference order (SDBM_File first)
     # skip NDBM and ODBM as they don't support EXISTS
     my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB);
 
+    # XXX use @{$ENV{DBD_DBM_MODULES}} or so ...
     if ("@ARGV" eq "all") {
 	# test with as many of the major DBM types as are available
         @dbm_types = grep { eval { local $^W; require "$_.pm" } } @dbms;
@@ -145,6 +147,7 @@ sub do_test {
     };
     ok($@);
 
+    SKIP:
     for my $sql ( @$stmts ) {
         $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
         $sql =~ s/;$//;  # in case no final \n on last line of __DATA__
@@ -175,7 +178,7 @@ sub do_test {
         my $n = $sth->execute(@bind);
 	print DBI::neat($n), "\n"; # execute might fail
         if ($sth->err and $sql !~ /DROP/) {
-            skip "execute failed",
+            skip "execute failed: " . $sth->errstr || 'unknown error',
                 ($starting_test_no + $tests_in_group - $test_builder->current_test);
             die $sth->errstr if $sth->err and $sql !~ /DROP/;
         }
