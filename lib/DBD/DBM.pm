@@ -76,7 +76,7 @@ sub connect ($$;$$$)
     #    my $this = DBI::_new_dbh($drh, {
     #	Name => $dbname,
     #    });
-    my $this = $drh->DBD::File::dr::connect ($dbname, $user, $auth, $attr);
+    my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
 
     $this->STORE( 'Active', 1 );
     return $this;
@@ -108,9 +108,9 @@ sub STORE ($$$)
 
     # use DBD::File's STORE unless its one of our own attributes
     #
-    if( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
+    if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
     {
-	$attrib = "dbm_" . $attrib; # backward compatibility - would like to carp here
+        $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
     return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
@@ -140,9 +140,9 @@ sub FETCH ($$)
 {
     my ( $dbh, $attrib ) = @_;
 
-    if( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
+    if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
     {
-	$attrib = "dbm_" . $attrib; # backward compatibility - would like to carp here
+        $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
     return $dbh->SUPER::FETCH($attrib) unless ( 0 == index( $attrib, 'dbm_' ) );
 
@@ -186,16 +186,16 @@ sub init_valid_attributes
     # see the STORE methods below for how to check these attrs
     #
     $sth->{dbm_valid_attrs} = {
-				 dbm_tables         => 1,    # per-table information
-				 dbm_type           => 1,    # the global DBM type e.g. SDBM_File
-				 dbm_mldbm          => 1,    # the global MLDBM serializer
-				 dbm_cols           => 1,    # the global column names
-				 dbm_version        => 1,    # verbose DBD::DBM version
-				 dbm_ext            => 1,    # file extension
-				 dbm_lockfile       => 1,    # lockfile extension
-				 dbm_store_metadata => 1,    # column names, etc.
-				 dbm_berkeley_flags => 1,    # for BerkeleyDB
-			       };
+                                dbm_tables         => 1,    # per-table information
+                                dbm_type           => 1,    # the global DBM type e.g. SDBM_File
+                                dbm_mldbm          => 1,    # the global MLDBM serializer
+                                dbm_cols           => 1,    # the global column names
+                                dbm_version        => 1,    # verbose DBD::DBM version
+                                dbm_ext            => 1,    # file extension
+                                dbm_lockfile       => 1,    # lockfile extension
+                                dbm_store_metadata => 1,    # column names, etc.
+                                dbm_berkeley_flags => 1,    # for BerkeleyDB
+                              };
 
     return $sth->SUPER::init_valid_attributes();
 }
@@ -272,6 +272,14 @@ use Fcntl;
 
 my $HAS_FLOCK = eval { flock STDOUT, 0; 1 };
 
+sub get_table_meta ($$$)
+{
+    my ( $self, $data, $table ) = @_;
+    ( $table, my $meta ) = $self->SUPER::get_table_meta( $data, $table );
+
+    return ( $table, $meta );
+}
+
 # you must define open_table;
 # it is done at the start of all executes;
 # it doesn't necessarily have to "open" anything;
@@ -288,9 +296,9 @@ sub open_table ($$$$$)
     my ( $self, $data, $table, $createMode, $lockMode ) = @_;
     my $dbh = $data->{Database};
 
-    my $tname = $table || $self->{tables}->[0]->{name};
-    my $file;
-    ( $table, $file ) = $self->get_file_name( $data, $tname );
+    my ( $file, $meta );
+    ( $table, $meta ) = $self->get_table_meta( $data, $table );
+    $file = $meta->{f_fqfn};
 
     # note the use of three levels of attribute settings below
     # first it looks for a per-table setting
@@ -300,23 +308,23 @@ sub open_table ($$$$$)
     # your DBD may not need this, globals and defaults may be enough
     #
     my $dbm_type =
-         $dbh->{dbm_tables}->{$tname}->{type}
+         $dbh->{dbm_tables}->{$table}->{type}
       || $dbh->{dbm_type}
       || 'SDBM_File';
-    $dbh->{dbm_tables}->{$tname}->{type} = $dbm_type;
+    $dbh->{dbm_tables}->{$table}->{type} = $dbm_type;
 
     my $serializer =
-         $dbh->{dbm_tables}->{$tname}->{mldbm}
+         $dbh->{dbm_tables}->{$table}->{mldbm}
       || $dbh->{dbm_mldbm}
       || '';
-    $dbh->{dbm_tables}->{$tname}->{mldbm} = $serializer if $serializer;
+    $dbh->{dbm_tables}->{$table}->{mldbm} = $serializer if $serializer;
 
     my $ext = '' if ( $dbm_type eq 'GDBM_File' or $dbm_type eq 'DB_File' or $dbm_type eq 'BerkeleyDB' );
     # XXX NDBM_File on FreeBSD (and elsewhere?) may actually be Berkeley
     # behind the scenes and so create a single .db file.
     $ext = '.pag' if ( $dbm_type eq 'NDBM_File' or $dbm_type eq 'SDBM_File' or $dbm_type eq 'ODBM_File' );
     $ext = $dbh->{dbm_ext} if ( defined $dbh->{dbm_ext} );
-    $ext = $dbh->{dbm_tables}->{$tname}->{ext} if ( defined $dbh->{dbm_tables}->{$tname}->{ext} );
+    $ext = $dbh->{dbm_tables}->{$table}->{ext} if ( defined $dbh->{dbm_tables}->{$table}->{ext} );
     $ext = '' unless ( defined $ext );
 
     my $open_mode = O_RDONLY;
@@ -349,7 +357,7 @@ sub open_table ($$$$$)
     # LOCKING
     #
     my ( $nolock, $lockext, $lock_table );
-    $lockext = $dbh->{dbm_tables}->{$tname}->{lockfile};
+    $lockext = $dbh->{dbm_tables}->{$table}->{lockfile};
     $lockext = $dbh->{dbm_lockfile} if !defined $lockext;
     if ( ( defined $lockext and $lockext == 0 ) or !$HAS_FLOCK )
     {
@@ -370,51 +378,51 @@ sub open_table ($$$$$)
     my %h;
     if ( $self->{command} ne 'DROP' )
     {
-	# TIEING
-	#
-	# allow users to pass in a pre-created tied object
-	#
-	my @tie_args;
-	if ( $dbm_type eq 'BerkeleyDB' )
-	{
-	    my $DB_CREATE = 1;     # but import constants if supplied
-	    my $DB_RDONLY = 16;    #
-	    my %flags;
-	    if ( my $f = $dbh->{dbm_berkeley_flags} )
-	    {
-		$DB_CREATE = $f->{DB_CREATE} if ( $f->{DB_CREATE} );
-		$DB_RDONLY = $f->{DB_RDONLY} if ( $f->{DB_RDONLY} );
-		delete $f->{DB_CREATE};
-		delete $f->{DB_RDONLY};
-		%flags = %$f;
-	    }
-	    $flags{'-Flags'} = $DB_RDONLY;
-	    $flags{'-Flags'} = $DB_CREATE if ( $lockMode or $createMode );
-	    my $t = 'BerkeleyDB::Hash';
-	    $t = 'MLDBM' if ($serializer);
-	    @tie_args = (
-			  $t,
-			  -Filename => $file,
-			  %flags
-			);
-	}
-	else
-	{
-	    @tie_args = ( $tie_type, $file, $open_mode, 0666 );
-	}
+        # TIEING
+        #
+        # allow users to pass in a pre-created tied object
+        #
+        my @tie_args;
+        if ( $dbm_type eq 'BerkeleyDB' )
+        {
+            my $DB_CREATE = 1;     # but import constants if supplied
+            my $DB_RDONLY = 16;    #
+            my %flags;
+            if ( my $f = $dbh->{dbm_berkeley_flags} )
+            {
+                $DB_CREATE = $f->{DB_CREATE} if ( $f->{DB_CREATE} );
+                $DB_RDONLY = $f->{DB_RDONLY} if ( $f->{DB_RDONLY} );
+                delete $f->{DB_CREATE};
+                delete $f->{DB_RDONLY};
+                %flags = %$f;
+            }
+            $flags{'-Flags'} = $DB_RDONLY;
+            $flags{'-Flags'} = $DB_CREATE if ( $lockMode or $createMode );
+            my $t = 'BerkeleyDB::Hash';
+            $t = 'MLDBM' if ($serializer);
+            @tie_args = (
+                          $t,
+                          -Filename => $file,
+                          %flags
+                        );
+        }
+        else
+        {
+            @tie_args = ( $tie_type, $file, $open_mode, 0666 );
+        }
 
         my $tie_class = shift @tie_args;
         eval { tie %h, $tie_class, @tie_args };
         croak "Cannot tie(%h $tie_class @tie_args): $@" if ($@);
     }
 
-    my $store = $dbh->{dbm_tables}->{$tname}->{store_metadata};
+    my $store = $dbh->{dbm_tables}->{$table}->{store_metadata};
     $store = $dbh->{dbm_store_metadata} unless ( defined $store );
     $store = 1 unless ( defined $store );
-    $dbh->{dbm_tables}->{$tname}->{store_metadata} = $store;
+    $dbh->{dbm_tables}->{$table}->{store_metadata} = $store;
 
     my $tbl = {
-                table_name     => $tname,
+                table_name     => $table,
                 file           => $file,
                 ext            => $ext,
                 hash           => \%h,
@@ -424,36 +432,36 @@ sub open_table ($$$$$)
                 lock_fh        => $lock_table->{fh},
                 lock_ext       => $lockext,
                 nolock         => $nolock,
-		col_names      => [],
-		col_nums       => {},
+                col_names      => [],
+                col_nums       => {},
               };
 
     # COLUMN NAMES
     #
-    unless( $createMode )
+    unless ($createMode)
     {
-	my ( $meta_data, $schema, $col_names );
-	$meta_data = $col_names = $h{"_metadata \0"} if $store;
-	if ( $meta_data and $meta_data =~ m~<dbd_metadata>(.+)</dbd_metadata>~is )
-	{
-	    $schema = $col_names = $1;
-	    $schema    =~ s~.*<schema>(.+)</schema>.*~$1~is;
-	    $col_names =~ s~.*<col_names>(.+)</col_names>.*~$1~is;
-	}
-	$col_names ||=
-	     $dbh->{dbm_tables}->{$tname}->{c_cols}
-	  || $dbh->{dbm_tables}->{$tname}->{cols}
-	  || $dbh->{dbm_cols}
-	  || [ 'k', 'v' ];
-	$col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
-	$dbh->{dbm_tables}->{$tname}->{cols}   = $col_names;
-	$dbh->{dbm_tables}->{$tname}->{schema} = $schema;
+        my ( $meta_data, $schema, $col_names );
+        $meta_data = $col_names = $h{"_metadata \0"} if $store;
+        if ( $meta_data and $meta_data =~ m~<dbd_metadata>(.+)</dbd_metadata>~is )
+        {
+            $schema = $col_names = $1;
+            $schema    =~ s~.*<schema>(.+)</schema>.*~$1~is;
+            $col_names =~ s~.*<col_names>(.+)</col_names>.*~$1~is;
+        }
+        $col_names ||=
+             $dbh->{dbm_tables}->{$table}->{c_cols}
+          || $dbh->{dbm_tables}->{$table}->{cols}
+          || $dbh->{dbm_cols}
+          || [ 'k', 'v' ];
+        $col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
+        $dbh->{dbm_tables}->{$table}->{cols}   = $col_names;
+        $dbh->{dbm_tables}->{$table}->{schema} = $schema;
 
-	my $i;
-	my %col_nums = map { $_ => $i++ } @$col_names;
+        my $i;
+        my %col_nums = map { $_ => $i++ } @$col_names;
 
-	$tbl->{col_nums} = \%col_nums;
-	$tbl->{col_names} = $col_names;
+        $tbl->{col_nums}  = \%col_nums;
+        $tbl->{col_names} = $col_names;
     }
 
     my $class = ref($self);
@@ -503,8 +511,8 @@ sub fetch_row ($$$)
     my ( $key, $val ) = @ary;
     unless ($key)
     {
-	delete $self->{row};
-	return;
+        delete $self->{row};
+        return;
     }
     my @row = ( ref($val) eq 'ARRAY' ) ? ( $key, @$val ) : ( $key, $val );
     $self->{row} = @row ? \@row : undef;
@@ -573,7 +581,7 @@ sub update_one_row ($$$)
 {
     my ( $self, $data, $aryref ) = @_;
     my $key = shift @$aryref;
-    return unless(defined $key);
+    return unless ( defined $key );
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $self->{hash}->{$key} = $self->{mldbm} ? $row : $row->[0];
 }
@@ -581,10 +589,10 @@ sub update_one_row ($$$)
 sub update_specific_row ($$$$)
 {
     my ( $self, $data, $aryref, $origary ) = @_;
-    my $key = shift @$origary;
+    my $key    = shift @$origary;
     my $newkey = shift @$aryref;
-    return unless(defined $key);
-    delete $self->{hash}->{$key} unless( $key eq $newkey );
+    return unless ( defined $key );
+    delete $self->{hash}->{$key} unless ( $key eq $newkey );
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $self->{hash}->{$newkey} = $self->{mldbm} ? $row : $row->[0];
 }

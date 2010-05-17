@@ -74,50 +74,6 @@ sub CLONE
     undef $drh;
     } # CLONE
 
-sub file2table
-{
-    my ($data, $dir, $file, $file_is_tab, $quoted) = @_;
-
-    $file eq "." || $file eq ".."	and return;
-
-    my ($ext, $req) = ("", 0);
-    if ($data->{f_ext}) {
-	($ext, my $opt) = split m/\//, $data->{f_ext};
-	if ($ext && $opt) {
-	    $opt =~ m/r/i and $req = 1;
-	    }
-	}
-
-    (my $tbl = $file) =~ s/$ext$//i;
-    $file_is_tab and $file = "$tbl$ext";
-
-    # Fully Qualified File Name
-    my $fqfn;
-    unless ($quoted) { # table names are case insensitive in SQL
-	opendir my $dh, $dir or croak "Can't open '$dir': $!";
-	my @f = grep { lc $_ eq lc $file } readdir $dh;
-	@f == 1 and $file = $f[0];
-	closedir $dh or croak "Can't close '$dir': $!";
-	}
-    $fqfn = File::Spec->catfile ($dir, $file);
-
-    $file = $fqfn;
-    if ($ext) {
-	if ($req) {
-	    # File extension required
-	    $file =~ s/$ext$//i			or  return;
-	    }
-	else {
-	    # File extension optional, skip if file with extension exists
-	    grep m/$ext$/i, glob "$fqfn.*"	and return;
-	    $file =~ s/$ext$//i;
-	    }
-	}
-
-    $data->{f_map}{$tbl} = $fqfn;
-    return $tbl;
-    } # file2table
-
 # ====== DRIVER ================================================================
 
 package DBD::File::dr;
@@ -240,7 +196,7 @@ sub prepare ($$;@)
 	if ( $dbh->{sql_handler} eq "SQL::Statement" and
 	     $dbh->{sql_statement_version} > 1) {
 	    my $parser = $dbh->{csv_sql_parser_object};
-	    $parser ||= eval { $dbh->func ("csv_cache_sql_parser_object") };
+	    $parser ||= eval { $dbh->func ("cache_sql_parser_object") };
 	    if ($@) {
 		$stmt = eval { $class->new ($statement) };
 		}
@@ -300,7 +256,7 @@ sub init_valid_attributes
     return $sth;
     } # init_valid_attributes
 
-sub csv_cache_sql_parser_object
+sub cache_sql_parser_object
 {
     my $dbh    = shift;
     my $parser = {
@@ -313,7 +269,7 @@ sub csv_cache_sql_parser_object
     $parser = SQL::Parser->new ($parser->{dialect}, $parser);
     $dbh->{csv_sql_parser_object} = $parser;
     return $parser;
-    } # csv_cache_sql_parser_object
+    } # cache_sql_parser_object
 
 sub disconnect ($)
 {
@@ -385,6 +341,50 @@ sub DESTROY ($)
     undef $dbh->{csv_sql_parser_object};
     } # DESTROY
 
+sub file2table
+{
+    my ($dbh, $dir, $file, $file_is_tab, $quoted) = @_;
+
+    $file eq "." || $file eq ".."	and return;
+
+    my ($ext, $req) = ("", 0);
+    if ($dbh->{f_ext}) {
+	($ext, my $opt) = split m/\//, $dbh->{f_ext};
+	if ($ext && $opt) {
+	    $opt =~ m/r/i and $req = 1;
+	    }
+	}
+
+    (my $tbl = $file) =~ s/$ext$//i;
+    $file_is_tab and $file = "$tbl$ext";
+
+    # Fully Qualified File Name
+    my $fqfn;
+    unless ($quoted) { # table names are case insensitive in SQL
+	opendir my $dh, $dir or croak "Can't open '$dir': $!";
+	my @f = grep { lc $_ eq lc $file } readdir $dh;
+	@f == 1 and $file = $f[0];
+	closedir $dh or croak "Can't close '$dir': $!";
+	}
+    $fqfn = File::Spec->catfile ($dir, $file);
+
+    $file = $fqfn;
+    if ($ext) {
+	if ($req) {
+	    # File extension required
+	    $file =~ s/$ext$//i			or  return;
+	    }
+	else {
+	    # File extension optional, skip if file with extension exists
+	    grep m/$ext$/i, glob "$fqfn.*"	and return;
+	    $file =~ s/$ext$//i;
+	    }
+	}
+
+    $dbh->{f_meta}{$tbl} = { f_fqfn => $fqfn, f_fqbn => $file, };
+    return $tbl;
+    } # file2table
+
 sub type_info_all ($)
 {
     [ { TYPE_NAME          => 0,
@@ -446,7 +446,7 @@ sub type_info_all ($)
 		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
-	    my $tbl = DBD::File::file2table ($dbh, $dir, $file, 0, 0) or next;
+	    my $tbl = $dbh->func ($dir, $file, 0, 0, 'file2table') or next;
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -695,30 +695,37 @@ my $open_table_re = sprintf "(?:%s|%s|%s)",
 	quotemeta (File::Spec->updir   ()),
 	quotemeta (File::Spec->rootdir ());
 
-sub get_file_name ($$$)
+sub get_table_meta ($$$)
 {
     my ($self, $data, $table) = @_;
     my $quoted = 0;
     $table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
     $table =~ s/\"$//;
     my $file = $table;
+    my $meta;
     if (    $file !~ m/^$open_table_re/o
 	and $file !~ m{^[/\\]}      # root
 	and $file !~ m{^[a-z]\:}    # drive letter
 	) {
-	exists $data->{Database}{f_map}{$table} or
-	    DBD::File::file2table ($data->{Database},
-		$data->{Database}{f_dir}, $file, 1, $quoted);
-	$file = $data->{Database}{f_map}{$table} || undef;
+	my $dbh = $data->{Database};
+	exists $dbh->{f_meta}->{$table} or
+	    $dbh->func ($dbh->{f_dir}, $file, 1,
+	                $quoted, 'file2table');
+	$meta = $dbh->{f_meta}->{$table} || {};
 	}
-    return ($table, $file);
-    } # get_file_name
+    else {
+	$meta = { f_fqfn => $file, f_fqbn => $file, };
+	}
+
+    return ($table, $meta);
+    } # get_table_meta
 
 sub open_table ($$$$$)
 {
     my ($self, $data, $table, $createMode, $lockMode) = @_;
-    my $file;
-    ($table, $file) = $self->get_file_name ($data, $table);
+    my $meta;
+    ($table, $meta) = $self->get_table_meta ($data, $table);
+    my $file = $meta->{f_fqfn};
     defined $file && $file ne "" or croak "No filename given";
     require IO::File;
     my $fh;
