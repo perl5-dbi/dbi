@@ -17,6 +17,10 @@ DBI::Changes - List of significant changes to the DBI
     including vhosts using PerlOptions +Parent.
   Fixed problems in 50dbm.t when running tests with multiple
     dbms (Martin J. Evans)
+  Added more tests to 50dbm_simple.t to prove optimizations in
+    DBI::SQL::Nano and SQL::Statement (Jens Rehsack)
+  Updated tests to cover optional installed SQL::Statement (Jens Rehsack)
+  Synchronize between SQL::Statement and DBI::SQL::Nano (Jens Rehsack)
 
 =head2 Changes in DBI 1.611 (svn r13935) 29th April 2010
 
