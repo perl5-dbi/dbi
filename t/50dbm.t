@@ -61,7 +61,7 @@ BEGIN {
     print "Using DBM modules: @dbm_types\n";
     print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
-    $tests_in_group = 14;
+    $tests_in_group = 15;
     my $num_tests = @dbm_types * @mldbm_types * $tests_in_group;
     printf "Test count: %d x %d x %d = %d\n",
         scalar @dbm_types, 0+@mldbm_types, $tests_in_group, $num_tests;
@@ -93,10 +93,7 @@ for my $mldbm ( @mldbm_types ) {
 rmtree $dir;
 
 sub do_test {
-    my $dtype = shift;
-    my $mldbm = shift;
-    my @sql = @_;
-    my $stmts = \@sql;
+    my ($dtype, $mldbm, @sql) = @_;
 
     my $test_builder = Test::More->builder;
     my $starting_test_no = $test_builder->current_test;
@@ -148,7 +145,7 @@ sub do_test {
     ok($@);
 
     SKIP:
-    for my $sql ( @$stmts ) {
+    for my $sql ( @sql ) {
         $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
         $sql =~ s/;$//;  # in case no final \n on last line of __DATA__
         #diag($sql);
@@ -186,11 +183,14 @@ sub do_test {
         my $results='';
         # Note that we can't rely on the order here, it's not portable,
         # different DBMs (or versions) will return different orders.
+	my @key_order;
         while (my ($key, $value) = $sth->fetchrow_array) {
             ok exists $expected_results->{$key};
             is $value, $expected_results->{$key};
+	    push @key_order, $key;
         }
         is $DBI::rows, keys %$expected_results;
+	is_deeply( \@key_order, [ 5, 3, 2, 1 ], 'select result order' );
     }
     $dbh->disconnect;
     return 1;
@@ -204,21 +204,27 @@ INSERT INTO  fruit VALUES (2,'to_change' );
 INSERT INTO  fruit VALUES (3, NULL       );
 INSERT INTO  fruit VALUES (4,'to delete' );
 INSERT INTO  fruit VALUES (?,?); #5,via placeholders
+INSERT INTO  fruit VALUES (6,'to delete' );
+INSERT INTO  fruit VALUES (7,'to_delete' );
 DELETE FROM  fruit WHERE dVal='to delete';
 UPDATE fruit SET dVal='apples' WHERE dKey=2;
-SELECT * FROM fruit;
+DELETE FROM  fruit WHERE dKey=7;
+SELECT * FROM fruit ORDER BY dKey DESC;
 DROP TABLE fruit;
 
 DROP TABLE IF EXISTS multi_fruit;
 CREATE TABLE multi_fruit (dKey INT, dVal VARCHAR(10), qux INT);
 INSERT INTO  multi_fruit VALUES (1,'oranges'  , 11 );
-INSERT INTO  multi_fruit VALUES (2,'apples'   ,  0 );
+INSERT INTO  multi_fruit VALUES (2,'to_change',  0 );
 INSERT INTO  multi_fruit VALUES (3, NULL      , 13 );
 INSERT INTO  multi_fruit VALUES (4,'to_delete', 14 );
 INSERT INTO  multi_fruit VALUES (?,?,?); #5,via placeholders,15
-UPDATE multi_fruit SET qux='12' WHERE dKey=2;
-DELETE FROM  multi_fruit WHERE dKey=4;
-SELECT dKey,qux FROM multi_fruit;
+INSERT INTO  multi_fruit VALUES (6,'to_delete', 16 );
+INSERT INTO  multi_fruit VALUES (7,'to delete', 17 );
+INSERT INTO  multi_fruit VALUES (8,'to remove', 18 );
+UPDATE multi_fruit SET dVal='apples', qux='12' WHERE dKey=2;
+DELETE FROM  multi_fruit WHERE dVal='to_delete';
+DELETE FROM  multi_fruit WHERE qux=17;
+DELETE FROM  multi_fruit WHERE dKey=8;
+SELECT dKey,qux FROM multi_fruit ORDER BY dKey DESC;
 DROP TABLE multi_fruit;
-
-
