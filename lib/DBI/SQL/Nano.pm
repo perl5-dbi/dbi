@@ -66,7 +66,7 @@ sub prepare {
                 $self->{command}      = 'CREATE';
                 $self->{table_name}   = $1;
                 $self->{column_names} = parse_coldef_list($2) if $2;
-                croak "Can't find columns\n" unless $self->{column_names};
+                croak "Can't find columns" unless $self->{column_names};
             };
         /^\s*DROP\s+TABLE\s+(IF\s+EXISTS\s+)?(.*?)\s*$/is
             &&do{
@@ -78,7 +78,7 @@ sub prepare {
             &&do{
                 $self->{command}      = 'SELECT';
                 $self->{column_names} = parse_comma_list($1) if $1;
-                croak "Can't find columns\n" unless $self->{column_names};
+                croak "Can't find columns" unless $self->{column_names};
                 $self->{table_name}   = $2;
                 if ( my $clauses = $4) {
 		    if ($clauses =~ /^(.*)\s+ORDER\s+BY\s+(.*)$/is) {
@@ -95,7 +95,7 @@ sub prepare {
                 $self->{table_name}   = $1;
                 $self->{column_names} = parse_comma_list($2) if $2;
                 $self->{values}       = $self->parse_values_list($4) if $4;
-                croak "Can't parse values\n" unless $self->{values};
+                croak "Can't parse values" unless $self->{values};
             };
         /^\s*DELETE\s+FROM\s+(\S+)((.*))?/is
             &&do{
@@ -111,7 +111,7 @@ sub prepare {
                 $self->{where_clause} = $self->parse_where_clause($3) if $3;
             };
     }
-    croak "Couldn't parse\n"
+    croak "Couldn't parsen"
 	unless $self->{command} and $self->{table_name};
     return $self;
 }
@@ -119,11 +119,11 @@ sub parse_order_clause {
     my($self,$str) = @_;
     my @clause = split /\s+/,$str;
     return { $clause[0] => 'ASC' } if @clause == 1;
-    croak "Bad ORDER BY clause '$str'\n" if @clause > 2;
+    croak "Bad ORDER BY clause '$str'" if @clause > 2;
     $clause[1] ||= '';
     return { $clause[0] => uc $clause[1] } if $clause[1] =~ /^ASC$/i
                                            or $clause[1] =~ /^DESC$/i;
-    croak "Bad ORDER BY clause '$clause[1]'\n";
+    croak "Bad ORDER BY clause '$clause[1]'";
 }
 sub parse_coldef_list  {                # check column definitions
     my @col_defs;
@@ -133,7 +133,7 @@ sub parse_coldef_list  {                # check column definitions
             $col = $1;                  # just checks if it exists
 	}
         else {
- 	    croak "No column definition for '$_'\n";
+ 	    croak "No column definition for '$_'";
 	}
         push @col_defs,$col;
     }
@@ -154,7 +154,7 @@ sub parse_set_clause {
         push @{$self->{column_names}}, $col_name;
         push @{$self->{values}}, $self->parse_value($value);
     }
-    croak "Can't parse set clause\n"
+    croak "Can't parse set clause"
         unless $self->{column_names}
            and $self->{values};
 }
@@ -179,12 +179,12 @@ sub parse_where_clause {
         $str = $1;
     }
     else {
-        croak "Couldn't find WHERE clause in '$str'\n";
+        croak "Couldn't find WHERE clause in '$str'";
     }
     my($neg) = $str =~ s/^\s*(NOT)\s+//is;
     my $opexp = '=|<>|<=|>=|<|>|LIKE|CLIKE|IS';
     my($val1,$op,$val2) = $str =~ /^(.+?)\s*($opexp)\s*(.+)\s*$/iso;
-    croak "Couldn't parse WHERE expression '$str'\n"
+    croak "Couldn't parse WHERE expression '$str'"
        unless defined $val1 and defined $op and defined $val2;
     return {
         arg1 => $self->parse_value($val1),
@@ -202,7 +202,7 @@ sub execute {
     my $num_placeholders = $self->params;
     my $num_params       = scalar @$params || 0;
     croak "Number of params '$num_params' does not match "
-      . "number of placeholders '$num_placeholders'\n"
+      . "number of placeholders '$num_placeholders'"
       unless $num_placeholders == $num_params;
     if (scalar @$params) {
         for my $i(0..$#{$self->{values}}) {
@@ -420,13 +420,13 @@ sub column_nums {
         while(my($k,$v)=each %dbd_nums) {
             return $v if uc $k eq uc $stmt_col_name;
         }
-        croak "No such column '$stmt_col_name'\n";
+        croak "No such column '$stmt_col_name'";
     }
     if ($stmt_col_name and $find_in_stmt) {
         for my $i(0..@{$self->{column_names}}) {
             return $i if uc $stmt_col_name eq uc $self->{column_names}->[$i];
         }
-        croak "No such column '$stmt_col_name'\n";
+        croak "No such column '$stmt_col_name'";
     }
     for my $i(0 .. $#dbd_cols) {
         for my $stmt_col(@{$self->{column_names}}) {
