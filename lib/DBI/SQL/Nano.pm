@@ -124,7 +124,7 @@ sub prepare
             $self->{where_clause} = $self->parse_where_clause($3) if $3;
         };
     }
-    croak "Couldn't parsen" unless ( $self->{command} and $self->{table_name} );
+    croak "Couldn't parse" unless ( $self->{command} and $self->{table_name} );
     return $self;
 }
 
