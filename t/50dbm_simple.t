@@ -24,7 +24,7 @@ BEGIN {
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
     # $ENV{DBI_SQL_NANO}=1;
-    # This is done in zvn_50dbm.t
+    # This is done in zv*n*_50dbm_simple.t
 
     push @mldbm_types, '';
     if (eval { require 'MLDBM.pm'; }) {
@@ -36,14 +36,17 @@ BEGIN {
     # Potential DBM modules in preference order (SDBM_File first)
     # skip NDBM and ODBM as they don't support EXISTS
     my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB);
+    my @use_dbms = @ARGV;
+    if( !@use_dbms && $ENV{DBD_DBM_TEST_BACKENDS} ) {
+	@use_dbms = split ' ', $ENV{DBD_DBM_TEST_BACKENDS};
+    }
 
-    # XXX use @{$ENV{DBD_DBM_MODULES}} or so ...
-    if ("@ARGV" eq "all") {
+    if (lc "@use_dbms" eq "all") {
 	# test with as many of the major DBM types as are available
         @dbm_types = grep { eval { local $^W; require "$_.pm" } } @dbms;
     }
-    elsif (@ARGV) {
-	@dbm_types = @ARGV;
+    elsif (@use_dbms) {
+	@dbm_types = @use_dbms;
     }
     else {
 	# we only test SDBM_File by default to avoid tripping up
