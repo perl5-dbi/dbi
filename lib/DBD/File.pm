@@ -116,7 +116,7 @@ sub connect ($$;$$$)
 	    }
 	}
     $this->STORE (Active => 1);
-    $this->func ('set_versions');
+    $this->func ("set_versions");
     return $this;
     } # connect
 
@@ -446,7 +446,7 @@ sub type_info_all ($)
 		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) };
 	while (defined ($file = readdir ($dirh))) {
-	    my $tbl = $dbh->func ($dir, $file, 0, 0, 'file2table') or next;
+	    my $tbl = $dbh->func ($dir, $file, 0, 0, "file2table") or next;
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -710,7 +710,7 @@ sub get_table_meta ($$$)
 	my $dbh = $data->{Database};
 	exists $dbh->{f_meta}->{$table} or
 	    $dbh->func ($dbh->{f_dir}, $file, 1,
-	                $quoted, 'file2table');
+			$quoted, "file2table");
 	$meta = $dbh->{f_meta}->{$table} || {};
 	}
     else {
@@ -746,7 +746,7 @@ sub open_table ($$$$$)
     if ($fh) {
 	if (my $enc = $data->{Database}{f_encoding}) {
 	    binmode $fh, ":encoding($enc)" or
-                croak "Failed to set encoding layer '$enc' on $file: $!";
+		croak "Failed to set encoding layer '$enc' on $file: $!";
 	    }
 	else {
 	    binmode $fh or croak "Failed to set binary mode on $file: $!";
