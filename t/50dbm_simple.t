@@ -35,7 +35,7 @@ BEGIN {
 
     # Potential DBM modules in preference order (SDBM_File first)
     # skip NDBM and ODBM as they don't support EXISTS
-    my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB);
+    my @dbms = qw(SDBM_File NDBM_File ODBM_File GDBM_File DB_File BerkeleyDB);
     my @use_dbms = @ARGV;
     if( !@use_dbms && $ENV{DBD_DBM_TEST_BACKENDS} ) {
 	@use_dbms = split ' ', $ENV{DBD_DBM_TEST_BACKENDS};
