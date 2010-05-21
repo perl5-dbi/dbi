@@ -341,50 +341,6 @@ sub DESTROY ($)
     undef $dbh->{csv_sql_parser_object};
     } # DESTROY
 
-sub file2table
-{
-    my ($dbh, $dir, $file, $file_is_tab, $quoted) = @_;
-
-    $file eq "." || $file eq ".."	and return;
-
-    my ($ext, $req) = ("", 0);
-    if ($dbh->{f_ext}) {
-	($ext, my $opt) = split m/\//, $dbh->{f_ext};
-	if ($ext && $opt) {
-	    $opt =~ m/r/i and $req = 1;
-	    }
-	}
-
-    (my $tbl = $file) =~ s/$ext$//i;
-    $file_is_tab and $file = "$tbl$ext";
-
-    # Fully Qualified File Name
-    my $fqfn;
-    unless ($quoted) { # table names are case insensitive in SQL
-	opendir my $dh, $dir or croak "Can't open '$dir': $!";
-	my @f = grep { lc $_ eq lc $file } readdir $dh;
-	@f == 1 and $file = $f[0];
-	closedir $dh or croak "Can't close '$dir': $!";
-	}
-    $fqfn = File::Spec->catfile ($dir, $file);
-
-    $file = $fqfn;
-    if ($ext) {
-	if ($req) {
-	    # File extension required
-	    $file =~ s/$ext$//i			or  return;
-	    }
-	else {
-	    # File extension optional, skip if file with extension exists
-	    grep m/$ext$/i, glob "$fqfn.*"	and return;
-	    $file =~ s/$ext$//i;
-	    }
-	}
-
-    $dbh->{f_meta}{$tbl} = { f_fqfn => $fqfn, f_fqbn => $file, };
-    return $tbl;
-    } # file2table
-
 sub type_info_all ($)
 {
     [ { TYPE_NAME          => 0,
@@ -440,13 +396,17 @@ sub type_info_all ($)
 	    return;
 	    }
 
+	my $class = $dbh->FETCH ("ImplementorClass");
+	$class =~ s/::db$/::Table/;
 	my ($file, @tables, %names);
 	my $schema = exists $dbh->{f_schema}
 	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
 		? $dbh->{f_schema} : undef
-	    : eval { getpwuid ((stat $dir)[4]) };
+	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
 	while (defined ($file = readdir ($dirh))) {
-	    my $tbl = $dbh->func ($dir, $file, 0, 0, "file2table") or next;
+	    # XXX $dbh->{f_meta} or ...
+	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
+	    # XXX collect from $dbh->{f_meta}
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -673,14 +633,12 @@ sub rows ($)
     return $_[0]->{f_stmt}{NUM_OF_ROWS};
     } # rows
 
+# ====== SQL::STATEMENT ========================================================
+
 package DBD::File::Statement;
 
 use strict;
 use Carp;
-
-# We may have a working flock () built-in but that doesn't mean that locking
-# will work on NFS (flock () may hang hard)
-my $locking = eval { flock STDOUT, 0; 1 };
 
 # Jochen's old check for flock ()
 #
@@ -690,111 +648,245 @@ my $locking = eval { flock STDOUT, 0; 1 };
 
 @DBD::File::Statement::ISA = qw( DBI::SQL::Nano::Statement );
 
-my $open_table_re = sprintf "(?:%s|%s|%s)",
-	quotemeta (File::Spec->curdir  ()),
-	quotemeta (File::Spec->updir   ()),
-	quotemeta (File::Spec->rootdir ());
-
-sub get_table_meta ($$$)
-{
-    my ($self, $data, $table) = @_;
-    my $quoted = 0;
-    $table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
-    $table =~ s/\"$//;
-    my $file = $table;
-    my $meta;
-    if (    $file !~ m/^$open_table_re/o
-	and $file !~ m{^[/\\]}      # root
-	and $file !~ m{^[a-z]\:}    # drive letter
-	) {
-	my $dbh = $data->{Database};
-	exists $dbh->{f_meta}->{$table} or
-	    $dbh->func ($dbh->{f_dir}, $file, 1,
-			$quoted, "file2table");
-	$meta = $dbh->{f_meta}->{$table} || {};
-	}
-    else {
-	$meta = { f_fqfn => $file, f_fqbn => $file, };
-	}
-
-    return ($table, $meta);
-    } # get_table_meta
-
 sub open_table ($$$$$)
 {
     my ($self, $data, $table, $createMode, $lockMode) = @_;
-    my $meta;
-    ($table, $meta) = $self->get_table_meta ($data, $table);
-    my $file = $meta->{f_fqfn};
-    defined $file && $file ne "" or croak "No filename given";
-    require IO::File;
-    my $fh;
-    my $safe_drop = $self->{ignore_missing_table} ? 1 : 0;
-    if ($createMode) {
-	-f $file and
-	    croak "Cannot create table $table: Already exists";
-	$fh = IO::File->new ($file, "a+") or
-	    croak "Cannot open $file for writing: $!";
-	$fh->seek (0, 0) or
-	    croak "Error while seeking back: $!";
-	}
-    else {
-	unless ($fh = IO::File->new ($file, ($lockMode ? "r+" : "r"))) {
-	    $safe_drop or croak "Cannot open $file: $!";
-	    }
-	}
-    if ($fh) {
-	if (my $enc = $data->{Database}{f_encoding}) {
-	    binmode $fh, ":encoding($enc)" or
-		croak "Failed to set encoding layer '$enc' on $file: $!";
-	    }
-	else {
-	    binmode $fh or croak "Failed to set binary mode on $file: $!";
-	    }
-	}
-    if ($locking && $fh) {
-	my $lm = defined $data->{Database}{f_lock}
-		      && $data->{Database}{f_lock} =~ m/^[012]$/
-		       ? $data->{Database}{f_lock}
-		       : $lockMode ? 2 : 1;
-	if ($lm == 2) {
-	    flock $fh, 2 or croak "Cannot obtain exclusive lock on $file: $!";
-	    }
-	elsif ($lm == 1) {
-	    flock $fh, 1 or croak "Cannot obtain shared lock on $file: $!";
-	    }
-	# $lm = 0 is forced no locking at all
-	}
-    my $columns = {};
-    my $array   = [];
-    my $pos     = $fh ? $fh->tell () : undef;
-    my $tbl     = {
-	file          => $file,
-	fh            => $fh,
-	col_nums      => $columns,
-	col_names     => $array,
-	first_row_pos => $pos,
-	};
+
     my $class = ref $self;
     $class =~ s/::Statement/::Table/;
-    return $class->new ($tbl);
+
+    my %flags = (createMode => $createMode,
+		 lockMode => $lockMode);
+    $self->{command} eq 'DROP' and $flags{dropMode} = 1;
+
+    return $class->new ($data, {table => $table}, \%flags);
     } # open_table
+
+# ====== SQL::TABLE ============================================================
 
 package DBD::File::Table;
 
 use strict;
 use Carp;
+require IO::File;
+
+# We may have a working flock () built-in but that doesn't mean that locking
+# will work on NFS (flock () may hang hard)
+my $locking = eval { flock STDOUT, 0; 1 };
 
 @DBD::File::Table::ISA = qw(DBI::SQL::Nano::Table);
 
+# ====== FLYWEIGHT SUPPORT =====================================================
+
+# Flyweight support for table_info
+# The functions file2table, init_table_meta, default_table_meta and
+# get_table_meta are using $self arguments for polymorphism only. The
+# must not rely on an instantiated DBD::File::Table
+sub file2table
+{
+    my ($self, $meta, $file, $file_is_table, $quoted) = @_;
+
+    $file eq "." || $file eq ".."	and return;
+
+    my ($ext, $req) = ("", 0); # XXX
+    if ($meta->{f_ext}) {
+	($ext, my $opt) = split m/\//, $meta->{f_ext};
+	if ($ext && $opt) {
+	    $opt =~ m/r/i and $req = 1;
+	    }
+	}
+
+    (my $tbl = $file) =~ s/$ext$//i;
+    $file_is_table and $file = "$tbl$ext";
+
+    # Fully Qualified File Name
+    unless ($quoted) { # table names are case insensitive in SQL
+	my $dir = $meta->{f_dir};
+	opendir my $dh, $dir or croak "Can't open '$dir': $!";
+	my @f = grep { lc $_ eq lc $file } readdir $dh;
+	@f == 1 and $tbl = $file = $f[0];
+	$tbl =~ s/$ext$//i; # XXX /i flag only when not quoted?
+	closedir $dh or croak "Can't close '$dir': $!";
+	}
+    my $fqfn = File::Spec->catfile ($meta->{f_dir}, $file);
+    my $fqbn = File::Spec->catfile ($meta->{f_dir}, $tbl);
+
+    $file = $fqfn;
+    if ($ext) {
+	if ($req) {
+	    # File extension required
+	    $file =~ s/$ext$//i			or  return;
+	    }
+	else {
+	    # File extension optional, skip if file with extension exists
+	    grep m/$ext$/i, glob "$fqfn.*"	and return;
+	    $file =~ s/$ext$//i;
+	    }
+	}
+
+    $meta->{f_fqfn} = $fqfn;
+    $meta->{f_fqbn} = $file;
+    return $tbl;
+    } # file2table
+
+my $open_table_re = sprintf "(?:%s|%s|%s)",
+	quotemeta (File::Spec->curdir  ()),
+	quotemeta (File::Spec->updir   ()),
+	quotemeta (File::Spec->rootdir ());
+
+sub init_table_meta ($$$$$)
+{
+    my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
+    defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table} or
+        $dbh->{f_meta}->{$table} = {};
+    my $meta = $dbh->{f_meta}->{$table};
+    defined $meta->{f_dir} or
+	$meta->{f_dir} = $dbh->{f_dir};
+    defined $meta->{f_ext} or
+	$meta->{f_ext} = $dbh->{f_ext};
+    defined $meta->{f_encoding} or
+	$meta->{f_encoding} = $dbh->{f_encoding};
+    defined $meta->{f_lock} or
+	$meta->{f_lock} = $dbh->{f_lock};
+    defined $meta->{f_fqfn} or
+	$self->file2table ($meta, $table, $file_is_table, $quoted);
+    } # init_table_meta
+
+sub default_table_meta ($$$)
+{
+    my ($self, $dbh, $table) = @_;
+    my $meta = { f_fqfn => $table, f_fqbn => $table, };
+    return $meta;
+    } # init_table_meta
+
+sub get_table_meta ($$$$;$)
+{
+    my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
+    unless( defined( $quoted ) ) {
+	$quoted = 0;
+	$table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
+	$table =~ s/\"$//;
+	}
+    my $meta;
+    if (    $table !~ m/^$open_table_re/o
+	and $table !~ m{^[/\\]}      # root
+	and $table !~ m{^[a-z]\:}    # drive letter
+	) {
+	# should be done anyway, table_info might generate incomplete f_meta
+	$self->init_table_meta ($dbh, $table, $file_is_table, $quoted);
+	$meta = $dbh->{f_meta}->{$table};
+	}
+    else {
+	$meta = $self->default_table_meta ($dbh, $table);
+	}
+
+    return ($table, $meta);
+    } # get_table_meta
+
+# ====== FILE OPEN =============================================================
+
+sub open_file ($$$)
+{
+    my ($self, $meta, $attrs, $flags) = @_;
+
+    defined $meta->{f_fqfn} && $meta->{f_fqfn} ne "" or croak "No filename given";
+
+    my ($fh, $fn);
+    unless ($meta->{f_dontopen}) {
+	$fn = $meta->{f_fqfn};
+	if ($flags->{createMode}) {
+	    -f $meta->{f_fqfn} and
+		croak "Cannot create table $attrs->{table}: Already exists";
+	    $fh = IO::File->new ($fn, "a+") or
+		croak "Cannot open $fn for writing: $!";
+	    $fh->seek (0, 0) or
+		croak "Error while seeking back: $!";
+	    }
+	else {
+	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
+		croak "Cannot open $fn: $!";
+		}
+	    }
+
+	if ($fh) {
+	    if (my $enc = $meta->{f_encoding}) {
+		binmode $fh, ":encoding($enc)" or
+		    croak "Failed to set encoding layer '$enc' on $fn: $!";
+		}
+	    else {
+		binmode $fh or croak "Failed to set binary mode on $fn: $!";
+		}
+	    }
+
+	$meta->{fh} = $fh;
+	}
+    if ($meta->{f_fqln}) {
+	$fn = $meta->{f_fqln};
+	if ($flags->{createMode}) {
+	    -f $fn and
+		croak "Cannot create table lock for $attrs->{table}: Already exists";
+	    $fh = IO::File->new ($fn, "a+") or
+		croak "Cannot open $fn for writing: $!";
+	    }
+	else {
+	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
+		croak "Cannot open $fn: $!";
+		}
+	    }
+
+	$meta->{lockfh} = $fh;
+	}
+
+    if ($locking && $fh) {
+	my $lm = defined $flags->{f_lock}
+		      && $flags->{f_lock} =~ m/^[012]$/
+		       ? $flags->{f_lock}
+		       : $flags->{lockMode} ? 2 : 1;
+	if ($lm == 2) {
+	    flock $fh, 2 or croak "Cannot obtain exclusive lock on $fn: $!";
+	    }
+	elsif ($lm == 1) {
+	    flock $fh, 1 or croak "Cannot obtain shared lock on $fn: $!";
+	    }
+	# $lm = 0 is forced no locking at all
+	}
+    } # open_file
+
+# ====== SQL::Eval API =========================================================
+
+sub new
+{
+    my ($className, $data, $attrs, $flags) = @_;
+    my $dbh = $data->{Database};
+
+    my $meta;
+    ($attrs->{table}, $meta) = $className->get_table_meta ($dbh, $attrs->{table}, 1);
+
+    $className->open_file ($meta, $attrs, $flags);
+
+    my $columns = {};
+    my $array   = [];
+    my $tbl     = {
+	%{$attrs},
+	meta          => $meta,
+	col_names     => $meta->{col_names} || [],
+	};
+    return $className->SUPER::new ($tbl);
+    } # new
+
 sub drop ($)
 {
-    my $self = shift;
+    my ($self, $data) = @_;
+    my $meta = $self->{meta};
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
-    $self->{fh} and $self->{fh}->close ();
-    undef $self->{fh};
-    unlink $self->{file};
+    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{lockfh} and $meta->{lockfh}->close ();
+    undef $meta->{fh};
+    undef $meta->{lockfh};
+    $meta->{f_fqfn} and unlink $meta->{f_fqfn};
+    $meta->{f_fqln} and unlink $meta->{f_fqln};
+    delete $data->{Database}->{f_meta}->{$self->{table}};
     return 1;
     } # drop
 
@@ -802,29 +894,32 @@ sub seek ($$$$)
 {
     my ($self, $data, $pos, $whence) = @_;
     if ($whence == 0 && $pos == 0) {
-	$pos = $self->{first_row_pos};
+	$pos = defined $self->{first_row_pos} ? $self->{first_row_pos} : 0;
 	}
     elsif ($whence != 2 || $pos != 0) {
 	croak "Illegal seek position: pos = $pos, whence = $whence";
 	}
 
-    $self->{fh}->seek ($pos, $whence) or
-	croak "Error while seeking in " . $self->{file} . ": $!";
+    $self->{meta}->{fh}->seek ($pos, $whence) or
+	croak "Error while seeking in " . $self->{meta}->{f_fqfn} . ": $!";
     } # seek
 
 sub truncate ($$)
 {
     my ($self, $data) = @_;
     $self->{fh}->truncate ($self->{fh}->tell ()) or
-	croak "Error while truncating " . $self->{file} . ": $!";
+	croak "Error while truncating " . $self->{meta}->{f_fqfn} . ": $!";
     return 1;
     } # truncate
 
 sub DESTROY
 {
     my $self = shift;
-    $self->{fh} and $self->{fh}->close ();
-    undef $self->{fh};
+    my $meta = $self->{meta};
+    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{lockfh} and $meta->{lockfh}->close ();
+    undef $meta->{fh};
+    undef $meta->{lockfh};
     } # DESTROY
 
 1;
