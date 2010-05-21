@@ -282,7 +282,17 @@ sub execute
 sub DROP ($$$)
 {
     my ( $self, $data, $params ) = @_;
-    my $table = $self->open_tables( $data, 0, 0 );
+
+    my $table;
+    eval { ($table) = $self->open_tables( $data, 0, 1 ); };
+    if ( $self->{ignore_missing_table} and $@ and $@ =~ m/no such (table|file)/i )
+    {
+	return ( -1, 0 );
+    }
+
+    $self->do_err($@) if ($@);
+    return ( -1, 0 ) unless $table;
+
     $table->drop($data);
     ( -1, 0 );
 }
@@ -703,11 +713,24 @@ sub new ($$)
 
     defined( $self->{col_nums} ) and "HASH" eq ref( $self->{col_nums} )
       or croak("attrbute 'col_nums' must be defined as a hash");
+    exists( $self->{col_nums} ) or $self->{col_nums} = _map_colnums( $self->{col_names} );
     defined( $self->{col_names} ) and "ARRAY" eq ref( $self->{col_names} )
       or croak("attrbute 'col_names' must be defined as an array");
 
     bless( $self, ( ref($proto) || $proto ) );
     return $self;
+}
+
+sub _map_colnums
+{
+    my $col_names = $_[0];
+    my %col_nums;
+    for my $i ( 0 .. $#$col_names )
+    {
+        next unless $col_names->[$i];
+        $col_nums{ $col_names->[$i] } = $i;
+    }
+    return \%col_nums;
 }
 
 sub row()         { return $_[0]->{row}; }
