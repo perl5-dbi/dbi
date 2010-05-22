@@ -457,9 +457,9 @@ sub drop ($$)
 # as Janis might say: "undef's just another word for
 # nothing left to fetch" :-)
 #
-sub fetch_row ($$$)
+sub fetch_row ($$)
 {
-    my ( $self, $data, $row ) = @_;
+    my ( $self, $data ) = @_;
     my $meta = $self->{meta};
     # fetch with %each
     #
