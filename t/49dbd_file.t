@@ -17,7 +17,7 @@ use_ok ("DBI");
 use_ok ("DBD::File");
 
 my $rowidx = 0;
-my @rows = ( [ 'Hello World' ], [ 'Hello DBI Developers' ], );
+my @rows = ( [ "Hello World" ], [ "Hello DBI Developers" ], );
 
 my $dbh;
 
@@ -62,21 +62,27 @@ ok ($sth = $dbh->prepare ("select * from t_sbdgf_53442Gz"), "Prepare select from
     like ("@msg", qr{Cannot open ./t_sbdgf_}, "Cannot open non-existing file");
     }
 
+my $tfh;
+
 # Now test some basic SQL statements
-#if (open my $fh, ">", "$tbl.txt") {
-#    print $fh "txt\nPlain text\n";
-#    close $fh;
-#    }
+my $tbl_file = "$tbl.txt";
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl");
-ok (-f "$tbl.txt", "Test table exists");
+ok (-f $tbl_file, "Test table exists");
+
+if ($tfh) { # push_names () cached the now opened file handle
+    # Expected: ("unix", "perlio", "encoding(iso-8859-1)")
+    # use Data::Peek; DDumper [ PerlIO::get_layers ($tfh) ];
+    my @layer = grep { $_ eq "encoding($encoding)" } PerlIO::get_layers ($tfh);
+    is (scalar @layer, 1, "encoding shows in layer");
+    }
 
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select *");
 $rowidx = 0;
 SKIP: {
-    skip "method intrusion didn't work with proxying", 1 if $using_dbd_gofer;
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
     ok ($sth->execute, "execute");
-    diag $dbh->errstr if $dbh->errstr;
-}
+    $dbh->errstr and diag;
+    }
 
 ok ($dbh->do ("drop table $tbl"), "table drop");
 is (-s "$tbl.txt", undef, "Test table removed");
@@ -85,9 +91,9 @@ done_testing ();
 
 sub DBD::File::Table::fetch_row ($$)
 {
-    my ( $self, $data ) = @_;
+    my ($self, $data) = @_;
     my $meta = $self->{meta};
-    if( $rowidx >= scalar @rows ) {
+    if ($rowidx >= scalar @rows) {
 	$self->{row} = undef;
 	}
     else {
@@ -96,10 +102,10 @@ sub DBD::File::Table::fetch_row ($$)
     return $self->{row};
     } # fetch_row
 
-
 sub DBD::File::Table::push_names ($$$)
 {
-    my ( $self, $data, $row_aryref ) = @_;
+    my ($self, $data, $row_aryref) = @_;
+    $tfh = $self->{fh};
     my $meta = $self->{meta};
     @{$meta->{col_names}} = @{$row_aryref};
     } # push_names
