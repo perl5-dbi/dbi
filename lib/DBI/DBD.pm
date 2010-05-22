@@ -3331,7 +3331,7 @@ sub dbd_edit_mm_attribs {
 		add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'} ],
 	},
 	n => {	name => "DBI::SQL::Nano",
-		match => qr/^(?:5\ddbm_\w+|85gofer)\.t$/,
+		match => qr/^(?:49dbd_file|5\ddbm_\w+|85gofer)\.t$/,
 		add => [ q{$ENV{DBI_SQL_NANO} = 1} ],
 	},
     #   mx => {	name => "DBD::Multiplex",
