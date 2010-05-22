@@ -711,11 +711,11 @@ sub new ($$)
     my ( $proto, $attr ) = @_;
     my ($self) = {%$attr};
 
-    defined( $self->{col_nums} ) and "HASH" eq ref( $self->{col_nums} )
-      or croak("attrbute 'col_nums' must be defined as a hash");
-    exists( $self->{col_nums} ) or $self->{col_nums} = _map_colnums( $self->{col_names} );
     defined( $self->{col_names} ) and "ARRAY" eq ref( $self->{col_names} )
-      or croak("attrbute 'col_names' must be defined as an array");
+      or croak("attribute 'col_names' must be defined as an array");
+    exists( $self->{col_nums} ) or $self->{col_nums} = _map_colnums( $self->{col_names} );
+    defined( $self->{col_nums} ) and "HASH" eq ref( $self->{col_nums} )
+      or croak("attribute 'col_nums' must be defined as a hash");
 
     bless( $self, ( ref($proto) || $proto ) );
     return $self;
