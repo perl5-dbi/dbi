@@ -105,7 +105,7 @@ sub DBD::File::Table::fetch_row ($$)
 sub DBD::File::Table::push_names ($$$)
 {
     my ($self, $data, $row_aryref) = @_;
-    $tfh = $self->{fh};
     my $meta = $self->{meta};
+    $tfh = $meta->{fh};
     @{$meta->{col_names}} = @{$row_aryref};
     } # push_names
