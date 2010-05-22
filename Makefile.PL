@@ -81,19 +81,36 @@ else {
     $::opt_thread = 0;
 }
 
-
- 
 my %opts = (
     NAME   => 'DBI',
     AUTHOR => 'Tim Bunce (dbi-users@perl.org)',
     VERSION_FROM  => 'DBI.pm',
     ABSTRACT_FROM => 'DBI.pm',
-    PREREQ_PM => {
-        "Test::Simple" => 0.84,
-        "Storable" => 1,
-        "File::Spec" => 0,
-        "Scalar::Util" => 0,
+    MIN_PERL_VERSION => '5.008',
+    BUILD_REQUIRES => {
+        'ExtUtils::MakeMaker' => '6.48',
+        'Test::Simple' => '0.90',
     },
+    META_MERGE => {
+	resources => {
+	    repository  => 'https://svn.perl.org/modules/dbi/trunk/',
+	    MailingList => 'mailto:dbi-dev@perl.org',
+	    license     => 'http://dev.perl.org/licenses/',
+	},
+	recommends => {
+	    'RPC::PlServer' => 0.2001,
+	    'Net::Daemon' => 0,
+	    'SQL::Statement' => 1.28,
+	    'MLDBM' => 0,
+	    'DB_File' => 0,
+	},
+    },
+    CONFLICTS => {
+	'SQL::Statement' => '1.27',
+	'DBD::AnyData' => '0.09',
+	'DBD::CSV' => '0.29',
+    },
+    LICENSE => 'perl',
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
@@ -105,7 +122,6 @@ my %opts = (
 	COMPRESS => 'gzip -v9', SUFFIX => 'gz',
     },
 );
-$opts{LICENSE} = 'perl' if $ExtUtils::MakeMaker::VERSION >= 6.3002;
 $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
 if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
@@ -155,8 +171,71 @@ for ( $cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp,
 # before any other action is taken
 $is_developer && -d ".git" && -f "git-svn-vsn.pl" and system $^X, "git-svn-vsn.pl";
 
+my $conflictMsg = <<EOCM;
+***
+    This version of DBI conflicts with the version of
+    module %s (%s) you have installed.
+
+    It's strongly recommended that you update it after
+    installing this version of DBI.
+***
+EOCM
+
+sub CheckConflicts {
+    my %params    = @_;
+    my %conflicts = %{ $params{CONFLICTS} };
+    my $found     = 0;
+
+    while ( my ( $module, $version ) = each(%conflicts) ) {
+        undef $@;
+        eval "require $module";
+        next if $@;
+        my $installed = eval "\$" . $module . "::VERSION";
+        if ( $installed le $version ) {
+            ++$found;
+            my $msg = $conflictMsg;
+            my $warning = sprintf( $msg, $module, $installed );
+            warn $warning;
+        }
+    }
+
+    return !$found;
+}
+
+sub WriteMakefile1 {
+    #Written by Alexandr Ciornii, version 0.21. Added by eumm-upgrade.
+    my %params       = @_;
+    my $eumm_version = $ExtUtils::MakeMaker::VERSION;
+    $eumm_version = eval $eumm_version;
+    die "EXTRA_META is deprecated" if ( exists( $params{EXTRA_META} ) );
+    die "License not specified"    if ( !exists( $params{LICENSE} ) );
+    if ( $params{BUILD_REQUIRES} and ( $eumm_version < 6.5503 ) ) {
+        #EUMM 6.5502 has problems with BUILD_REQUIRES
+        $params{PREREQ_PM} = { %{ $params{PREREQ_PM} || {} }, %{ $params{BUILD_REQUIRES} } };
+        delete $params{BUILD_REQUIRES};
+    }
+    delete $params{CONFIGURE_REQUIRES} if ( $eumm_version < 6.52 );
+    delete $params{MIN_PERL_VERSION}   if ( $eumm_version < 6.48 );
+    delete $params{META_MERGE}         if ( $eumm_version < 6.46 );
+    delete $params{META_ADD}           if ( $eumm_version < 6.46 );
+    delete $params{LICENSE}            if ( $eumm_version < 6.31 );
+
+    # more or less taken from Moose' Makefile.PL
+    if ( $params{CONFLICTS} ) {
+        my $ok = CheckConflicts(%params);
+        exit(0) if ( $params{PREREQ_FATAL} and not $ok );
+        my $cpan_smoker = grep { $_ =~ m/(?:CR_SMOKER|CPAN_REPORTER|AUTOMATED_TESTING)/ } keys %ENV;
+        unless ( $cpan_smoker || $ENV{PERL_MM_USE_DEFAULT} ) {
+            sleep 4 unless ($ok);
+        }
+        delete $params{CONFLICTS};
+    }
+
+    WriteMakefile(%params);
+}
+
 $Verbose = $::opt_v;
-WriteMakefile(
+WriteMakefile1(
     dbd_edit_mm_attribs(\%opts, {
 	create_pp_tests => 1,
 	create_nano_tests => 1,
