@@ -21,6 +21,9 @@ DBI::Changes - List of significant changes to the DBI
     DBI::SQL::Nano and SQL::Statement (Jens Rehsack)
   Updated tests to cover optional installed SQL::Statement (Jens Rehsack)
   Synchronize between SQL::Statement and DBI::SQL::Nano (Jens Rehsack)
+  Added basic test for DBD::File (H. Merijn Brand)
+  Modernize Makefile.PL with CONFLICTS, recommended dependencies and
+    resources (Jens Rehsack)
 
 =head2 Changes in DBI 1.611 (svn r13935) 29th April 2010
 
