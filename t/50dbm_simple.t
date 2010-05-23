@@ -7,19 +7,14 @@ use File::Spec;
 use Test::More;
 use Cwd;
 use Config qw(%Config);
+use Storable qw(dclone);
 
 my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
 
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
-my $tests_in_group;
 
 BEGIN {
-
-    # Be conservative about what modules we use here.
-    # We don't want to be tripped up by a badly installed module
-    # so we remove from @INC any version-specific dirs that don't
-    # also have an arch-specific dir. Plus, for 5.8 remove any <=5.7
 
     # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
     # next line forces use of Nano rather than default behaviour
@@ -28,14 +23,13 @@ BEGIN {
 
     push @mldbm_types, '';
     if (eval { require 'MLDBM.pm'; }) {
-        push @mldbm_types, 'Data::Dumper' if eval { require 'Data/Dumper.pm' };
-        push @mldbm_types, 'Storable'     if eval { require 'Storable.pm' };
+	push @mldbm_types, qw(Data::Dumper Storable); # both in CORE
         push @mldbm_types, 'FreezeThaw'   if eval { require 'FreezeThaw.pm' };
     }
 
     # Potential DBM modules in preference order (SDBM_File first)
     # skip NDBM and ODBM as they don't support EXISTS
-    my @dbms = qw(SDBM_File NDBM_File ODBM_File GDBM_File DB_File BerkeleyDB);
+    my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB NDBM_File ODBM_File);
     my @use_dbms = @ARGV;
     if( !@use_dbms && $ENV{DBD_DBM_TEST_BACKENDS} ) {
 	@use_dbms = split ' ', $ENV{DBD_DBM_TEST_BACKENDS};
@@ -60,21 +54,6 @@ BEGIN {
             }
         }
     }
-
-    print "Using DBM modules: @dbm_types\n";
-    print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
-
-    $tests_in_group = 15;
-    my $num_tests = @dbm_types * @mldbm_types * $tests_in_group;
-    printf "Test count: %d x %d x %d = %d\n",
-        scalar @dbm_types, 0+@mldbm_types, $tests_in_group, $num_tests;
-	
-    if (!$num_tests) {
-        plan skip_all => "No DBM modules available";
-    }
-    else {
-        plan tests => $num_tests;
-    }
 }
 
 my $dir = File::Spec->catdir(getcwd(),'test_output');
@@ -82,11 +61,76 @@ my $dir = File::Spec->catdir(getcwd(),'test_output');
 rmtree $dir;
 mkpath $dir;
 
-my( $two_col_sql,$three_col_sql ) = split /\n\n/,join '',<DATA>;
+my %expected_results = (
+    2 => [
+	"DROP TABLE IF EXISTS fruit", undef,
+	"CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))", '0E0',
+	"INSERT INTO  fruit VALUES (1,'oranges'   )", 1,
+	"INSERT INTO  fruit VALUES (2,'to_change' )", 1,
+	"INSERT INTO  fruit VALUES (3, NULL       )", 1,
+	"INSERT INTO  fruit VALUES (4,'to delete' )", 1,
+	"INSERT INTO  fruit VALUES (?,?); #5,via placeholders", 1,
+	"INSERT INTO  fruit VALUES (6,'to delete' )", 1,
+	"INSERT INTO  fruit VALUES (7,'to_delete' )", 1,
+	"DELETE FROM  fruit WHERE dVal='to delete'", 2,
+	"UPDATE fruit SET dVal='apples' WHERE dKey=2", 1,
+	"DELETE FROM  fruit WHERE dKey=7", 1,
+	'SELECT * FROM fruit ORDER BY dKey DESC', [
+	    [ 5, 'via placeholders' ],
+	    [ 3, '' ],
+	    [ 2, 'apples' ],
+	    [ 1, 'oranges' ],
+	],
+	"DROP TABLE fruit", -1,
+    ],
+    3 => [
+	"DROP TABLE IF EXISTS multi_fruit", undef,
+	"CREATE TABLE multi_fruit (dKey INT, dVal VARCHAR(10), qux INT)", '0E0',
+	"INSERT INTO  multi_fruit VALUES (1,'oranges'  , 11 )", 1,
+	"INSERT INTO  multi_fruit VALUES (2,'to_change',  0 )", 1,
+	"INSERT INTO  multi_fruit VALUES (3, NULL      , 13 )", 1,
+	"INSERT INTO  multi_fruit VALUES (4,'to_delete', 14 )", 1,
+	"INSERT INTO  multi_fruit VALUES (?,?,?); #5,via placeholders,15", 1,
+	"INSERT INTO  multi_fruit VALUES (6,'to_delete', 16 )", 1,
+	"INSERT INTO  multi_fruit VALUES (7,'to delete', 17 )", 1,
+	"INSERT INTO  multi_fruit VALUES (8,'to remove', 18 )", 1,
+	"UPDATE multi_fruit SET dVal='apples', qux='12' WHERE dKey=2", 1,
+	"DELETE FROM  multi_fruit WHERE dVal='to_delete'", 2,
+	"DELETE FROM  multi_fruit WHERE qux=17", 1,
+	"DELETE FROM  multi_fruit WHERE dKey=8", 1,
+	'SELECT * FROM multi_fruit ORDER BY dKey DESC', [
+	    [ 5, 'via placeholders', 15 ],
+	    [ 3, undef, 13 ],
+	    [ 2, 'apples', 12 ],
+	    [ 1, 'oranges', 11 ],
+	],
+	"DROP TABLE multi_fruit", -1,
+    ],
+);
+
+print "Using DBM modules: @dbm_types\n";
+print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
+
+my $tests_offsets_group = 5;
+my $ndbm_types = scalar @dbm_types;
+my $nmldbm_types = scalar @mldbm_types;
+my $tests_without_mldbm = $tests_offsets_group + scalar(@{$expected_results{2}}) / 2 + 1;
+my $tests_with_mldbm = ( $nmldbm_types - 1 ) * ($tests_offsets_group + scalar(@{$expected_results{3}})/2 + 1);
+my $num_tests = $ndbm_types * ( $tests_without_mldbm + $tests_with_mldbm );
+printf "Test count: %d x ( ( %d + %d ) + %d x ( %d + %d ) ) = %d\n",
+    scalar $ndbm_types, $tests_offsets_group, scalar(@{$expected_results{2}}) / 2 + 1,
+                        $nmldbm_types - 1, $tests_offsets_group, scalar(@{$expected_results{3}})/2 + 1,
+    $num_tests;
+    
+if (!$num_tests) {
+    plan skip_all => "No DBM modules available";
+}
+else {
+    plan tests => $num_tests;
+}
 
 for my $mldbm ( @mldbm_types ) {
-    my $sql = ($mldbm) ? $three_col_sql : $two_col_sql;
-    my @sql = split /\n/, $sql;
+    my @sql = ($mldbm) ? @{$expected_results{3}} : @{$expected_results{2}};
     for my $dbm_type ( @dbm_types ) {
 	print "\n--- Using $dbm_type ($mldbm) ---\n";
         eval { do_test( $dbm_type, $mldbm, @sql) }
@@ -95,8 +139,16 @@ for my $mldbm ( @mldbm_types ) {
 }
 rmtree $dir;
 
+# XXX from PP part of List::MoreUtils
+sub part(&@) {
+    my ($code, @list) = @_;
+    my @parts;
+    push @{ $parts[$code->($_)] }, $_  for @list;
+    return @parts;
+}
+
 sub do_test {
-    my ($dtype, $mldbm, @sql) = @_;
+    my ($dtype, $mldbm, @sqltests) = @_;
 
     my $test_builder = Test::More->builder;
     my $starting_test_no = $test_builder->current_test;
@@ -106,7 +158,7 @@ sub do_test {
     # on systems with broken NFS locking daemons.
     # (This test script doesn't test that locking actually works anyway.)
 
-    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;mldbm=$mldbm;lockfile=0";
+    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;dbm_lockfile=1";
 
     if ($using_dbd_gofer) {
         $dsn .= ";f_dir=$dir";
@@ -147,87 +199,49 @@ sub do_test {
     };
     ok($@);
 
-    SKIP:
-    for my $sql ( @sql ) {
-        $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
-        $sql =~ s/;$//;  # in case no final \n on last line of __DATA__
-        #diag($sql);
-        my $null = '';
-        my $expected_results = {
-            1 => 'oranges',
-            2 => 'apples',
-            3 => $null,
-            5 => 'via placeholders',
-        };
-        $expected_results = {
-            1 => '11',
-            2 => '12',
-            3 => '13',
-            5 => '15',
-        } if $mldbm;
+    # XXX I would prefer use List::Moreutils::part ...
+    my $i = 0;
+    my @tests = part { $i++ % 2 } @sqltests;
+    my @queries = @{$tests[0]};
+    my @results = @{dclone $tests[1]};
 
-	print " $sql ...";
+    SKIP:
+    for my $idx ( 0 .. $#queries ) {
+	my $sql = $queries[$idx];
+        $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
+        $sql =~ s/;$//;
+        #diag($sql);
+
+        # XXX FIX INSERT with NULL VALUE WHEN COLUMN NOT NULLABLE
+	$dtype eq 'BerkeleyDB' and !$mldbm and 0 == index($sql, 'INSERT') and $sql =~ s/NULL/''/;
+
         $sql =~ s/\s*;\s*(?:#(.*))//;
         my $comment = $1;
 
-        my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-        my @bind;
-        @bind = split /,/, $comment if $sth->{NUM_OF_PARAMS};
+        my $sth = $dbh->prepare($sql);
+	unless( $sth ) {
+            skip "prepare failed: " . $dbh->errstr || 'unknown error',
+	        ($sql =~ /SELECT/) ? 2 : 1;
+	}
+        my @bind = split /,/, $comment if $sth->{NUM_OF_PARAMS};
         # if execute errors we will handle it, not PrintError:
         $sth->{PrintError} = 0;
         my $n = $sth->execute(@bind);
-	print DBI::neat($n), "\n"; # execute might fail
-        if ($sth->err and $sql !~ /DROP/) {
+        if ($sth->err and $sql !~ /^DROP/ ) {
             skip "execute failed: " . $sth->errstr || 'unknown error',
-                ($starting_test_no + $tests_in_group - $test_builder->current_test);
-            die $sth->errstr if $sth->err and $sql !~ /DROP/;
+	        ($sql =~ /SELECT/) ? 2 : 1;
         }
+	is( $n, $results[$idx], $sql ) unless( 'ARRAY' eq ref $results[$idx] );
         next unless $sql =~ /SELECT/;
         my $results='';
         # Note that we can't rely on the order here, it's not portable,
         # different DBMs (or versions) will return different orders.
-	my @key_order;
-        while (my ($key, $value) = $sth->fetchrow_array) {
-            ok exists $expected_results->{$key};
-            is $value, $expected_results->{$key};
-	    push @key_order, $key;
-        }
-        is $DBI::rows, keys %$expected_results;
-	is_deeply( \@key_order, [ 5, 3, 2, 1 ], 'select result order' );
+	my $allrows = $sth->fetchall_arrayref();
+	my $expected_rows = $results[$idx];
+	is( $DBI::rows, scalar( @{$expected_rows} ), $sql );
+	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
     $dbh->disconnect;
     return 1;
 }
 1;
-__DATA__
-DROP TABLE IF EXISTS fruit;
-CREATE TABLE fruit (dKey INT, dVal VARCHAR(10));
-INSERT INTO  fruit VALUES (1,'oranges'   );
-INSERT INTO  fruit VALUES (2,'to_change' );
-INSERT INTO  fruit VALUES (3, NULL       );
-INSERT INTO  fruit VALUES (4,'to delete' );
-INSERT INTO  fruit VALUES (?,?); #5,via placeholders
-INSERT INTO  fruit VALUES (6,'to delete' );
-INSERT INTO  fruit VALUES (7,'to_delete' );
-DELETE FROM  fruit WHERE dVal='to delete';
-UPDATE fruit SET dVal='apples' WHERE dKey=2;
-DELETE FROM  fruit WHERE dKey=7;
-SELECT * FROM fruit ORDER BY dKey DESC;
-DROP TABLE fruit;
-
-DROP TABLE IF EXISTS multi_fruit;
-CREATE TABLE multi_fruit (dKey INT, dVal VARCHAR(10), qux INT);
-INSERT INTO  multi_fruit VALUES (1,'oranges'  , 11 );
-INSERT INTO  multi_fruit VALUES (2,'to_change',  0 );
-INSERT INTO  multi_fruit VALUES (3, NULL      , 13 );
-INSERT INTO  multi_fruit VALUES (4,'to_delete', 14 );
-INSERT INTO  multi_fruit VALUES (?,?,?); #5,via placeholders,15
-INSERT INTO  multi_fruit VALUES (6,'to_delete', 16 );
-INSERT INTO  multi_fruit VALUES (7,'to delete', 17 );
-INSERT INTO  multi_fruit VALUES (8,'to remove', 18 );
-UPDATE multi_fruit SET dVal='apples', qux='12' WHERE dKey=2;
-DELETE FROM  multi_fruit WHERE dVal='to_delete';
-DELETE FROM  multi_fruit WHERE qux=17;
-DELETE FROM  multi_fruit WHERE dKey=8;
-SELECT dKey,qux FROM multi_fruit ORDER BY dKey DESC;
-DROP TABLE multi_fruit;
