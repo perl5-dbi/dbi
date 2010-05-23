@@ -287,7 +287,7 @@ sub DROP ($$$)
     eval { ($table) = $self->open_tables( $data, 0, 1 ); };
     if ( $self->{ignore_missing_table} and $@ and $@ =~ m/no such (table|file)/i )
     {
-	return ( -1, 0 );
+        return ( -1, 0 );
     }
 
     $self->do_err($@) if ($@);
@@ -343,7 +343,6 @@ sub DELETE ($$$)
     my $can_dor = $table->can('delete_one_row');
     while ( $array = $table->fetch_row($data) )
     {
-
         if ( $self->eval_where( $table, $array ) )
         {
             ++$affected;
@@ -432,7 +431,7 @@ sub SELECT ($$$)
     {
         my ( $sort_col, $desc ) = each %{ $self->{order_clause} };
         my @sortCols = ( $self->column_nums( $table, $sort_col, 1 ) );
-	$sortCols[1] = uc $desc eq 'DESC' ? 1 : 0;
+        $sortCols[1] = uc $desc eq 'DESC' ? 1 : 0;
 
         @rows = sort {
             my ( $result, $colNum, $desc );
@@ -460,6 +459,7 @@ sub UPDATE ($$$)
     my ( @rows, $array, $f_array, $val, $col, $i );
     while ( $array = $table->fetch_row($data) )
     {
+
         if ( $self->eval_where( $table, $array ) )
         {
             $array = $self->{fetched_value} if ( $self->{fetched_from_key} and $table->can('update_one_row') );
@@ -683,8 +683,7 @@ sub open_tables
 
 sub row_values
 {
-    my $self    = shift;
-    my $val_num = shift;
+    my ( $self, $val_num ) = @_;
     if ( !$self->{"values"} ) { return 0; }
     if ( defined $val_num )
     {
@@ -698,6 +697,17 @@ sub row_values
     {
         return scalar @{ $self->{"values"} };
     }
+}
+
+sub column_names
+{
+    my ($self) = @_;
+    my @col_names;
+    if ( $self->{column_names} and $self->{column_names}->[0] ne '*' )
+    {
+        @col_names = @{ $self->{column_names} };
+    }
+    return @col_names;
 }
 
 ###############################
