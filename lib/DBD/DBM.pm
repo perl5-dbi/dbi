@@ -245,6 +245,35 @@ package DBD::DBM::st;
 $DBD::DBM::st::imp_data_size = 0;
 @DBD::DBM::st::ISA           = qw(DBD::File::st);
 
+sub FETCH
+{
+    my ( $sth, $attr ) = @_;
+
+    # Being a bit dirty here, as neither SQL::Statement::Structure nor
+    # DBI::SQL::Nano::Statement_ does not offer an interface to the
+    # required data
+    my @colnames;
+    if ( $sth->{f_stmt}->isa('SQL::Statement') )
+    {
+        my $struct = $sth->{f_stmt}{struct} || {};
+        my @coldefs = @{ $struct->{column_defs} || [] };
+        @colnames = map { $_->{name} || $_->{value} } @coldefs;
+    }
+    @colnames = $sth->{f_stmt}->column_names() unless (@colnames);
+
+    $attr eq "TYPE" and return [ map { "CHAR" } @colnames ];
+
+    # XXX not really known ...
+    # $attr eq "PRECISION" and
+
+    # XXX only BerkeleyDB fails having NULL values for non-MLDBM databases,
+    #     none accept it for key - but it requires more knowledge between
+    #     queries and tables storage to return fully correct information
+    $attr eq "NULLABLE" and return [ map { 0 } @colnames ];
+
+    return $sth->SUPER::FETCH($attr);
+}    # FETCH
+
 sub dbm_schema
 {
     my ( $sth, $tname ) = @_;
@@ -289,8 +318,8 @@ sub file2table
 sub init_table_meta ($$$$$)
 {
     my ( $self, $dbh, $table, $file_is_table, $quoted ) = @_;
-    defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table} or
-        $dbh->{f_meta}->{$table} = {};
+    defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table}
+      or $dbh->{f_meta}->{$table} = {};
     my $meta = $dbh->{f_meta}->{$table};
 
     $meta->{dbm_type} ||= $dbh->{dbm_type} || 'SDBM_File';
@@ -330,8 +359,8 @@ sub init_table_meta ($$$$$)
         if ( $meta->{dbm_mldbm} )
         {
             require "MLDBM.pm" unless ( $INC{"MLDBM.pm"} );
-	    $meta->{dbm_usedb} = $tie_type;
-            $tie_type          = 'MLDBM';
+            $meta->{dbm_usedb} = $tie_type;
+            $tie_type = 'MLDBM';
         }
 
         $meta->{dbm_tietype} = $tie_type;
@@ -484,7 +513,7 @@ sub push_row ($$$)
 {
     my ( $self, $data, $row_aryref ) = @_;
     my $meta = $self->{meta};
-    my $key = shift @$row_aryref;
+    my $key  = shift @$row_aryref;
     if ( $meta->{dbm_mldbm} )
     {
         $meta->{hash}->{$key} = $row_aryref;
@@ -543,7 +572,7 @@ sub update_one_row ($$$)
 {
     my ( $self, $data, $aryref ) = @_;
     my $meta = $self->{meta};
-    my $key = shift @$aryref;
+    my $key  = shift @$aryref;
     return unless ( defined $key );
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $meta->{hash}->{$key} = $meta->{dbm_mldbm} ? $row : $row->[0];
@@ -552,7 +581,7 @@ sub update_one_row ($$$)
 sub update_specific_row ($$$$)
 {
     my ( $self, $data, $aryref, $origary ) = @_;
-    my $meta = $self->{meta};
+    my $meta   = $self->{meta};
     my $key    = shift @$origary;
     my $newkey = shift @$aryref;
     return unless ( defined $key );
