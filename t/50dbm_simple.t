@@ -54,6 +54,23 @@ BEGIN {
             }
         }
     }
+
+    if( eval { require List::MoreUtils; } )
+    {
+	List::MoreUtils->import("part");
+    }
+    else
+    {
+	# XXX from PP part of List::MoreUtils
+	eval <<'EOP';
+sub part(&@) {
+    my ($code, @list) = @_;
+    my @parts;
+    push @{ $parts[$code->($_)] }, $_  for @list;
+    return @parts;
+}
+EOP
+    }
 }
 
 my $dir = File::Spec->catdir(getcwd(),'test_output');
@@ -61,7 +78,7 @@ my $dir = File::Spec->catdir(getcwd(),'test_output');
 rmtree $dir;
 mkpath $dir;
 
-my %expected_results = (
+my %tests_statement_results = (
     2 => [
 	"DROP TABLE IF EXISTS fruit", -1,
 	"CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))", '0E0',
@@ -111,15 +128,29 @@ my %expected_results = (
 print "Using DBM modules: @dbm_types\n";
 print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
+my %test_statements;
+my %expected_results;
+
+for my $columns ( 2 .. 3 )
+{
+    my $i = 0;
+    my @tests = part { $i++ % 2 } @{ $tests_statement_results{$columns} };
+    @{ $test_statements{$columns} } = @{$tests[0]};
+    @{ $expected_results{$columns} } = @{$tests[1]};
+}
+
 my $tests_offsets_group = 5;
 my $ndbm_types = scalar @dbm_types;
 my $nmldbm_types = scalar @mldbm_types;
-my $tests_without_mldbm = $tests_offsets_group + scalar(@{$expected_results{2}}) / 2 + 1;
-my $tests_with_mldbm = ( $nmldbm_types - 1 ) * ($tests_offsets_group + scalar(@{$expected_results{3}})/2 + 1);
+my $tests_without_mldbm = $tests_offsets_group + scalar(@{$test_statements{2}});
+   $tests_without_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{2} };
+my $tests_with_mldbm = $tests_offsets_group + scalar(@{$test_statements{3}});
+   $tests_with_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{3} };
+   $tests_with_mldbm *= $nmldbm_types - 1;
 my $num_tests = $ndbm_types * ( $tests_without_mldbm + $tests_with_mldbm );
 printf "Test count: %d x ( ( %d + %d ) + %d x ( %d + %d ) ) = %d\n",
-    scalar $ndbm_types, $tests_offsets_group, scalar(@{$expected_results{2}}) / 2 + 1,
-                        $nmldbm_types - 1, $tests_offsets_group, scalar(@{$expected_results{3}})/2 + 1,
+    $ndbm_types, $tests_offsets_group, $tests_without_mldbm - $tests_offsets_group,
+                 $nmldbm_types - 1, $tests_offsets_group, $tests_with_mldbm / ($nmldbm_types - 1) - $tests_offsets_group,
     $num_tests;
     
 if (!$num_tests) {
@@ -130,25 +161,17 @@ else {
 }
 
 for my $mldbm ( @mldbm_types ) {
-    my @sql = ($mldbm) ? @{$expected_results{3}} : @{$expected_results{2}};
+    my $columns = ($mldbm) ? 3 : 2;
     for my $dbm_type ( @dbm_types ) {
 	print "\n--- Using $dbm_type ($mldbm) ---\n";
-        eval { do_test( $dbm_type, $mldbm, @sql) }
+        eval { do_test( $dbm_type, $mldbm, $columns) }
             or warn $@;
     }
 }
 rmtree $dir;
 
-# XXX from PP part of List::MoreUtils
-sub part(&@) {
-    my ($code, @list) = @_;
-    my @parts;
-    push @{ $parts[$code->($_)] }, $_  for @list;
-    return @parts;
-}
-
 sub do_test {
-    my ($dtype, $mldbm, @sqltests) = @_;
+    my ($dtype, $mldbm, $columns) = @_;
 
     my $test_builder = Test::More->builder;
     my $starting_test_no = $test_builder->current_test;
@@ -200,11 +223,8 @@ sub do_test {
     };
     ok($@);
 
-    # XXX I would prefer use List::Moreutils::part ...
-    my $i = 0;
-    my @tests = part { $i++ % 2 } @sqltests;
-    my @queries = @{$tests[0]};
-    my @results = @{dclone $tests[1]};
+    my @queries = @{$test_statements{$columns}};
+    my @results = @{$expected_results{$columns}};
 
     SKIP:
     for my $idx ( 0 .. $#queries ) {
@@ -230,19 +250,20 @@ sub do_test {
         my $n = $sth->execute(@bind);
         if ($sth->err and $sql !~ /^DROP/ ) {
             skip "execute failed: " . $sth->errstr || 'unknown error',
-	        ($sql =~ /SELECT/) ? 2 : 1;
+	        ($sql =~ /^(?:SELECT|UPDATE|DELETE)/) ? 2 : 1;
         }
 	is( $n, $results[$idx], $sql ) unless( 'ARRAY' eq ref $results[$idx] );
+	TODO: {
+	    local $TODO = "AUTOPROXY drivers might throw away sth->rows()";
+	    is( $n, $sth->rows, '$sth->execute(' . $sql . ') == $sth->rows' ) if( $sql =~ m/^(?:UPDATE|DELETE)/ );
+	}
         next unless $sql =~ /SELECT/;
         my $results='';
         # Note that we can't rely on the order here, it's not portable,
         # different DBMs (or versions) will return different orders.
 	my $allrows = $sth->fetchall_arrayref();
 	my $expected_rows = $results[$idx];
-	TODO: {
-	    local $TODO = "Proxying DBD's might not return amount of fetched rows";
-	    is( $sth->rows, scalar( @{$expected_rows} ), $sql );
-	}
+	is( $sth->rows, scalar( @{$expected_rows} ), $sql );
 	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
     $dbh->disconnect;
