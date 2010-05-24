@@ -1010,7 +1010,7 @@ These attributes and methods are not supported:
     LongTruncOk
 
 Additional to the DBI attributes, you can use the following dbh
-attribute:
+attributes to control the behaviour of DBD::File in the file system:
 
 =over 4
 
@@ -1114,7 +1114,38 @@ If you wish to disable locking, set the f_lockfile equal to 0.
 With this attribute, you can set the encoding in which the file is opened.
 This is implemented using C<binmode $fh, ":encoding(<f_encoding>)">.
 
+=item f_meta
+
+Private data area which contains information about the tables this
+module handles.
+
 =back
+
+Internally private attributes to deal with SQL backends:
+
+=over 4
+
+=item sql_nano_version
+
+Conatins the version of loaded DBI::SQL::Nano
+
+=item sql_statement_version
+
+Contains the version of loaded SQL::Statement
+
+=item sql_handler
+
+Contains either 'SQL::Statement' or 'DBI::SQL::Nano'.
+
+=item sql_ram_tables
+
+Contains optionally temporary tables.
+
+=back
+
+Do not modify one of above private attributes, except you know exactly the
+implications. The behaviour of DBD::File and derived DBD's might be
+unpredictable when one or more of those attributes are modified.
 
 =head2 Driver private methods
 
