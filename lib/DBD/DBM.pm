@@ -116,7 +116,7 @@ sub STORE ($$$)
     }
     if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
-	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g
+	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
 	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
 	$attrib = $newattrib;
     }
@@ -154,7 +154,7 @@ sub FETCH ($$)
     }
     if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
-	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g
+	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
 	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
 	$attrib = $newattrib;
     }

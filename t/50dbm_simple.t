@@ -63,7 +63,7 @@ mkpath $dir;
 
 my %expected_results = (
     2 => [
-	"DROP TABLE IF EXISTS fruit", undef,
+	"DROP TABLE IF EXISTS fruit", -1,
 	"CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))", '0E0',
 	"INSERT INTO  fruit VALUES (1,'oranges'   )", 1,
 	"INSERT INTO  fruit VALUES (2,'to_change' )", 1,
@@ -84,7 +84,7 @@ my %expected_results = (
 	"DROP TABLE fruit", -1,
     ],
     3 => [
-	"DROP TABLE IF EXISTS multi_fruit", undef,
+	"DROP TABLE IF EXISTS multi_fruit", -1,
 	"CREATE TABLE multi_fruit (dKey INT, dVal VARCHAR(10), qux INT)", '0E0',
 	"INSERT INTO  multi_fruit VALUES (1,'oranges'  , 11 )", 1,
 	"INSERT INTO  multi_fruit VALUES (2,'to_change',  0 )", 1,
