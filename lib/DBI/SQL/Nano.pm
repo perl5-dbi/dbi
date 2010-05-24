@@ -917,6 +917,29 @@ The base class interfaces are provided by DBI::SQL::Nano::Table_ in case of
 relying on DBI::SQL::Nano or SQL::Eval::Table (see L<SQL::Eval> for details)
 otherwise.
 
+=head1 BUGS AND LIMITATIONS
+
+There are no know bugs in DBI::SQL::Nano::Statement. If you find a one
+and want to report, please see L<DBI> how to report bugs.
+
+DBI::SQL::Nano::Statement is designed to provide a minimal subset for
+executing SQL statements.
+
+The most important limitation might be the restriction to one table per
+statement. This implies, that no JOINs are supported and there can no
+foreign key relation between tables.
+
+The where clause evaluation of DBI::SQL::Nano::Statement is very slow
+(SQL::Statement uses a precompiled evaluation).
+
+INSERT can handle only one row per statement. To insert multiple rows,
+use parameters as explained in DBI.
+
+The parser of DBI::SQL::Nano is very limited and support no extras as
+brackets, comments, functions, aggregations etc.
+
+In contrast to SQL::Statement, temporary tables are not supported.
+
 =head1 ACKNOWLEDGEMENTS
 
 Tim Bunce provided the original idea for this module, helped me out of the

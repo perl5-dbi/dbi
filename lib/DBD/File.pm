@@ -952,7 +952,7 @@ INI files. The module is based on the SQL::Statement module, a simple
 SQL engine.
 
 See L<DBI> for details on DBI, L<SQL::Statement> for details on
-SQL::Statement and L<DBD::CSV> or L<DBD::IniFile> for example
+SQL::Statement and L<DBD::CSV>, L<DBD::DBM> or L<DBD::AnyData> for example
 drivers.
 
 =head2 Metadata
@@ -1143,7 +1143,19 @@ those that have non-valid table names, from the view of SQL.
 
 =back
 
-=head1 KNOWN BUGS
+=head1 SQL ENGINES
+
+DBD::File currently supports two SQL engines: L<DBI::SQL::Nano> and
+L<SQL::Statement>. DBI::SQL::Nano supports a I<very> limited subset
+of SQL statements, but it might be faster in for some very simple
+tasks. SQL::Statement in contrast supports a large subset of ANSI
+SQL.
+
+To use SQL::Statement, the module version 1.28 of SQL::Statement is
+a prerequisite and the environment variable C<< DBI_SQL_NANO >> must
+not be set on a true value.
+
+=head1 KNOWN BUGS AND LIMITATIONS
 
 =over 8
 
@@ -1153,6 +1165,29 @@ The module is using flock () internally. However, this function is not
 available on all platforms. Using flock () is disabled on MacOS and
 Windows 95: There's no locking at all (perhaps not so important on
 MacOS and Windows 95, as there's a single user anyways).
+
+=item *
+
+The module stores details about the handled tables in a private area
+of the driver handle (C<< $drh >>). This data area isn't shared between
+different driver instances, so several C<< DBI->connect() >> calls will
+cause different table instances and private data areas.
+
+This data area is filled first time when a table is accessed - either
+via an SQL statement or via C<< table_info >> and is not destroyed
+before the table is dropped or the driver handle is released.
+
+=item *
+
+When used with SQL::Statement and the feature of temporary tables is
+used with
+
+  CREATE TEMP TABLE ...
+
+the table data processing passes DBD::File::Table. No file system calls
+will be made, no influence with existing (file based) tables with the same
+name will occur. Temporary tables are choosen in favor over file tables,
+but they will not covered by C<< table_info >>.
 
 =back
 
@@ -1167,9 +1202,9 @@ The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2009-2010 by H.Merijn Brand & Jens Rehsack
-Copyright (C) 2004-2009 by Jeff Zucker
-Copyright (C) 1998-2004 by Jochen Wiedmann
+ Copyright (C) 2009-2010 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2004-2009 by Jeff Zucker
+ Copyright (C) 1998-2004 by Jochen Wiedmann
 
 All rights reserved.
 
