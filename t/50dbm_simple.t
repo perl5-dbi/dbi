@@ -144,13 +144,13 @@ my $ndbm_types = scalar @dbm_types;
 my $nmldbm_types = scalar @mldbm_types;
 my $tests_without_mldbm = $tests_offsets_group + scalar(@{$test_statements{2}});
    $tests_without_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{2} };
-my $tests_with_mldbm = $tests_offsets_group + scalar(@{$test_statements{3}});
-   $tests_with_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{3} };
-   $tests_with_mldbm *= $nmldbm_types - 1;
+my $tests_per_mldbm = $tests_offsets_group + scalar(@{$test_statements{3}});
+   $tests_per_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{3} };
+my $tests_with_mldbm = $tests_per_mldbm * ($nmldbm_types - 1);
 my $num_tests = $ndbm_types * ( $tests_without_mldbm + $tests_with_mldbm );
 printf "Test count: %d x ( ( %d + %d ) + %d x ( %d + %d ) ) = %d\n",
     $ndbm_types, $tests_offsets_group, $tests_without_mldbm - $tests_offsets_group,
-                 $nmldbm_types - 1, $tests_offsets_group, $tests_with_mldbm / ($nmldbm_types - 1) - $tests_offsets_group,
+                 $nmldbm_types - 1, $tests_offsets_group, $tests_per_mldbm - $tests_offsets_group,
     $num_tests;
     
 if (!$num_tests) {
