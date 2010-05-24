@@ -933,7 +933,7 @@ The where clause evaluation of DBI::SQL::Nano::Statement is very slow
 (SQL::Statement uses a precompiled evaluation).
 
 INSERT can handle only one row per statement. To insert multiple rows,
-use parameters as explained in DBI.
+use placeholders as explained in DBI.
 
 The parser of DBI::SQL::Nano is very limited and support no extras as
 brackets, comments, functions, aggregations etc.
