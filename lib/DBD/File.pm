@@ -726,6 +726,10 @@ sub file2table
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $file;
+    if( !defined($meta->{f_lockfile}) and $meta->{f_lockfile} ) {
+	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
+	}
+
     return $tbl;
     } # file2table
 
@@ -740,14 +744,16 @@ sub init_table_meta ($$$$$)
     defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table} or
         $dbh->{f_meta}->{$table} = {};
     my $meta = $dbh->{f_meta}->{$table};
-    defined $meta->{f_dir} or
+    exists $meta->{f_dir} or
 	$meta->{f_dir} = $dbh->{f_dir};
     defined $meta->{f_ext} or
 	$meta->{f_ext} = $dbh->{f_ext};
-    defined $meta->{f_encoding} or
+    exists $meta->{f_encoding} or
 	$meta->{f_encoding} = $dbh->{f_encoding};
-    defined $meta->{f_lock} or
+    exists $meta->{f_lock} or
 	$meta->{f_lock} = $dbh->{f_lock};
+    exists $meta->{dbm_lockfile} or
+        $meta->{dbm_lockfile} = $dbh->{dbm_lockfile};
     defined $meta->{f_fqfn} or
 	$self->file2table ($meta, $table, $file_is_table, $quoted);
     } # init_table_meta
@@ -1087,6 +1093,21 @@ Only exclusive locks will be used.
 =back
 
 But see L</"KNOWN BUGS"> below.
+
+=item f_lockfile
+
+If you wish to use a lockfile extension other than '.lck', simply specify
+the f_lockfile attribute:
+
+  $dbh = DBI->connect('dbi:DBM:f_lockfile=.foo');
+  $dbh->{f_lockfile} = '.foo';
+  $dbh->{f_meta}->{qux}->{f_lockfile} = '.foo';
+
+If you wish to disable locking, set the f_lockfile equal to 0.
+
+  $dbh = DBI->connect('dbi:DBM:f_lockfile=0');
+  $dbh->{f_lockfile} = 0;
+  $dbh->{f_meta}->{qux}->{f_lockfile} = 0;
 
 =item f_encoding
 

@@ -78,7 +78,7 @@ sub connect ($$;$$$)
     #    });
     my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
 
-    $this->STORE( 'dbm_lockfile', '.lck' );
+    $this->STORE( 'f_lockfile', '.lck' );
     $this->STORE( 'Active', 1 );
     return $this;
 }
@@ -114,30 +114,31 @@ sub STORE ($$$)
 	# carp "Usage of '$attrib' is depreciated, use 'dbm_$attrib' instead" if( $^W );
         $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
-    if( $attrib eq "dbm_ext" )
+    if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
-	# carp "Attribute 'dbm_ext' is depreciated, use 'f_ext' instead" if( $^W );
-	$attrib = 'f_ext';
+	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g
+	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+	$attrib = $newattrib;
     }
     return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
     # throw an error if it has our prefix but isn't a valid attr name
     #
     if (
-        $attrib ne 'dbm_valid_attrs'    # gotta start somewhere :-)
-        and !$dbh->{dbm_valid_attrs}->{$attrib}
+        $dbh->{dbm_valid_attrs}->{$attrib}
+        or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
        )
     {
-        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'!" );
-    }
-    else
-    {
-
         # check here if you need to validate values
         # or conceivably do other things as well
         #
         $dbh->{$attrib} = $value;
         return 1;
+    }
+    else
+    {
+	# throw an error if it has our prefix but isn't a valid attr name
+        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'!" );
     }
 }
 
@@ -151,24 +152,28 @@ sub FETCH ($$)
     {
         $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
+    if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
+    {
+	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g
+	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+	$attrib = $newattrib;
+    }
     return $dbh->SUPER::FETCH($attrib) unless ( 0 == index( $attrib, 'dbm_' ) );
 
-    # throw an error if it has our prefix but isn't a valid attr name
-    #
     if (
-        $attrib ne 'dbm_valid_attrs'    # gotta start somewhere :-)
-        and !$dbh->{dbm_valid_attrs}->{$attrib}
+        $dbh->{dbm_valid_attrs}->{$attrib}
+        or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
        )
     {
-        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'" );
-    }
-    else
-    {
-
         # check here if you need to validate values
         # or conceivably do other things as well
         #
         return $dbh->{$attrib};
+    }
+    else
+    {
+	# throw an error if it has our prefix but isn't a valid attr name
+        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'" );
     }
 }
 
@@ -197,7 +202,6 @@ sub init_valid_attributes
                                 dbm_mldbm          => 1,    # the global MLDBM serializer
                                 dbm_cols           => 1,    # the global column names
                                 dbm_version        => 1,    # verbose DBD::DBM version
-                                dbm_lockfile       => 1,    # lockfile extension
                                 dbm_store_metadata => 1,    # column names, etc.
                                 dbm_berkeley_flags => 1,    # for BerkeleyDB
                               };
@@ -316,10 +320,6 @@ sub file2table
 
     my $tbl = $self->SUPER::file2table( $meta, $file, $file_is_table, $quoted ) or return;
 
-    if( !defined($meta->{dbm_lockfile}) and $meta->{dbm_lockfile} )
-    {
-	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{dbm_lockfile};
-    }
     $meta->{f_dontopen} = 1;
 
     return $tbl;
@@ -335,8 +335,6 @@ sub init_table_meta ($$$$$)
     $meta->{dbm_type} ||= $dbh->{dbm_type} || 'SDBM_File';
     $meta->{dbm_mldbm} ||= $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
     $meta->{dbm_berkeley_flags} ||= $dbh->{dbm_berkeley_flags};
-    exists $meta->{dbm_lockfile} or
-        $meta->{dbm_lockfile} = $dbh->{dbm_lockfile};
 
     unless ( defined( $meta->{f_ext} ) )
     {
@@ -821,19 +819,6 @@ you use a lockfile with the other program that has the same name as the
 lockfile used in DBD::DBM and that program also uses flock() on that
 lockfile.  In that case, DBD::DBM and your other program will respect each
 other's locks.
-
-If you wish to use a lockfile extension other than '.lck', simply specify
-the dbm_lockfile attribute:
-
-  $dbh = DBI->connect('dbi:DBM:dbm_lockfile=.foo');
-  $dbh->{dbm_lockfile} = '.foo';
-  $dbh->{f_meta}->{qux}->{dbm_lockfile} = '.foo';
-
-If you wish to disable locking, set the dbm_lockfile equal to 0.
-
-  $dbh = DBI->connect('dbi:DBM:dbm_lockfile=0');
-  $dbh->{dbm_lockfile} = 0;
-  $dbh->{f_meta}->{qux}->{dbm_lockfile} = 0;
 
 =head2 Specifying the DBM type
 
