@@ -752,8 +752,8 @@ sub init_table_meta ($$$$$)
 	$meta->{f_encoding} = $dbh->{f_encoding};
     exists $meta->{f_lock} or
 	$meta->{f_lock} = $dbh->{f_lock};
-    exists $meta->{dbm_lockfile} or
-        $meta->{dbm_lockfile} = $dbh->{dbm_lockfile};
+    exists $meta->{f_lockfile} or
+        $meta->{f_lockfile} = $dbh->{f_lockfile};
     defined $meta->{f_fqfn} or
 	$self->file2table ($meta, $table, $file_is_table, $quoted);
     } # init_table_meta
@@ -1016,13 +1016,14 @@ attributes to control the behaviour of DBD::File in the file system:
 
 =item f_dir
 
-This attribute is used for setting the directory where CSV files are
+This attribute is used for setting the directory where the files are
 opened. Usually you set it in the dbh, it defaults to the current
-directory ("."). However, it is overwritable in the statement handles.
+directory ("."). However, it is overwritable in the statement handles
+before executing the statements. See L<BUGS AND LIMITATIONS>.
 
 =item f_ext
 
-This attribute is used for setting the file extension where (CSV) files are
+This attribute is used for setting the file extension where files are
 opened. There are several possibilities.
 
     DBI:CSV:f_dir=data;f_ext=.csv
@@ -1033,7 +1034,7 @@ your datadir has files with extensions, and you do not pass this attribute,
 your table is named C<table.csv>, which is probably not what you wanted. The
 extension is always case-insensitive. The table names are not.
 
-    DBI:CSV:f_dir=data;f_ext=.csv/r
+    DBI:DBM:f_dir=data;f_ext=.db/r
 
 In this case the extension is required, and all filenames that do not match
 are ignored.
@@ -1188,7 +1189,7 @@ not be set on a true value.
 
 =head1 KNOWN BUGS AND LIMITATIONS
 
-=over 8
+=over 4
 
 =item *
 
@@ -1207,6 +1208,26 @@ cause different table instances and private data areas.
 This data area is filled first time when a table is accessed - either
 via an SQL statement or via C<< table_info >> and is not destroyed
 before the table is dropped or the driver handle is released.
+
+Following attributes are conserved in those data area and will
+evaluated instead of driver globals:
+
+=over 8
+
+=item f_ext
+
+=item f_dir
+
+=item f_lock
+
+=item f_lockfile
+
+=back
+
+For DBD::CSV tables this means, once opened 'foo.csv' as table named 'foo',
+another table named 'foo' accessing the file 'foo.csl' cannot be opened.
+Accessing 'foo' will always access the file 'foo.csv' in memorized
+C<< f_dir >>, locking C<< f_lockfile >> via memorized C<< f_lock >>.
 
 =item *
 
@@ -1245,6 +1266,7 @@ specified in the Perl README file.
 
 =head1 SEE ALSO
 
-L<DBI>, L<Text::CSV>, L<Text::CSV_XS>, L<SQL::Statement>
+L<DBI>, L<DBD::DBM>, L<DBD::CSV>, L<Text::CSV>, L<Text::CSV_XS>,
+L<SQL::Statement>, L<DBI::SQL::Nano>
 
 =cut
