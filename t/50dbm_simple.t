@@ -239,7 +239,10 @@ sub do_test {
         # different DBMs (or versions) will return different orders.
 	my $allrows = $sth->fetchall_arrayref();
 	my $expected_rows = $results[$idx];
-	is( $DBI::rows, scalar( @{$expected_rows} ), $sql );
+	TODO: {
+	    local $TODO = "Proxying DBD's might not return amount of fetched rows";
+	    is( $DBI::rows, scalar( @{$expected_rows} ), $sql );
+	}
 	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
     $dbh->disconnect;
