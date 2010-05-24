@@ -78,6 +78,7 @@ sub connect ($$;$$$)
     #    });
     my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
 
+    $this->STORE( 'dbm_lockfile', '.lck' );
     $this->STORE( 'Active', 1 );
     return $this;
 }
@@ -110,7 +111,13 @@ sub STORE ($$$)
     #
     if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
     {
+	# carp "Usage of '$attrib' is depreciated, use 'dbm_$attrib' instead" if( $^W );
         $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
+    }
+    if( $attrib eq "dbm_ext" )
+    {
+	# carp "Attribute 'dbm_ext' is depreciated, use 'f_ext' instead" if( $^W );
+	$attrib = 'f_ext';
     }
     return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
@@ -309,7 +316,10 @@ sub file2table
 
     my $tbl = $self->SUPER::file2table( $meta, $file, $file_is_table, $quoted ) or return;
 
-    $meta->{f_fqln}     = $meta->{f_fqbn} . '.lck';
+    if( !defined($meta->{dbm_lockfile}) and $meta->{dbm_lockfile} )
+    {
+	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{dbm_lockfile};
+    }
     $meta->{f_dontopen} = 1;
 
     return $tbl;
@@ -325,6 +335,8 @@ sub init_table_meta ($$$$$)
     $meta->{dbm_type} ||= $dbh->{dbm_type} || 'SDBM_File';
     $meta->{dbm_mldbm} ||= $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
     $meta->{dbm_berkeley_flags} ||= $dbh->{dbm_berkeley_flags};
+    exists $meta->{dbm_lockfile} or
+        $meta->{dbm_lockfile} = $dbh->{dbm_lockfile};
 
     unless ( defined( $meta->{f_ext} ) )
     {
@@ -737,18 +749,18 @@ statements.
 
 However, I am not aware (and therefore DBD::DBM is not aware) of all
 possible extensions for various DBM types.  If your DBM type uses an
-extension other than .pag and .dir, you should set the I<dbm_ext> attribute
+extension other than .pag and .dir, you should set the I<f_ext> attribute
 to the extension. B<And> you should write me with the name of the
 implementation and extension so I can add it to DBD::DBM! Thanks in advance
 for that :-).
 
-    $dbh = DBI->connect('dbi:DBM:ext=.db');  # .db extension is used
-    $dbh = DBI->connect('dbi:DBM:ext=');     # no extension is used
+    $dbh = DBI->connect('dbi:DBM:f_ext=.db');  # .db extension is used
+    $dbh = DBI->connect('dbi:DBM:f_ext=');     # no extension is used
 
 or
 
-    $dbh->{dbm_ext}='.db';                      # global setting
-    $dbh->{dbm_tables}->{'qux'}->{ext}='.db';   # setting for table 'qux'
+    $dbh->{f_ext}='.db';                      # global setting
+    $dbh->{f_meta}->{'qux'}->{f_ext}='.db';       # setting for table 'qux'
 
 By default files are assumed to be in the current working directory.  To
 have the module look in a different directory, specify the I<f_dir>
@@ -813,15 +825,15 @@ other's locks.
 If you wish to use a lockfile extension other than '.lck', simply specify
 the dbm_lockfile attribute:
 
-  $dbh = DBI->connect('dbi:DBM:lockfile=.foo');
+  $dbh = DBI->connect('dbi:DBM:dbm_lockfile=.foo');
   $dbh->{dbm_lockfile} = '.foo';
-  $dbh->{dbm_tables}->{qux}->{lockfile} = '.foo';
+  $dbh->{f_meta}->{qux}->{dbm_lockfile} = '.foo';
 
 If you wish to disable locking, set the dbm_lockfile equal to 0.
 
-  $dbh = DBI->connect('dbi:DBM:lockfile=0');
+  $dbh = DBI->connect('dbi:DBM:dbm_lockfile=0');
   $dbh->{dbm_lockfile} = 0;
-  $dbh->{dbm_tables}->{qux}->{lockfile} = 0;
+  $dbh->{f_meta}->{qux}->{dbm_lockfile} = 0;
 
 =head2 Specifying the DBM type
 
@@ -1113,7 +1125,7 @@ You *must* use placeholders to insert or refer to the data.
 =head1 GOTCHAS AND WARNINGS
 
 Using the SQL DROP command will remove any file that has the name specified
-in the command with either '.pag' or '.dir' or your {dbm_ext} appended to
+in the command with either '.pag' or '.dir' or your {f_ext} appended to
 it.  So this be dangerous if you aren't sure what file it refers to:
 
  $dbh->do(qq{DROP TABLE "/path/to/any/file"});
