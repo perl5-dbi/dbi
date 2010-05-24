@@ -3361,6 +3361,14 @@ sub dbd_edit_mm_attribs {
 	push @all_keys, @new_keys;
     }
 
+    my %uniq_keys;
+    foreach my $key (@all_keys) {
+	@tv_keys = sort split //, $key;
+	my $ordered = join( '', @tv_keys );
+	$uniq_keys{$ordered} = 1;
+    }
+    @all_keys = sort { length $a <=> length $b or $a cmp $b } keys %uniq_keys;
+
     # do whatever needs doing
     if( keys %test_variants ) {
 	# XXX need to convert this to work within the generated Makefile
