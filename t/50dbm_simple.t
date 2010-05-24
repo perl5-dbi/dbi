@@ -158,7 +158,7 @@ sub do_test {
     # on systems with broken NFS locking daemons.
     # (This test script doesn't test that locking actually works anyway.)
 
-    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;dbm_lockfile=1";
+    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;dbm_lockfile=.lck";
 
     if ($using_dbd_gofer) {
         $dsn .= ";f_dir=$dir";
