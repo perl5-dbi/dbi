@@ -62,19 +62,17 @@ ok ($sth = $dbh->prepare ("select * from t_sbdgf_53442Gz"), "Prepare select from
     like ("@msg", qr{Cannot open ./t_sbdgf_}, "Cannot open non-existing file");
     }
 
-my $tfh;
+my @tfhl;
 
 # Now test some basic SQL statements
 my $tbl_file = "$tbl.txt";
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl");
 ok (-f $tbl_file, "Test table exists");
 
-if ($tfh) { # push_names () cached the now opened file handle
-    # Expected: ("unix", "perlio", "encoding(iso-8859-1)")
-    # use Data::Peek; DDumper [ PerlIO::get_layers ($tfh) ];
-    my @layer = grep { $_ eq "encoding($encoding)" } PerlIO::get_layers ($tfh);
-    is (scalar @layer, 1, "encoding shows in layer");
-    }
+# Expected: ("unix", "perlio", "encoding(iso-8859-1)")
+# use Data::Peek; DDumper [ @tfh ];
+my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
+is (scalar @layer, 1, "encoding shows in layer");
 
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select *");
 $rowidx = 0;
@@ -106,6 +104,6 @@ sub DBD::File::Table::push_names ($$$)
 {
     my ($self, $data, $row_aryref) = @_;
     my $meta = $self->{meta};
-    $tfh = $meta->{fh};
+    @tfhl = PerlIO::get_layers ($meta->{fh});
     @{$meta->{col_names}} = @{$row_aryref};
     } # push_names
