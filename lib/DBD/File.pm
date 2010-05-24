@@ -726,17 +726,16 @@ sub file2table
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $file;
-    if( !defined($meta->{f_lockfile}) and $meta->{f_lockfile} ) {
+    !defined ($meta->{f_lockfile}) && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
-	}
 
     return $tbl;
     } # file2table
 
 my $open_table_re = sprintf "(?:%s|%s|%s)",
-	quotemeta (File::Spec->curdir  ()),
-	quotemeta (File::Spec->updir   ()),
-	quotemeta (File::Spec->rootdir ());
+    quotemeta (File::Spec->curdir  ()),
+    quotemeta (File::Spec->updir   ()),
+    quotemeta (File::Spec->rootdir ());
 
 sub init_table_meta ($$$$$)
 {
