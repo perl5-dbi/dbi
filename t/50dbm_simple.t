@@ -241,7 +241,7 @@ sub do_test {
 	my $expected_rows = $results[$idx];
 	TODO: {
 	    local $TODO = "Proxying DBD's might not return amount of fetched rows";
-	    is( $DBI::rows, scalar( @{$expected_rows} ), $sql );
+	    is( $sth->rows, scalar( @{$expected_rows} ), $sql );
 	}
 	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
