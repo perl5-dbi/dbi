@@ -1018,6 +1018,7 @@ attributes:
 This attribute is used for setting the directory where the files are
 opened and it defaults to the current directory ("."). Usually you set
 it on the dbh but it may be overriden on the statement handle.
+See L<BUGS AND LIMITATIONS>.
 
 =item f_ext
 
@@ -1083,24 +1084,24 @@ so the DSN can be C<dbi:CSV:f_schema=;f_dir=.>.
 
 =item f_lock
 
-With this attribute, you can force locking mode (if locking is supported
-at all) for opening tables. By default, tables are opened with a shared
-lock for reading, and with an exclusive lock for writing. The supported
-modes are:
+The C<f_lock> attribute is used to set the locking mode on the opened
+table files. Note that not all platforms support locking.  By default,
+tables are opened with a shared lock for reading, and with an
+exclusive lock for writing. The supported modes are:
 
 =over 2
 
 =item 0
 
-Force no locking at all.
+No locking at all.
 
 =item 1
 
-Only shared locks will be used.
+Shared locks will be used.
 
 =item 2
 
-Only exclusive locks will be used.
+Exclusive locks will be used.
 
 =back
 
@@ -1204,10 +1205,10 @@ not be set to a true value.
 
 =item *
 
-The module is using flock () internally. However, this function is not
-available on all platforms. Using flock () is disabled on MacOS and
-Windows 95: There's no locking at all (perhaps not so important on
-MacOS and Windows 95, as there's a single user anyways).
+This module uses flock() internally but flock is not available on all
+platforms. On MacOS and Windows 95 there is no locking at all (perhaps
+not so important on MacOS and Windows 95, as there is only a single
+user).
 
 =item *
 
@@ -1216,12 +1217,12 @@ of the driver handle (C<< $drh >>). This data area isn't shared between
 different driver instances, so several C<< DBI->connect() >> calls will
 cause different table instances and private data areas.
 
-This data area is filled first time when a table is accessed - either
-via an SQL statement or via C<< table_info >> and is not destroyed
-before the table is dropped or the driver handle is released.
+This data area is filled for the first time when a table is accessed,
+either via an SQL statement or via C<< table_info >> and is not
+destroyed when the table is dropped or the driver handle is released.
 
-Following attributes are conserved in those data area and will
-evaluated instead of driver globals:
+Following attributes are preserved in the data area and will evaluated
+instead of driver globals:
 
 =over 8
 
