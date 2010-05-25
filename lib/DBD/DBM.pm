@@ -559,7 +559,7 @@ sub push_names ($$$)
 
     # some sanity checks ...
     my $ncols = scalar( @$row_aryref );
-    $ncols < 1 and croak "At least 2 columns are required for DBD::DBM tables ...";
+    $ncols < 2 and croak "At least 2 columns are required for DBD::DBM tables ...";
     !$meta->{dbm_mldbm} and $ncols > 2 and
 	croak "Without serializing with MLDBM only 2 columns are supported, you give $ncols";
     $meta->{col_names} = $row_aryref;
