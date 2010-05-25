@@ -25,6 +25,7 @@ BEGIN {
     if (eval { require 'MLDBM.pm'; }) {
 	push @mldbm_types, qw(Data::Dumper Storable); # both in CORE
         push @mldbm_types, 'FreezeThaw'   if eval { require 'FreezeThaw.pm' };
+        push @mldbm_types, 'YAML'         if eval { require MLDBM::Serializer::YAML; };
     }
 
     # Potential DBM modules in preference order (SDBM_File first)
