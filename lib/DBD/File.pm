@@ -1131,7 +1131,13 @@ This is implemented using C<binmode $fh, ":encoding(<f_encoding>)">.
 =item f_meta
 
 Private data area which contains information about the tables this
-module handles.
+module handles. Meta data of a table might not be available unless the
+table has been accessed first time doing a statement on it. But it's
+possible to pre-initialize attributes for each table wanted to use.
+
+DBD::File recognizes the (public) attributes f_ext, f_dir, f_encoding, f_lock,
+and f_lockfile. Be very careful when modifying attributes you do not know,
+the consequence might a destroyed table.
 
 =back
 
