@@ -96,6 +96,7 @@ my %opts = (
 	    repository  => 'https://svn.perl.org/modules/dbi/trunk/',
 	    MailingList => 'mailto:dbi-dev@perl.org',
 	    license     => 'http://dev.perl.org/licenses/',
+	    homepage    => 'http://dbi.perl.org/',
 	},
 	recommends => {
 	    'RPC::PlServer' => 0.2001,
@@ -109,6 +110,8 @@ my %opts = (
 	'SQL::Statement' => '1.27',
 	'DBD::AnyData' => '0.09',
 	'DBD::CSV' => '0.29',
+	'DBD::RAM' => '0.072',
+	'DBD::PO' => '2.10',
     },
     LICENSE => 'perl',
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl" ],
@@ -214,11 +217,6 @@ sub WriteMakefile1 {
         $params{PREREQ_PM} = { %{ $params{PREREQ_PM} || {} }, %{ $params{BUILD_REQUIRES} } };
         delete $params{BUILD_REQUIRES};
     }
-    delete $params{CONFIGURE_REQUIRES} if ( $eumm_version < 6.52 );
-    delete $params{MIN_PERL_VERSION}   if ( $eumm_version < 6.48 );
-    delete $params{META_MERGE}         if ( $eumm_version < 6.46 );
-    delete $params{META_ADD}           if ( $eumm_version < 6.46 );
-    delete $params{LICENSE}            if ( $eumm_version < 6.31 );
 
     # more or less taken from Moose' Makefile.PL
     if ( $params{CONFLICTS} ) {
@@ -228,8 +226,15 @@ sub WriteMakefile1 {
         unless ( $cpan_smoker || $ENV{PERL_MM_USE_DEFAULT} ) {
             sleep 4 unless ($ok);
         }
+	%{$params{META_MERGE}{conflicts}} = %{$params{CONFLICTS}};
         delete $params{CONFLICTS};
     }
+
+    delete $params{CONFIGURE_REQUIRES} if ( $eumm_version < 6.52 );
+    delete $params{MIN_PERL_VERSION}   if ( $eumm_version < 6.48 );
+    delete $params{META_MERGE}         if ( $eumm_version < 6.46 );
+    delete $params{META_ADD}           if ( $eumm_version < 6.46 );
+    delete $params{LICENSE}            if ( $eumm_version < 6.31 );
 
     WriteMakefile(%params);
 }
