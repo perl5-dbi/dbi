@@ -74,11 +74,20 @@ ok (-f $tbl_file, "Test table exists");
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
 is (scalar @layer, 1, "encoding shows in layer");
 
-ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select *");
+ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
 $rowidx = 0;
 SKIP: {
     $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
-    ok ($sth->execute, "execute");
+    ok ($sth->execute, "execute on $tbl");
+    $dbh->errstr and diag;
+    }
+
+my $uctbl = uc($tbl);
+ok ($sth = $dbh->prepare ("select * from $uctbl"), "Prepare select * from $uctbl");
+$rowidx = 0;
+SKIP: {
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
+    ok ($sth->execute, "execute on $uctbl");
     $dbh->errstr and diag;
     }
 
