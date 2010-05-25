@@ -79,7 +79,7 @@ sub connect ($$;$$$)
     my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
 
     $this->STORE( 'f_lockfile', '.lck' );
-    $this->STORE( 'Active', 1 );
+    $this->STORE( 'Active',     1 );
     return $this;
 }
 
@@ -111,21 +111,21 @@ sub STORE ($$$)
     #
     if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
     {
-	# carp "Usage of '$attrib' is depreciated, use 'dbm_$attrib' instead" if( $^W );
+        # carp "Usage of '$attrib' is depreciated, use 'dbm_$attrib' instead" if( $^W );
         $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
-    if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
+    if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
-	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
-	$attrib = $newattrib;
+        ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
+        # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+        $attrib = $newattrib;
     }
     return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
     # throw an error if it has our prefix but isn't a valid attr name
     #
     if (
-        $dbh->{dbm_valid_attrs}->{$attrib}
+           $dbh->{dbm_valid_attrs}->{$attrib}
         or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
        )
     {
@@ -137,7 +137,7 @@ sub STORE ($$$)
     }
     else
     {
-	# throw an error if it has our prefix but isn't a valid attr name
+        # throw an error if it has our prefix but isn't a valid attr name
         return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'!" );
     }
 }
@@ -152,16 +152,16 @@ sub FETCH ($$)
     {
         $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
     }
-    if( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
+    if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
-	( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-	# carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
-	$attrib = $newattrib;
+        ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
+        # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+        $attrib = $newattrib;
     }
     return $dbh->SUPER::FETCH($attrib) unless ( 0 == index( $attrib, 'dbm_' ) );
 
     if (
-        $dbh->{dbm_valid_attrs}->{$attrib}
+           $dbh->{dbm_valid_attrs}->{$attrib}
         or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
        )
     {
@@ -172,7 +172,7 @@ sub FETCH ($$)
     }
     else
     {
-	# throw an error if it has our prefix but isn't a valid attr name
+        # throw an error if it has our prefix but isn't a valid attr name
         return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'" );
     }
 }
@@ -336,6 +336,8 @@ sub init_table_meta ($$$$$)
     $meta->{dbm_mldbm} ||= $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
     $meta->{dbm_berkeley_flags} ||= $dbh->{dbm_berkeley_flags};
 
+    defined $meta->{f_ext}
+      or $meta->{f_ext} = $dbh->{f_ext};
     unless ( defined( $meta->{f_ext} ) )
     {
         my $ext;
@@ -469,8 +471,16 @@ sub open_file
         }
         $col_names ||= $meta->{col_names} || [ 'k', 'v' ];
         $col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
-        $meta->{schema} = $schema;
+        if ( $meta->{dbm_store_metadata} and not $meta->{hash}->{"_metadata \0"} )
+        {
+	    $schema or $schema = '';
+            $meta->{hash}->{"_metadata \0"} = join( "",
+                                                    "<dbd_metadata>", "<schema>$schema</schema>",
+                                                    "<col_names>", join( ",", @{$col_names} ) . "</col_names>",
+                                                    "</dbd_metadata>" );
+        }
 
+        $meta->{schema}    = $schema;
         $meta->{col_names} = $col_names;
     }
 }
@@ -656,37 +666,47 @@ DBD::DBM - a DBI driver for DBM & MLDBM files
 =head1 SYNOPSIS
 
  use DBI;
- $dbh = DBI->connect('dbi:DBM:');                # defaults to SDBM_File
- $dbh = DBI->connect('DBI:DBM(RaiseError=1):');  # defaults to SDBM_File
- $dbh = DBI->connect('dbi:DBM:type=GDBM_File');  # defaults to GDBM_File
- $dbh = DBI->connect('dbi:DBM:mldbm=Storable');  # MLDBM with SDBM_File
-                                                 # and Storable
+ $dbh = DBI->connect('dbi:DBM:');                    # defaults to SDBM_File
+ $dbh = DBI->connect('DBI:DBM(RaiseError=1):');      # defaults to SDBM_File
+ $dbh = DBI->connect('dbi:DBM:dbm_type=DB_File');    # defaults to DB_File
+ $dbh = DBI->connect('dbi:DBM:dbm_mldbm=Storable');  # MLDBM with SDBM_File
 
-or
-
+ # or
  $dbh = DBI->connect('dbi:DBM:', undef, undef);
- $dbh = DBI->connect('dbi:DBM:', undef, undef, { dbm_type => 'ODBM_File' });
+ $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+     f_ext              => '.db/r',
+     f_dir              => '/path/to/dbfiles/',
+     f_lockfile         => '.lck',
+     dbm_type           => 'BerkeleyDB',
+     dbm_mldbm          => 'FreezeThaw',
+     dbm_store_metadata => 1,
+     dbm_berkeley_flags => {
+	 '-Cachesize' => 1000, # set a ::Hash flag
+     },
+ });
 
-and other variations on connect() as shown in the DBI docs and with
-the dbm_ attributes shown below
+and other variations on connect() as shown in the L<DBI> docs, the
+L<DBD::File/Metadata|DBD::File metadata> and with the L</Metadata>
+shown below.
 
-... and then use standard DBI prepare, execute, fetch, placeholders, etc.,
+Use standard DBI prepare, execute, fetch, placeholders, etc.,
 see L<QUICK START> for an example
 
 =head1 DESCRIPTION
 
 DBD::DBM is a database management sytem that can work right out of the box.
 If you have a standard installation of Perl and a standard installation of
-DBI, you can begin creating, accessing, and modifying database tables
-without any further installation.  You can also add some other modules to
-it for more robust capabilities if you wish.
+DBI, you can begin creating, accessing, and modifying simple database tables
+without any further installation.  You can (and should) also add some other
+modules to it for more robust capabilities if you wish.
 
 The module uses a DBM file storage layer.  DBM file storage is common on
-many platforms and files can be created with it in many languages. That
-means that, in addition to creating files with DBI/SQL, you can also use
-DBI/SQL to access and modify files created by other DBM modules and
-programs.  You can also use those programs to access files created with
-DBD::DBM.
+many platforms and files can be created with it in many programming
+languages using different APIs. That means that, in addition to creating
+files with DBI/SQL, you can also use DBI/SQL to access and modify files
+created by other DBM modules and programs and vice versa. B<Note> that
+in those cases it might be necessary to use a common subset of the
+provided features.
 
 DBM files are stored in binary format optimized for quick retrieval when
 using a key field.  That optimization can be used advantageously to make
@@ -699,7 +719,8 @@ into tables.
 
 DBD::DBM has been tested with the following DBM types: SDBM_File,
 NDBM_File, ODBM_File, GDBM_File, DB_File, BerekeleyDB.  Each type was
-tested both with and without MLDBM.
+tested both with and without MLDBM and serializers Data::Dumper, Storable,
+FreezeThaw and YAML.
 
 =head1 QUICK START
 
@@ -737,28 +758,53 @@ But here's a sample to get you started.
 
 =head1 USAGE
 
+This chapter will explain some use cases a bit deeper. To get an overview
+about the available attributes, see L</Metadata>.
+
 =head2 Specifiying Files and Directories
 
 DBD::DBM will automatically supply an appropriate file extension for the
 type of DBM you are using.  For example, if you use SDBM_File, a table
 called "fruit" will be stored in two files called "fruit.pag" and
-"fruit.dir".  You should I<never> specify the file extensions in your SQL
+"fruit.dir".  You should B<never> specify the file extensions in your SQL
 statements.
 
-However, I am not aware (and therefore DBD::DBM is not aware) of all
+DBD::DBM recognizes following default extensions for following types:
+
+=over 4
+
+=item .pag/r
+
+Chosen for dbm_type C<< SDBM_File >>, C<< ODBM_File >> and C<< NDBM_File >>
+when an implementation is detected which wraps C<< -ldbm >> for
+C<< NDBM_File >> (e.g. Solaris, AIX, ...).
+
+For those types, the C<< .dir >> extension is recognized, too (for being
+deleted when dropping a table).
+
+=item .db/r
+
+Chosen for dbm_type C<< NDBM_File >> when an implementation is detected
+which wraps BerkeleyDB 1.x for C<< NDBM_File >> (typically BSD's, Darwin).
+
+=back
+
+C<< GDBM_File >>, C<< DB_File >> and C<< BerkeleyDB >> are known to
+avoid adding own file extension.
+
+However, we are not aware (and therefore DBD::DBM is not aware) of all
 possible extensions for various DBM types.  If your DBM type uses an
-extension other than .pag and .dir, you should set the I<f_ext> attribute
-to the extension. B<And> you should write me with the name of the
-implementation and extension so I can add it to DBD::DBM! Thanks in advance
-for that :-).
+extension other than recognized types and extensions, you should set the
+I<f_ext> attribute to the extension. B<And> you should fill a bug report
+as described in DBI with the name of the implementation and extension so
+we can add it to DBD::DBM! Thanks in advance for that :-).
 
-    $dbh = DBI->connect('dbi:DBM:f_ext=.db');  # .db extension is used
-    $dbh = DBI->connect('dbi:DBM:f_ext=');     # no extension is used
+  $dbh = DBI->connect('dbi:DBM:f_ext=.db');  # .db extension is used
+  $dbh = DBI->connect('dbi:DBM:f_ext=');     # no extension is used
 
-or
-
-    $dbh->{f_ext}='.db';                      # global setting
-    $dbh->{f_meta}->{'qux'}->{f_ext}='.db';       # setting for table 'qux'
+  # or
+  $dbh->{f_ext}='.db';                       # global setting
+  $dbh->{f_meta}->{'qux'}->{f_ext}='.db';    # setting for table 'qux'
 
 By default files are assumed to be in the current working directory.  To
 have the module look in a different directory, specify the I<f_dir>
@@ -768,14 +814,15 @@ attribute.
 For example, this will look for the file /foo/bar/fruit (or
 /foo/bar/fruit.pag for DBM types that use that extension)
 
-   my $dbh = DBI->connect('dbi:DBM:f_dir=/foo/bar');
-   my $ary = $dbh->selectall_arrayref(q{ SELECT * FROM fruit });
+  my $dbh = DBI->connect('dbi:DBM:f_dir=/foo/bar');
+  # and this will do, too:
+  my $dbh = DBI->connect('dbi:DBM:');
+  $dbh->{f_dir} = '/foo/bar';
+  # even if only this is recommended
+  my $dbh = DBI->connect('dbi:DBM:', undef, undef, { f_dir => '/foo/bar' } );
 
-And this will too:
-
-   my $dbh = DBI->connect('dbi:DBM:');
-   $dbh->{f_dir} = '/foo/bar';
-   my $ary = $dbh->selectall_arrayref(q{ SELECT x FROM fruit });
+  # now you can do
+  my $ary = $dbh->selectall_arrayref(q{ SELECT x FROM fruit });
 
 You can also use delimited identifiers to specify paths directly in SQL
 statements.  This looks in the same place as the two examples above but
@@ -797,12 +844,13 @@ See the L<GOTCHAS AND WARNINGS> for using DROP on tables.
 
 =head2 Table locking and flock()
 
-Table locking is accomplished using a lockfile which has the same name as
-the table's file but with the file extension '.lck' (or a lockfile
+Table locking is accomplished using a lockfile which has the same basename
+as the table's file but with the file extension '.lck' (or a lockfile
 extension that you supply, see below).  This file is created along with the
 table during a CREATE and removed during a DROP.  Every time the table
 itself is opened, the lockfile is flocked().  For SELECT, this is an shared
-lock.  For all other operations, it is an exclusive lock.
+lock.  For all other operations, it is an exclusive lock (except you specify
+something different using the I<f_lock> attribute).
 
 Since the locking depends on flock(), it only works on operating systems
 that support flock().  In cases where flock() is not implemented, DBD::DBM
@@ -823,29 +871,31 @@ other's locks.
 =head2 Specifying the DBM type
 
 Each "flavor" of DBM stores its files in a different format and has
-different capabilities and different limitations.  See L<AnyDBM_File> for a
+different capabilities and different limitations. See L<AnyDBM_File> for a
 comparison of DBM types.
 
-By default, DBD::DBM uses the SDBM_File type of storage since SDBM_File
-comes with Perl itself.  But if you have other types of DBM storage
-available, you can use any of them with DBD::DBM also.
+By default, DBD::DBM uses the C<< SDBM_File >> type of storage since
+C<< SDBM_File >> comes with Perl itself. But if you have other types of DBM
+storage available, you can use any of them with DBD::DBM also. It is
+strongly recommended to use at least C<< DB_File >>, because C<< SDBM_File >>
+has quirks and limitations and C<< ODBM_file >>, C<< NDBM_File >> and
+C<< GDBM_File >> are not always available.
 
-You can specify the DBM type using the "dbm_type" attribute which can be
-set in the connection string or with the $dbh->{dbm_type} attribute for
-global settings or with the $dbh->{dbm_tables}->{$table_name}->{type}
+You can specify the DBM type using the I<dbm_type> attribute which can be
+set in the connection string or with the C<< $dbh->{dbm_type} >> attribute
+for global settings or with the C<< $dbh->{f_meta}->{$table_name}->{type} >>
 attribute for per-table settings in cases where a single script is
 accessing more than one kind of DBM file.
 
-In the connection string, just set type=TYPENAME where TYPENAME is any DBM
-type such as GDBM_File, DB_File, etc.  Do I<not> use MLDBM as your
-dbm_type, that is set differently, see below.
+In the connection string, just set C<< dbm_type=TYPENAME >> where
+C<< TYPENAME >> is any DBM type such as GDBM_File, DB_File, etc. Do I<not>
+use MLDBM as your I<dbm_type>, that is set differently, see below.
 
- my $dbh=DBI->connect('dbi:DBM:');               # uses the default SDBM_File
- my $dbh=DBI->connect('dbi:DBM:type=GDBM_File'); # uses the GDBM_File
+ my $dbh=DBI->connect('dbi:DBM:');                   # uses the default SDBM_File
+ my $dbh=DBI->connect('dbi:DBM:dbm_type=GDBM_File'); # uses the GDBM_File
 
-You can also use $dbh->{dbm_type} to set global DBM type:
-
- $dbh->{dbm_type} = 'GDBM_File';  # set the global DBM type
+ # You can also use $dbh->{dbm_type} to set global DBM type:
+ $dbh->{dbm_type} = 'DB_File';    # set the global DBM type
  print $dbh->{dbm_type};          # display the global DBM type
 
 If you are going to have several tables in your script that come from
@@ -853,58 +903,62 @@ different DBM types, you can use the $dbh->{dbm_tables} hash to store
 different settings for the various tables.  You can even use this to
 perform joins on files that have completely different storage mechanisms.
 
- my $dbh->('dbi:DBM:type=GDBM_File');
- #
  # sets global default of GDBM_File
+ my $dbh->('dbi:DBM:type=GDBM_File');
 
- my $dbh->{dbm_tables}->{foo}->{type} = 'DB_File';
- #
- # over-rides the global setting, but only for the table called "foo"
+ # over-rides the global setting, but only for the tables called
+ # I<foo> and I<bar>
+ my $dbh->{f_meta}->{foo}->{dbm_type} = 'DB_File';
+ my $dbh->{f_meta}->{bar}->{dbm_type} = 'BerkeleyDB';
 
- print $dbh->{dbm_tables}->{foo}->{type};
- #
  # prints the dbm_type for the table "foo"
+ print $dbh->{f_meta}->{foo}->{dbm_type};
+
+B<Note> that you must change the I<dbm_type> of a table before you access
+it first time.
 
 =head2 Adding multi-column support with MLDBM
 
-Most of the DBM types only support two columns.  However a CPAN module
-called MLDBM overcomes this limitation by allowing more than two columns.
-It does this by serializing the data - basically it puts a reference to an
-array into the second column.  It can also put almost any kind of Perl
-object or even Perl coderefs into columns.
+Most of the DBM types only support two columns and even if it would support
+more, DBD::DBM would only use two. However a CPAN module called MLDBM
+overcomes this limitation by allowing more than two columns.  It does this
+by serializing the data - basically it puts a reference to an array into
+the second column. It can also put almost any kind of Perl object or even
+B<Perl coderefs> into columns.
 
-If you want more than two columns, you must install MLDBM.  It's available
+If you want more than two columns, you B<must> install MLDBM. It's available
 for many platforms and is easy to install.
 
-MLDBM can use three different modules to serialize the column -
-Data::Dumper, Storable, and FreezeThaw.  Data::Dumper is the default,
-Storable is the fastest.  MLDBM can also make use of user-defined
-serialization methods.  All of this is available to you through DBD::DBM
-with just one attribute setting.
-
-To use MLDBM with DBD::DBM, you need to set the dbm_mldbm attribute to the
-name of the serialization module.
+MLDBM is defaultly distributed with three serializers - Data::Dumper,
+Storable, and FreezeThaw. Data::Dumper is the default, Storable is the
+fastest. MLDBM can also make use of user-defined serialization methods or
+other serialization modules (e.g. L<YAML::MLDBM>). All of this is available
+to you through DBD::DBM with just one attribute setting: I<dbm_mldbm>.
 
 Some examples:
 
- $dbh=DBI->connect('dbi:DBM:mldbm=Storable');  # use MLDBM with Storable
+ $dbh=DBI->connect('dbi:DBM:dbm_mldbm=Storable');  # use MLDBM with Storable
  $dbh=DBI->connect(
-    'dbi:DBM:mldbm=MySerializer'           # use MLDBM with a user defined module
+    'dbi:DBM:dbm_mldbm=MySerializer' # use MLDBM with a user defined module
  );
- $dbh->{dbm_mldbm} = 'MySerializer';       # same as above
- print $dbh->{dbm_mldbm}                   # show the MLDBM serializer
- $dbh->{dbm_tables}->{foo}->{mldbm}='Data::Dumper';   # set Data::Dumper for table "foo"
- print $dbh->{dbm_tables}->{foo}->{mldbm}; # show serializer for table "foo"
+ $dbh=DBI->connect('dbi::dbm:', undef,
+     undef, { dbm_mldbm => 'YAML' }); # use 3rd party serializer
+ $dbh->{dbm_mldbm} = 'YAML'; # same as above
+ print $dbh->{dbm_mldbm} # show the MLDBM serializer
+ $dbh->{f_meta}->{foo}->{dbm_mldbm}='Data::Dumper';   # set Data::Dumper for table "foo"
+ print $dbh->{f_meta}->{foo}->{mldbm}; # show serializer for table "foo"
 
 MLDBM works on top of other DBM modules so you can also set a DBM type
 along with setting dbm_mldbm.  The examples above would default to using
 SDBM_File with MLDBM.  If you wanted GDBM_File instead, here's how:
 
- $dbh = DBI->connect('dbi:DBM:type=GDBM_File;mldbm=Storable');
- #
- # uses GDBM_File with MLDBM and Storable
+ # uses DB_File with MLDBM and Storable
+ $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+     dbm_type  => 'DB_File',
+     dbm_mldbm => 'Storable',
+ });
 
-SDBM_File, the default file type is quite limited, so if you are going to
+SDBM_File, the default I<dbm_type> is quite limited, so if you are going to
 use MLDBM, you should probably use a different type, see L<AnyDBM_File>.
 
 See below for some L<GOTCHAS AND WARNINGS> about MLDBM.
@@ -924,71 +978,46 @@ support ::Btree or ::Recno.
 With BerkeleyDB, you can specify initialization flags by setting them in
 your script like this:
 
- my $dbh = DBI->connect('dbi:DBM:type=BerkeleyDB;mldbm=Storable');
  use BerkeleyDB;
  my $env = new BerkeleyDB::Env -Home => $dir;  # and/or other Env flags
- $dbh->{dbm_berkeley_flags} = {
-      'DB_CREATE'  => DB_CREATE  # pass in constants
-    , 'DB_RDONLY'  => DB_RDONLY  # pass in constants
-    , '-Cachesize' => 1000       # set a ::Hash flag
-    , '-Env'       => $env       # pass in an environment
- };
+ $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+     dbm_type  => 'BerkeleyDB',
+     dbm_mldbm => 'Storable',
+     dbm_berkeley_flags => {
+	 'DB_CREATE'  => DB_CREATE,  # pass in constants
+	 'DB_RDONLY'  => DB_RDONLY,  # pass in constants
+	 '-Cachesize' => 1000,       # set a ::Hash flag
+	 '-Env'       => $env,       # pass in an environment
+     },
+ });
 
-Do I<not> set the -Flags or -Filename flags, those are determined by the
-SQL (e.g. -Flags => DB_RDONLY is set automatically when you issue a SELECT
-statement).
+Do I<not> set the -Flags or -Filename flags, those are determined and
+overwritten by the SQL (e.g. -Flags => DB_RDONLY is set automatically
+when you issue a SELECT statement).
 
-Time has not permitted me to provide support in this release of DBD::DBM
+Time has not permitted us to provide support in this release of DBD::DBM
 for further Berkeley DB features such as transactions, concurrency,
-locking, etc.  I will be working on these in the future and would value
+locking, etc. We will be working on these in the future and would value
 suggestions, patches, etc.
 
 See L<DB_File> and L<BerkeleyDB> for further details.
 
-=head2 Supported SQL syntax
-
-DBD::DBM uses a subset of SQL.  The robustness of that subset depends on
-what other modules you have installed. Both options support basic SQL
-operations including CREATE TABLE, DROP TABLE, INSERT, DELETE, UPDATE, and
-SELECT.
-
-B<Option #1:> By default, this module inherits its SQL support from
-DBI::SQL::Nano that comes with DBI.  Nano is, as its name implies, a *very*
-small SQL engine.  Although limited in scope, it is faster than option #2
-for some operations.  See L<DBI::SQL::Nano> for a description of the SQL it
-supports and comparisons of it with option #2.
-
-B<Option #2:> If you install the pure Perl CPAN module SQL::Statement,
-DBD::DBM will use it instead of Nano.  This adds support for table aliases,
-for functions, for joins, and much more.  If you're going to use DBD::DBM
-for anything other than very simple tables and queries, you should install
-SQL::Statement.  You don't have to change DBD::DBM or your scripts in any
-way, simply installing SQL::Statement will give you the more robust SQL
-capabilities without breaking scripts written for DBI::SQL::Nano.  See
-L<SQL::Statement> for a description of the SQL it supports.
-
-To find out which SQL module is working in a given script, you can use the
-dbm_versions() method or, if you don't need the full output and version
-numbers, just do this:
-
- print $dbh->{sql_handler};
-
-That will print out either "SQL::Statement" or "DBI::SQL::Nano".
-
 =head2 Optimizing use of key fields
 
 Most "flavors" of DBM have only two physical columns (but can contain
-multiple logical columns as explained below).  They work similarly to a
-Perl hash with the first column serving as the key.  Like a Perl hash, DBM
+multiple logical columns as explained above in
+L<Adding multi-column support with MLDBM>). They work similarly to a
+Perl hash with the first column serving as the key. Like a Perl hash, DBM
 files permit you to do quick lookups by specifying the key and thus avoid
-looping through all records.  Also like a Perl hash, the keys must be
-unique.  It is impossible to create two records with the same key.  To put
-this all more simply and in SQL terms, the key column functions as the
-PRIMARY KEY.
+looping through all records (supported by DBI::SQL::Nano only). Also like
+a Perl hash, the keys must be unique. It is impossible to create two
+records with the same key.  To put this all more simply and in SQL terms,
+the key column functions as the I<PRIMARY KEY>.
 
 In DBD::DBM, you can take advantage of the speed of keyed lookups by using
-a WHERE clause with a single equal comparison on the key field.  For
-example, the following SQL statements are optimized for keyed lookup:
+DBI::SQL::Nano and a WHERE clause with a single equal comparison on the key
+field. For example, the following SQL statements are optimized for keyed
+lookup:
 
  CREATE TABLE user ( user_name TEXT, phone TEXT);
  INSERT INTO user VALUES ('Fred Bloggs','233-7777');
@@ -1010,6 +1039,84 @@ comparison, so it will not be optimized for key searching.  In #2, the key
 field "user_name" is not specified in the WHERE clause, and therefore the
 search will need to loop through all rows to find the desired result.
 
+B<Note> that the underlying DBM storage needs to loop over all I<key/value>
+pairs when the optimized fetch is used. SQL::Statement has a massively
+improved where clause evaluation which costs around 15% of the evaluation
+in DBI::SQL::Nano - combined with the loop in the DBM storage the speed
+improvement isn't so impressive.
+
+Even if lookups are sped up by circa 50%, DBI::SQL::Nano and SQL::Statement
+can benefit from the key field optimizations on updating and deleting some
+rows - and here the improved where clause evaluation of SQL::Statement
+might beat DBI::SQL::Nano every time the where clause contains not only
+the key field (or more than one).
+
+=head2 Supported SQL syntax
+
+DBD::DBM uses a subset of SQL.  The robustness of that subset depends on
+what other modules you have installed. Both options support basic SQL
+operations including CREATE TABLE, DROP TABLE, INSERT, DELETE, UPDATE, and
+SELECT.
+
+B<Option #1:> By default, this module inherits its SQL support from
+DBI::SQL::Nano that comes with DBI.  Nano is, as its name implies, a *very*
+small SQL engine.  Although limited in scope, it is faster than option #2
+for some operations (especially single I<primary key> lookups). See
+L<DBI::SQL::Nano> for a description of the SQL it supports and comparisons
+of it with option #2.
+
+B<Option #2:> If you install the pure Perl CPAN module SQL::Statement,
+DBD::DBM will use it instead of Nano.  This adds support for table aliases,
+for functions, for joins, and much more.  If you're going to use DBD::DBM
+for anything other than very simple tables and queries, you should install
+SQL::Statement.  You don't have to change DBD::DBM or your scripts in any
+way, simply installing SQL::Statement will give you the more robust SQL
+capabilities without breaking scripts written for DBI::SQL::Nano.  See
+L<SQL::Statement> for a description of the SQL it supports.
+
+To find out which SQL module is working in a given script, you can use the
+dbm_versions() method or, if you don't need the full output and version
+numbers, just do this:
+
+ say $dbh->{sql_handler};
+
+That will print out either "SQL::Statement" or "DBI::SQL::Nano".
+
+Having the section about optimized access to the DBM storage in mind,
+comparing the benefits of both engines:
+
+  # DBI::SQL::Nano is faster
+  $sth = $dbh->prepare( "update foo set value='new' where key=15" );
+  $sth->execute();
+  $sth = $dbh->prepare( "delete from foo where key=27" );
+  $sth->execute();
+  $sth = $dbh->prepare( "select * from foo where key='abc'" );
+
+  # SQL::Statement might faster (depending on DB size)
+  $sth = $dbh->prepare( "update foo set value='new' where key=?" );
+  $sth->execute(15);
+  $sth = $dbh->prepare( "update foo set value=? where key=15" );
+  $sth->execute('new');
+  $sth = $dbh->prepare( "delete from foo where key=?" );
+  $sth->execute(27);
+
+  # SQL::Statement is faster
+  $sth = $dbh->prepare( "update foo set value='new' where value='old'" );
+  $sth->execute();
+  # must be expressed using "where key = 15 or key = 27 or key = 42 or key = 'abc'"
+  # in DBI::SQL::Nano
+  $sth = $dbh->prepare( "delete from foo where key in (15,27,42,'abc')" );
+  $sth->execute();
+  # must be expressed using "where key > 10 and key < 90" in DBI::SQL::Nano
+  $sth = $dbh->prepare( "select * from foo where key between (10,90)" );
+  $sth->execute();
+
+  # only SQL::Statement can handle
+  $sth->prepare( "select * from foo,bar where foo.name = bar.name" );
+  $sth->execute();
+  $sth->prepare( "insert into foo values ( 1, 'foo' ), ( 2, 'bar' )" );
+  $sth->execute();
+
 =head2 Specifying Column Names
 
 DBM files don't have a standard way to store column names.   DBD::DBM gets
@@ -1026,45 +1133,43 @@ DBD::DBM stores column names as a row in the file with the key I<_metadata
 
 Will create a file that has a structure something like this:
 
-  _metadata \0 | foo,bar
+  _metadata \0 | <dbd_metadata><schema></schema><col_names>foo,bar</col_names></dbd_metadata>
   zippy        | 1
 
 The next time you access this table with DBD::DBM, it will treat the
-_metadata row as a header rather than as data and will pull the column
+I<_metadata \0> row as a header rather than as data and will pull the column
 names from there.  However, if you access the file with something other
 than DBD::DBM, the row will be treated as a regular data row.
 
 If you do not want the column names stored as a data row in the table you
 can set the I<dbm_store_metadata> attribute to 0.
 
- my $dbh = DBI->connect('dbi:DBM:store_metadata=0');
+ my $dbh = DBI->connect('dbi:DBM:', undef, undef, { dbm_store_metadata => 0 });
 
-or
-
+ # or
  $dbh->{dbm_store_metadata} = 0;
 
-or, for per-table setting
-
- $dbh->{dbm_tables}->{qux}->{store_metadata} = 0;
+ # or for per-table setting
+ $dbh->{f_meta}->{qux}->{dbm_store_metadata} = 0;
 
 By default, DBD::DBM assumes that you have two columns named "k" and "v"
 (short for "key" and "value").  So if you have I<dbm_store_metadata> set to
 1 and you want to use alternate column names, you need to specify the
 column names like this:
 
- my $dbh = DBI->connect('dbi:DBM:store_metadata=0;cols=foo,bar');
+ my $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+     dbm_store_metadata => 0,
+     dbm_cols => [ qw(foo bar) ],
+ });
 
-or
-
+ # or
  $dbh->{dbm_store_metadata} = 0;
  $dbh->{dbm_cols}           = 'foo,bar';
 
-To set the column names on per-table basis, do this:
-
- $dbh->{dbm_tables}->{qux}->{store_metadata} = 0;
- $dbh->{dbm_tables}->{qux}->{cols}           = 'foo,bar';
- #
+ # or to set the column names on per-table basis, do this:
  # sets the column names only for table "qux"
+ $dbh->{f_meta}->{qux}->{dbm_store_metadata} = 0;
+ $dbh->{f_meta}->{qux}->{col_names}          = [qw(foo bar)];
 
 If you have a file that was created by another DBM program or created with
 I<dbm_store_metadata> set to zero and you want to convert it to using
@@ -1074,11 +1179,81 @@ only have to do that once - thereafter you can get by without setting
 either I<dbm_store_metadata> or setting I<dbm_cols> because the names will
 be stored in the file.
 
+=head1 DBI database handle attributes
+
 =head2 Statement handle ($sth) attributes and methods
 
 Most statement handle attributes such as NAME, NUM_OF_FIELDS, etc. are
 available only after an execute.  The same is true of $sth->rows which is
 available after the execute but does I<not> require a fetch.
+
+=head2 Metadata
+
+=over 4
+
+=item dbm_cols
+
+Contains a comma separated list of column names or an array reference to
+a column names.
+
+=item dbm_type
+
+Contains the DBM storage type. Currently know supported ones are
+C<< ODBM_File >>, C<< NDBM_File >>, C<< SDBM_File >>, C<< GDBM_File >>,
+C<< DB_File >> and C<< BerkeleyDB >>. It's not recommended to use one
+of the first three types - even if C<< SDBM_File >> is the most common
+available I<dbm_type>.
+
+=item dbm_mldbm
+
+Contains the serializer for DBM storage (value column). Requires the
+CPAN module L<MLDBM> installed.  Currently know supported serializers are:
+
+=over 8
+
+=item Data::Dumper
+
+Default serializer. Deployed with Perl core.
+
+=item Storable
+
+Faster serializer. Deployed with Perl core.
+
+=item FreezeThaw
+
+Pure Perl serializer, requires L<FreezeThaw> being installed.
+
+=item YAML
+
+Very portable serializer (between languages, not between archirectures).
+Requires L<YAML::MLDBM> being installed.
+
+=back
+
+=item dbm_store_metadata
+
+Boolean value whether to store some metadata in DBM storage or not.
+
+=item dbm_berkeley_flags
+
+Hash reference with additional flags for BerkeleyDB::Hash instantiation.
+
+=item dbm_version
+
+Readonly attribute containing this version of DBD::DBM.
+
+=item f_meta
+
+In addition to the attributes L<DBD::File> recognizes, DBD::DBM cares about
+the (public) attributes col_names (B<Note> not I<dbm_cols> here!), dbm_type,
+dbm_mldbm, dbm_store_metadata and dbm_berkeley_flags. There are, like in
+DBD::File undocumented, internally used attributes.  Be very careful when
+modifying attributes you do not know, the consequence might a destroyed
+table.
+
+=back
+
+=head1 DBI database handle methods
 
 =head2 The $dbh->dbm_versions() method
 
@@ -1105,13 +1280,11 @@ To store objects in columns, you should (but don't absolutely need to)
 declare it as a column of type BLOB (the type is *currently* ignored by the
 SQL engine, but heh, it's good form).
 
-You *must* use placeholders to insert or refer to the data.
-
 =head1 GOTCHAS AND WARNINGS
 
 Using the SQL DROP command will remove any file that has the name specified
-in the command with either '.pag' or '.dir' or your {f_ext} appended to
-it.  So this be dangerous if you aren't sure what file it refers to:
+in the command with either '.pag' and '.dir', '.db' or your {f_ext} appended
+to it.  So this be dangerous if you aren't sure what file it refers to:
 
  $dbh->do(qq{DROP TABLE "/path/to/any/file"});
 
@@ -1123,9 +1296,7 @@ See the documentation for whatever DBM you are using for details.
 
 Different DBM implementations return records in different orders.  That
 means that you can I<not> depend on the order of records unless you use an
-ORDER BY statement.  DBI::SQL::Nano does not currently support ORDER BY
-(though it may soon) so if you need ordering, you'll have to install
-SQL::Statement.
+ORDER BY statement.
 
 DBM data files are platform-specific.  To move them from one platform to
 another, you'll need to do something along the lines of dumping your data
@@ -1151,24 +1322,45 @@ newsgroup on usenet.  I'm afraid I can't always answer these kinds of
 questions quickly and there are many on the mailing list or in the
 newsgroup who can.
 
+DBD developers for DBD's which rely on DBD::File or DBD::DBM or use one
+of them as example are enforced to join the DBI developers mailing list at
+dbi-dev@perl.org and strongly encouraged to join our IRC channel at
+L<irc://irc.perl.org/dbi>.
+
 If you have suggestions, ideas for improvements, or bugs to report, please
-write me directly at the email shown below.
+report a bug as described in DBI. Do not mail any of the authors directly,
+you might not get an answer.
 
 When reporting bugs, please send the output of $dbh->dbm_versions($table)
-for a table that exhibits the bug and, if possible, as small a sample as
-you can make of the code that produces the bug.  And of course, patches are
-welcome too :-).
+for a table that exhibits the bug and a small sample as you can make of
+the code that produces the bug.  And of course, patches are welcome, too
+:-).
+
+If you need enhancements quickly, you can get commercial support like
+described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
+at rehsack@cpan.org for commercial support in Germany.
+
+Please don't bother Jochen Wiedmann or Jeff Zucker for support - they
+hand over the further maintaining to H.Merijn Brand and Jens Rehsack.
 
 =head1 ACKNOWLEDGEMENTS
 
 Many, many thanks to Tim Bunce for prodding me to write this, and for
-copious, wise, and patient suggestions all along the way.
+copious, wise, and patient suggestions all along the way. (Jeff Zucker)
+
+I send my thanks and acknowledgements to H.Merijn Brand for his initial
+refactoring of DBD::File and his strong and ongoing support of
+SQL::Statement. Without him, the current progress never had been reached.
+And I have to name Martin J. Evans for each laugh (and correction) of all
+those funny word creations I (as non-native speaker) made to the
+documentation. And - of course - I have to thank all those unnamed
+contributors and testers from the Perl community. (Jens Rehsack)
 
 =head1 AUTHOR AND COPYRIGHT
 
 This module is written by Jeff Zucker < jzucker AT cpan.org >, who also
-maintained it till 2010. After that, Jens Rehsack & H.Merijn Brand took
-over maintenance.
+maintained it till 2007. After that, in 2010, Jens Rehsack & H.Merijn Brand
+took over maintenance.
 
  Copyright (c) 2004 by Jeff Zucker, all rights reserved.
  Copyright (c) 2010 by Jens Rehsack & H.Merijn Brand, all rights reserved.
