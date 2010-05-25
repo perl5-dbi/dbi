@@ -1253,6 +1253,34 @@ table.
 
 =back
 
+It is not supported anymore to use dbm-attributes without the dbm_-prefix.
+Currently, if an DBD::DBM private attribute is accessed without an
+underscore in it's name, dbm_ is prepended to that attribute and it's
+processed further. If the resulting attribute name is invalid, an error is
+thrown.
+
+Following attributes are no longer handled by DBD::DBM:
+
+=over 4
+
+=item dbm_ext
+
+This attribute is silently mapped to DBD::File's attribute I<f_ext>.
+Later versions of DBI might show a depreciated warning when this attribute
+is used and one fine day it will be removed.
+
+=item dbm_lockfile
+
+This attribute is silently mapped to DBD::File's attribute I<f_lockfile>.
+Later versions of DBI might show a depreciated warning when this attribute
+is used and one fine day it will be removed.
+
+=item dbm_tables
+
+This attribute is forbidden and accessing it will throw an error.
+
+=back
+
 =head1 DBI database handle methods
 
 =head2 The $dbh->dbm_versions() method
