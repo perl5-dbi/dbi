@@ -533,6 +533,10 @@ sub push_row ($$$)
 {
     my ( $self, $data, $row_aryref ) = @_;
     my $meta = $self->{meta};
+    my $ncols = scalar(@{$meta->{col_names}});
+    my $nitems = scalar(@{$row_aryref});
+    $ncols == $nitems or
+        croak "You tried to insert $nitems, but table is created with $ncols columns";
     my $key  = shift @$row_aryref;
     if ( $meta->{dbm_mldbm} )
     {
@@ -552,8 +556,15 @@ sub push_names ($$$)
 {
     my ( $self, $data, $row_aryref ) = @_;
     my $meta = $self->{meta};
+
+    # some sanity checks ...
+    my $ncols = scalar( @$row_aryref );
+    $ncols < 1 and croak "At least 2 columns are required for DBD::DBM tables ...";
+    !$meta->{dbm_mldbm} and $ncols > 2 and
+	croak "Without serializing with MLDBM only 2 columns are supported, you give $ncols";
     $meta->{col_names} = $row_aryref;
     return unless $meta->{dbm_store_metadata};
+
     my $stmt      = $data->{f_stmt};
     my $col_names = join( ',', @{$row_aryref} );
     my $schema    = $data->{Database}->{Statement};
