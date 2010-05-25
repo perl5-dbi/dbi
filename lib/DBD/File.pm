@@ -912,8 +912,9 @@ sub seek ($$$$)
 sub truncate ($$)
 {
     my ($self, $data) = @_;
-    $self->{fh}->truncate ($self->{fh}->tell ()) or
-	croak "Error while truncating " . $self->{meta}->{f_fqfn} . ": $!";
+    my $meta = $self->{meta};
+    $meta->{fh}->truncate ($meta->{fh}->tell ()) or
+	croak "Error while truncating " . $meta->{f_fqfn} . ": $!";
     return 1;
     } # truncate
 
