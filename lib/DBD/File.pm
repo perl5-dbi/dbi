@@ -404,6 +404,7 @@ sub type_info_all ($)
 		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
 	while (defined ($file = readdir ($dirh))) {
+	    -f $file or next;	# No dir's, devices, or pipes. Only plain files
 	    # XXX $dbh->{f_meta} or ...
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
 	    # XXX collect from $dbh->{f_meta}
@@ -740,21 +741,19 @@ my $open_table_re = sprintf "(?:%s|%s|%s)",
 sub init_table_meta ($$$$$)
 {
     my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
-    defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table} or
-        $dbh->{f_meta}->{$table} = {};
-    my $meta = $dbh->{f_meta}->{$table};
-    exists $meta->{f_dir} or
-	$meta->{f_dir} = $dbh->{f_dir};
-    defined $meta->{f_ext} or
-	$meta->{f_ext} = $dbh->{f_ext};
-    exists $meta->{f_encoding} or
-	$meta->{f_encoding} = $dbh->{f_encoding};
-    exists $meta->{f_lock} or
-	$meta->{f_lock} = $dbh->{f_lock};
-    exists $meta->{f_lockfile} or
-        $meta->{f_lockfile} = $dbh->{f_lockfile};
-    defined $meta->{f_fqfn} or
+
+    defined $dbh->{f_meta}{$table} and "HASH" eq ref $dbh->{f_meta}{$table} or
+        $dbh->{f_meta}{$table} = {};
+    my $meta = $dbh->{f_meta}{$table};
+    exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
+    defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
+    defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
+    exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
+    exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
+    defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
+    defined $meta->{f_fqfn}	or
 	$self->file2table ($meta, $table, $file_is_table, $quoted);
+
     } # init_table_meta
 
 sub default_table_meta ($$$)
