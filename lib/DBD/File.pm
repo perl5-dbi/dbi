@@ -1189,14 +1189,14 @@ those that have non-valid table names, from the view of SQL.
 =head1 SQL ENGINES
 
 DBD::File currently supports two SQL engines: L<DBI::SQL::Nano> and
-L<SQL::Statement>. DBI::SQL::Nano supports a I<very> limited subset
-of SQL statements, but it might be faster in for some very simple
-tasks. SQL::Statement in contrast supports a large subset of ANSI
-SQL.
+L<SQL::Statement>. DBI::SQL::Nano supports a I<very> limited subset of
+SQL statements, but it might be faster for some very simple
+tasks. SQL::Statement in contrast supports a much larger subset of
+ANSI SQL.
 
 To use SQL::Statement, the module version 1.28 of SQL::Statement is
 a prerequisite and the environment variable C<< DBI_SQL_NANO >> must
-not be set on a true value.
+not be set to a true value.
 
 =head1 KNOWN BUGS AND LIMITATIONS
 
