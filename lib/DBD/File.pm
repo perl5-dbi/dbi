@@ -1157,9 +1157,10 @@ Contains optionally temporary tables.
 
 =back
 
-Do not modify one of above private attributes, except you know exactly the
-implications. The behaviour of DBD::File and derived DBD's might be
-unpredictable when one or more of those attributes are modified.
+Do not modify any of above private attributes unless you understand
+the implications of doing so. The behaviour of DBD::File and derived
+DBD's might be unpredictable when one or more of those attributes are
+modified.
 
 =head2 Driver private methods
 
