@@ -24,6 +24,8 @@ DBI::Changes - List of significant changes to the DBI
   Added basic test for DBD::File (H. Merijn Brand)
   Modernize Makefile.PL with CONFLICTS, recommended dependencies and
     resources (Jens Rehsack)
+  Changes to DBD::File for better English and hopefully better
+    explanation (Martin J. Evans)
 
 =head2 Changes in DBI 1.611 (svn r13935) 29th April 2010
 

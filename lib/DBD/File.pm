@@ -1008,40 +1008,53 @@ These attributes and methods are not supported:
     LongReadLen
     LongTruncOk
 
-Additional to the DBI attributes, you can use the following dbh
-attributes to control the behaviour of DBD::File in the file system:
+In addition to the DBI attributes, you can use the following dbh
+attributes:
 
 =over 4
 
 =item f_dir
 
 This attribute is used for setting the directory where the files are
-opened. Usually you set it in the dbh, it defaults to the current
-directory ("."). However, it is overwritable in the statement handles
-before executing the statements. See L<BUGS AND LIMITATIONS>.
+opened and it defaults to the current directory ("."). Usually you set
+it on the dbh but it may be overriden on the statement handle.
 
 =item f_ext
 
-This attribute is used for setting the file extension where files are
-opened. There are several possibilities.
+This attribute is used for setting the file extension. The format is:
+
+  extension{/flag}
+
+where the /flag is optional and the extension is case-insensitive.
+C<f_ext> allows you to specify an extension which:
+
+ o makes DBD::File prefer F<table.extension> over F<table>.
+ o makes the table name the filename minus the extension.
 
     DBI:CSV:f_dir=data;f_ext=.csv
 
-In this case, DBD::File will open only C<table.csv> if both C<table.csv> and
-C<table> exist in the datadir. The table will still be named C<table>. If
-your datadir has files with extensions, and you do not pass this attribute,
-your table is named C<table.csv>, which is probably not what you wanted. The
-extension is always case-insensitive. The table names are not.
+In the above example and when C<f_dir> contains both F<table.csv> and
+F<table>, DBD::File will open F<table.csv> and the table will be
+named "table". If F<table.csv> does not exist but F<table> does
+that file is opened and the table is also called "table".
 
-    DBI:DBM:f_dir=data;f_ext=.db/r
+If C<f_ext> is not specified and F<table.csv> exists it will be opened
+and the table will be called "table.csv" which is probably not what
+you want.
 
-In this case the extension is required, and all filenames that do not match
-are ignored.
+NOTE: even though extensions are case-insensitive, table names are
+not.
+
+    DBI:CSV:f_dir=data;f_ext=.csv/r
+
+The C<r> flag means the file extension is required and any filename
+that does not match the extension is ignored.
 
 =item f_schema
 
-This will set the schema name. Default is the owner of the folder in which
-the table file resides.  C<undef> is allowed.
+This will set the schema name and defaults to the owner of the
+directory in which the table file resides. You can set C<f_schema> to
+C<undef>.
 
     my $dbh = DBI->connect ("dbi:CSV:", "", "", {
         f_schema => undef,
@@ -1049,10 +1062,9 @@ the table file resides.  C<undef> is allowed.
         f_ext    => ".csv/r",
         }) or die $DBI::errstr;
 
-The effect is that when you get table names from DBI, you can force all
-tables into the same (or no) schema:
+By setting the schema you effect the results from the tables call:
 
-    my @tables $dbh->tables ();
+    my @tables = $dbh->tables ();
 
     # no f_schema
     "merijn".foo
@@ -1066,8 +1078,8 @@ tables into the same (or no) schema:
     foo
     bar
 
-Defining f_schema to the empty string is equal to setting it to C<undef>,
-this to enable the DSN to be C<dbi:CSV:f_schema=;f_dir=.>.
+Defining f_schema to the empty string is equal to setting it to C<undef>
+so the DSN can be C<dbi:CSV:f_schema=;f_dir=.>.
 
 =item f_lock
 
