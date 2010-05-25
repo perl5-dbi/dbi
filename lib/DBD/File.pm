@@ -898,15 +898,16 @@ sub drop ($)
 sub seek ($$$$)
 {
     my ($self, $data, $pos, $whence) = @_;
+    my $meta = $self->{meta};
     if ($whence == 0 && $pos == 0) {
-	$pos = defined $self->{first_row_pos} ? $self->{first_row_pos} : 0;
+	$pos = defined $meta->{first_row_pos} ? $meta->{first_row_pos} : 0;
 	}
     elsif ($whence != 2 || $pos != 0) {
 	croak "Illegal seek position: pos = $pos, whence = $whence";
 	}
 
-    $self->{meta}->{fh}->seek ($pos, $whence) or
-	croak "Error while seeking in " . $self->{meta}->{f_fqfn} . ": $!";
+    $meta->{fh}->seek ($pos, $whence) or
+	croak "Error while seeking in " . $meta->{f_fqfn} . ": $!";
     } # seek
 
 sub truncate ($$)
