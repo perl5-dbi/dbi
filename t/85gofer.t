@@ -155,6 +155,7 @@ sub run_tests {
         ? $driver_dsn
         : $remote_driver_dsn;
 
+    END { unlink glob "fruit.???" }
     ok $dbh->do("DROP TABLE IF EXISTS fruit");
     ok $dbh->do("CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))");
     die "$test_run_tag aborted\n" if $DBI::err;

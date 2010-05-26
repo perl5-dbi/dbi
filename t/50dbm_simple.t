@@ -76,7 +76,7 @@ EOP
 
 my $dir = File::Spec->catdir(getcwd(),'test_output');
 
-rmtree $dir;
+rmtree $dir; END { rmtree $dir }
 mkpath $dir;
 
 my %tests_statement_results = (
@@ -169,7 +169,6 @@ for my $mldbm ( @mldbm_types ) {
             or warn $@;
     }
 }
-rmtree $dir;
 
 sub do_test {
     my ($dtype, $mldbm, $columns) = @_;
