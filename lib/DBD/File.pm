@@ -98,8 +98,6 @@ sub connect ($$;$$$)
 	$this->func ("init_valid_attributes");
 	my ($var, $val);
 	$this->{f_dir} = File::Spec->curdir ();
-	$this->{f_ext} = "";
-	$this->{f_map} = {};
 	while (length $dbname) {
 	    if ($dbname =~ s/^((?:[^\\;]|\\.)*?);//s) {
 		$var    = $1;
