@@ -402,10 +402,8 @@ sub type_info_all ($)
 		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
 	while (defined ($file = readdir ($dirh))) {
-	    -f $file or next;	# No dir's, devices, or pipes. Only plain files
-	    # XXX $dbh->{f_meta} or ...
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
-	    # XXX collect from $dbh->{f_meta}
+	    $tbl && $meta && -f $meta->{f_fqfn} or next;
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -654,11 +652,13 @@ sub open_table ($$$$$)
     my $class = ref $self;
     $class =~ s/::Statement/::Table/;
 
-    my %flags = (createMode => $createMode,
-		 lockMode => $lockMode);
-    $self->{command} eq 'DROP' and $flags{dropMode} = 1;
+    my $flags = {
+	createMode	=> $createMode,
+	lockMode	=> $lockMode,
+	};
+    $self->{command} eq "DROP" and $flags->{dropMode} = 1;
 
-    return $class->new ($data, {table => $table}, \%flags);
+    return $class->new ($data, { table => $table }, $flags);
     } # open_table
 
 # ====== SQL::TABLE ============================================================
@@ -749,25 +749,28 @@ sub init_table_meta ($$$$$)
     exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
     exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
     defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
-    defined $meta->{f_fqfn}	or
-	$self->file2table ($meta, $table, $file_is_table, $quoted);
+    unless (defined $meta->{f_fqfn}) {
+	my $tbl = $self->file2table ($meta, $table, $file_is_table, $quoted);
+	$tbl or $meta->{f_fqfn}	= undef;
+	}
     } # init_table_meta
 
 sub default_table_meta ($$$)
 {
     my ($self, $dbh, $table) = @_;
-    my $meta = { f_fqfn => $table, f_fqbn => $table, };
+    my $meta = { f_fqfn => $table, f_fqbn => $table };
     return $meta;
     } # init_table_meta
 
 sub get_table_meta ($$$$;$)
 {
     my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
-    unless( defined( $quoted ) ) {
+    unless (defined $quoted) {
 	$quoted = 0;
 	$table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
 	$table =~ s/\"$//;
 	}
+
     my $meta;
     if (    $table !~ m/^$open_table_re/o
 	and $table !~ m{^[/\\]}      # root
