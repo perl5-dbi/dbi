@@ -753,7 +753,6 @@ sub init_table_meta ($$$$$)
     defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
     defined $meta->{f_fqfn}	or
 	$self->file2table ($meta, $table, $file_is_table, $quoted);
-
     } # init_table_meta
 
 sub default_table_meta ($$$)
@@ -1018,7 +1017,7 @@ attributes:
 
 This attribute is used for setting the directory where the files are
 opened and it defaults to the current directory ("."). Usually you set
-it on the dbh but it may be overriden on the statement handle.
+it on the dbh but it may be overridden on the statement handle.
 See L<BUGS AND LIMITATIONS>.
 
 =item f_ext
@@ -1137,7 +1136,7 @@ possible to pre-initialize attributes for each table wanted to use.
 
 DBD::File recognizes the (public) attributes f_ext, f_dir, f_encoding, f_lock,
 and f_lockfile. Be very careful when modifying attributes you do not know,
-the consequence might a destroyed table.
+the consequence might be a destroyed table.
 
 =back
 
@@ -1147,7 +1146,7 @@ Internally private attributes to deal with SQL backends:
 
 =item sql_nano_version
 
-Conatins the version of loaded DBI::SQL::Nano
+Contains the version of loaded DBI::SQL::Nano
 
 =item sql_statement_version
 
@@ -1164,7 +1163,7 @@ Contains optionally temporary tables.
 =back
 
 Do not modify any of above private attributes unless you understand
-the implications of doing so. The behaviour of DBD::File and derived
+the implications of doing so. The behavior of DBD::File and derived
 DBD's might be unpredictable when one or more of those attributes are
 modified.
 
@@ -1258,7 +1257,7 @@ used with
 
 the table data processing passes DBD::File::Table. No file system calls
 will be made, no influence with existing (file based) tables with the same
-name will occur. Temporary tables are choosen in favor over file tables,
+name will occur. Temporary tables are chosen in favor over file tables,
 but they will not covered by C<< table_info >>.
 
 =back
