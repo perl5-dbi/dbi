@@ -325,12 +325,9 @@ sub file2table
     return $tbl;
 }
 
-sub init_table_meta ($$$$$)
+sub bootstrap_table_meta
 {
-    my ( $self, $dbh, $table, $file_is_table, $quoted ) = @_;
-    defined $dbh->{f_meta}->{$table} and "HASH" eq ref $dbh->{f_meta}->{$table}
-      or $dbh->{f_meta}->{$table} = {};
-    my $meta = $dbh->{f_meta}->{$table};
+    my ( $self, $dbh, $meta, $table ) = @_;
 
     $meta->{dbm_type} ||= $dbh->{dbm_type} || 'SDBM_File';
     $meta->{dbm_mldbm} ||= $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
@@ -362,6 +359,13 @@ sub init_table_meta ($$$$$)
         $meta->{f_ext} = $ext if ( defined($ext) );
     }
 
+    $self->SUPER::bootstrap_table_meta( $dbh, $meta, $table );
+}
+
+sub init_table_meta
+{
+    my ( $self, $dbh, $meta, $table ) = @_;
+
     unless ( defined( $meta->{dbm_tietype} ) )
     {
         my $tie_type = $meta->{dbm_type};
@@ -390,18 +394,7 @@ sub init_table_meta ($$$$$)
         $meta->{col_names} = $dbh->{dbm_cols} if ( defined( $dbh->{dbm_cols} ) );
     }
 
-    $self->SUPER::init_table_meta( $dbh, $table, $file_is_table, $quoted );
-}
-
-sub default_table_meta ($$$)
-{
-    my ( $self, $dbh, $table ) = @_;
-    my $meta = $self->SUPER::default_table_meta( $dbh, $table );
-
-    $meta->{dbm_type} = $dbh->{dbm_type} || 'SDBM_File';
-    $meta->{dbm_mldbm} = $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
-
-    return $meta;
+    $self->SUPER::init_table_meta( $dbh, $table );
 }
 
 sub open_file

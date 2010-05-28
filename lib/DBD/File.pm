@@ -25,7 +25,6 @@ use strict;
 
 use DBI ();
 require DBI::SQL::Nano;
-require File::Spec;
 
 package DBD::File;
 
@@ -114,6 +113,8 @@ sub connect ($$;$$$)
 	    }
 	}
     $this->STORE (Active => 1);
+    $this->STORE (sql_identifier_case => 2); # SQL_IC_LOWER
+    $this->STORE (sql_quoted_identifier_case => 3); # SQL_IC_SENSITIVE
     $this->func ("set_versions");
     return $this;
     } # connect
@@ -167,6 +168,8 @@ package DBD::File::db;
 
 use strict;
 use Carp;
+require File::Spec;
+require Cwd;
 
 $DBD::File::db::imp_data_size = 0;
 
@@ -193,8 +196,8 @@ sub prepare ($$;@)
 
 	if ( $dbh->{sql_handler} eq "SQL::Statement" and
 	     $dbh->{sql_statement_version} > 1) {
-	    my $parser = $dbh->{csv_sql_parser_object};
-	    $parser ||= eval { $dbh->func ("cache_sql_parser_object") };
+	    my $parser = $dbh->{sql_parser_object};
+	    $parser ||= eval { $dbh->func ("sql_parser_object") };
 	    if ($@) {
 		$stmt = eval { $class->new ($statement) };
 		}
@@ -237,24 +240,43 @@ sub init_valid_attributes
     my $sth = shift;
 
     $sth->{f_valid_attrs} = {
-	f_version  => 1, # DBD::File version
-	f_dir      => 1, # base directory
-	f_ext      => 1, # file extension
-	f_schema   => 1, # schema name
-	f_tables   => 1, # base directory
-	f_lock     => 1, # Table locking mode
-	f_encoding => 1, # Encoding of the file
+	f_version        => 1, # DBD::File version
+	f_dir            => 1, # base directory
+	f_ext            => 1, # file extension
+	f_schema         => 1, # schema name
+	f_meta           => 1, # meta data for tables
+	f_lock           => 1, # Table locking mode
+	f_encoding       => 1, # Encoding of the file
+	f_readonly_attrs => 1, # File readonly attributes
 	};
     $sth->{sql_valid_attrs} = {
-	sql_handler           => 1, # Nano or S:S
-	sql_nano_version      => 1, # Nano version
-	sql_statement_version => 1, # S:S version
+	sql_handler                => 1, # Nano or S:S
+	sql_nano_version           => 1, # Nano version
+	sql_statement_version      => 1, # S:S version
+	sql_quoted_identifier_case => 1, # case for quoted identifiers
+	sql_identifier_case        => 1, # case for non-quoted identifiers
+	sql_parser_object          => 1, # SQL::Parser instance
+	sql_readonly_attrs         => 1, # SQL readonly attributes
+	};
+    $sth->{f_readonly_attrs} = {
+	f_version        => 1, # DBD::File version
+	f_valid_attrs    => 1, # File valid attributes
+	f_readonly_attrs => 1, # File readonly attributes
+	};
+    $sth->{sql_readonly_attrs} = {
+	sql_handler                => 1, # Nano or S:S
+	sql_nano_version           => 1, # Nano version
+	sql_statement_version      => 1, # S:S version
+	sql_quoted_identifier_case => 1, # case for quoted identifiers
+	sql_parser_object          => 1, # SQL::Parser instance
+	sql_valid_attrs            => 1, # SQL valid attributes
+	sql_readonly_attrs         => 1, # SQL readonly attributes
 	};
 
     return $sth;
     } # init_valid_attributes
 
-sub cache_sql_parser_object
+sub sql_parser_object
 {
     my $dbh    = shift;
     my $parser = {
@@ -265,7 +287,7 @@ sub cache_sql_parser_object
     my $sql_flags = $dbh->FETCH ("sql_flags") || {};
     %$parser = (%$parser, %$sql_flags);
     $parser = SQL::Parser->new ($parser->{dialect}, $parser);
-    $dbh->{csv_sql_parser_object} = $parser;
+    $dbh->{sql_parser_object} = $parser;
     return $parser;
     } # cache_sql_parser_object
 
@@ -321,11 +343,24 @@ sub STORE ($$$)
 	if ($attrib eq "f_dir") {
 	    -d $value or
 		return $dbh->set_err ($DBI::stderr, "No such directory '$value'");
+	    File::Spec->file_name_is_absolute ($value) or
+	        $value = Cwd::abs_path ($value);
 	    }
 	if ($attrib eq "f_ext") {
 	    $value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
 		carp "'$value' doesn't look like a valid file extension attribute\n";
 	    }
+	if (($attrib eq "sql_identifier_case" or $attrib eq "sql_quoted_identifier_case") and
+	    ($value < 1 or $value > 4)) {
+	    croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
+	    }
+
+        if (( 0 == index( $attrib, "f_" ) and $dbh->{f_readonly_attrs}->{$attrib}) or 
+            ( 0 == index( $attrib, "sql_" ) and $dbh->{sql_readonly_attrs}->{$attrib}) and
+	    defined($dbh->{$attrib})) {
+	    croak "attribute '$attrib' is readonly and must not be modified";
+	    }
+
 	$dbh->{$attrib} = $value;
 	return 1;
 	}
@@ -403,7 +438,7 @@ sub type_info_all ($)
 	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
 	while (defined ($file = readdir ($dirh))) {
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
-	    $tbl && $meta && -f $meta->{f_fqfn} or next;
+	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
 	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
@@ -668,6 +703,9 @@ package DBD::File::Table;
 use strict;
 use Carp;
 require IO::File;
+require File::Basename;
+require File::Spec;
+require Cwd;
 
 # We may have a working flock () built-in but that doesn't mean that locking
 # will work on NFS (flock () may hang hard)
@@ -683,11 +721,11 @@ my $locking = eval { flock STDOUT, 0; 1 };
 # must not rely on an instantiated DBD::File::Table
 sub file2table
 {
-    my ($self, $meta, $file, $file_is_table, $quoted) = @_;
+    my ($self, $meta, $file, $file_is_table, $respect_case) = @_;
 
-    $file eq "." || $file eq ".."	and return;
+    $file eq "." || $file eq ".."	and return; # XXX would break a possible DBD::Dir
 
-    my ($ext, $req) = ("", 0); # XXX
+    my ($ext, $req) = ("", 0);
     if ($meta->{f_ext}) {
 	($ext, my $opt) = split m/\//, $meta->{f_ext};
 	if ($ext && $opt) {
@@ -695,20 +733,29 @@ sub file2table
 	    }
 	}
 
-    (my $tbl = $file) =~ s/$ext$//i;
+    # (my $tbl = $file) =~ s/$ext$//i;
+    my ( $tbl, $dir, undef ) = File::Basename::fileparse( $file, $ext );
+    Cwd::abs_path( $dir ) eq $meta->{f_dir} and
+        $dir = "";
+    !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
+        $tbl = uc($tbl);
+    !$respect_case and $meta->{sql_identifier_case} == 2 and # XXX SQL_IC_LOWER
+        $tbl = lc($tbl);
     $file_is_table and $file = "$tbl$ext";
+    my $searchdir = File::Spec->file_name_is_absolute ($dir) ? $dir : File::Spec->catdir ($meta->{f_dir}, $dir);
 
     # Fully Qualified File Name
-    unless ($quoted) { # table names are case insensitive in SQL
-	my $dir = $meta->{f_dir};
-	opendir my $dh, $dir or croak "Can't open '$dir': $!";
+    unless ($respect_case) { # table names are case insensitive in SQL
+	opendir my $dh, $searchdir or croak "Can't open '$searchdir': $!";
 	my @f = grep { lc $_ eq lc $file } readdir $dh;
-	@f == 1 and $tbl = $file = $f[0];
-	$tbl =~ s/$ext$//i; # XXX /i flag only when not quoted?
-	closedir $dh or croak "Can't close '$dir': $!";
+	@f == 1 and $file = $f[0];
+	!$respect_case and $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
+	    ($tbl = $file ) =~ s/$ext$//i;
+	closedir $dh or croak "Can't close '$searchdir': $!";
 	}
-    my $fqfn = File::Spec->catfile ($meta->{f_dir}, $file);
-    my $fqbn = File::Spec->catfile ($meta->{f_dir}, $tbl);
+    my $fqfn = Cwd::abs_path( File::Spec->catfile ($searchdir, $file) );
+    my $fqbn = File::Spec->catfile ($searchdir, $tbl);
+    $dir and $tbl = File::Spec->catfile ($dir, $tbl);
 
     $file = $fqfn;
     if ($ext) {
@@ -728,60 +775,61 @@ sub file2table
     !defined ($meta->{f_lockfile}) && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
+    $meta->{table_name} = $tbl;
+    $respect_case or $tbl = lc($tbl); # for internal storage
+
     return $tbl;
     } # file2table
 
-my $open_table_re = sprintf "(?:%s|%s|%s)",
-    quotemeta (File::Spec->curdir  ()),
-    quotemeta (File::Spec->updir   ()),
-    quotemeta (File::Spec->rootdir ());
-
-sub init_table_meta ($$$$$)
+sub bootstrap_table_meta ($$$$$)
 {
-    my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
+    my ($self, $dbh, $meta, $table) = @_;
 
-    defined $dbh->{f_meta}{$table} and "HASH" eq ref $dbh->{f_meta}{$table} or
-        $dbh->{f_meta}{$table} = {};
-    my $meta = $dbh->{f_meta}{$table};
     exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
     defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
     defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
     exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
     exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
     defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
-    unless (defined $meta->{f_fqfn}) {
-	my $tbl = $self->file2table ($meta, $table, $file_is_table, $quoted);
-	$tbl or $meta->{f_fqfn}	= undef;
-	}
-    } # init_table_meta
+    defined $meta->{sql_identifier_case} or
+        $meta->{sql_identifier_case} = $dbh->{sql_identifier_case};
+    } # bootstrap_table_meta
 
-sub default_table_meta ($$$)
+sub init_table_meta ($$$$$)
 {
-    my ($self, $dbh, $table) = @_;
-    my $meta = { f_fqfn => $table, f_fqbn => $table };
-    return $meta;
+    my ($self, $dbh, $meta, $table) = @_;
+
+    return;
     } # init_table_meta
 
 sub get_table_meta ($$$$;$)
 {
-    my ($self, $dbh, $table, $file_is_table, $quoted) = @_;
-    unless (defined $quoted) {
-	$quoted = 0;
-	$table =~ s/^\"// and $quoted = 1;    # handle quoted identifiers
+    my ($self, $dbh, $table, $file_is_table, $respect_case) = @_;
+    unless (defined $respect_case) {
+	$respect_case = 0;
+	$table =~ s/^\"// and $respect_case = 1;    # handle quoted identifiers
 	$table =~ s/\"$//;
 	}
 
     my $meta;
-    if (    $table !~ m/^$open_table_re/o
-	and $table !~ m{^[/\\]}      # root
-	and $table !~ m{^[a-z]\:}    # drive letter
-	) {
-	# should be done anyway, table_info might generate incomplete f_meta
-	$self->init_table_meta ($dbh, $table, $file_is_table, $quoted);
+    if( defined( $dbh->{f_meta}->{$table} ) ) {
 	$meta = $dbh->{f_meta}->{$table};
 	}
     else {
-	$meta = $self->default_table_meta ($dbh, $table);
+	$meta = {};
+	}
+
+    unless( $meta->{initialized} ) {
+	$self->bootstrap_table_meta($dbh, $meta, $table);
+
+	unless (defined $meta->{f_fqfn}) {
+	    $table = $self->file2table ($meta, $table, $file_is_table, $respect_case);
+	    $table or return;
+	    }
+
+	$self->init_table_meta ($dbh, $meta, $table);
+	$meta->{initialized} = 1;
+	$dbh->{f_meta}->{$table} = $meta;
 	}
 
     return ($table, $meta);

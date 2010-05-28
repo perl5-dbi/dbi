@@ -26,6 +26,10 @@ DBI::Changes - List of significant changes to the DBI
     resources (Jens Rehsack)
   Changes to DBD::File for better English and hopefully better
     explanation (Martin J. Evans)
+  Update documentation of DBD::DBM to cover current implementation,
+    tried to explain some things better and changes most examples to
+    preferred style of Merijn and myself (Jens Rehsack)
+  DBD::DBM fixes found during tests (Jens Rehsack)
 
 =head2 Changes in DBI 1.611 (svn r13935) 29th April 2010
 
