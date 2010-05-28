@@ -1,0 +1,132 @@
+=head1 NAME
+
+DBD::File::Roadmap - Planned Enhancements for the DBD::File and Pure Perl DBD's
+
+Jens Rehsack - May 2010
+
+=head1 SYNOPSIS
+
+This document gives a high level overview of the future of the DBD::File DBI
+driver and groundwork for pure Perl DBI drivers.
+
+The planned enhancements cover testing, performance, reliability,
+extensibility and more.
+
+=head1 CHANGES AND ENHANCEMENTS
+
+=head2 Testing
+
+DBD::File and the dependent DBD::DBM requires much more automated tests,
+covering stability of current API and compatibility with optional modules
+like SQL::Statement.
+
+=head2 Performance
+
+Several discussions about support for features like index on columns or
+cursors are made for DBD::CSV (which is a DBD::File based driver, too).
+Same discussions could be made for DBD::DBM, DBD::AnyData, DBD::RAM or
+DBD::PO etc.
+
+To improve the performance of the underlying SQL engines, a clean
+reimplementation seems to be required. Currently both engines are premature
+optimized and therefore it's not trivial to optimize even more without
+high risk of breaking running features.
+
+Join the DBI developers IRC channel at L<irc://irc.perl.org/dbi> to
+participate or write us to the DBI Developers Mailing List.
+
+=head2 Reliability
+
+DBD::File currently lacks following points:
+
+=over 4
+
+=item duplicate table names
+
+It's currently possible to access a table quoted with a relative path (a)
+and second time using an absolute path (b). If the absolute path of (a)
+points to the path of (b), it's not recognized (except flock protection
+handled by the Operating System) and two independent tables are handled.
+
+=item invalid table names
+
+Current implementation doesn't protect from choosing a directory name
+as physical file name for the table to open.
+
+=back
+
+=head2 Extensibility
+
+I (Jens Rehsack) have some (partially for example only) DBD's in mind:
+
+=over 4
+
+=item DBD::Sys
+
+Derive DBD::Sys from a common code base shared with DBD::File which handled
+all emulation DBI needs (as getinfo, SQL engine handling, ...)
+
+=item DBD::Dir
+
+Provide a DBD::File derived to walk with fixed table definitions through the
+file system to demonstrate how DBI / Pure Perl DBD's could handle databases
+with hierarchical structues.
+
+=item DBD::Join
+
+Provide a DBI driver which is able to manage multiple connections to other
+Databases (as DBD::Multiplex), but allow them to point to different data
+sources and allow joins between the tables of them:
+
+  # Example
+  # Let table 'lsof' being a table in DBD::Sys giving a list of open files using lsof utility
+  # Let table 'dir' being a atable from DBD::Dir
+  $sth = $dbh->prepare( "select * from dir,lsof where path='/documents' and dir.entry = lsof.filename" )
+  $sth->execute(); # gives all open files in '/documents'
+  ...
+
+  # Let table 'filesys' a DBD::Sys table of known file systems on current host
+  # Let table 'applications' a table of your Configuration Management Database
+  #  where current applications (relocatable, with mountpoints for filesystems)
+  #  are stored
+  $sth = dbh->prepare( "select * from applications,filesys where " .
+                       "application.mountpoint = filesys.mountpoint and ".
+		       "filesys.mounted is true" );
+  $sth->execute(); # gives all currently mounted applications on this host
+
+=back
+
+=head1 PRIORITIES
+
+Our priorities are localized to our current issues. At first, many new test
+cases for DBD::File and DBD::DBM should be added to DBI test suite. After
+it, some additional documentation how to use the DBD::File API will be
+provided.
+
+Any additional priorities will come later and can be modified by (paying)
+users.
+
+=head1 RESOURCES AND CONTRIBUTIONS
+
+See L<http://dbi.perl.org/contributing> for I<how you can help>.
+
+If your company has benefited from the DBI, please consider if
+it could make a donation to The Perl Foundation "DBI Development"
+fund at L<http://dbi.perl.org/donate> to secure future development.
+
+Alternatively, if your company would benefit from a specific new
+DBI feature, please consider sponsoring its development through
+the options listed in the section "Commercial Support from the Author"
+on L<http://dbi.perl.org/support/>.
+
+Using such targeted financing allows you to contribute to DBI
+development and rapidly get something specific and directly valuable
+to you in return.
+
+My company also offers annual support contracts for the DBI, which
+provide another way to support the DBI and get something specific
+in return. Contact me for details.
+
+Thank you.
+
+=cut
