@@ -97,6 +97,8 @@ sub connect ($$;$$$)
 	$this->func ("init_valid_attributes");
 	my ($var, $val);
 	$this->{f_dir} = File::Spec->curdir ();
+	$this->{f_ext} = "";
+	$this->{f_map} = {};
 	while (length $dbname) {
 	    if ($dbname =~ s/^((?:[^\\;]|\\.)*?);//s) {
 		$var    = $1;
@@ -346,24 +348,29 @@ sub STORE ($$$)
 	    File::Spec->file_name_is_absolute ($value) or
 	        $value = Cwd::abs_path ($value);
 	    }
+
 	if ($attrib eq "f_ext") {
 	    $value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
 		carp "'$value' doesn't look like a valid file extension attribute\n";
 	    }
-	if (($attrib eq "sql_identifier_case" or $attrib eq "sql_quoted_identifier_case") and
-	    ($value < 1 or $value > 4)) {
+
+	if (    $attrib eq "sql_identifier_case" ||
+	        $attrib eq "sql_quoted_identifier_case"
+	    and
+		$value < 1 || $value > 4) {
 	    croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
 	    }
 
-        if (( 0 == index( $attrib, "f_" ) and $dbh->{f_readonly_attrs}->{$attrib}) or 
-            ( 0 == index( $attrib, "sql_" ) and $dbh->{sql_readonly_attrs}->{$attrib}) and
-	    defined($dbh->{$attrib})) {
+        if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or 
+             $attrib =~ m/^sql_/ && $dbh->{sql_readonly_attrs}{$attrib}) and
+	     defined $dbh->{$attrib}) {
 	    croak "attribute '$attrib' is readonly and must not be modified";
 	    }
 
 	$dbh->{$attrib} = $value;
 	return 1;
 	}
+
     return $dbh->SUPER::STORE ($attrib, $value);
     } # STORE
 
@@ -436,10 +443,12 @@ sub type_info_all ($)
 	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
 		? $dbh->{f_schema} : undef
 	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
+	my %seen;
 	while (defined ($file = readdir ($dirh))) {
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
 	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
+	    $seen{"$schema\0$tbl"}++ or
+		push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
 	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
@@ -734,15 +743,17 @@ sub file2table
 	}
 
     # (my $tbl = $file) =~ s/$ext$//i;
-    my ( $tbl, $dir, undef ) = File::Basename::fileparse( $file, $ext );
-    Cwd::abs_path( $dir ) eq $meta->{f_dir} and
-        $dir = "";
+    my ($tbl, $dir, undef) = File::Basename::fileparse ($file, $ext);
+    Cwd::abs_path ($dir) eq $meta->{f_dir} and
+	$dir = "";
     !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
-        $tbl = uc($tbl);
+        $tbl = uc $tbl;
     !$respect_case and $meta->{sql_identifier_case} == 2 and # XXX SQL_IC_LOWER
-        $tbl = lc($tbl);
+        $tbl = lc $tbl;
     $file_is_table and $file = "$tbl$ext";
-    my $searchdir = File::Spec->file_name_is_absolute ($dir) ? $dir : File::Spec->catdir ($meta->{f_dir}, $dir);
+    my $searchdir = File::Spec->file_name_is_absolute ($dir)
+	? $dir
+	: File::Spec->catdir ($meta->{f_dir}, $dir);
 
     # Fully Qualified File Name
     unless ($respect_case) { # table names are case insensitive in SQL
@@ -750,12 +761,14 @@ sub file2table
 	my @f = grep { lc $_ eq lc $file } readdir $dh;
 	@f == 1 and $file = $f[0];
 	!$respect_case and $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
-	    ($tbl = $file ) =~ s/$ext$//i;
+	    ($tbl = $file) =~ s/$ext$//i;
 	closedir $dh or croak "Can't close '$searchdir': $!";
 	}
-    my $fqfn = Cwd::abs_path( File::Spec->catfile ($searchdir, $file) );
+    my $fqfn = Cwd::abs_path (File::Spec->catfile ($searchdir, $file));
     my $fqbn = File::Spec->catfile ($searchdir, $tbl);
-    $dir and $tbl = File::Spec->catfile ($dir, $tbl);
+
+    (my $tdir = $dir) =~ s{^\./}{};	# We do not want all tables to start with ./
+    $tdir and $tbl = File::Spec->catfile ($tdir, $tbl);
 
     $file = $fqfn;
     if ($ext) {
@@ -772,11 +785,11 @@ sub file2table
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $file;
-    !defined ($meta->{f_lockfile}) && $meta->{f_lockfile} and
+    !defined $meta->{f_lockfile} && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
     $meta->{table_name} = $tbl;
-    $respect_case or $tbl = lc($tbl); # for internal storage
+    $respect_case or $tbl = lc $tbl; # for internal storage
 
     return $tbl;
     } # file2table
@@ -811,16 +824,9 @@ sub get_table_meta ($$$$;$)
 	$table =~ s/\"$//;
 	}
 
-    my $meta;
-    if( defined( $dbh->{f_meta}->{$table} ) ) {
-	$meta = $dbh->{f_meta}->{$table};
-	}
-    else {
-	$meta = {};
-	}
-
-    unless( $meta->{initialized} ) {
-	$self->bootstrap_table_meta($dbh, $meta, $table);
+    my $meta = $dbh->{f_meta}{$table} || {};
+    unless ($meta->{initialized}) {
+	$self->bootstrap_table_meta ($dbh, $meta, $table);
 
 	unless (defined $meta->{f_fqfn}) {
 	    $table = $self->file2table ($meta, $table, $file_is_table, $respect_case);
@@ -829,7 +835,7 @@ sub get_table_meta ($$$$;$)
 
 	$self->init_table_meta ($dbh, $meta, $table);
 	$meta->{initialized} = 1;
-	$dbh->{f_meta}->{$table} = $meta;
+	$dbh->{f_meta}{$table} = $meta;
 	}
 
     return ($table, $meta);
