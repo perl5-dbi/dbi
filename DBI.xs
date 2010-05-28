@@ -4407,7 +4407,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
                 (long)(level & DBIc_TRACE_LEVEL_MASK),
                 (int)PerlProc_getpid(),
 #ifdef MULTIPLICITY
-                my_perl,
+                (void *)my_perl,
 #else
                 0,
 #endif
