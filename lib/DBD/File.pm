@@ -35,7 +35,7 @@ use vars qw( @ISA $VERSION $drh $valid_attrs );
 
 $VERSION = "0.39";
 
-$drh = undef;		# holds driver handle(s) once initialised
+$drh = undef;		# holds driver handle(s) once initialized
 
 sub driver ($;$)
 {
@@ -93,7 +93,7 @@ sub connect ($$;$$$)
 	});
 
     if ($this) {
-	# must be done first, because setting flags implicitely calls $dbdname::st->STORE
+	# must be done first, because setting flags implicitly calls $dbdname::st->STORE
 	$this->func ("init_valid_attributes");
 	my ($var, $val);
 	$this->{f_dir} = File::Spec->curdir ();
@@ -944,7 +944,7 @@ sub drop ($)
     undef $meta->{lockfh};
     $meta->{f_fqfn} and unlink $meta->{f_fqfn};
     $meta->{f_fqln} and unlink $meta->{f_fqln};
-    delete $data->{Database}->{f_meta}->{$self->{table}};
+    delete $data->{Database}{f_meta}{$self->{table}};
     return 1;
     } # drop
 
@@ -1164,18 +1164,18 @@ But see L</"KNOWN BUGS"> below.
 
 =item f_lockfile
 
-If you wish to use a lockfile extension other than '.lck', simply specify
+If you wish to use a lockfile extension other than C<.lck>, simply specify
 the f_lockfile attribute:
 
-  $dbh = DBI->connect('dbi:DBM:f_lockfile=.foo');
-  $dbh->{f_lockfile} = '.foo';
-  $dbh->{f_meta}->{qux}->{f_lockfile} = '.foo';
+  $dbh = DBI->connect ("dbi:DBM:f_lockfile=.foo");
+  $dbh->{f_lockfile} = ".foo";
+  $dbh->{f_meta}{qux}{f_lockfile} = ".foo";
 
 If you wish to disable locking, set the f_lockfile equal to 0.
 
-  $dbh = DBI->connect('dbi:DBM:f_lockfile=0');
+  $dbh = DBI->connect ("dbi:DBM:f_lockfile=0");
   $dbh->{f_lockfile} = 0;
-  $dbh->{f_meta}->{qux}->{f_lockfile} = 0;
+  $dbh->{f_meta}{qux}{f_lockfile} = 0;
 
 =item f_encoding
 
@@ -1209,7 +1209,7 @@ Contains the version of loaded SQL::Statement
 
 =item sql_handler
 
-Contains either 'SQL::Statement' or 'DBI::SQL::Nano'.
+Contains either the text 'SQL::Statement' or 'DBI::SQL::Nano'.
 
 =item sql_ram_tables
 
@@ -1233,7 +1233,7 @@ directory in the form "DBI:CSV:f_dir=$dirname".
 
 If you want to read the subdirectories of another directory, use
 
-    my ($drh) = DBI->install_driver ("CSV");
+    my ($drh)  = DBI->install_driver ("CSV");
     my (@list) = $drh->data_sources (f_dir => "/usr/local/csv_data" );
 
 =item list_tables
@@ -1241,7 +1241,7 @@ If you want to read the subdirectories of another directory, use
 This method returns a list of file names inside $dbh->{f_dir}.
 Example:
 
-    my ($dbh) = DBI->connect ("DBI:CSV:f_dir=/usr/local/csv_data");
+    my ($dbh)  = DBI->connect ("DBI:CSV:f_dir=/usr/local/csv_data");
     my (@list) = $dbh->func ("list_tables");
 
 Note that the list includes all files contained in the directory, even
@@ -1267,7 +1267,7 @@ not be set to a true value.
 
 =item *
 
-This module uses flock() internally but flock is not available on all
+This module uses flock () internally but flock is not available on all
 platforms. On MacOS and Windows 95 there is no locking at all (perhaps
 not so important on MacOS and Windows 95, as there is only a single
 user).
@@ -1276,7 +1276,7 @@ user).
 
 The module stores details about the handled tables in a private area
 of the driver handle (C<< $drh >>). This data area isn't shared between
-different driver instances, so several C<< DBI->connect() >> calls will
+different driver instances, so several C<< DBI->connect () >> calls will
 cause different table instances and private data areas.
 
 This data area is filled for the first time when a table is accessed,
