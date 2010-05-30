@@ -447,7 +447,7 @@ sub type_info_all ($)
 	while (defined ($file = readdir ($dirh))) {
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
 	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    $seen{$schema}{$tbl}++ or
+	    $seen{defined $schema ? $schema : "\0"}{$tbl}++ or
 		push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
 	    }
 	unless (closedir $dirh) {
