@@ -217,19 +217,50 @@ Contains the methods to deal with once prepared statement handles:
 
 =item bind_param
 
+Common routine to bind placeholders to a statement for execution. It's
+dangerous to override this method without detailed knowledge about the
+DBD::File internal storage structure.
+
 =item execute
+
+Executes previously prepared statements (with placeholders, if any).
 
 =item finish
 
+Finishes a statement handle, discards all buffered results. The prepared
+statement isn't discards to allow the statement can be executed multiple
+times.
+
 =item fetch
+
+Fetches next row from last execute results. This method may be rewritten
+in a later version and if it's overwritten in a derived class, the derived
+implementation shouldn't rely on the storage details.
 
 =item fetchrow_arrayref
 
+Alias for C<< fetch >>.
+
 =item FETCH
+
+Fetches statement handle attributes. Supported attributes (for full overview
+see L<DBI/Statement Handle Attributes>) are C<< NAME >> and C<< NULLABLE >>.
+Each column is returned being C<< NULLABLE >> which might be wrong depending
+on derived backend storage. If the statement handle has private attributes,
+they can be fetched using this method, too. B<Note> that statement attributes
+are not associated to any table used in this statement.
+
+This method usually requires being extended in a derived implementation.
+See L<DBD::CSV> or L<DBD::DBM> for some example.
 
 =item STORE
 
+Allowes storing of statement private attributes.
+
 =item rows
+
+Returns the number of rows affected by the last execute. This method might
+return C<< undef >>.
 
 =back
 
@@ -240,6 +271,28 @@ Derives from DBI::SQL::Nano::Statement to provide following method:
 =over 4
 
 =item open_table
+
+Implements the open_table method required by L<SQL::Statement> and
+L<DBI::SQL::Nano>. All real action for opening the file(s) belonging to the
+table is handled and parametrized in DBD::File::Table. Unless you intend
+to add anything to the following implementation, an empty DBD::XXX::Statement
+package satisfies DBD::File.
+
+  sub open_table ($$$$$)
+  {
+      my ($self, $data, $table, $createMode, $lockMode) = @_;
+
+      my $class = ref $self;
+      $class =~ s/::Statement/::Table/;
+
+      my $flags = {
+  	  createMode	=> $createMode,
+	  lockMode	=> $lockMode,
+	  };
+      $self->{command} eq "DROP" and $flags->{dropMode} = 1;
+
+      return $class->new ($data, { table => $table }, $flags);
+      } # open_table
 
 =back
 
@@ -252,11 +305,41 @@ the table data which are stored in the files.
 
 =item file2table
 
+This method tries to match between a file name and the fitting table name.
+It's called with a rudimentarily filled meta structure for the resulting
+table containg at least following attributes: C<< f_ext >>, C<< f_dir >>,
+C<< f_lockfile >> and C<< sql_identifier_case >>.
+
+It fills following attributes in the meta structure: C<< f_fqfn >>,
+C<< f_fqbn >>, C<< f_fqln >> and C<< table_name >> if the mapping job could
+be finished successfully. The table name is returned in this case - but
+I<undef> otherwise.
+
 =item bootstrap_table_meta
+
+Initializes a table meta structure rudimentarily. Can be safely overwritten
+in derived classed, as long as the C<< SUPER >> method is called at the end
+of the overwritten method.
+
+It copies following attributes from the database into the table meta data
+C<< f_dir >>, C<< f_ext >>, C<< f_encoding >>, C<< f_lock >>, C<< f_schema >>,
+C<< f_lockfile >> and C<< sql_identifier_case >> and make them sticky to the
+table this way.
+
+This method is called before it's tried to map between file name and table
+name to ensure right directory, extension etc. is used.
 
 =item init_table_meta
 
+Initializes more attributes of the table meta data - usually more expensive
+ones (e.g. those which requires class instantiations) - when the file name
+and the table name could mapped.
+
 =item get_table_meta
+
+Delivers the table meta data. If there are none for the required table, it's
+tried to initializes new ones. When it fails, nothing is returned. On
+success, the name of the table and the meta data structure is returned.
 
 =item open_file
 
