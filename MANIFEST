@@ -27,6 +27,8 @@ lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
 lib/DBD/File.pm			A driver base class for simple drivers
+lib/DBD/File/Developers.pod	Developer documentation for DBD::File
+lib/DBD/File/Roadmap.pod	Roadmap for DBD::File and other Pure Perl DBD's
 lib/DBD/Gofer.pm                DBD::Gofer 'stateless proxy' driver
 lib/DBD/Gofer/Policy/Base.pm
 lib/DBD/Gofer/Policy/pedantic.pm    Safest and most transparent, but also slowest
