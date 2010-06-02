@@ -6381,28 +6381,27 @@ earlier ones.
   $rc  = $sth->finish;
 
 Indicate that no more data will be fetched from this statement handle
-before it is either executed again or destroyed.  The C<finish> method
-is rarely needed, and frequently overused, but can sometimes be
-helpful in a few very specific situations to allow the server to free
-up resources (such as sort buffers).
+before it is either executed again or destroyed.  You almost certainly
+do I<not> need to call this method.
 
-When all the data has been fetched from a C<SELECT> statement, the
-driver should automatically call C<finish> for you. So you should
-I<not> normally need to call it explicitly I<except> when you know
-that you've not fetched all the data from a statement handle.
-The most common example is when you only want to fetch one row,
-but in that case the C<selectrow_*> methods are usually better anyway.
-Adding calls to C<finish> after each fetch loop is a common mistake,
+Adding calls to C<finish> after loop that fetches all rows is a common mistake,
 don't do it, it can mask genuine problems like uncaught fetch errors.
+
+When all the data has been fetched from a C<SELECT> statement, the driver will
+automatically call C<finish> for you. So you should I<not> call it explicitly
+I<except> when you know that you've not fetched all the data from a statement
+handle I<and> the handle won't be destroyed soon.
+
+The most common example is when you only want to fetch just one row,
+but in that case the C<selectrow_*> methods are usually better anyway.
 
 Consider a query like:
 
-  SELECT foo FROM table WHERE bar=? ORDER BY foo
+  SELECT foo FROM table WHERE bar=? ORDER BY baz
 
-where you want to select just the first (smallest) "foo" value from a
-very large table. When executed, the database server will have to use
+on a very large table. When executed, the database server will have to use
 temporary buffer space to store the sorted rows. If, after executing
-the handle and selecting one row, the handle won't be re-executed for
+the handle and selecting just a few rows, the handle won't be re-executed for
 some time and won't be destroyed, the C<finish> method can be used to tell
 the server that the buffer space can be freed.
 
