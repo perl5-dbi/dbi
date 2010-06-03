@@ -343,13 +343,48 @@ success, the name of the table and the meta data structure is returned.
 
 =item open_file
 
+Is called to open the table's data file.
+
+Depending on the attributes set in table's meta data, following steps are
+done: unless C<< f_dontopen >> is set to a true value, C<< f_fqfn >> must
+contain the full qualified file name for the table to work on (file2table
+ensures this). The encoding in C<< f_encoding >> is applied if set and
+the file is opened. If C<< f_fqln >> (full qualified lock name) is set,
+this file is opened, too. Depending of the value in C<< f_lock >>, the
+appropriate lock is set on the opened data file or lock file, respectively.
+
+After this is done, a derived class might add more steps in an overwritten
+C<< open_file >> method.
+
 =item new
+
+Instantiates the table. This is done in 3 steps:
+
+ 1. get the table meta data
+ 2. open the data file
+ 3. bless the table data structure using inherited constructor new
+
+It's not recommended to override the constructor of the table class.
+Find a reasonable place to add you extensions in one of above four methods.
 
 =item drop
 
+Implements abstract table method for C<< DROP >> command. Discards table
+meta data after all files belonging to the table are closed and unlinked.
+
+Overriding this method might be reasonable in very rare cases.
+
 =item seek
 
+Implements abstract table method used when accessing the table from the
+engine. C<< seek >> is called every time the engine uses dumb algorithms
+for iterating over the table content.
+
 =item truncate
+
+Implements abstract table method used when dumb table algorithms for
+C<< UPDATE >> or C<< DELETE >> to truncate the table storage after last
+written row.
 
 =back
 
