@@ -45,7 +45,7 @@ sub driver ($;$)
     # but you can write private methods before official registration
     # by hacking the $dbd_prefix_registry in a private copy of DBI.pm
     #
-    if ( $DBI::VERSION >= 1.37 and !$methods_already_installed++ )
+    unless ( $methods_already_installed++ )
     {
         DBD::DBM::db->install_method('dbm_versions');
         DBD::DBM::st->install_method('dbm_schema');
@@ -215,35 +215,32 @@ sub init_valid_attributes
 #
 sub dbm_versions
 {
-    my $dbh = shift;
-    my $table = shift || '';
-    my $dtype =
-         $dbh->{f_meta}->{$table}->{dbm_type}
-      || $dbh->{dbm_type}
-      || 'SDBM_File';
-    my $mldbm =
-         $dbh->{f_meta}->{$table}->{dbm_mldbm}
-      || $dbh->{dbm_mldbm}
-      || '';
-    $dtype .= ' + MLDBM + ' . $mldbm if ($mldbm);
+    my $class = $_[0]->FETCH ("ImplementorClass");
+    my $get_versions = $class->can( 'get_versions' );
+    goto &$get_versions;
+}
 
-    my %version = ( DBI => $DBI::VERSION );
-    $version{"DBI::PurePerl"} = $DBI::PurePerl::VERSION if ($DBI::PurePerl);
-    $version{OS}              = "$^O ($Config::Config{osvers})";
-    $version{Perl}            = "$] ($Config::Config{archname})";
-    my $str = sprintf( "%-16s %s\n%-16s %s\n%-16s %s\n",
-                       'DBD::DBM', $dbh->{Driver}->{Version} . " using $dtype",
-                       '  DBD::File', $dbh->{f_version},
-                       '  DBI::SQL::Nano',
-                       $dbh->{sql_nano_version} );
-    $str .= sprintf( "%-16s %s\n", '  SQL::Statement', $dbh->{sql_statement_version} )
-      if ( $dbh->{sql_handler} eq 'SQL::Statement' );
+sub get_versions
+{
+    my ($dbh, $table) = @_;
+    $table ||= '';
+    my @versions = $dbh->SUPER::get_versions( $table );
 
-    for ( sort keys %version )
-    {
-        $str .= sprintf( "%-16s %s\n", $_, $version{$_} );
-    }
-    return "$str\n";
+    # update first line (optical)
+    my $dbdfv = shift @versions;
+    my ($pkg, $info) = split( /\s+/, $dbdfv, 2 );
+    unshift (@versions, sprintf ("%-16s %s", '  ' . $pkg, $info ));
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta or $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table );
+
+    my $dtype = $meta->{dbm_type};
+    $dtype .= ' + MLDBM + ' . $meta->{dbm_mldbm} if( $meta->{dbm_mldbm} );
+    unshift( @versions, sprintf( "%-16s %s using %s", 'DBD::DBM', $dbh->{dbm_version}, $dtype ) );
+
+    return wantarray ? @versions : join ("\n", @versions);
 }
 
 # you may need to over-ride some DBD::File::db methods here
@@ -1342,6 +1339,18 @@ de-serialized, they may be eval'ed - in other words MLDBM (or actually
 Data::Dumper when used by MLDBM) may take the values and try to execute
 them in Perl.  Obviously, this can present dangers, so if you don't know
 what's in a file, be careful before you access it with MLDBM turned on!
+
+This modules uses hash interfaces of two column file databases. While
+none of supported SQL engines have a support for indeces, following
+statements really do the same (even if they mean something completely
+different):
+
+  $sth->do( "insert into foo values (1, 'hello')" );
+
+  # this statement does ...
+  $sth->do( "update foo set v='world' where k=1" );
+  # ... the same as this statement
+  $sth->do( "insert into foo values (1, 'world')" );
 
 See the entire section on L<Table locking and flock()> for gotchas and
 warnings about the use of flock().

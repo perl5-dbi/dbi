@@ -31,11 +31,20 @@ package DBD::File;
 use strict;
 
 use Carp;
-use vars qw( @ISA $VERSION $drh $valid_attrs );
+use vars qw( @ISA $VERSION $drh );
 
 $VERSION = "0.39";
 
 $drh = undef;		# holds driver handle(s) once initialized
+
+DBI->setup_driver ("DBD::File"); # only needed once but harmless to repeat
+
+my %accessors = (
+    versions   => 'get_file_versions',
+    get_meta   => 'get_file_meta',
+    set_meta   => 'set_file_meta',
+    clear_meta => 'clear_file_meta',
+    );
 
 sub driver ($;$)
 {
@@ -50,7 +59,6 @@ sub driver ($;$)
     # their own caching, so caching here just provides extra safety.
     $drh->{$class} and return $drh->{$class};
 
-    DBI->setup_driver ("DBD::File"); # only needed once but harmless to repeat
     $attr ||= {};
     {	no strict "refs";
 	unless ($attr->{Attribution}) {
@@ -65,6 +73,23 @@ sub driver ($;$)
 
     $drh->{$class} = DBI::_new_drh ($class . "::dr", $attr);
     $drh->{$class}->STORE (ShowErrorStatement => 1);
+
+    my $prefix = DBI->driver_prefix ($class);
+    my $dbclass = $class . "::db";
+    while (my ($accessor, $funcname) = each %accessors) {
+	my $method = $prefix . $accessor;
+	$dbclass->can ($method) and next;
+	my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
+sub %s::%s
+{
+    my $func = %s->can( '%s' );
+    goto &$func;
+    }
+EOI
+	eval $inject;
+	$dbclass->install_method ($method);
+	}
+
     return $drh->{$class};
     } # driver
 
@@ -95,10 +120,16 @@ sub connect ($$;$$$)
     if ($this) {
 	# must be done first, because setting flags implicitly calls $dbdname::st->STORE
 	$this->func ("init_valid_attributes");
+
+	#$this->{f_ext} = "";
+	$this->{f_dir}  = File::Spec->curdir ();
+	$this->{f_meta} = {};
+	#$this->{f_map} = {};
+	$this->{f_meta_map} = {}; # choose new name because it contains other keys
+	$this->STORE (sql_identifier_case => 2); # SQL_IC_LOWER
+	$this->STORE (sql_quoted_identifier_case => 3); # SQL_IC_SENSITIVE
+
 	my ($var, $val);
-	$this->{f_dir} = File::Spec->curdir ();
-	$this->{f_ext} = "";
-	$this->{f_map} = {};
 	while (length $dbname) {
 	    if ($dbname =~ s/^((?:[^\\;]|\\.)*?);//s) {
 		$var    = $1;
@@ -112,12 +143,18 @@ sub connect ($$;$$$)
 		($val = $2) =~ s/\\(.)/$1/g;
 		$this->{$var} = $val;
 		}
+	    elsif ($var =~ m/^(.+?)=>(.*)/s) {
+		$var = $1;
+		($val = $2) =~ s/\\(.)/$1/g;
+		my $ref = eval($val);
+		$this->$var ($ref);
+		}
 	    }
+
+	$this->STORE (Active => 1);
+	$this->func ("set_versions");
 	}
-    $this->STORE (Active => 1);
-    $this->STORE (sql_identifier_case => 2); # SQL_IC_LOWER
-    $this->STORE (sql_quoted_identifier_case => 3); # SQL_IC_SENSITIVE
-    $this->func ("set_versions");
+
     return $this;
     } # connect
 
@@ -234,6 +271,7 @@ sub set_versions
     $this->{sql_handler} = $this->{sql_statement_version}
 	? "SQL::Statement"
 	: "DBI::SQL::Nano";
+
     return $this;
     } # set_versions
 
@@ -296,6 +334,7 @@ sub sql_parser_object
 sub disconnect ($)
 {
     $_[0]->STORE (Active => 0);
+    $_[0]->STORE (f_meta => {});
     return 1;
     } # disconnect
 
@@ -374,11 +413,71 @@ sub STORE ($$$)
     return $dbh->SUPER::STORE ($attrib, $value);
     } # STORE
 
+sub get_versions
+{
+    my $dbh = $_[0];
+    my %version;
+    $version{'DBD::File'}  = $dbh->{f_version} . " using " . $dbh->{sql_handler} . " ";
+    $version{'DBD::File'} .= $dbh->{sql_handler} eq "SQL::Statement" 
+                               ? $dbh->{sql_statement_version}
+			       : $dbh->{sql_nano_version};
+    $version{'DBI'} = $DBI::VERSION;
+    $version{"DBI::PurePerl"} = $DBI::PurePerl::VERSION if ($DBI::PurePerl);
+    $version{OS} = "$^O ($Config::Config{osvers})";
+    $version{Perl} = "$] ($Config::Config{archname})";
+
+    my @versions;
+    foreach my $vk (sort keys %version) {
+	push (@versions, sprintf ("%-16s %s", $vk, $version{$vk} ));
+	}
+
+    return wantarray ? @versions : join ("\n", @versions);
+    } # get_file_versions
+
+sub get_file_meta
+{
+    my ($dbh, $table, $attr) = @_;
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta or croak "No such table '$table'";
+
+    # prevent creation of undef attributes
+    exists $meta->{$attr} and return $meta->{$attr};
+    return;
+    } # get_file_meta
+
+sub set_file_meta
+{
+    my ($dbh, $table, $attr, $value) = @_;
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta or croak "No such table '$table'";
+
+    $meta->{$attr} = $value;
+    return;
+    } # set_file_meta
+
+sub clear_file_meta
+{
+    my ($dbh, $table, $attr, $value) = @_;
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta and %{$meta} = ();
+
+    return;
+    } # clear_file_meta
+
 sub DESTROY ($)
 {
     my $dbh = shift;
     $dbh->SUPER::FETCH ("Active") and $dbh->disconnect ;
-    undef $dbh->{csv_sql_parser_object};
+    undef $dbh->{sql_parser_object};
     } # DESTROY
 
 sub type_info_all ($)
@@ -744,7 +843,7 @@ sub file2table
 
     # (my $tbl = $file) =~ s/$ext$//i;
     my ($tbl, $dir, undef) = File::Basename::fileparse ($file, $ext);
-    Cwd::abs_path ($dir) eq $meta->{f_dir} and
+    (Cwd::abs_path ($dir) eq $meta->{f_dir} or $dir eq "./") and
 	$dir = "";
     !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
         $tbl = uc $tbl;
@@ -756,19 +855,35 @@ sub file2table
 	: File::Spec->catdir ($meta->{f_dir}, $dir);
 
     # Fully Qualified File Name
-    unless ($respect_case) { # table names are case insensitive in SQL
-	opendir my $dh, $searchdir or croak "Can't open '$searchdir': $!";
-	my @f = grep { lc $_ eq lc $file } readdir $dh;
-	@f == 1 and $file = $f[0];
-	!$respect_case and $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
-	    ($tbl = $file) =~ s/$ext$//i;
-	closedir $dh or croak "Can't close '$searchdir': $!";
+    my $cmpsub;
+    if ($respect_case) {
+	$cmpsub = sub {
+	    my ( $fn, undef, $sfx ) = File::Basename::fileparse( $_, qr/\.[^.]*/ );
+	    return ( lc $sfx eq lc $ext or (!$req and !$sfx) ) if $fn eq $tbl;
+	    return 0;
+	    }
 	}
+    else {
+	$cmpsub = sub {
+	    my ( $fn, undef, $sfx ) = File::Basename::fileparse( $_, qr/\.[^.]*/ );
+	    return ( lc $sfx eq lc $ext or (!$req and !$sfx) ) if lc $fn eq lc $tbl;
+	    return 0;
+	    }
+	}
+
+    opendir my $dh, $searchdir or croak "Can't open '$searchdir': $!";
+    my @f = sort { length $b <=> length $a } ( grep { &$cmpsub($_) } readdir $dh );
+    @f > 0 and @f <= 2 and $file = $f[0];
+    !$respect_case and $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
+	($tbl = $file) =~ s/$ext$//i;
+    closedir $dh or croak "Can't close '$searchdir': $!";
+
     my $fqfn = Cwd::abs_path (File::Spec->catfile ($searchdir, $file));
     my $fqbn = File::Spec->catfile ($searchdir, $tbl);
 
-    (my $tdir = $dir) =~ s{^\./}{};	# We do not want all tables to start with ./
-    $tdir and $tbl = File::Spec->catfile ($tdir, $tbl);
+    #(my $tdir = $dir) =~ s{^\./}{};	# XXX We do not want all tables to start with ./
+    #$tdir and $tbl = File::Spec->catfile ($tdir, $tbl);
+    $dir and $tbl = File::Spec->catfile ($dir, $tbl);
 
     $file = $fqfn;
     if ($ext) {
@@ -776,25 +891,24 @@ sub file2table
 	    # File extension required
 	    $file =~ s/$ext$//i			or  return;
 	    }
-	else {
-	    # File extension optional, skip if file with extension exists
-	    grep m/$ext$/i, glob "$fqfn.*"	and return;
-	    $file =~ s/$ext$//i;
-	    }
+#	else {
+#	    # File extension optional, skip if file with extension exists
+#	    grep m/$ext$/i, glob "$fqfn.*"	and return;
+#	    $file =~ s/$ext$//i;
+#	    }
 	}
 
     $meta->{f_fqfn} = $fqfn;
-    $meta->{f_fqbn} = $file;
+    $meta->{f_fqbn} = $fqbn;
     !defined $meta->{f_lockfile} && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
     $meta->{table_name} = $tbl;
-    $respect_case or $tbl = lc $tbl; # for internal storage
 
     return $tbl;
     } # file2table
 
-sub bootstrap_table_meta ($$$$$)
+sub bootstrap_table_meta
 {
     my ($self, $dbh, $meta, $table) = @_;
 
@@ -808,7 +922,7 @@ sub bootstrap_table_meta ($$$$$)
         $meta->{sql_identifier_case} = $dbh->{sql_identifier_case};
     } # bootstrap_table_meta
 
-sub init_table_meta ($$$$$)
+sub init_table_meta
 {
     my ($self, $dbh, $meta, $table) = @_;
 
@@ -824,15 +938,23 @@ sub get_table_meta ($$$$;$)
 	$table =~ s/\"$//;
 	}
 
-    my $meta = $dbh->{f_meta}{$table} || {};
+    defined $dbh->{f_meta_map}{$table} and $table = $dbh->{f_meta_map}{$table};
+
+    my $meta = {};
+    defined ($dbh->{f_meta}{$table}) and $meta = $dbh->{f_meta}{$table};
     unless ($meta->{initialized}) {
 	$self->bootstrap_table_meta ($dbh, $meta, $table);
 
 	unless (defined $meta->{f_fqfn}) {
-	    $table = $self->file2table ($meta, $table, $file_is_table, $respect_case);
-	    $table or return;
+	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or return;
 	    }
 
+	if( defined $meta->{table_name} and $table ne $meta->{table_name} ) {
+	    $dbh->{f_meta_map}{$table} = $meta->{table_name};
+	    $table = $meta->{table_name};
+	    }
+
+	# XXX check $dbh->{f_meta}{ $meta->{table_name} }
 	$self->init_table_meta ($dbh, $meta, $table);
 	$meta->{initialized} = 1;
 	$dbh->{f_meta}{$table} = $meta;
@@ -917,8 +1039,9 @@ sub new
     my ($className, $data, $attrs, $flags) = @_;
     my $dbh = $data->{Database};
 
-    my $meta;
-    ($attrs->{table}, $meta) = $className->get_table_meta ($dbh, $attrs->{table}, 1);
+    my ($tblnm, $meta) = $className->get_table_meta ($dbh, $attrs->{table}, 1) or
+        croak "Cannot find appropriate file for table '$attrs->{table}'";
+    $attrs->{table} = $tblnm;
 
     $className->open_file ($meta, $attrs, $flags);
 
