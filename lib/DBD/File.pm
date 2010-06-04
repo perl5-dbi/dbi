@@ -40,10 +40,10 @@ $drh = undef;		# holds driver handle(s) once initialized
 DBI->setup_driver ("DBD::File"); # only needed once but harmless to repeat
 
 my %accessors = (
-    versions   => 'get_file_versions',
-    get_meta   => 'get_file_meta',
-    set_meta   => 'set_file_meta',
-    clear_meta => 'clear_file_meta',
+    versions   => "get_file_versions",
+    get_meta   => "get_file_meta",
+    set_meta   => "set_file_meta",
+    clear_meta => "clear_file_meta",
     );
 
 sub driver ($;$)
@@ -82,7 +82,7 @@ sub driver ($;$)
 	my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
 sub %s::%s
 {
-    my $func = %s->can( '%s' );
+    my $func = %s->can (q{%s});
     goto &$func;
     }
 EOI
@@ -121,12 +121,12 @@ sub connect ($$;$$$)
 	# must be done first, because setting flags implicitly calls $dbdname::st->STORE
 	$this->func ("init_valid_attributes");
 
-	#$this->{f_ext} = "";
-	$this->{f_dir}  = File::Spec->curdir ();
-	$this->{f_meta} = {};
-	#$this->{f_map} = {};
+	# f_ext should not be initialized
+	# f_map is deprecated (but might return)
+	$this->{f_dir}      = File::Spec->curdir ();
+	$this->{f_meta}     = {};
 	$this->{f_meta_map} = {}; # choose new name because it contains other keys
-	$this->STORE (sql_identifier_case => 2); # SQL_IC_LOWER
+	$this->STORE (sql_identifier_case        => 2); # SQL_IC_LOWER
 	$this->STORE (sql_quoted_identifier_case => 3); # SQL_IC_SENSITIVE
 
 	my ($var, $val);
@@ -146,7 +146,7 @@ sub connect ($$;$$$)
 	    elsif ($var =~ m/^(.+?)=>(.*)/s) {
 		$var = $1;
 		($val = $2) =~ s/\\(.)/$1/g;
-		my $ref = eval($val);
+		my $ref = eval $val;
 		$this->$var ($ref);
 		}
 	    }
@@ -400,7 +400,7 @@ sub STORE ($$$)
 	    croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
 	    }
 
-        if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or 
+        if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or
              $attrib =~ m/^sql_/ && $dbh->{sql_readonly_attrs}{$attrib}) and
 	     defined $dbh->{$attrib}) {
 	    croak "attribute '$attrib' is readonly and must not be modified";
@@ -416,23 +416,23 @@ sub STORE ($$$)
 sub get_versions
 {
     my $dbh = $_[0];
-    my %version;
-    $version{'DBD::File'}  = $dbh->{f_version} . " using " . $dbh->{sql_handler} . " ";
-    $version{'DBD::File'} .= $dbh->{sql_handler} eq "SQL::Statement" 
-                               ? $dbh->{sql_statement_version}
-			       : $dbh->{sql_nano_version};
-    $version{'DBI'} = $DBI::VERSION;
-    $version{"DBI::PurePerl"} = $DBI::PurePerl::VERSION if ($DBI::PurePerl);
-    $version{OS} = "$^O ($Config::Config{osvers})";
-    $version{Perl} = "$] ($Config::Config{archname})";
+    my %vsn = (
+	OS		=> "$^O ($Config::Config{osvers})",
+	Perl		=> "$] ($Config::Config{archname})",
+	DBI		=> $DBI::VERSION,
 
-    my @versions;
-    foreach my $vk (sort keys %version) {
-	push (@versions, sprintf ("%-16s %s", $vk, $version{$vk} ));
-	}
+	"DBD::File"	=> join " ",
+	    $dbh->{f_version}, "using", $dbh->{sql_handler},
+	    $dbh->{sql_handler} eq "SQL::Statement"
+		? $dbh->{sql_statement_version}
+		: $dbh->{sql_nano_version},
+	);
+    $DBI::PurePerl and $vsn{"DBI::PurePerl"} = $DBI::PurePerl::VERSION;
 
-    return wantarray ? @versions : join ("\n", @versions);
-    } # get_file_versions
+    my @versions = map { sprintf "%-16s %s", $_, $vsn{$_} } sort keys %vsn;
+
+    return wantarray ? @versions : join "\n", @versions;
+    } # get_versions
 
 sub get_file_meta
 {
@@ -440,7 +440,7 @@ sub get_file_meta
 
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
-    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    my (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta or croak "No such table '$table'";
 
     # prevent creation of undef attributes
@@ -454,7 +454,7 @@ sub set_file_meta
 
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
-    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    my (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta or croak "No such table '$table'";
 
     $meta->{$attr} = $value;
@@ -467,7 +467,7 @@ sub clear_file_meta
 
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
-    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    my (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta and %{$meta} = ();
 
     return;
@@ -858,23 +858,25 @@ sub file2table
     my $cmpsub;
     if ($respect_case) {
 	$cmpsub = sub {
-	    my ( $fn, undef, $sfx ) = File::Basename::fileparse( $_, qr/\.[^.]*/ );
-	    return ( lc $sfx eq lc $ext or (!$req and !$sfx) ) if $fn eq $tbl;
+	    my ($fn, undef, $sfx) = File::Basename::fileparse ($_, qr/\.[^.]*/);
+	    $fn eq $tbl and
+		return (lc $sfx eq lc $ext or !$req && !$sfx);
 	    return 0;
 	    }
 	}
     else {
 	$cmpsub = sub {
-	    my ( $fn, undef, $sfx ) = File::Basename::fileparse( $_, qr/\.[^.]*/ );
-	    return ( lc $sfx eq lc $ext or (!$req and !$sfx) ) if lc $fn eq lc $tbl;
+	    my ($fn, undef, $sfx) = File::Basename::fileparse ($_, qr/\.[^.]*/);
+	    lc $fn eq lc $tbl and
+		return (lc $sfx eq lc $ext or !$req && !$sfx);
 	    return 0;
 	    }
 	}
 
     opendir my $dh, $searchdir or croak "Can't open '$searchdir': $!";
-    my @f = sort { length $b <=> length $a } ( grep { &$cmpsub($_) } readdir $dh );
-    @f > 0 and @f <= 2 and $file = $f[0];
-    !$respect_case and $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
+    my @f = sort { length $b <=> length $a } grep { &$cmpsub ($_) } readdir $dh;
+    @f > 0 && @f <= 2 and $file = $f[0];
+    !$respect_case && $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
 	($tbl = $file) =~ s/$ext$//i;
     closedir $dh or croak "Can't close '$searchdir': $!";
 
@@ -941,7 +943,7 @@ sub get_table_meta ($$$$;$)
     defined $dbh->{f_meta_map}{$table} and $table = $dbh->{f_meta_map}{$table};
 
     my $meta = {};
-    defined ($dbh->{f_meta}{$table}) and $meta = $dbh->{f_meta}{$table};
+    defined $dbh->{f_meta}{$table} and $meta = $dbh->{f_meta}{$table};
     unless ($meta->{initialized}) {
 	$self->bootstrap_table_meta ($dbh, $meta, $table);
 
@@ -949,7 +951,7 @@ sub get_table_meta ($$$$;$)
 	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or return;
 	    }
 
-	if( defined $meta->{table_name} and $table ne $meta->{table_name} ) {
+	if (defined $meta->{table_name} and $table ne $meta->{table_name}) {
 	    $dbh->{f_meta_map}{$table} = $meta->{table_name};
 	    $table = $meta->{table_name};
 	    }
