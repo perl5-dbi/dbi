@@ -21,7 +21,7 @@ pod2htm*
 *.tbz
 *.tgz
 tmp/*
-t/zv[gpx]*
+t/zv[gpxn]*
 valgrind.log
 xx*
 ModList
