@@ -1117,22 +1117,22 @@ DBD::File - Base class for writing DBI drivers
 
 =head1 SYNOPSIS
 
- This module is a base class for writing other DBDs.
- It is not intended to function as a DBD itself.
- If you want to access flatfiles, use DBD::AnyData, or DBD::CSV,
- (both of which are subclasses of DBD::File).
+This module is a base class for writing other L<DBD|DBI::DBD>s.
+It is not intended to function as a DBD itself (though it is possible).
+If you want to access flat files, use L<DBD::AnyData|DBD::AnyData>, or
+L<DBD::CSV|DBD::CSV> (both of which are subclasses of DBD::File).
 
 =head1 DESCRIPTION
 
-The DBD::File module is not a true DBI driver, but an abstract
-base class for deriving concrete DBI drivers from it. The implication is,
-that these drivers work with plain files, for example CSV files or
-INI files. The module is based on the SQL::Statement module, a simple
-SQL engine.
+The DBD::File module is not a true L<DBI|DBI> driver, but an abstract
+base class for deriving concrete DBI drivers from it. The implication
+is, that these drivers work with plain files, for example CSV files or
+INI files. The module is based on the L<SQL::Statement|SQL::Statement>
+module, a simple SQL engine.
 
-See L<DBI> for details on DBI, L<SQL::Statement> for details on
-SQL::Statement and L<DBD::CSV>, L<DBD::DBM> or L<DBD::AnyData> for example
-drivers.
+See L<DBI|DBI> for details on DBI, L<SQL::Statement|SQL::Statement> for
+details on SQL::Statement and L<DBD::CSV|DBD::CSV>, L<DBD::DBM|DBD::DBM>
+or L<DBD::AnyData|DBD::AnyData> for example drivers.
 
 =head2 Metadata
 
@@ -1149,58 +1149,61 @@ thus they all work like expected:
     RaiseError
     Warn                   (Not used)
 
-The following DBI attributes are handled by DBD::File:
+=head3 The following DBI attributes are handled by DBD::File:
 
-=over 4
-
-=item AutoCommit
+=head4 AutoCommit
 
 Always on
 
-=item ChopBlanks
+=head4 ChopBlanks
 
 Works
 
-=item NUM_OF_FIELDS
+=head4 NUM_OF_FIELDS
 
 Valid after C<< $sth->execute >>
 
-=item NUM_OF_PARAMS
+=head4 NUM_OF_PARAMS
 
 Valid after C<< $sth->prepare >>
 
-=item NAME
+=head4 NAME
 
 Valid after C<< $sth->execute >>; undef for Non-Select statements.
 
-=item NULLABLE
+=head4 NULLABLE
 
 Not really working, always returns an array ref of one's, as DBD::CSV
 doesn't verify input data. Valid after C<< $sth->execute >>; undef for
 Non-Select statements.
 
+=head3 The following DBI attributes and methods are not supported:
+
+=over 4
+
+=item bind_param_inout
+
+=item CursorName
+
+=item LongReadLen
+
+=item LongTruncOk
+
 =back
 
-These attributes and methods are not supported:
-
-    bind_param_inout
-    CursorName
-    LongReadLen
-    LongTruncOk
+=head3 DBD::File specific attributes
 
 In addition to the DBI attributes, you can use the following dbh
 attributes:
 
-=over 4
-
-=item f_dir
+=head4 f_dir
 
 This attribute is used for setting the directory where the files are
-opened and it defaults to the current directory ("."). Usually you set
+opened and it defaults to the current directory (C<.>). Usually you set
 it on the dbh but it may be overridden on the statement handle.
-See L<BUGS AND LIMITATIONS>.
+See L<KNOWN BUGS AND LIMITATIONS>.
 
-=item f_ext
+=head4 f_ext
 
 This attribute is used for setting the file extension. The format is:
 
@@ -1209,8 +1212,17 @@ This attribute is used for setting the file extension. The format is:
 where the /flag is optional and the extension is case-insensitive.
 C<f_ext> allows you to specify an extension which:
 
- o makes DBD::File prefer F<table.extension> over F<table>.
- o makes the table name the filename minus the extension.
+=over
+
+=item *
+
+makes DBD::File prefer F<table.extension> over F<table>.
+
+=item *
+
+makes the table name the filename minus the extension.
+
+=back
 
     DBI:CSV:f_dir=data;f_ext=.csv
 
@@ -1231,7 +1243,7 @@ not.
 The C<r> flag means the file extension is required and any filename
 that does not match the extension is ignored.
 
-=item f_schema
+=head4 f_schema
 
 This will set the schema name and defaults to the owner of the
 directory in which the table file resides. You can set C<f_schema> to
@@ -1259,132 +1271,112 @@ By setting the schema you effect the results from the tables call:
     foo
     bar
 
-Defining f_schema to the empty string is equal to setting it to C<undef>
-so the DSN can be C<dbi:CSV:f_schema=;f_dir=.>.
+Defining C<f_schema> to the empty string is equal to setting it to C<undef>
+so the DSN can be C<"dbi:CSV:f_schema=;f_dir=.">.
 
-=item f_lock
+=head4 f_lock
 
 The C<f_lock> attribute is used to set the locking mode on the opened
 table files. Note that not all platforms support locking.  By default,
 tables are opened with a shared lock for reading, and with an
 exclusive lock for writing. The supported modes are:
 
-=over 2
+  0: No locking at all.
 
-=item 0
+  1: Shared locks will be used.
 
-No locking at all.
+  2: Exclusive locks will be used.
 
-=item 1
+But see L<KNOWN BUGS|/"KNOWN BUGS AND LIMITATIONS"> below.
 
-Shared locks will be used.
-
-=item 2
-
-Exclusive locks will be used.
-
-=back
-
-But see L</"KNOWN BUGS"> below.
-
-=item f_lockfile
+=head4 f_lockfile
 
 If you wish to use a lockfile extension other than C<.lck>, simply specify
-the f_lockfile attribute:
+the C<f_lockfile> attribute:
 
   $dbh = DBI->connect ("dbi:DBM:f_lockfile=.foo");
   $dbh->{f_lockfile} = ".foo";
   $dbh->{f_meta}{qux}{f_lockfile} = ".foo";
 
-If you wish to disable locking, set the f_lockfile equal to 0.
+If you wish to disable locking, set the C<f_lockfile> to C<0>.
 
   $dbh = DBI->connect ("dbi:DBM:f_lockfile=0");
   $dbh->{f_lockfile} = 0;
   $dbh->{f_meta}{qux}{f_lockfile} = 0;
 
-=item f_encoding
+=head4 f_encoding
 
 With this attribute, you can set the encoding in which the file is opened.
-This is implemented using C<binmode $fh, ":encoding(<f_encoding>)">.
+This is implemented using C<< binmode $fh, ":encoding(<f_encoding>)" >>.
 
-=item f_meta
+=head4 f_meta
 
 Private data area which contains information about the tables this
 module handles. Meta data of a table might not be available unless the
 table has been accessed first time doing a statement on it. But it's
 possible to pre-initialize attributes for each table wanted to use.
 
-DBD::File recognizes the (public) attributes f_ext, f_dir, f_encoding, f_lock,
-and f_lockfile. Be very careful when modifying attributes you do not know,
-the consequence might be a destroyed table.
+DBD::File recognizes the (public) attributes C<f_ext>, C<f_dir>,
+C<f_encoding>, C<f_lock>, and C<f_lockfile>. Be very careful when
+modifying attributes you do not know, the consequence might be a
+destroyed table.
 
-=back
+=head3 Internally private attributes to deal with SQL backends:
 
-Internally private attributes to deal with SQL backends:
-
-=over 4
-
-=item sql_nano_version
-
-Contains the version of loaded DBI::SQL::Nano
-
-=item sql_statement_version
-
-Contains the version of loaded SQL::Statement
-
-=item sql_handler
-
-Contains either the text 'SQL::Statement' or 'DBI::SQL::Nano'.
-
-=item sql_ram_tables
-
-Contains optionally temporary tables.
-
-=back
-
-Do not modify any of above private attributes unless you understand
+Do not modify any of these private attributes unless you understand
 the implications of doing so. The behavior of DBD::File and derived
 DBD's might be unpredictable when one or more of those attributes are
 modified.
 
+=head4 sql_nano_version
+
+Contains the version of loaded DBI::SQL::Nano
+
+=head4 sql_statement_version
+
+Contains the version of loaded SQL::Statement
+
+=head4 sql_handler
+
+Contains either the text 'SQL::Statement' or 'DBI::SQL::Nano'.
+
+=head4 sql_ram_tables
+
+Contains optionally temporary tables.
+
 =head2 Driver private methods
 
-=over 4
-
-=item data_sources
+=head4 data_sources
 
 The C<data_sources> method returns a list of subdirectories of the current
-directory in the form "DBI:CSV:f_dir=$dirname".
+directory in the form "dbi:CSV:f_dir=$dirname".
 
 If you want to read the subdirectories of another directory, use
 
     my ($drh)  = DBI->install_driver ("CSV");
     my (@list) = $drh->data_sources (f_dir => "/usr/local/csv_data" );
 
-=item list_tables
+=head4 list_tables
 
 This method returns a list of file names inside $dbh->{f_dir}.
 Example:
 
-    my ($dbh)  = DBI->connect ("DBI:CSV:f_dir=/usr/local/csv_data");
+    my ($dbh)  = DBI->connect ("dbi:CSV:f_dir=/usr/local/csv_data");
     my (@list) = $dbh->func ("list_tables");
 
 Note that the list includes all files contained in the directory, even
 those that have non-valid table names, from the view of SQL.
 
-=back
-
 =head1 SQL ENGINES
 
-DBD::File currently supports two SQL engines: L<DBI::SQL::Nano> and
-L<SQL::Statement>. DBI::SQL::Nano supports a I<very> limited subset of
-SQL statements, but it might be faster for some very simple
-tasks. SQL::Statement in contrast supports a much larger subset of
-ANSI SQL.
+DBD::File currently supports two SQL engines: L<DBI::SQL::Nano|DBI::SQL::Nano>
+and L<SQL::Statement|SQL::Statement>. DBI::SQL::Nano supports a I<very> limited
+subset of SQL statements, but it might be faster for some very simple tasks.
+SQL::Statement in contrast supports a much larger subset of ANSI SQL.
 
-To use SQL::Statement, the module version 1.28 of SQL::Statement is
-a prerequisite and the environment variable C<< DBI_SQL_NANO >> must
-not be set to a true value.
+To use SQL::Statement, the module version 1.28 of SQL::Statement is a
+prerequisite and the environment variable C<DBI_SQL_NANO> must not be
+set to a true value.
 
 =head1 KNOWN BUGS AND LIMITATIONS
 
@@ -1400,12 +1392,12 @@ user).
 =item *
 
 The module stores details about the handled tables in a private area
-of the driver handle (C<< $drh >>). This data area isn't shared between
+of the driver handle (C<$drh>). This data area isn't shared between
 different driver instances, so several C<< DBI->connect () >> calls will
 cause different table instances and private data areas.
 
 This data area is filled for the first time when a table is accessed,
-either via an SQL statement or via C<< table_info >> and is not
+either via an SQL statement or via C<table_info> and is not
 destroyed when the table is dropped or the driver handle is released.
 
 Following attributes are preserved in the data area and will evaluated
@@ -1426,7 +1418,7 @@ instead of driver globals:
 For DBD::CSV tables this means, once opened 'foo.csv' as table named 'foo',
 another table named 'foo' accessing the file 'foo.csl' cannot be opened.
 Accessing 'foo' will always access the file 'foo.csv' in memorized
-C<< f_dir >>, locking C<< f_lockfile >> via memorized C<< f_lock >>.
+C<f_dir>, locking C<f_lockfile> via memorized C<f_lock>.
 
 =item *
 
@@ -1438,7 +1430,7 @@ used with
 the table data processing passes DBD::File::Table. No file system calls
 will be made, no influence with existing (file based) tables with the same
 name will occur. Temporary tables are chosen in favor over file tables,
-but they will not covered by C<< table_info >>.
+but they will not covered by C<table_info>.
 
 =back
 
@@ -1465,7 +1457,8 @@ specified in the Perl README file.
 
 =head1 SEE ALSO
 
-L<DBI>, L<DBD::DBM>, L<DBD::CSV>, L<Text::CSV>, L<Text::CSV_XS>,
-L<SQL::Statement>, L<DBI::SQL::Nano>
+L<DBI|DBI>, L<DBD::DBM|DBD::DBM>, L<DBD::CSV|DBD::CSV>, L<Text::CSV|Text::CSV>,
+L<Text::CSV_XS|Text::CSV_XS>, L<SQL::Statement|SQL::Statement>, and
+L<DBI::SQL::Nano|DBI::SQL::Nano>
 
 =cut
