@@ -944,6 +944,7 @@ sub get_table_meta ($$$$;$)
 
     my $meta = {};
     defined $dbh->{f_meta}{$table} and $meta = $dbh->{f_meta}{$table};
+DOUBLE_CKECK:
     unless ($meta->{initialized}) {
 	$self->bootstrap_table_meta ($dbh, $meta, $table);
 
@@ -958,7 +959,7 @@ sub get_table_meta ($$$$;$)
 
 	# now we know a bit more - let's check if user can't use consequent spelling
 	# XXX add know issue about reset sql_identifier_case here ...
-	if( exists( $dbh->{f_meta}{$table} ) ) {
+	if (defined( $dbh->{f_meta}{$table} ) and $dbh->{f_meta}{$table}{initialized}) {
 	    $meta = $dbh->{f_meta}{$table};
 	    }
 	else {
