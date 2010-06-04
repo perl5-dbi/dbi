@@ -342,7 +342,9 @@ my $dbd_prefix_registry = {
   pg_      => { class => 'DBD::Pg',		},
   pgpp_    => { class => 'DBD::PgPP',		},
   plb_     => { class => 'DBD::Plibdata',	},
+  po_      => { class => 'DBD::PO',		},
   proxy_   => { class => 'DBD::Proxy',		},
+  ram_     => { class => 'DBD::RAM',		},
   rdb_     => { class => 'DBD::RDB',		},
   sapdb_   => { class => 'DBD::SAP_DB',		},
   solid_   => { class => 'DBD::Solid',		},
@@ -350,6 +352,7 @@ my $dbd_prefix_registry = {
   sql_     => { class => 'SQL::Statement',	},
   sqlite_  => { class => 'DBD::SQLite',  	},
   syb_     => { class => 'DBD::Sybase',		},
+  sys_     => { class => 'DBD::Sys',		},
   tdat_    => { class => 'DBD::Teradata',	},
   tmpl_    => { class => 'DBD::Template',	},
   tmplss_  => { class => 'DBD::TemplateSS',	},
@@ -362,6 +365,10 @@ my $dbd_prefix_registry = {
   xl_      => { class => 'DBD::Excel',		},
   yaswi_   => { class => 'DBD::Yaswi',		},
 };
+
+my %dbd_class_registry = map { $dbd_prefix_registry->{$_}->{class} => { prefix => $_ } }
+			     grep { exists $dbd_prefix_registry->{$_}->{class} }
+			     keys %{$dbd_prefix_registry};
 
 sub dump_dbd_registry {
     require Data::Dumper;
@@ -968,6 +975,11 @@ sub init_rootclass {	# deprecated
 
 *internal = \&DBD::Switch::dr::driver;
 
+sub driver_prefix {
+    my ($class, $driver) = @_;
+    return $dbd_class_registry{$driver}->{prefix} if exists $dbd_class_registry{$driver};
+    return;
+}
 
 sub available_drivers {
     my($quiet) = @_;
