@@ -234,7 +234,7 @@ sub get_versions
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
     my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
-    $meta or $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table );
+    $meta or ( $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table ) );
 
     my $dtype = $meta->{dbm_type};
     $dtype .= ' + MLDBM + ' . $meta->{dbm_mldbm} if( $meta->{dbm_mldbm} );
