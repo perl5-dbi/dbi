@@ -31,10 +31,10 @@ mkpath $dir;
 
 $dbh->dbm_clear_meta( 'fred' ); # otherwise the col_names are still known!
 
-$dbh->{sql_identifier_case} = 2; # SQL_IC_LOWER
+$dbh->{sql_identifier_case} = 2 unless ($using_dbd_gofer); # SQL_IC_LOWER
 
 $dbh->do(q/create table FRED (a integer, b integer)/);
-ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists");
+ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists") unless $using_dbd_gofer;
 
 ok($dbh->do(q/insert into fRED (a,b) values(1,2)/));
 
