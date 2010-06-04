@@ -199,8 +199,8 @@ sub do_test {
     else {
         $dbm_versions = $dbh->func('dbm_versions');
     }
-    print $dbm_versions;
-    ok($dbm_versions);
+    note $dbm_versions;
+    ok($dbm_versions, 'dbm_versions');
     isa_ok($dbh, 'DBI::db');
 
     # test if it correctly accepts valid $dbh attributes
@@ -254,13 +254,11 @@ sub do_test {
         }
 	is( $n, $results[$idx], $sql ) unless( 'ARRAY' eq ref $results[$idx] );
 	TODO: {
-	    local $TODO = "AUTOPROXY drivers might throw away sth->rows()";
+	    local $TODO = "AUTOPROXY drivers might throw away sth->rows()" if($ENV{DBI_AUTOPROXY});
 	    is( $n, $sth->rows, '$sth->execute(' . $sql . ') == $sth->rows' ) if( $sql =~ m/^(?:UPDATE|DELETE)/ );
 	}
         next unless $sql =~ /SELECT/;
         my $results='';
-        # Note that we can't rely on the order here, it's not portable,
-        # different DBMs (or versions) will return different orders.
 	my $allrows = $sth->fetchall_arrayref();
 	my $expected_rows = $results[$idx];
 	is( $sth->rows, scalar( @{$expected_rows} ), $sql );
