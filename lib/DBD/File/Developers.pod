@@ -166,6 +166,49 @@ C<< sql_readonly_attrs >> and C<< sql_handler >>.
 
 When overriding this method, do not forget to invoke the superior one.
 
+=item get_versions
+
+This method is called by the code injected to the instantiated driver to
+provide the user callable driver method C<< ${prefix}versions >> (e.g.
+C<< dbm_versions >>, C<< csv_versions >>, ...).
+
+The DBD::File implementation returns all version information known by
+DBD::File (e.g. DBI version, Perl version and of course, DBD::File version,
+used sql handler including it's version, too).
+
+Overriding it to add some more version information about your module, (e.g.
+some kind of parser version in case of DBD::CSV, ...).
+
+C<< get_versions >> takes the C<< $dbh >> as first argument and an optionally
+second argument containing a table name. The second argument isn't evaluated
+in C<< DBD::File::db::get_versions >> - but might be done in future.
+
+See DBD::DBM::db::get_versions how to override it.
+
+=item get_file_meta
+
+Retrieve an attribute from table's meta information. Method signature is
+C<< get_file_meta ($dbh, $table, $attr) >>. This method is called by the
+injected db handle method C<< ${prefix}get_meta >>.
+
+You can override this method to allow an API compatibility to previous
+versions of your module like you would do in C<< FETCH >>.
+
+=item set_file_meta
+
+Sets an attribute in table's meta information. Method signature is
+C<< set_file_meta ($dbh, $table, $attr, $value) >>. This method is called
+by the injected db handle method C<< ${prefix}set_meta >>.
+
+You can override this method to allow an API compatibility to previous
+versions of your module like you would do in C<< STORE >>.
+
+=item clear_file_meta
+
+Clears all meta information cached about a table. Method signature is
+C<< clear_file_meta ($dbh, $table) >>. This method is called
+by the injected db handle method C<< ${prefix}clear_meta >>.
+
 =item sql_parser_object
 
 Delivers an L<SQL::Parser> instance, when C<< sql_handler >> is set to
