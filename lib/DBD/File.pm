@@ -463,7 +463,7 @@ sub set_file_meta
 
 sub clear_file_meta
 {
-    my ($dbh, $table, $attr, $value) = @_;
+    my ($dbh, $table) = @_;
 
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
@@ -944,7 +944,7 @@ sub get_table_meta ($$$$;$)
 
     my $meta = {};
     defined $dbh->{f_meta}{$table} and $meta = $dbh->{f_meta}{$table};
-DOUBLE_CKECK:
+
     unless ($meta->{initialized}) {
 	$self->bootstrap_table_meta ($dbh, $meta, $table);
 
