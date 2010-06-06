@@ -959,7 +959,7 @@ sub get_table_meta ($$$$;$)
 
 	# now we know a bit more - let's check if user can't use consequent spelling
 	# XXX add know issue about reset sql_identifier_case here ...
-	if (defined( $dbh->{f_meta}{$table} ) and $dbh->{f_meta}{$table}{initialized}) {
+	if (defined $dbh->{f_meta}{$table} && $dbh->{f_meta}{$table}{initialized}) {
 	    $meta = $dbh->{f_meta}{$table};
 	    }
 	else {
