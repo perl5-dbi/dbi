@@ -604,7 +604,7 @@ every workstation shall be able to execute every query.
 There is a perl program "dbiproxy" which runs on a machine which is able
 to connect to all the databases we wish to reach. All Perl-DBD-drivers must
 be installed on this machine. You can also reach databases for which drivers 
-are not available on the machine where you run the programm querying the 
+are not available on the machine where you run the program querying the 
 database, e.g. ask MS-Access-database from Linux.
 
 Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
@@ -687,7 +687,7 @@ Start the proxyserver like this:
 
 =head2 Testing the connection from a remote machine
 
-Call a programm "dbish" from your commandline. I take the machine from rule "internal_webserver"
+Call a program "dbish" from your commandline. I take the machine from rule "internal_webserver"
 
 	dbish "dbi:Proxy:hostname=oracle.zdf;port=12400;dsn=dbi:Oracle:e01" informationdesk xxx
 
