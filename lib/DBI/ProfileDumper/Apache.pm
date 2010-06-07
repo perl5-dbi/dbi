@@ -61,7 +61,7 @@ directory.  So, for example, if you're running the child httpds as user 'nobody'
 and using chronolog to write to the logs directory, then you'll need to change
 the default.
 
-You can change the destination directory either by secifying a C<Dir> value
+You can change the destination directory either by specifying a C<Dir> value
 when creating the profile (like C<File> in the L<DBI::ProfileDumper> docs),
 or you can use the C<DBI_PROFILE_APACHE_LOG_DIR> env var to change that. For example:
 

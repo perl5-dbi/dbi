@@ -239,7 +239,7 @@ scripts by doing
 
 =head1 TO DO
 
-Error handling is virtually non-existant.
+Error handling is virtually non-existent.
 
 =head1 AUTHOR
 

@@ -1816,7 +1816,7 @@ passed as the sixth argument.
 Since B<DBI> post v1.607, if a C<dbd_db_login6_sv()> macro is defined (for
 a function like dbd_db_login6 but with scalar pointers for the dbname,
 username and password), it will be used instead. This will allow your
-login6 function to see if there are any unicode characters in the
+login6 function to see if there are any Unicode characters in the
 dbname.
 
 People used to just pick Oracle's F<dbdimp.c> and use the same names,
@@ -2904,7 +2904,7 @@ call a method the DBI merges the handles settings into its own for the
 duration of the call: the trace flags of the handle are OR'd into the
 trace flags of the DBI, and if the handle has a higher trace level
 then the DBI trace level is raised to match it. The previous DBI trace
-setings are restored when the called method returns.
+settings are restored when the called method returns.
 
 =head2 Trace Level
 

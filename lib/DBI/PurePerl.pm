@@ -1113,7 +1113,7 @@ bug reports to Jeff Zucker at <jeff@vpservices.com> with a cc to
 =head1 USAGE
 
 The usage is the same as for standard DBI with the exception
-that you need to set the enviornment variable DBI_PUREPERL if
+that you need to set the environment variable DBI_PUREPERL if
 you want to use the PurePerl version.
 
  DBI_PUREPERL == 0 (the default) Always use compiled DBI, die
@@ -1178,7 +1178,7 @@ functionality:
 =head2 Tracing
 
 Trace functionality is more limited and the code to handle tracing is
-only embeded into DBI:PurePerl if the DBI_TRACE environment variable
+only embedded into DBI:PurePerl if the DBI_TRACE environment variable
 is defined.  To enable total tracing you can set the DBI_TRACE
 environment variable as usual.  But to enable individual handle
 tracing using the trace() method you also need to set the DBI_TRACE

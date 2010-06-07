@@ -1030,7 +1030,7 @@ SELECT statement uses the key column in a single equal comparison -
 "user_name='Fred Bloggs' - so the search will find it very quickly without
 having to loop through however many names were inserted into the table.
 
-In contrast, thes searches on the same table are not optimized:
+In contrast, these searches on the same table are not optimized:
 
  1. SELECT phone FROM user WHERE user_name < 'Fred';
  2. SELECT user_name FROM user WHERE phone = '233-7777';

@@ -1101,7 +1101,7 @@ sub data_diff {
 
 sub data_string_diff {
     # Compares 'logical' characters, not bytes, so a latin1 string and an
-    # an equivalent unicode string will compare as equal even though their
+    # an equivalent Unicode string will compare as equal even though their
     # byte encodings are different.
     my ($a, $b) = @_;
     unless (defined $a and defined $b) {             # one undef
@@ -2267,7 +2267,7 @@ Perl supports binary data in Perl strings, and the DBI will pass binary
 data to and from the driver without change. It is up to the driver
 implementors to decide how they wish to handle such binary data.
 
-Perl supports two kinds of strings: unicode (utf8 internally) and non-unicode
+Perl supports two kinds of strings: Unicode (utf8 internally) and non-Unicode
 (defaults to iso-8859-1 if forced to assume an encoding).  Drivers should
 accept both kinds of strings and, if required, convert them to the character
 set of the database being used. Similarly, when fetching from the database
@@ -6818,7 +6818,7 @@ and values).
 
 It is possible that the values in the hash returned by C<ParamTypes>
 are not exactly the same as those passed to bind_param() or execute().
-Param attributes specified using the abreviated form, like this:
+Param attributes specified using the abbreviated form, like this:
 
     $sth->bind_param(1, SQL_INTEGER);
 
@@ -7210,7 +7210,7 @@ to be delivered $seconds in the future. For example:
   if ( $@ eq "TIMEOUT\n" ) { ... }
   elsif ($@) { ... } # some other error
 
-The first (outer) eval is used to avoid the unlikey but possible
+The first (outer) eval is used to avoid the unlikely but possible
 chance that the "code to execute" dies and the alarm fires before it
 is cancelled. Without the outer eval, if this happened your program
 will die if you have no ALRM handler or a non-local alarm handler

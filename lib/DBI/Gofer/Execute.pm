@@ -852,7 +852,7 @@ Negative values for R have special meaning, see below.
 
 =item err=N
 
-Sets the current failure err vaue to N (instead of the DBI's default 'standard
+Sets the current failure err value to N (instead of the DBI's default 'standard
 err value' of 2000000000). This is useful when you want to simulate a
 specific error.
 

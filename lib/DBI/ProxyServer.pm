@@ -526,7 +526,7 @@ UID's can be passed as group names or numeric values.
 
 =item I<version> (B<--version>)
 
-Supresses startup of the server; instead the version string will
+Suppresses startup of the server; instead the version string will
 be printed and the program exits immediately.
 
 =back
@@ -545,7 +545,7 @@ The configuration file is just that of I<RPC::PlServer> or I<Net::Daemon>
 with some additional attributes in the client list.
 
 The config file is a Perl script. At the top of the file you may include
-arbitraty Perl source, for example load drivers at the start (useful
+arbitrary Perl source, for example load drivers at the start (useful
 to enhance performance), prepare a chroot environment and so on.
 
 The important thing is that you finally return a hash ref of option

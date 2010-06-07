@@ -1018,7 +1018,7 @@ The AutoCommit attribute doesn't appear to be affected by the begin_work
 method. That's one symptom of the next item:
 
 Attributes may not behave as expected because the DBI intercepts
-atribute FETCH calls and returns the value, if there is one, from
+attribute FETCH calls and returns the value, if there is one, from
 DBD::Multiplex's attribute cache and doesn't give DBD::Multiplex a
 change to multiplex the FETCH. That's fixed from DBI 1.36.
 

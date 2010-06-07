@@ -1423,7 +1423,7 @@ instead of driver globals:
 =back
 
 For DBD::CSV tables this means, once opened 'foo.csv' as table named 'foo',
-another table named 'foo' accessing the file 'foo.csl' cannot be opened.
+another table named 'foo' accessing the file 'foo.txt' cannot be opened.
 Accessing 'foo' will always access the file 'foo.csv' in memorized
 C<f_dir>, locking C<f_lockfile> via memorized C<f_lock>.
 

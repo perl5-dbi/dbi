@@ -879,7 +879,7 @@ change.
 This attribute can be used to reduce network traffic: If the
 application is calling $sth->finish() then the proxy tells the server
 to finish the remote statement handle. Of course this slows down things
-quite a lot, but is prefectly good for reducing memory usage with
+quite a lot, but is perfectly good for reducing memory usage with
 persistent connections.
 
 However, if you set the I<proxy_no_finish> attribute to a TRUE value,
@@ -960,7 +960,7 @@ This becomes a little bit clearer, if we rewrite the above code:
   $tables->{"passwd"} = { "sep_char" => ":", "eol" => "\n";
 
 While the examples work fine without the proxy, the fail due to a
-subtile difference in step 1: By DBI magic, the hash ref
+subtle difference in step 1: By DBI magic, the hash ref
 $dbh->{'csv_tables'} is returned from the server to the client.
 The client creates a local copy. This local copy is the result of
 step 1. In other words, step 2 modifies a local copy of the hash ref,

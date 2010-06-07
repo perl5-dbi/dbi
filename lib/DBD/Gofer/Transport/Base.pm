@@ -358,7 +358,7 @@ A retry won't be allowed if the number of previous retries has reached C<go_retr
 
 =head1 TRACING
 
-Tracing of gofer requests and reponses can be enabled by setting the
+Tracing of gofer requests and responses can be enabled by setting the
 C<DBD_GOFER_TRACE> environment variable. A value of 1 gives a reasonably
 compact summary of each request and response. A value of 2 or more gives a
 detailed, and voluminous, dump.
