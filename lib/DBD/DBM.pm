@@ -695,7 +695,7 @@ see L<QUICK START> for an example
 
 =head1 DESCRIPTION
 
-DBD::DBM is a database management sytem that can work right out of the box.
+DBD::DBM is a database management system that can work right out of the box.
 If you have a standard installation of Perl and a standard installation of
 DBI, you can begin creating, accessing, and modifying simple database tables
 without any further installation.  You can (and should) also add some other
@@ -860,7 +860,7 @@ although no actual locking will happen.  Read the documentation for flock()
 if you need to understand this.
 
 Even on those systems that do support flock(), the locking is only advisory
-- as is allways the case with flock().  This means that if some other
+- as is always the case with flock().  This means that if some other
 program tries to access the table while DBD::DBM has the table locked, that
 other program will *succeed* at opening the table.  DBD::DBM's locking only
 applies to DBD::DBM.  An exception to this would be the situation in which
@@ -930,7 +930,7 @@ B<Perl coderefs> into columns.
 If you want more than two columns, you B<must> install MLDBM. It's available
 for many platforms and is easy to install.
 
-MLDBM is defaultly distributed with three serializers - Data::Dumper,
+MLDBM is by default distributed with three serializers - Data::Dumper,
 Storable, and FreezeThaw. Data::Dumper is the default, Storable is the
 fastest. MLDBM can also make use of user-defined serialization methods or
 other serialization modules (e.g. L<YAML::MLDBM>). All of this is available
@@ -1226,7 +1226,7 @@ Pure Perl serializer, requires L<FreezeThaw> being installed.
 
 =item YAML
 
-Very portable serializer (between languages, not between archirectures).
+Very portable serializer (between languages, not between architectures).
 Requires L<YAML::MLDBM> being installed.
 
 =back
@@ -1341,7 +1341,7 @@ them in Perl.  Obviously, this can present dangers, so if you don't know
 what's in a file, be careful before you access it with MLDBM turned on!
 
 This modules uses hash interfaces of two column file databases. While
-none of supported SQL engines have a support for indeces, following
+none of supported SQL engines have a support for indices, following
 statements really do the same (even if they mean something completely
 different):
 
