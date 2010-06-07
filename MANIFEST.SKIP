@@ -23,6 +23,7 @@
 ^[oj]dbc/
 ^mail/
 ^t/zz_\w+_pp.t$
+^t/pod-cm.t
 ^.git
 ^git-
 ^devel/
