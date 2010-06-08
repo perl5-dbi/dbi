@@ -354,7 +354,7 @@ the table data which are stored in the files.
 This method tries to map a filename to the associated table
 name.  It is called with a partly filled meta structure for the
 resulting table containing at least the following attributes:
-C<<f_ext >>, C<< f_dir >>, C<< f_lockfile >> and C<< sql_identifier_case>>.
+C<< f_ext >>, C<< f_dir >>, C<< f_lockfile >> and C<< sql_identifier_case >>.
 
 If a file/table map can be found then this method sets the C<< f_fqfn
 >>, C<< f_fqbn >>, C<< f_fqln >> and C<< table_name >> attributes in
