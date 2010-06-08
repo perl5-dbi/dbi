@@ -90,6 +90,8 @@ EOI
 	$dbclass->install_method ($method);
 	}
 
+    # XXX inject DBD::XXX::Statement unless exists
+
     return $drh->{$class};
     } # driver
 
@@ -118,7 +120,7 @@ sub connect ($$;$$$)
 	});
 
     if ($this) {
-	# must be done first, because setting flags implicitly calls $dbdname::st->STORE
+	# must be done first, because setting flags implicitly calls $dbdname::db->STORE
 	$this->func ("init_valid_attributes");
 
 	# f_ext should not be initialized
@@ -262,34 +264,36 @@ sub prepare ($$;@)
 
 sub set_versions
 {
-    my $this = shift;
-    $this->{f_version} = $DBD::File::VERSION;
+    my $dbh = shift;
+    $dbh->{f_version} = $DBD::File::VERSION;
     for (qw( nano_version statement_version )) {
 	# strip development release version part
-	($this->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
+	($dbh->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
 	}
-    $this->{sql_handler} = $this->{sql_statement_version}
+    $dbh->{sql_handler} = $dbh->{sql_statement_version}
 	? "SQL::Statement"
 	: "DBI::SQL::Nano";
 
-    return $this;
+    return $dbh;
     } # set_versions
 
 sub init_valid_attributes
 {
-    my $sth = shift;
+    my $dbh = shift;
 
-    $sth->{f_valid_attrs} = {
+    $dbh->{f_valid_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_dir            => 1, # base directory
 	f_ext            => 1, # file extension
 	f_schema         => 1, # schema name
 	f_meta           => 1, # meta data for tables
+	f_meta_map       => 1, # mapping table for identifier case
 	f_lock           => 1, # Table locking mode
+	f_lockfile       => 1, # Table lockfile extension
 	f_encoding       => 1, # Encoding of the file
 	f_readonly_attrs => 1, # File readonly attributes
 	};
-    $sth->{sql_valid_attrs} = {
+    $dbh->{sql_valid_attrs} = {
 	sql_handler                => 1, # Nano or S:S
 	sql_nano_version           => 1, # Nano version
 	sql_statement_version      => 1, # S:S version
@@ -298,12 +302,12 @@ sub init_valid_attributes
 	sql_parser_object          => 1, # SQL::Parser instance
 	sql_readonly_attrs         => 1, # SQL readonly attributes
 	};
-    $sth->{f_readonly_attrs} = {
+    $dbh->{f_readonly_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_valid_attrs    => 1, # File valid attributes
 	f_readonly_attrs => 1, # File readonly attributes
 	};
-    $sth->{sql_readonly_attrs} = {
+    $dbh->{sql_readonly_attrs} = {
 	sql_handler                => 1, # Nano or S:S
 	sql_nano_version           => 1, # Nano version
 	sql_statement_version      => 1, # S:S version
@@ -313,7 +317,7 @@ sub init_valid_attributes
 	sql_readonly_attrs         => 1, # SQL readonly attributes
 	};
 
-    return $sth;
+    return $dbh;
     } # init_valid_attributes
 
 sub sql_parser_object
@@ -377,8 +381,19 @@ sub STORE ($$$)
 	# not implemented yet
 	# my $class = $dbh->FETCH ("ImplementorClass");
 	#
-	# !$dbh->{f_valid_attrs}{$attrib} && !$dbh->{sql_valid_attrs}{$attrib} and
-	#    return $dbh->set_err ($DBI::stderr, "Invalid attribute '$attrib'");
+	my $attr_prefix;
+	$attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
+	unless ($attr_prefix) {
+	    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+	    $attr_prefix = DBI->driver_prefix ($drv_class);
+	    $attrib = $attr_prefix . $attrib;
+	    }
+	my $valid_attrs = $attr_prefix . "valid_attrs";
+	my $ro_attrs = $attr_prefix . "readonly_attrs";
+	exists $dbh->{$valid_attrs} and ($dbh->{$valid_attrs}{$attrib} or
+	   return $dbh->set_err ($DBI::stderr, "Invalid attribute '$attrib'"));
+	exists $dbh->{$ro_attrs} and $dbh->{$ro_attrs}{$attrib} and defined $dbh->{$attrib} and
+	   return $dbh->set_err ($DBI::stderr, "attribute '$attrib' is readonly and must not be modified");
 	#  $dbh->{$attrib} = $value;
 
 	if ($attrib eq "f_dir") {
@@ -400,11 +415,11 @@ sub STORE ($$$)
 	    croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
 	    }
 
-        if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or
-             $attrib =~ m/^sql_/ && $dbh->{sql_readonly_attrs}{$attrib}) and
-	     defined $dbh->{$attrib}) {
-	    croak "attribute '$attrib' is readonly and must not be modified";
-	    }
+        # if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or
+        #      $attrib =~ m/^sql_/ && $dbh->{sql_readonly_attrs}{$attrib}) and
+	#      defined $dbh->{$attrib}) {
+	#     croak "attribute '$attrib' is readonly and must not be modified";
+	#     }
 
 	$dbh->{$attrib} = $value;
 	return 1;
