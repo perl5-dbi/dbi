@@ -75,7 +75,7 @@ sub driver {
 
     $class .= "::dr";
 
-    # $drh is not scoped with 'my', 
+    # $drh is not scoped with 'my',
     # since we use it above to prevent multiple drivers.
 
     ($drh) = DBI::_new_drh ($class, {
@@ -168,7 +168,7 @@ sub mx_method_all {
 ########################################
 # 'Bottom-level' support function to multiplex the calls.
 # See the documentation for information about $exit_mode.
-# Currently the 'last_result' exit_mode is automagic.	
+# Currently the 'last_result' exit_mode is automagic.
 ########################################
 
 sub mx_do_calls {
@@ -214,7 +214,7 @@ sub mx_do_calls {
 
 	local $@;
 	# Here, the actual method being multiplexed is being called.
-	push @results, ($wantarray) 
+	push @results, ($wantarray)
 		? [ eval {        $child_handle->$method(@$args) } ]
 		: [ eval { scalar $child_handle->$method(@$args) } ];
 
@@ -244,7 +244,7 @@ sub mx_do_calls {
 
     $parent_handle->trace_msg(sprintf " mx <= %s (exit_mode=%s, %d results, %d errors)\n\n",
 	$method, $exit_mode, scalar @results, scalar @error_list);
-    
+
     return (\@results, \@errors, \@child_handles, scalar @error_list);
 }
 
@@ -311,7 +311,7 @@ sub _load_logic {	# map logic role name to code ref
 
 sub connect {
     my ($drh, $dsn, $user, $auth, $attr) = @_;
-    
+
     # strip off any leading 'dsn=' that the DBI_AUTOPROXY mechanism adds
     $dsn =~ s/^;?(dsn=)?//;
 
@@ -422,7 +422,7 @@ sub connect {
     unless (@mx_dbh_list) {	# couldn't connect to anything!
 	return $drh->set_err($err, $errstr);
     }
-    
+
     my $this = DBI::_new_dbh ($drh, {
 	'Name' => $mx_dbh_list[0]->{Name}, # adopt Name of first child
 	'User' => $user,
@@ -447,12 +447,12 @@ sub disconnect_all { } # needed for DBI < ~1.35
 
 { #============================================================== DATABASE ===
 
-package DBD::Multiplex::db; 
+package DBD::Multiplex::db;
 	$imp_data_size = $imp_data_size = 0;
 	use strict;
 
 ########################################
-# The statement handle constructor. 
+# The statement handle constructor.
 # This function calls mx_do_calls and therefore cannot be called using mx_method_all.
 # TK Note:
 # Consider the interaction between prepare, execute, and mx_error_proc.
@@ -471,7 +471,7 @@ sub prepare {
     # create sth before executing prepare to get correct semantics (incl Statement)
     my ($sth_outer, $sth_inner) = DBI::_new_sth ($dbh, {
 	Statement => $statement,
-	map { 
+	map {
 	    $_ => (exists $attr->{$_}) ? $attr->{$_} : $dbh->{$_}
 	} qw(mx_master_id mx_exit_mode mx_error_proc mx_union mx_as_select mx_pick_handles),
     });
@@ -555,14 +555,14 @@ sub DESTROY { } # needed re AUTOLOAD
 ########################################
 # The default behaviour is to not multiplex simple select statements.
 # The resulting statement handle then contains only one child handle,
-# automatically resulting in subsequent methods executed against the 
+# automatically resulting in subsequent methods executed against the
 # statement handle to use 'first_success' mode.
 ########################################
 
 sub mx_default_statement_mode {
     my ($h, $statement) = @_;
     $statement = DBD::Multiplex::mx_strip_comments($statement);
-    
+
     # XXX poor parsing and show is mysql specific
     if (($statement =~ /^(SELECT|SHOW)\b/i)
 	and !DBD::Multiplex::mx_is_modify_statement($statement)
@@ -602,7 +602,7 @@ for (sort keys %{ $DBI::DBI_methods{db} }) {
 }
 
 
-######################################## 
+########################################
 # AUTOLOAD to catch methods not explictly handled elsewhere,
 # including driver-specific methods, and multiplex via func
 # XXX using func isn't quite right, integrate with install_method/can?
@@ -621,7 +621,7 @@ sub AUTOLOAD {
 
 { #============================================================= STATEMENT ===
 
-package DBD::Multiplex::st; 
+package DBD::Multiplex::st;
 $imp_data_size = $imp_data_size = 0;
 use strict;
 
@@ -768,7 +768,7 @@ for (sort keys %{ $DBI::DBI_methods{st} }) {
     *$_ = mx_method_closure_st($_, $call_super_method_first{$_})
 }
 
-######################################## 
+########################################
 # AUTOLOAD to catch methods not explictly handled elsewhere,
 # including driver-specific methods, and multiplex via func
 # XXX using func isn't quite right, integrate with install_method/can?
@@ -802,14 +802,14 @@ DBD::Multiplex - A multiplexing driver for the DBI.
  my ($dsn1, $dsn2, $dsn3, $dsn4, %attr);
 
  # Define four databases, in this case, four Postgres databases.
- 
+
  $dsn1 = 'dbi:Pg:dbname=aaa;host=10.0.0.1;mx_id=db-aaa-1';
  $dsn2 = 'dbi:Pg:dbname=bbb;host=10.0.0.2;mx_id=db-bbb-2';
  $dsn3 = 'dbi:Pg:dbname=ccc;host=10.0.0.3;mx_id=db-ccc-3';
  $dsn4 = 'dbi:Pg:dbname=ddd;host=10.0.0.4;mx_id=db-ddd-4';
 
  # Define a callback error handler.
- 
+
  sub MyErrorProcedure {
 	my ($dsn, $mx_id, $error_number, $error_string, $h) = @_;
 	open TFH, ">>/tmp/dbi_mx$mx_id.txt";
@@ -819,7 +819,7 @@ DBD::Multiplex - A multiplexing driver for the DBI.
  }
 
  # Define the pool of datasources.
- 
+
  %attr = (
 	'mx_dsns' => [$dsn1, $dsn2, $dsn3, $dsn4],
 	'mx_master_id' => 'db-aaa-1',
@@ -829,8 +829,8 @@ DBD::Multiplex - A multiplexing driver for the DBI.
  );
 
  # Connect to all four datasources.
- 
- $dbh = DBI->connect("dbi:Multiplex:", 'username', 'password', \%attr); 
+
+ $dbh = DBI->connect("dbi:Multiplex:", 'username', 'password', \%attr);
 
  # See the DBI module documentation for full details.
 
@@ -866,8 +866,8 @@ which in turn is used by DBD::Proxy. Yet it works.
 =head1 CONNECTING TO THE DATASOURCES
 
 Multiple datasources are specified in the either the DSN parameter of
-the DBI->connect() function (separated by the '|' character), 
-or in the 'mx_dsns' key/value pair (as an array reference) of 
+the DBI->connect() function (separated by the '|' character),
+or in the 'mx_dsns' key/value pair (as an array reference) of
 the \%attr hash parameter.
 
 =head1 SPECIFIC ATTRIBUTES
@@ -878,7 +878,7 @@ The following specific attributes can be set when connecting:
 
 =item B<mx_dsns>
 
-An array reference of DSN strings. 
+An array reference of DSN strings.
 
 =item B<mx_master_id>
 
@@ -901,27 +901,27 @@ Failed connections are ignored, forgotten, and therefore, unused.
 =item B<mx_exit_mode>
 
 Options available or under consideration:
- 
+
 B<first_error>
 
-Execute the requested method against each child handle, stopping 
+Execute the requested method against each child handle, stopping
 after the first error, and returning the all of the results.
 This is the default.
 
 B<first_success>
 
-Execute the requested method against each child handle, stopping after 
+Execute the requested method against each child handle, stopping after
 the first successful result, and returning only the successful result.
 Most appropriate when reading from a set of mirrored datasources.
 
 B<last_result>
 
-Execute the requested method against each child handle, not stopping after 
+Execute the requested method against each child handle, not stopping after
 any errors, and returning all of the results.
 
 B<last_result_most_common>
 
-Execute the requested method against each child handle, not stopping after 
+Execute the requested method against each child handle, not stopping after
 the errors, and returning the most common result (eg three-way-voting etc).
 Not yet implemented.
 
@@ -936,8 +936,8 @@ Like C<mx_shuffle> above but only applies to connect().
 
 =item B<mx_error_proc>
 
-A reference to a subroutine which will be executed whenever a DBI method 
-generates an error when working with a specific datasource. It will be 
+A reference to a subroutine which will be executed whenever a DBI method
+generates an error when working with a specific datasource. It will be
 passed the DSN and 'mx_id' of the datasource, and the $DBI::err and $DBI::errstr.
 
 Define your own subroutine and pass a reference to it. A simple
@@ -947,27 +947,27 @@ can be selected by setting mx_error_proc to the string 'DEFAULT'.
 =back
 
 In some cases, the exit mode will depend on the method being called.
-For example, this module will always execute $dbh->disconnect() calls 
+For example, this module will always execute $dbh->disconnect() calls
 against each child handle.
- 
-In others, the default will be used, unless the user of the DBI  
-specified the 'mx_exit_mode' when connecting, or later changed 
-the 'mx_exit_mode' attribute of a database or statement handle. 
+
+In others, the default will be used, unless the user of the DBI
+specified the 'mx_exit_mode' when connecting, or later changed
+the 'mx_exit_mode' attribute of a database or statement handle.
 
 =head1 USAGE EXAMPLE
 
-Here's an example of using DBD::Multiplex with MySQL's replication scheme. 
+Here's an example of using DBD::Multiplex with MySQL's replication scheme.
 
-MySQL supports one-way replication, which means we run a server as the master 
-server and others as slaves which catch up any changes made on the master. 
-Any READ operations then may be distributed among them (master and slave(s)), 
-whereas any WRITE operation must I<only> be directed toward the master. 
-Any changes happened on slave(s) will never get synchronized to other servers. 
+MySQL supports one-way replication, which means we run a server as the master
+server and others as slaves which catch up any changes made on the master.
+Any READ operations then may be distributed among them (master and slave(s)),
+whereas any WRITE operation must I<only> be directed toward the master.
+Any changes happened on slave(s) will never get synchronized to other servers.
 More detailed instructions on how to arrange such setup can be found at:
 
 http://www.mysql.com/documentation/mysql/bychapter/manual_Replication.html
 
-Now say we have two servers, one at 10.0.0.1 as a master, and one at 
+Now say we have two servers, one at 10.0.0.1 as a master, and one at
 10.0.0.9 as a slave. The DSN for each server may be written like this:
 
  my @dsns = qw{
@@ -976,8 +976,8 @@ Now say we have two servers, one at 10.0.0.1 as a master, and one at
  };
 
 Here we choose easy-to-remember C<mx_id>s: masterdb and slavedb.
-You are free to choose alternative names, for example: mst and slv. 
-Then we create the DSN for DBD::Multiplex by joining them, using the 
+You are free to choose alternative names, for example: mst and slv.
+Then we create the DSN for DBD::Multiplex by joining them, using the
 pipe character as separator:
 
  my $dsn = 'dbi:Multiplex:' . join('|', @dsns);
@@ -998,7 +998,7 @@ Next, we define the attributes which will affect DBD::Multiplex behaviour:
 These attributes are required for MySQL replication support:
 
 We set C<mx_shuffle> true which will make DBD::Multiplex shuffle the
-DSN list order prior to connect, and shuffle the 
+DSN list order prior to connect, and shuffle the
 
 The C<mx_master_id> attribute specifies which C<mx_id> will be recognized
 as the master. In our example, this is set to 'masterdb'. This attribute will
