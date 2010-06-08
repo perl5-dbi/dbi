@@ -266,7 +266,7 @@ inherited the selectrow_arrayref method provided by the DBI.
 But you'll note that there is only one call to
 DBD::_::db::selectrow_arrayref but another 99 to
 DBD::mysql::db::selectrow_arrayref. Currently the first
-call Pern't record the true location. That may change.
+call doesn't record the true location. That may change.
 
 B<!Caller>
 
