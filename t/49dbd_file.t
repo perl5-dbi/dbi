@@ -33,6 +33,10 @@ my $dbh;
 ok ($dbh = DBI->connect ("dbi:File:"), "Connect clean");
 is (ref $dbh, "DBI::db", "Can connect to DBD::File driver");
 
+my $f_versions = $dbh->func('f_versions');
+note $f_versions;
+ok($f_versions, 'f_versions');
+
 # Check if all the basic DBI attributes are accepted
 ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
     RaiseError		=> 1,
