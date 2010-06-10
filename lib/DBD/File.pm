@@ -1630,7 +1630,7 @@ C<f_file> can be an absolute path name or a relative path name. If
 it's relative, it's interpreted as being relative to the C<f_dir>
 attribute of the table meta data. When C<f_file> is set DBD::File
 will use C<f_file> as specified and will not attempt to work out an
-alternative for C<f_file> using the C<table> and C<f_ext> attributes.
+alternative for C<f_file> using the C<table name> and C<f_ext> attribute.
 
 While C<f_meta> is a private and readonly attribute (which means, you
 cannot modify it's values), derived drivers might provide restricted
