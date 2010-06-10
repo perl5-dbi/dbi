@@ -29,12 +29,23 @@ ok(-f File::Spec->catfile( $dir, "FRED.dir" ), "FRED.dir exists");
 rmtree $dir;
 mkpath $dir;
 
-$dbh->dbm_clear_meta( 'fred' ); # otherwise the col_names are still known!
-
-$dbh->{sql_identifier_case} = 2 unless ($using_dbd_gofer); # SQL_IC_LOWER
+if( $using_dbd_gofer )
+{
+    # can't modify attributes when connect through a Gofer instance
+    $dbh->disconnect();
+    $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+	f_dir => $dir,
+	sql_identifier_case => 2, # SQL_IC_LOWER
+    } ); 
+}
+else
+{
+    $dbh->dbm_clear_meta( 'fred' ); # otherwise the col_names are still known!
+    $dbh->{sql_identifier_case} = 2; # SQL_IC_LOWER
+}
 
 $dbh->do(q/create table FRED (a integer, b integer)/);
-ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists") unless $using_dbd_gofer;
+ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists");
 
 ok($dbh->do(q/insert into fRED (a,b) values(1,2)/));
 
