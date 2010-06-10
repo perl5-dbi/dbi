@@ -1626,10 +1626,11 @@ C<AS> keyword:
 
     SELECT * FROM tbl AS t1, tbl AS t2 WHERE t1.id = t2.id
 
-C<f_file> can be an absolute path name or a relative path name. If it's
-relative, it's interpreted being relative to the C<f_dir> attribute of
-the table meta data. It's not tried to find alternate files for the
-table when C<f_file> is set.
+C<f_file> can be an absolute path name or a relative path name. If
+it's relative, it's interpreted as being relative to the C<f_dir>
+attribute of the table meta data. When C<f_file> is set DBD::File
+will use C<f_file> as specified and will not attempt to work out an
+alternative for C<f_file> using the C<table> and C<f_ext> attributes.
 
 While C<f_meta> is a private and readonly attribute (which means, you
 cannot modify it's values), derived drivers might provide restricted
@@ -1743,7 +1744,7 @@ Returns the value of a meta attribute set for a specific table, if any.
 See L<f_meta> for the possible attributes.
 
 A table name of C<'.'> (single dot) is interpreted as the default table.
-This causes in getting the appropriate attribute globally from the dbh.
+This will retrieve the appropriate attribute globally from the dbh.
 This has the same restrictions as C<< $dbh->{$attrib} >>.
 
 =head4 f_set_meta
