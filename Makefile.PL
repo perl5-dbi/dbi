@@ -99,11 +99,12 @@ my %opts = (
 	    homepage    => 'http://dbi.perl.org/',
 	},
 	recommends => {
-	    'RPC::PlServer' => 0.2001,
-	    'Net::Daemon' => 0,
+	    'RPC::PlServer'  => 0.2001,
+	    'Net::Daemon'    => 0,
 	    'SQL::Statement' => 1.28,
-	    'MLDBM' => 0,
-	    'DB_File' => 0,
+	    'Clone'          => 0.31,
+	    'MLDBM'          => 0,
+	    'DB_File'        => 0,
 	},
     },
     CONFLICTS => {
