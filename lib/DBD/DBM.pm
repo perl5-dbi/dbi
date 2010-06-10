@@ -186,7 +186,7 @@ sub set_versions
 
 sub init_valid_attributes
 {
-    my $sth = shift;
+    my $dbh = shift;
 
     # define valid private attributes
     #
@@ -197,16 +197,28 @@ sub init_valid_attributes
     #
     # see the STORE methods below for how to check these attrs
     #
-    $sth->{dbm_valid_attrs} = {
+    $dbh->{dbm_valid_attrs} = {
                                 dbm_type           => 1,    # the global DBM type e.g. SDBM_File
                                 dbm_mldbm          => 1,    # the global MLDBM serializer
                                 dbm_cols           => 1,    # the global column names
                                 dbm_version        => 1,    # verbose DBD::DBM version
                                 dbm_store_metadata => 1,    # column names, etc.
                                 dbm_berkeley_flags => 1,    # for BerkeleyDB
+				dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
+				dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
+				dbm_meta           => 1,    # DBD::DBM public access for f_meta
+				dbm_tables         => 1,    # DBD::DBM public access for f_meta
                               };
+    $dbh->{dbm_readonly_attrs} = {
+                                dbm_version        => 1,    # verbose DBD::DBM version
+				dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
+				dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
+				dbm_meta           => 1,    # DBD::DBM public access for f_meta
+    };
 
-    return $sth->SUPER::init_valid_attributes();
+    $dbh->{dbm_meta} = "dbm_tables";
+
+    return $dbh->SUPER::init_valid_attributes();
 }
 
 # this is an example of a private method
@@ -1182,22 +1194,28 @@ be stored in the file.
 
 =head1 DBI database handle attributes
 
-=head2 Statement handle ($sth) attributes and methods
+=head2 Metadata
+
+=head3 Statement handle ($sth) attributes and methods
 
 Most statement handle attributes such as NAME, NUM_OF_FIELDS, etc. are
 available only after an execute.  The same is true of $sth->rows which is
 available after the execute but does I<not> require a fetch.
 
-=head2 Metadata
+=head3 Driver handle ($dbh) attributes
 
-=over 4
+It is not supported anymore to use dbm-attributes without the dbm_-prefix.
+Currently, if an DBD::DBM private attribute is accessed without an
+underscore in it's name, dbm_ is prepended to that attribute and it's
+processed further. If the resulting attribute name is invalid, an error is
+thrown.
 
-=item dbm_cols
+=head4 dbm_cols
 
 Contains a comma separated list of column names or an array reference to
 a column names.
 
-=item dbm_type
+=head4 dbm_type
 
 Contains the DBM storage type. Currently know supported ones are
 C<< ODBM_File >>, C<< NDBM_File >>, C<< SDBM_File >>, C<< GDBM_File >>,
@@ -1205,7 +1223,7 @@ C<< DB_File >> and C<< BerkeleyDB >>. It's not recommended to use one
 of the first three types - even if C<< SDBM_File >> is the most common
 available I<dbm_type>.
 
-=item dbm_mldbm
+=head4 dbm_mldbm
 
 Contains the serializer for DBM storage (value column). Requires the
 CPAN module L<MLDBM> installed.  Currently know supported serializers are:
@@ -1231,56 +1249,53 @@ Requires L<YAML::MLDBM> being installed.
 
 =back
 
-=item dbm_store_metadata
+=head4 dbm_store_metadata
 
 Boolean value whether to store some metadata in DBM storage or not.
 
-=item dbm_berkeley_flags
+=head4 dbm_berkeley_flags
 
 Hash reference with additional flags for BerkeleyDB::Hash instantiation.
 
-=item dbm_version
+=head4 dbm_version
 
 Readonly attribute containing this version of DBD::DBM.
 
-=item f_meta
+=head4 f_meta
 
 In addition to the attributes L<DBD::File> recognizes, DBD::DBM cares about
-the (public) attributes col_names (B<Note> not I<dbm_cols> here!), dbm_type,
-dbm_mldbm, dbm_store_metadata and dbm_berkeley_flags. There are, like in
-DBD::File undocumented, internally used attributes.  Be very careful when
-modifying attributes you do not know, the consequence might a destroyed
-table.
+the (public) attributes C<col_names> (B<Note> not I<dbm_cols> here!),
+C<dbm_type>, C<dbm_mldbm>, C<dbm_store_metadata> and C<dbm_berkeley_flags>.
+There are, like in DBD::File undocumented, internally used attributes.
+Be very careful when modifying attributes you do not know, the consequence
+might a destroyed or corrupted table.
 
-=back
+=head4 dbm_tables
 
-It is not supported anymore to use dbm-attributes without the dbm_-prefix.
-Currently, if an DBD::DBM private attribute is accessed without an
-underscore in it's name, dbm_ is prepended to that attribute and it's
-processed further. If the resulting attribute name is invalid, an error is
-thrown.
+This attribute provides restricted access to the table meta data. See
+L<f_meta> and L<DBD::File/f_meta> for attribute details.
 
-Following attributes are no longer handled by DBD::DBM:
+dbm_tables is a tied hash providing the internal table names as key
+(accessing to unknown tables might create an entry) and their meta
+data as another tied hash. The table meta storage is obtained via
+the C<get_table_meta> method from the table implementation (see
+L<DBD::File::Developers>). Attribute setting and getting within the
+table meta data is handled via the methods C<set_table_meta_attr> and
+C<get_table_meta_attr>.
 
-=over 4
+=head3 Following attributes are no longer handled by DBD::DBM:
 
-=item dbm_ext
+=head4 dbm_ext
 
 This attribute is silently mapped to DBD::File's attribute I<f_ext>.
 Later versions of DBI might show a depreciated warning when this attribute
 is used and one fine day it will be removed.
 
-=item dbm_lockfile
+=head4 dbm_lockfile
 
 This attribute is silently mapped to DBD::File's attribute I<f_lockfile>.
 Later versions of DBI might show a depreciated warning when this attribute
 is used and one fine day it will be removed.
-
-=item dbm_tables
-
-This attribute is forbidden and accessing it will throw an error.
-
-=back
 
 =head1 DBI database handle methods
 
@@ -1340,6 +1355,11 @@ Data::Dumper when used by MLDBM) may take the values and try to execute
 them in Perl.  Obviously, this can present dangers, so if you don't know
 what's in a file, be careful before you access it with MLDBM turned on!
 
+See the entire section on L<Table locking and flock()> for gotchas and
+warnings about the use of flock().
+
+=head1 BUGS AND LIMITATIONS
+
 This modules uses hash interfaces of two column file databases. While
 none of supported SQL engines have a support for indices, following
 statements really do the same (even if they mean something completely
@@ -1352,8 +1372,7 @@ different):
   # ... the same as this statement
   $sth->do( "insert into foo values (1, 'world')" );
 
-See the entire section on L<Table locking and flock()> for gotchas and
-warnings about the use of flock().
+This is considered as a bug and might change in a future release.
 
 =head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 
