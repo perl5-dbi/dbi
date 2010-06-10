@@ -1485,7 +1485,7 @@ attributes:
 =head4 f_dir
 
 This attribute is used for setting the directory where the files are
-opened and it defaults to the current directory (C<.>). Usually you set
+opened and it defaults to the current directory (F<.>). Usually you set
 it on the dbh but it may be overridden per table (see L<f_meta>).
 
 When the value for C<f_dir> is a relative path, it's converted into the
@@ -1606,9 +1606,10 @@ This is implemented using C<< binmode $fh, ":encoding(<f_encoding>)" >>.
 =head4 f_meta
 
 Private data area which contains information about the tables this
-module handles. Meta data of a table might not be available unless the
-table has been accessed first time doing a statement on it. But it's
-possible to pre-initialize attributes for each table wanted to use.
+module handles. Meta data of a table might not be available until the
+table has been accessed for the first time e.g., by issuing a select
+on it however it's possible to pre-initialize attributes for each table
+you use.
 
 DBD::File recognizes the (public) attributes C<f_ext>, C<f_dir>,
 C<f_file>, C<f_encoding>, C<f_lock>, C<f_lockfile>, C<f_schema>,
@@ -1616,11 +1617,12 @@ C<col_names>, C<table_name> and C<sql_identifier_case>. Be very careful
 when modifying attributes you do not know, the consequence might be a
 destroyed or corrupted table.
 
-C<f_file> is an attribute applicable to table meta data only, you won't
-find a corresponding attribute in the dbh. While it may reasonable to
-have several tables with the same column names, it's not for the same
-file name. If you need access to the same file using different table
-names, use C<SQL::Statement> as SQL engine and the C<AS> keyword:
+C<f_file> is an attribute applicable to table meta data only and you
+will not find a corresponding attribute in the dbh. Whilst it may be
+reasonable to have several tables with the same column names, it's not
+for the same file name. If you need access to the same file using
+different table names, use C<SQL::Statement> as the SQL engine and the
+C<AS> keyword:
 
     SELECT * FROM tbl AS t1, tbl AS t2 WHERE t1.id = t2.id
 
@@ -1691,7 +1693,7 @@ those that have non-valid table names, from the view of SQL.
 
 =head3 Additional methods
 
-Following methods are only available via the here decribed name when
+The following methods are only available via their documented name when
 DBD::File is used directly. Because this is only reasonable for testing
 purposes, the real names must be used instead. Those names can be computed
 by replacing the C<f_> in the method name with the driver prefix.
@@ -1709,7 +1711,7 @@ Signature:
 
 Returns the versions of the driver, including the DBI version, the Perl
 version, DBI::PurePerl version (if DBI::PurePerl is active) and the version
-of the used SQL engine.
+of the SQL engine in use.
 
     my $dbh = DBI->connect ("dbi:File:");
     my $f_versions = $dbh->f_versions ();
@@ -1779,12 +1781,12 @@ dbh.
 DBD::File currently supports two SQL engines: L<SQL::Statement|SQL::Statement>
 and L<DBI::SQL::Nano::Statement_|DBI::SQL::Nano>. DBI::SQL::Nano supports a
 I<very> limited subset of SQL statements, but it might be faster for some
-very simple tasks.  SQL::Statement in contrast supports a much larger subset
+very simple tasks. SQL::Statement in contrast supports a much larger subset
 of ANSI SQL.
 
-To use SQL::Statement, the module version 1.28 of SQL::Statement is a
-prerequisite and the environment variable C<DBI_SQL_NANO> must not be
-set to a true value.
+To use SQL::Statement, you need at least version 1.28 of
+SQL::Statement and the environment variable C<DBI_SQL_NANO> must not
+be set to a true value.
 
 =head1 KNOWN BUGS AND LIMITATIONS
 
@@ -1805,12 +1807,12 @@ different driver instances, so several C<< DBI->connect () >> calls will
 cause different table instances and private data areas.
 
 This data area is filled for the first time when a table is accessed,
-either via an SQL statement or via C<table_info> and is not 
+either via an SQL statement or via C<table_info> and is not
 destroyed until the table is dropped or the driver handle is released.
 Manual destruction is possible via L<f_clear_meta>.
 
-Following attributes are preserved in the data area and will evaluated
-instead of driver globals:
+The following attributes are preserved in the data area and will
+evaluated instead of driver globals:
 
 =over 8
 
@@ -1832,8 +1834,8 @@ instead of driver globals:
 
 =back
 
-Following attributes are preserved in the data area only and cannot be set
-globally.
+The following attributes are preserved in the data area only and
+cannot be set globally.
 
 =over 8
 
@@ -1841,8 +1843,8 @@ globally.
 
 =back
 
-Following attributes are preserved in the data area only and are computed
-when initializing the data area:
+The following attributes are preserved in the data area only and are
+computed when initializing the data area:
 
 =over 8
 
@@ -1862,19 +1864,18 @@ Accessing 'foo' will always access the file 'foo.csv' in memorized
 C<f_dir>, locking C<f_lockfile> via memorized C<f_lock>.
 
 You can use L<f_clear_meta> or the C<f_file> attribute for a specific table
-to find a way out.
+to work around this.
 
 =item *
 
-When used with SQL::Statement and the feature of temporary tables is
-used with
+When used with SQL::Statement and temporary tables e.g.,
 
   CREATE TEMP TABLE ...
 
-the table data processing passes DBD::File::Table. No file system calls
-will be made, no influence with existing (file based) tables with the same
-name will occur. Temporary tables are chosen in favor over file tables,
-but they will not covered by C<table_info>.
+the table data processing bypasses DBD::File::Table. No file system
+calls will be made and there are no clashes with existing (file based)
+tables with the same name. Temporary tables are chosen over file
+tables, but they will not covered by C<table_info>.
 
 =back
 
