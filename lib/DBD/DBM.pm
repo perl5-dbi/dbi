@@ -1400,7 +1400,7 @@ described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
 at rehsack@cpan.org for commercial support in Germany.
 
 Please don't bother Jochen Wiedmann or Jeff Zucker for support - they
-handed over further maintainence to H.Merijn Brand and Jens Rehsack.
+handed over further maintenence to H.Merijn Brand and Jens Rehsack.
 
 =head1 ACKNOWLEDGEMENTS
 

@@ -8,9 +8,7 @@ use File::Path;
 use File::Spec;
 use Test::More;
 
-my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
-
-#use DBI;
+my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||"") =~ /^dbi:Gofer.*transport=/i;
 
 my $tbl;
 BEGIN { $tbl = "db_". $$ . "_" };
@@ -19,7 +17,7 @@ BEGIN { $tbl = "db_". $$ . "_" };
 use_ok ("DBI");
 use_ok ("DBD::File");
 
-my $dir = File::Spec->catdir(getcwd(),'test_output');
+my $dir = File::Spec->catdir (getcwd (), "test_output");
 
 rmtree $dir;
 mkpath $dir;
@@ -33,9 +31,9 @@ my $dbh;
 ok ($dbh = DBI->connect ("dbi:File:"), "Connect clean");
 is (ref $dbh, "DBI::db", "Can connect to DBD::File driver");
 
-my $f_versions = $dbh->func('f_versions');
+my $f_versions = $dbh->func ("f_versions");
 note $f_versions;
-ok($f_versions, 'f_versions');
+ok ($f_versions, "f_versions");
 
 # Check if all the basic DBI attributes are accepted
 ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
@@ -80,18 +78,18 @@ SKIP: {
     my $tbl2 = $tbl . "2";
 
     my $tbl2_file1 = File::Spec->catfile ($dir, "$tbl2.txt");
-    open $fh, ">", $tbl2_file1 or skip;
+    open  $fh, ">", $tbl2_file1 or skip;
     print $fh "You cannot read this anyway ...";
     close $fh;
 
     my $tbl2_file2 = File::Spec->catfile ($dir, "$tbl2");
-    open $fh, ">", $tbl2_file2 or skip;
+    open  $fh, ">", $tbl2_file2 or skip;
     print $fh "Neither that";
     close $fh;
 
     ok ($dbh->do ("drop table if exists $tbl2"), "drop manually created table $tbl2 (first file)");
     ok (! -f $tbl2_file1, "$tbl2_file1 removed");
-    ok (-f $tbl2_file2, "$tbl2_file2 exists");
+    ok (  -f $tbl2_file2, "$tbl2_file2 exists");
     ok ($dbh->do ("drop table if exists $tbl2"), "drop manually created table $tbl2 (second file)");
     ok (! -f $tbl2_file2, "$tbl2_file2 removed");
     }

@@ -534,7 +534,7 @@ sub get_file_meta
     $meta or croak "No such table '$table'";
 
     # prevent creation of undef attributes
-    return $class->get_table_meta_attr( $meta, $attr );
+    return $class->get_table_meta_attr ($meta, $attr);
     } # get_file_meta
 
 sub set_file_meta
@@ -542,16 +542,14 @@ sub set_file_meta
     my ($dbh, $table, $attr, $value) = @_;
     my $meta;
 
-    if ($table eq ".") {
+    $table eq "." and
 	return $dbh->STORE ($attr, $value);
-	}
-    else {
-	my $class = $dbh->FETCH ("ImplementorClass");
-	$class =~ s/::db$/::Table/;
-	(undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
-	$meta or croak "No such table '$table'";
-	return $class->set_table_meta_attr( $meta, $attr, $value );
-	}
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
+    $meta or croak "No such table '$table'";
+    return $class->set_table_meta_attr ($meta, $attr, $value);
     } # set_file_meta
 
 sub clear_file_meta
