@@ -49,6 +49,17 @@ package DBI::SQL::Nano::Statement_;
 ###################################
 
 use Carp qw(croak);
+use Errno;
+
+if ( eval { require Clone; } )
+{
+    Clone->import("clone");
+}
+else
+{
+    require Storable;    # in CORE since 5.7.3
+    *clone = \&Storable::dclone;
+}
 
 sub new
 {
@@ -279,6 +290,9 @@ sub execute
     $self->{'NUM_OF_ROWS'} || '0E0';
 }
 
+my $enoentstr = "Cannot open .*\(" . Errno::ENOENT . "\)";
+my $enoentrx  = qr/$enoentstr/;
+
 sub DROP ($$$)
 {
     my ( $self, $data, $params ) = @_;
@@ -286,16 +300,16 @@ sub DROP ($$$)
     my $table;
     my @err;
     eval {
-	local $SIG{__WARN__} = sub { push @err, @_ };
-	($table) = $self->open_tables( $data, 0, 1 );
+        local $SIG{__WARN__} = sub { push @err, @_ };
+        ($table) = $self->open_tables( $data, 0, 1 );
     };
-    if ( $self->{ignore_missing_table} and ($@ or @err) and grep { m/no such (table|file)/i } (@err, $@) )
+    if ( $self->{ignore_missing_table} and ( $@ or @err ) and grep { $_ =~ $enoentrx } ( @err, $@ ) )
     {
-	$@ = '';
+        $@ = '';
         return ( -1, 0 );
     }
 
-    $self->do_err($@ || $err[0]) if ($@ || @err);
+    $self->do_err( $@ || $err[0] ) if ( $@ || @err );
     return ( -1, 0 ) unless $table;
 
     $table->drop($data);
@@ -315,7 +329,7 @@ sub INSERT ($$$)
     my ( $self, $data, $params ) = @_;
     my $table = $self->open_tables( $data, 0, 1 );
     $self->verify_columns($table);
-    $table->seek( $data, 0, 2 );
+    $table->seek( $data, 0, 2 ) unless ( $table->can('insert_one_row') );
     my ($array) = [];
     my ( $val, $col, $i );
     $self->{column_names} = $table->col_names() unless ( $self->{column_names} );
@@ -334,8 +348,10 @@ sub INSERT ($$$)
     {
         croak "Bad col names in INSERT";
     }
-    $table->push_row( $data, $array );
-    ( 1, 0 );
+
+    $table->can('insert_new_row') ? $table->insert_new_row( $data, $array ) : $table->push_row( $data, $array );
+
+    return ( 1, 0 );
 }
 
 sub DELETE ($$$)
@@ -408,14 +424,18 @@ sub SELECT ($$$)
     $self->verify_columns($table);
     my $tname = $self->{table_name};
     my ($affected) = 0;
-    my ( @rows, $array, $val, $col, $i );
+    my ( @rows, %cols, $array, $val, $col, $i );
     while ( $array = $table->fetch_row($data) )
     {
         if ( $self->eval_where( $table, $array ) )
         {
             $array = $self->{fetched_value} if ( $self->{fetched_from_key} );
-            my $col_nums = $self->column_nums($table);
-            my %cols     = reverse %{$col_nums};
+            unless ( keys %cols )
+            {
+                my $col_nums = $self->column_nums($table);
+                %cols = reverse %{$col_nums};
+            }
+
             my $rowhash;
             for ( sort keys %cols )
             {
@@ -460,46 +480,68 @@ sub UPDATE ($$$)
     my $table = $self->open_tables( $data, 0, 1 );
     $self->verify_columns($table);
     return undef unless $table;
-    my ($affected) = 0;
+    my $affected = 0;
+    my $can_usr  = $table->can('update_specific_row');
+    my $can_uor  = $table->can('update_one_row');
+    my $can_rwu  = $can_usr || $can_uor;
     my ( @rows, $array, $f_array, $val, $col, $i );
+
     while ( $array = $table->fetch_row($data) )
     {
-
         if ( $self->eval_where( $table, $array ) )
         {
-            $array = $self->{fetched_value} if ( $self->{fetched_from_key} and $table->can('update_one_row') );
-            my $col_nums = $self->column_nums($table);
-            my %cols     = reverse %{$col_nums};
-            my $rowhash;
-            for ( sort keys %cols )
-            {
-                $rowhash->{ $cols{$_} } = $array->[$_];
-            }
+            $array = $self->{fetched_value} if ( $self->{fetched_from_key} and $can_rwu );
+            my $orig_ary = clone($array) if ($can_usr);
             for ( $i = 0; $i < @{ $self->{column_names} }; $i++ )
             {
                 $col = $self->{column_names}->[$i];
                 $array->[ $self->column_nums( $table, $col ) ] = $self->row_values($i);
             }
             $affected++;
-            if ( $self->{fetched_from_key} )
+            if ( $self->{fetched_value} )
             {
-                $table->update_one_row( $data, $array );
+                if ($can_usr)
+                {
+                    $table->update_specific_row( $data, $array, $orig_ary );
+                }
+                elsif ($can_uor)
+                {
+                    $table->update_one_row( $data, $array );
+                }
                 return ( $affected, 0 );
             }
-            push( @rows, $array );
+            push( @rows, $can_usr ? [ $array, $orig_ary ] : $array );
         }
         else
         {
-            push( @rows, $array );
+            push( @rows, $array ) unless ($can_rwu);
         }
     }
-    $table->seek( $data, 0, 0 );
-    foreach my $array (@rows)
+    if ($can_rwu)
     {
-        $table->push_row( $data, $array );
+        foreach my $array (@rows)
+        {
+            if ($can_usr)
+            {
+                $table->update_specific_row( $data, @$array );
+            }
+            elsif ($can_uor)
+            {
+                $table->update_one_row( $data, $array );
+            }
+        }
     }
-    $table->truncate($data);
-    ( $affected, 0 );
+    else
+    {
+        $table->seek( $data, 0, 0 );
+        foreach my $array (@rows)
+        {
+            $table->push_row( $data, $array );
+        }
+        $table->truncate($data);
+    }
+
+    return ( $affected, 0 );
 }
 
 sub verify_columns
@@ -557,9 +599,7 @@ sub column_nums
 
 sub eval_where
 {
-    my $self     = shift;
-    my $table    = shift;
-    my $rowary   = shift;
+    my ( $self, $table, $rowary ) = @_;
     my $where    = $self->{"where_clause"} || return 1;
     my $col_nums = $table->col_nums();
     my %cols     = reverse %{$col_nums};
@@ -649,8 +689,7 @@ sub is_matched
 
 sub params
 {
-    my $self    = shift;
-    my $val_num = shift;
+    my ( $self, $val_num ) = @_;
     if ( !$self->{"params"} ) { return 0; }
     if ( defined $val_num )
     {
