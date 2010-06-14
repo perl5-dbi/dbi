@@ -1264,17 +1264,17 @@ sub open_file ($$$)
 	    -f $meta->{f_fqfn} and
 		croak "Cannot create table $attrs->{table}: Already exists";
 	    $fh = IO::File->new ($fn, "a+") or
-		croak "Cannot open $fn for writing: $!";
-	    $fh->seek (0, 0) or
-		croak "Error while seeking back: $!";
+		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
 	    }
 	else {
 	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
-		croak "Cannot open $fn: $!";
+		croak "Cannot open $fn: $! (" . ($!+0) . ")";
 		}
 	    }
 
 	if ($fh) {
+	    $fh->seek (0, 0) or
+		croak "Error while seeking back: $!";
 	    if (my $enc = $meta->{f_encoding}) {
 		binmode $fh, ":encoding($enc)" or
 		    croak "Failed to set encoding layer '$enc' on $fn: $!";
@@ -1292,11 +1292,11 @@ sub open_file ($$$)
 	    -f $fn and
 		croak "Cannot create table lock for $attrs->{table}: Already exists";
 	    $fh = IO::File->new ($fn, "a+") or
-		croak "Cannot open $fn for writing: $!";
+		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
 	    }
 	else {
 	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
-		croak "Cannot open $fn: $!";
+		croak "Cannot open $fn: $! (" . ($!+0) . ")";
 		}
 	    }
 
