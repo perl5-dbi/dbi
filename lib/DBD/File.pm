@@ -520,7 +520,7 @@ sub get_versions
     return wantarray ? @versions : join "\n", @versions;
     } # get_versions
 
-sub get_file_meta
+sub get_single_table_meta
 {
     my ($dbh, $table, $attr) = @_;
     my $meta;
@@ -535,6 +535,42 @@ sub get_file_meta
 
     # prevent creation of undef attributes
     return $class->get_table_meta_attr ($meta, $attr);
+    } # get_single_table_meta
+
+sub get_file_meta
+{
+    my ($dbh, $table, $attr) = @_;
+
+    my $gstm = $dbh->{ImplementorClass}->can ("get_single_table_meta");
+
+    $table eq "*" and
+	$table = [ ".", keys %{$dbh->{f_meta}} ];
+    $table eq "+" and
+	$table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{$dbh->{f_meta}} ];
+    ref ($table) eq "Regexp" and
+	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
+
+    unless (ref ($table) or ref ($attr)) {
+	return &$gstm ($dbh, $table, $attr);
+	}
+    else {
+	ref $attr or $attr = [ $attr ];
+	"ARRAY" eq ref $table or
+	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
+	"ARRAY" eq ref $attr or
+	    croak "Invalid argument for \$attr - SCALAR or ARRAY expected but got " . ref $attr;
+
+	my %results;
+	foreach my $tname (@{$table}) {
+	    my %tattrs;
+	    foreach my $aname (@{$attr}) {
+		$tattrs{$aname} = &$gstm ($dbh, $tname, $aname);
+		}
+		$results{$tname} = \%tattrs;
+	    }
+
+	return \%results;
+	}
     } # get_file_meta
 
 sub set_file_meta

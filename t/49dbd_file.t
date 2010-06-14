@@ -101,6 +101,20 @@ my $tbl_file = File::Spec->catfile ($dir, "$tbl.txt");
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl") or diag $dbh->errstr;
 ok (-f $tbl_file, "Test table exists");
 
+is ($dbh->f_get_meta ($tbl, "f_fqfn"), $tbl_file, "get single table meta data");
+is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
+           {
+	       $tbl => {
+		   f_dir => $dir,
+		   f_ext => q(.txt),
+	       },
+	       t_sbdgf_53442Gz =>  {
+		   f_dir => $dir,
+		   f_ext => q(.txt),
+	       },
+	   },
+	   "get multiple meta data");
+
 # Expected: ("unix", "perlio", "encoding(iso-8859-1)")
 # use Data::Peek; DDumper [ @tfh ];
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
