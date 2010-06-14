@@ -528,10 +528,10 @@ sub fetch_row ($$)
     return wantarray ? @row : \@row;
 }
 
-# you must define push_row
-# it is called on inserts and updates
+# you must define push_row except insert_new_row and update_specific_row is defined
+# it is called on inserts and updates as primitive
 #
-sub push_row ($$$)
+sub insert_new_row ($$$)
 {
     my ( $self, $data, $row_aryref ) = @_;
     my $meta = $self->{meta};
@@ -539,7 +539,11 @@ sub push_row ($$$)
     my $nitems = scalar(@{$row_aryref});
     $ncols == $nitems or
         croak "You tried to insert $nitems, but table is created with $ncols columns";
+
     my $key  = shift @$row_aryref;
+    exists($meta->{hash}->{$key}) and
+	croak "Row with PK '$key' already exists";
+
     if ( $meta->{dbm_mldbm} )
     {
         $meta->{hash}->{$key} = $row_aryref;
@@ -1356,22 +1360,6 @@ what's in a file, be careful before you access it with MLDBM turned on!
 
 See the entire section on L<Table locking and flock()> for gotchas and
 warnings about the use of flock().
-
-=head1 BUGS AND LIMITATIONS
-
-This modules uses hash interfaces of two column file databases. While
-none of supported SQL engines have a support for indices, following
-statements really do the same (even if they mean something completely
-different):
-
-  $sth->do( "insert into foo values (1, 'hello')" );
-
-  # this statement does ...
-  $sth->do( "update foo set v='world' where k=1" );
-  # ... the same as this statement
-  $sth->do( "insert into foo values (1, 'world')" );
-
-This is considered as a bug and might change in a future release.
 
 =head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 
