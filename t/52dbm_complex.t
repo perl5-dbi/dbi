@@ -92,19 +92,33 @@ rmtree $dir;
 END { rmtree $dir }
 mkpath $dir;
 
-plan skip_all => "These tests require SQL::Statement" unless ( $haveSS and @mldbm_types );
+plan skip_all => "Not running with SQL::Statement" unless ( $haveSS and @mldbm_types );
 plan skip_all => "Needs more love to run with Gofer, too" if( $using_dbd_gofer );
 
 my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, { f_dir => $dir, } );
 
 my $suffix;
+my $tbl_meta;
 
 sub load_tables
 {
-    my ( $dbmtype, $serializer ) = @_;
+    my ( $dbmtype, $dbmmldbm ) = @_;
+
+    if ($using_dbd_gofer)
+    {
+	$dbh->disconnect();
+	$dbh = DBI->connect( "dbi:DBM:", undef, undef, { f_dir => $dir, f_meta => $tbl_meta, dbm_type => $dbmtype, dbm_mldbm => $dbmmldbm } );
+    }
+    else
+    {
+	$dbh->{dbm_type}  = $dbmtype;
+	$dbh->{dbm_mldbm} = $dbmmldbm;
+    }
+
     my $last_suffix = $suffix;
-    $serializer =~ s/::/_/g;
+    (my $serializer = $dbmmldbm ) =~ s/::/_/g;
     $suffix = join( "_", $$, $dbmtype, $serializer );
+
     if ($last_suffix)
     {
         for my $table (qw(APPL_%s PREC_%s NODE_%s LANDSCAPE_%s CONTACT_%s NM_LANDSCAPE_%s APPL_CONTACT_%s))
@@ -216,6 +230,18 @@ EOD
             ok( $dbh->do($sql), $sql );
         }
     }
+
+    for my $table (qw(APPL_%s PREC_%s NODE_%s LANDSCAPE_%s CONTACT_%s NM_LANDSCAPE_%s APPL_CONTACT_%s))
+    {
+	my $tbl_name = lc sprintf($table, $suffix);
+	$tbl_meta->{$tbl_name} = { dbm_type => $dbmtype, dbm_mldbm => $dbmmldbm };
+    }
+
+    unless ($using_dbd_gofer)
+    {
+	my $tbl_known_meta = $dbh->dbm_get_meta( "+", [ qw(dbm_type dbm_mldbm) ] );
+	is_deeply( $tbl_known_meta, $tbl_meta, "Know meta" );
+    }
 }
 
 sub do_tests
@@ -223,9 +249,6 @@ sub do_tests
     my ( $dbmtype, $serializer ) = @_;
 
     note "Running do_tests for $dbmtype + $serializer";
-
-    $dbh->{dbm_type}  = $dbmtype;
-    $dbh->{dbm_mldbm} = $serializer;
 
     load_tables( $dbmtype, $serializer );
 
