@@ -78,8 +78,6 @@ sub connect ($$;$$$)
     #    });
     my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
 
-    $this->STORE( 'f_lockfile', '.lck' );
-    $this->STORE( 'Active',     1 );
     return $this;
 }
 
@@ -219,6 +217,16 @@ sub init_valid_attributes
     $dbh->{dbm_meta} = "dbm_tables";
 
     return $dbh->SUPER::init_valid_attributes();
+}
+
+sub init_default_attributes
+{
+    my $dbh = shift;
+
+    $dbh->SUPER::init_default_attributes();
+    $dbh->{f_lockfile} = '.lck';
+
+    return $dbh;
 }
 
 # this is an example of a private method
