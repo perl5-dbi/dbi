@@ -120,6 +120,14 @@ is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
 is (scalar @layer, 1, "encoding shows in layer");
 
+SKIP: {
+    $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
+    ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");
+    is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set single meta datum");
+    ok ($dbh->f_set_meta ($tbl, { f_dir => $dir }), "set multiple meta data");
+    is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set multiple meta attributes");
+    }
+
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
 $rowidx = 0;
 SKIP: {

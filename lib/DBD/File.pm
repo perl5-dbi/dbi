@@ -554,6 +554,7 @@ sub get_file_meta
 	return &$gstm ($dbh, $table, $attr);
 	}
     else {
+	ref $table or $table = [ $table ];
 	ref $attr or $attr = [ $attr ];
 	"ARRAY" eq ref $table or
 	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
@@ -573,7 +574,7 @@ sub get_file_meta
 	}
     } # get_file_meta
 
-sub set_file_meta
+sub set_single_table_meta
 {
     my ($dbh, $table, $attr, $value) = @_;
     my $meta;
@@ -585,7 +586,44 @@ sub set_file_meta
     $class =~ s/::db$/::Table/;
     (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta or croak "No such table '$table'";
-    return $class->set_table_meta_attr ($meta, $attr, $value);
+    $class->set_table_meta_attr ($meta, $attr, $value);
+
+    return $dbh;
+    } # set_single_table_meta
+
+sub set_file_meta
+{
+    my ($dbh, $table, $attr, $value) = @_;
+
+    my $sstm = $dbh->{ImplementorClass}->can ("set_single_table_meta");
+
+    $table eq "*" and
+	$table = [ ".", keys %{$dbh->{f_meta}} ];
+    $table eq "+" and
+	$table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{$dbh->{f_meta}} ];
+    ref ($table) eq "Regexp" and
+	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
+
+    unless (ref ($table) or ref ($attr)) {
+	return &$sstm ($dbh, $table, $attr, $value);
+	}
+    else {
+	ref $table or $table = [ $table ];
+	ref $attr or $attr = { $attr => $value };
+	"ARRAY" eq ref $table or
+	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
+	"HASH" eq ref $attr or
+	    croak "Invalid argument for \$attr - SCALAR or HASH expected but got " . ref $attr;
+
+	foreach my $tname (@{$table}) {
+	    my %tattrs;
+	    while (my ($aname, $aval) = each %$attr) {
+		&$sstm ($dbh, $tname, $aname, $aval);
+		}
+	    }
+
+	return $dbh;
+	}
     } # set_file_meta
 
 sub clear_file_meta
