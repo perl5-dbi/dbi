@@ -130,18 +130,27 @@ recommended to override this method.
 Fetches an attribute of a DBI database object. Private handle attributes
 must have a prefix (this is mandatory). If a requested attribute is
 detected as a private attribute without a valid prefix, the driver prefix
-is added. If the database handle has an attribute ${prefix}_valid_attrs -
-for attribute names which are not listed in that hash, this method croaks.
+(further written as C<$drv_prefix>) is added.
+
+The driver prefix is extracted from the attribute name and verified against
+C<< $dbh->{ $drv_prefix . "valid_attrs" } >> (when exists). If the
+requested attribute value isn't listed as valid attribute, this method
+croaks. If the attribute is valid and readonly (listed in C<< $dbh->{
+$drv_prefix . "readonly_attrs" } >> when exists), a real copy of the
+attribute value is returned. So it's not possible to modify
+C<f_valid_attrs> from outside of DBD::File::db or a derived class.
 
 =item STORE
 
 Stores a database private attribute. Private handle attributes must have a
 prefix (this is mandatory). If a requested attribute is detected as a private
-attribute without a valid prefix, the driver prefix is added. If the
-database handle has an attribute ${prefix}_valid_attrs - for attribute
-names which are not listed in that hash, this method croaks. If the
-database handle has an attribute ${prefix}_readonly_attrs, only attributes
-which are not listed there can be stored (once they are initialized).
+attribute without a valid prefix, the driver prefix (further written as
+C<$drv_prefix>) is added. If the database handle has an attribute
+C<${drv_prefix}_valid_attrs> - for attribute names which are not listed in
+that hash, this method croaks. If the database handle has an attribute
+C<${drv_prefix}_readonly_attrs>, only attributes which are not listed there
+can be stored (once they are initialized). Trying to overwrite such an
+immutable attribute forces this method to croak.
 
 An example of a valid attributes list can be found in
 C<< DBD::File::db::init_valid_attributes >>.
@@ -158,16 +167,51 @@ When overriding this method, do not forget to invoke the superior one.
 
 =item init_valid_attributes
 
-This method is called after the database handle is initialized as the
-first attribute initialization. When this method is complete, default
-values for some attributes are set (e.g. for C<< f_dir >>, C<<
-sql_identifier_case >>).
+This method is called after the database handle is instantiated as the
+first attribute initialization.
 
 C<< DBD::File::db::init_valid_attributes >> initializes the attributes
-C<< f_valid_attrs >>, C<< sql_valid_attrs >>, C<< f_readonly_attrs >>,
-C<< sql_readonly_attrs >> and C<< sql_handler >>.
+C<f_valid_attrs>, C<sql_valid_attrs>, C<f_readonly_attrs>
+and C<sql_readonly_attrs>.
 
-When overriding this method, do not forget to invoke the superior one.
+When overriding this method, do not forget to invoke the superior one,
+preferably before doing anything else. Compatibility table attribute
+access must be initialized here to allow DBD::File to instantiate the
+map tie:
+
+    # for DBD::CSV
+    $dbh->{csv_meta} = "csv_tables";
+    # for DBD::DBM
+    $dbh->{dbm_meta} = "dbm_tables";
+    # for DBD::AnyData
+    $dbh->{ad_meta}  = "ad_tables";
+
+=item init_default_attributes
+
+This method is called after the database handle is instantiated to
+initialize the default attributes.
+
+C<< DBD::File::db::init_default_attributes >> initializes the attributes
+C<f_dir>, C<f_meta>, C<f_meta_map>, C<f_version>, C<sql_identifier_case>,
+C<sql_quoted_identifier_case> and C<sql_handler>.
+
+When the derived implementor class provides the attribute to validate
+attributes (e.g. C<< $dbh->{dbm_valid_attrs} = {...}; >>) or the attribute
+containing the immutable attributes (e.g.  C<< $dbh->{dbm_readonly_attrs}
+= {...}; >>), the attributes C<drv_valid_attrs>, C<drv_readonly_attrs>,
+C<drv_version> and C<drv_meta> are added (when available) to the list of
+valid and immutable attributes (where C<drv_> is interpreted as the driver
+prefix).
+
+If C<drv_meta> is set, an attribute with the name in C<drv_meta> is
+initialized providing restricted read/write access to the meta data of the
+tables using C<DBD::File::TieTables> in the first (table) level and
+C<DBD::File::TieMeta> for the meta attribute level. C<DBD::File::TieTables>
+is using C<DBD::DRV::Table::get_table_meta> to initialize the second level
+tied hash on FETCH/STORE. The C<DBD::File::TieMeta> class uses
+C<DBD::DRV::Table::get_table_meta_attr> to FETCH attribute values and
+C<DBD::DRV::Table::set_table_meta_attr> to STORE attribute values. This
+allows to map meta attributes for compatibility reasons.
 
 =item get_versions
 
@@ -179,39 +223,72 @@ The DBD::File implementation returns all version information known by
 DBD::File (e.g. DBI version, Perl version and of course, DBD::File version,
 used sql handler including it's version, too).
 
+C<get_versions> takes the C<$dbh> as the first argument and optionally a
+second argument containing a table name. The second argument is not
+evaluated in C<< DBD::File::db::get_versions >> itself - but might be in
+the future.
+
+If the derived implementor class provides a method named
+C<get_${drv_prefix}versions>, this is invoked and the return value of
+it is associated to the derived driver name:
+
+    if (my $dgv = $dbh->{ImplementorClass}->can ("get_" . $drv_prefix . "versions") {
+	(my $derived_driver = $dbh->{ImplementorClass}) =~ s/::db$//;
+	$versions{$derived_driver} = &$dgv ($dbh, $table);
+    }
+
 Override it to add more version information about your module, (e.g.
-some kind of parser version in case of DBD::CSV, ...).
+some kind of parser version in case of DBD::CSV, ...), if one line is not
+enought room to provide all relevant information.
 
-C<< get_versions >> takes the C<< $dbh >> as the first argument and
-optionally a second argument containing a table name. The second
-argument is not evaluated in C<< DBD::File::db::get_versions >> - but
-might be in the future.
-
-See DBD::DBM::db::get_versions for an example.
+=item get_single_table_meta
 
 =item get_file_meta
 
 Retrieve an attribute from table's meta information. Method signature is
 C<< get_file_meta ($dbh, $table, $attr) >>. This method is called by the
-injected db handle method C<< ${prefix}get_meta >>.
+injected db handle method C<< ${drv_prefix}get_meta >>.
 
-You can override this method to allow an API compatibility to previous
-versions of your module like you would do in C<< FETCH >>.
+While get_file_meta allows C<$table> or C<$attr> being a list of tables or
+attributes to retrieve, get_single_table_meta allows only one table name
+and only one attribute name. A table name of C<'.'> (single dot) is
+interpreted as the default table. This will retrieve the appropriate
+attribute globally from the dbh. This has the same restrictions as
+C<< $dbh->{$attrib} >>.
+
+get_file_meta allows C<'+'> and C<'*'> as wildcards for table names and
+C<$table> being a regular expression matching against the table names
+(evaluated without the default table). The table name C<'*'> is taken
+as I<all currently known tables, including the default one>. The table
+name C<'+'> is taken as I<all table names with names conform to ANSI
+file name restriction> (/^[_A-Za-z0-9]+$/).
+
+The table meta information is retrieved using the get_table_meta and
+get_table_meta_attr methods of the table class of the implementation.
+
+=item set_single_table_meta
 
 =item set_file_meta
 
 Sets an attribute in table's meta information. Method signature is
 C<< set_file_meta ($dbh, $table, $attr, $value) >>. This method is called
-by the injected db handle method C<< ${prefix}set_meta >>.
+by the injected db handle method C<< ${drv_prefix}set_meta >>.
 
-You can override this method to allow an API compatibility to previous
-versions of your module like you would do in C<< STORE >>.
+While set_file_meta allows C<$table> being a list of tables or C<$attr>
+being a hash of several attributes to set, set_single_table_meta allows
+only one table name and only one attribute name/value pair.
+
+The wildcard characters for the table name are the same as for
+get_file_meta.
+
+The table meta information is updated using the get_table_meta and
+set_table_meta_attr methods of the table class of the implementation.
 
 =item clear_file_meta
 
 Clears all meta information cached about a table. Method signature is
 C<< clear_file_meta ($dbh, $table) >>. This method is called
-by the injected db handle method C<< ${prefix}clear_meta >>.
+by the injected db handle method C<< ${drv_prefix}clear_meta >>.
 
 =item sql_parser_object
 
@@ -387,6 +464,18 @@ Delivers the table meta data. If there are none for the required
 table, a new one is initialized. When it fails, nothing is
 returned. On success, the name of the table and the meta data
 structure is returned.
+
+=item get_table_meta_attr
+
+Delivers a single attribute from the table meta data. This method should
+be overwritten when mapped attribute names shall be returned for
+compatibility reasons.
+
+=item set_table_meta_attr
+
+Sets a single attribute in the table meta data. This method should
+be overwritten when mapped attribute names shall be modified for
+compatibility reasons.
 
 =item open_file
 
