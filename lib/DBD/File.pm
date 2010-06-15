@@ -501,21 +501,41 @@ sub STORE ($$$)
 
 sub get_versions
 {
-    my $dbh = $_[0];
+    my ($dbh, $table) = @_;
     my %vsn = (
 	OS		=> "$^O ($Config::Config{osvers})",
 	Perl		=> "$] ($Config::Config{archname})",
 	DBI		=> $DBI::VERSION,
-
-	"DBD::File"	=> join " ",
-	    $dbh->{f_version}, "using", $dbh->{sql_handler},
-	    $dbh->{sql_handler} eq "SQL::Statement"
-		? $dbh->{sql_statement_version}
-		: $dbh->{sql_nano_version},
 	);
+    my %vmp;
+
+    my $dbd_file_verinfo = join " ",
+	$dbh->{f_version}, "using", $dbh->{sql_handler},
+	$dbh->{sql_handler} eq "SQL::Statement"
+	    ? $dbh->{sql_statement_version}
+	    : $dbh->{sql_nano_version};
+
+    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+    my $drv_prefix = DBI->driver_prefix ($drv_class);
+    my $ddgv = $dbh->{ImplementorClass}->can( "get_" . $drv_prefix . "versions" );
+    if ($ddgv) {
+	$vsn{"DBD::File"} = $dbd_file_verinfo;
+	$vmp{"DBD::File"} = "  DBD::File";
+	$vsn{$drv_class}  = &$ddgv ($dbh, $table);
+	}
+    else {
+	$vsn{"DBD::File"} = $dbd_file_verinfo;
+	}
+
     $DBI::PurePerl and $vsn{"DBI::PurePerl"} = $DBI::PurePerl::VERSION;
 
-    my @versions = map { sprintf "%-16s %s", $_, $vsn{$_} } sort keys %vsn;
+    my @versions = map { sprintf "%-16s %s", $vmp{$_} || $_, $vsn{$_} }
+		   sort
+		   {
+		       $a->isa ($b) and return -1;
+		       $b->isa ($a) and return 1;
+		       return $a cmp $b;
+		       } keys %vsn;
 
     return wantarray ? @versions : join "\n", @versions;
     } # get_versions

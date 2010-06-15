@@ -47,7 +47,6 @@ sub driver ($;$)
     #
     unless ( $methods_already_installed++ )
     {
-        DBD::DBM::db->install_method('dbm_versions');
         DBD::DBM::st->install_method('dbm_schema');
     }
 
@@ -229,38 +228,36 @@ sub init_default_attributes
     return $dbh;
 }
 
-# this is an example of a private method
-# these used to be done with $dbh->func(...)
-# see above in the driver() sub for how to install the method
-#
-sub dbm_versions
-{
-    my $class = $_[0]->FETCH ("ImplementorClass");
-    my $get_versions = $class->can( 'get_versions' );
-    goto &$get_versions;
-}
-
-sub get_versions
+sub get_dbm_versions
 {
     my ($dbh, $table) = @_;
     $table ||= '';
-    my @versions = $dbh->SUPER::get_versions( $table );
-
-    # update first line (optical)
-    my $dbdfv = shift @versions;
-    my ($pkg, $info) = split( /\s+/, $dbdfv, 2 );
-    unshift (@versions, sprintf ("%-16s %s", '  ' . $pkg, $info ));
 
     my $class = $dbh->FETCH ("ImplementorClass");
     $class =~ s/::db$/::Table/;
     my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
     $meta or ( $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table ) );
 
+    my $dver;
+    my $eval_str;
+    $eval_str = sprintf( '$dver = $%s::VERSION', $meta->{dbm_type} );
+    eval $eval_str;
     my $dtype = $meta->{dbm_type};
-    $dtype .= ' + MLDBM + ' . $meta->{dbm_mldbm} if( $meta->{dbm_mldbm} );
-    unshift( @versions, sprintf( "%-16s %s using %s", 'DBD::DBM', $dbh->{dbm_version}, $dtype ) );
-
-    return wantarray ? @versions : join ("\n", @versions);
+    $dtype .= ' (' . $dver . ')' if $dver;
+    if( $meta->{dbm_mldbm} )
+    {
+	$dtype .= ' + MLDBM';
+	$eval_str = '$dver = $MLDBM::VERSION';
+	eval $eval_str;
+	$dtype .= ' (' . $dver . ')' if $dver;
+	$dtype .= ' + ' . $meta->{dbm_mldbm};
+	$eval_str = sprintf( 'require MLDBM::Serializer::%s;' .
+	                     '$dver = $MLDBM::Serializer::%s::VERSION',
+			     $meta->{dbm_mldbm}, $meta->{dbm_mldbm} );
+	eval $eval_str;
+	$dtype .= ' (' . $dver . ')' if $dver;
+    }
+    return sprintf( "%s using %s", $dbh->{dbm_version}, $dtype );
 }
 
 # you may need to over-ride some DBD::File::db methods here
