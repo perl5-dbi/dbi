@@ -92,8 +92,10 @@ t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
 t/43prof_env.t
-t/49dbd_file.t
-t/50dbm_simple.t
+t/49dbd_file.t			DBD::File API and very basic tests
+t/50dbm_simple.t		simple DBD::DBM tests
+t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
+t/52dbm_complex.t		Complex DBD::DBM tests with SQL::Statement
 t/60preparse.t
 t/65transact.t
 t/70callbacks.t
