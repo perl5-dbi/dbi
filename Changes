@@ -13,7 +13,7 @@ DBD::File and drivers that depend on it, like DBD::DBM and DBD::CSV.
 
 This is also the first release where the bulk of the development work
 has been done by other people. I'd like to thank (in no particular order)
-Jens Rehsack, Martin J. Evans, and Jens Rehsack for all their contributions.
+Jens Rehsack, Martin J. Evans, and H. Merijn Brand for all their contributions.
 
   Fixed DBD::DBM breakage with SQL::Statement (Jens Rehsack, fixes RT#56561)
   Fixed DBD::File file handle leak (Jens Rehsack)
