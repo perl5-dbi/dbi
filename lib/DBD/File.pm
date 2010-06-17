@@ -151,12 +151,24 @@ sub connect ($$;$$$)
     return $this;
     } # connect
 
+sub dsn_quote
+{
+    my $str = $_[0];
+    ref $str and return "";
+    defined $str or return "";
+    $str =~ s/([;:])/\\$1/g;
+    return $str;
+    }
+
 sub data_sources ($;$)
 {
     my ($drh, $attr) = @_;
     my $dir = $attr && exists $attr->{f_dir}
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
+    $attr and my %attrs = %$attr;
+    delete $attrs{f_dir};
+    my $dsnextra = join (";", map { $_ . "=" . dsn_quote ($attrs{$_}) } keys %attrs);
     my ($dirh) = Symbol::gensym ();
     unless (opendir ($dirh, $dir)) {
 	$drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
@@ -164,12 +176,13 @@ sub data_sources ($;$)
 	}
 
     my ($file, @dsns, %names, $driver);
-    if ($drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i) {
-	$driver = $1;
-	}
-    else {
-	$driver = "File";
-	}
+    $driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
+    #if ($drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i) {
+#	$driver = $1;
+#	}
+#    else {
+#	$driver = "File";
+#	}
 
     while (defined ($file = readdir ($dirh))) {
 	if ($^O eq "VMS") {
@@ -180,7 +193,7 @@ sub data_sources ($;$)
 	my $d = File::Spec->catdir ($dir, $file);
 	# allow current dir ... it can be a data_source too
 	$file ne File::Spec->updir () && -d $d and
-	    push @dsns, "DBI:$driver:f_dir=$d";
+	    push @dsns, "DBI:$driver:f_dir=" . dsn_quote ($d) . ($dsnextra ? ";$dsnextra" : "");
 	}
     return @dsns;
     } # data_sources
@@ -548,8 +561,7 @@ sub get_single_table_meta
     $table eq "." and
 	return $dbh->FETCH ($attr);
 
-    my $class = $dbh->FETCH ("ImplementorClass");
-    $class =~ s/::db$/::Table/;
+    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
     (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta or croak "No such table '$table'";
 
@@ -602,8 +614,7 @@ sub set_single_table_meta
     $table eq "." and
 	return $dbh->STORE ($attr, $value);
 
-    my $class = $dbh->FETCH ("ImplementorClass");
-    $class =~ s/::db$/::Table/;
+    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
     (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta or croak "No such table '$table'";
     $class->set_table_meta_attr ($meta, $attr, $value);
@@ -650,8 +661,7 @@ sub clear_file_meta
 {
     my ($dbh, $table) = @_;
 
-    my $class = $dbh->FETCH ("ImplementorClass");
-    $class =~ s/::db$/::Table/;
+    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
     my (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
     $meta and %{$meta} = ();
 
