@@ -1254,8 +1254,8 @@ sub file2table
 	    }
 	}
 
-    my $fqfn = Cwd::abs_path (File::Spec->catfile ($searchdir, $file));
-    my $fqbn = Cwd::abs_path (File::Spec->catfile ($searchdir, $tbl));
+    my $fqfn = File::Spec->catfile ($searchdir, $file);
+    my $fqbn = File::Spec->catfile ($searchdir, $tbl);
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $fqbn;
