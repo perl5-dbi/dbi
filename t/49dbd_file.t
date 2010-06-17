@@ -70,7 +70,10 @@ ok ($sth = $dbh->prepare ("select * from t_sbdgf_53442Gz"), "Prepare select from
 	local $SIG{__DIE__} = sub { push @msg, @_ };
 	$sth->execute;
 	};
-    like ("@msg", qr{Cannot open .*/t_sbdgf_}, "Cannot open non-existing file");
+    like ("@msg", qr{Cannot open .*t_sbdgf_}, "Cannot open non-existing file");
+    eval {
+        note $dbh->f_get_meta ("t_sbdgf_53442Gz", "f_fqfn");
+        };
     }
 
 SKIP: {
