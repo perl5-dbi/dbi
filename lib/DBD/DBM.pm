@@ -64,22 +64,6 @@ package DBD::DBM::dr;
 $DBD::DBM::dr::imp_data_size = 0;
 @DBD::DBM::dr::ISA           = qw(DBD::File::dr);
 
-# you can get by without connect() if you don't have to check private
-# attributes, DBD::File will gather the connection string arguments for you
-#
-sub connect ($$;$$$)
-{
-    my ( $drh, $dbname, $user, $auth, $attr ) = @_;
-
-    # create a 'blank' dbh
-    #    my $this = DBI::_new_dbh($drh, {
-    #	Name => $dbname,
-    #    });
-    my $this = $drh->SUPER::connect( $dbname, $user, $auth, $attr );
-
-    return $this;
-}
-
 # you could put some :dr private methods here
 
 # you may need to over-ride some DBD::File::dr methods here
