@@ -43,6 +43,9 @@ to use in C<< DBI->connect () >> with a special DBD::File attribute.
 
 =back
 
+Other points of view to the planned features (and more features for the
+SQL::Statement engine) are shown in L<SQL::Statement::Roadmap>.
+
 =head2 Testing
 
 DBD::File and the dependent DBD::DBM requires much more automated tests,
