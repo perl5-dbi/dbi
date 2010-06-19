@@ -525,7 +525,7 @@ sub get_versions
 
     (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
     my $drv_prefix = DBI->driver_prefix ($drv_class);
-    my $ddgv = $dbh->{ImplementorClass}->can( "get_" . $drv_prefix . "versions" );
+    my $ddgv = $dbh->{ImplementorClass}->can ("get_${drv_prefix}versions");
     if ($ddgv) {
 	$vsn{"DBD::File"} = $dbd_file_verinfo;
 	$vmp{"DBD::File"} = "  DBD::File";
@@ -537,11 +537,10 @@ sub get_versions
 
     $DBI::PurePerl and $vsn{"DBI::PurePerl"} = $DBI::PurePerl::VERSION;
 
-    my @versions = map { sprintf "%-16s %s", $vmp{$_} || $_, $vsn{$_} }
-		   sort
-		   {
+    my @versions = map  { sprintf "%-16s %s", $vmp{$_} || $_, $vsn{$_} }
+		   sort {
 		       $a->isa ($b) and return -1;
-		       $b->isa ($a) and return 1;
+		       $b->isa ($a) and return  1;
 		       return $a cmp $b;
 		       } keys %vsn;
 
@@ -582,7 +581,7 @@ sub get_file_meta
 	}
     else {
 	ref $table or $table = [ $table ];
-	ref $attr or $attr = [ $attr ];
+	ref $attr  or $attr  = [ $attr  ];
 	"ARRAY" eq ref $table or
 	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
 	"ARRAY" eq ref $attr or
@@ -594,7 +593,7 @@ sub get_file_meta
 	    foreach my $aname (@{$attr}) {
 		$tattrs{$aname} = &$gstm ($dbh, $tname, $aname);
 		}
-		$results{$tname} = \%tattrs;
+	    $results{$tname} = \%tattrs;
 	    }
 
 	return \%results;
@@ -630,26 +629,24 @@ sub set_file_meta
     ref ($table) eq "Regexp" and
 	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
 
-    unless (ref ($table) or ref ($attr)) {
+    ref $table || ref $attr or
 	return &$sstm ($dbh, $table, $attr, $value);
-	}
-    else {
-	ref $table or $table = [ $table ];
-	ref $attr or $attr = { $attr => $value };
-	"ARRAY" eq ref $table or
-	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
-	"HASH" eq ref $attr or
-	    croak "Invalid argument for \$attr - SCALAR or HASH expected but got " . ref $attr;
 
-	foreach my $tname (@{$table}) {
-	    my %tattrs;
-	    while (my ($aname, $aval) = each %$attr) {
-		&$sstm ($dbh, $tname, $aname, $aval);
-		}
+    ref $table or $table = [ $table ];
+    ref $attr  or $attr  = { $attr => $value };
+    "ARRAY" eq ref $table or
+	croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
+    "HASH" eq ref $attr or
+	croak "Invalid argument for \$attr - SCALAR or HASH expected but got " . ref $attr;
+
+    foreach my $tname (@{$table}) {
+	my %tattrs;
+	while (my ($aname, $aval) = each %$attr) {
+	    &$sstm ($dbh, $tname, $aname, $aval);
 	    }
-
-	return $dbh;
 	}
+
+    return $dbh;
     } # set_file_meta
 
 sub clear_file_meta
