@@ -109,13 +109,13 @@ is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
            {
 	       $tbl => {
 		   f_dir => $dir,
-		   f_ext => q(.txt),
-	       },
-	       t_sbdgf_53442Gz =>  {
+		   f_ext => ".txt",
+		   },
+	       t_sbdgf_53442Gz => {
 		   f_dir => $dir,
-		   f_ext => q(.txt),
+		   f_ext => ".txt",
+		   },
 	       },
-	   },
 	   "get multiple meta data");
 
 # Expected: ("unix", "perlio", "encoding(iso-8859-1)")

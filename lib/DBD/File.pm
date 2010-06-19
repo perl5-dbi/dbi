@@ -573,31 +573,29 @@ sub get_file_meta
 	$table = [ ".", keys %{$dbh->{f_meta}} ];
     $table eq "+" and
 	$table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{$dbh->{f_meta}} ];
-    ref ($table) eq "Regexp" and
+    ref $table eq "Regexp" and
 	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
 
-    unless (ref ($table) or ref ($attr)) {
+    ref $table || ref $attr or
 	return &$gstm ($dbh, $table, $attr);
-	}
-    else {
-	ref $table or $table = [ $table ];
-	ref $attr  or $attr  = [ $attr  ];
-	"ARRAY" eq ref $table or
-	    croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
-	"ARRAY" eq ref $attr or
-	    croak "Invalid argument for \$attr - SCALAR or ARRAY expected but got " . ref $attr;
 
-	my %results;
-	foreach my $tname (@{$table}) {
-	    my %tattrs;
-	    foreach my $aname (@{$attr}) {
-		$tattrs{$aname} = &$gstm ($dbh, $tname, $aname);
-		}
-	    $results{$tname} = \%tattrs;
+    ref $table or $table = [ $table ];
+    ref $attr  or $attr  = [ $attr  ];
+    "ARRAY" eq ref $table or
+	croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
+    "ARRAY" eq ref $attr or
+	croak "Invalid argument for \$attr - SCALAR or ARRAY expected but got " . ref $attr;
+
+    my %results;
+    foreach my $tname (@{$table}) {
+	my %tattrs;
+	foreach my $aname (@{$attr}) {
+	    $tattrs{$aname} = &$gstm ($dbh, $tname, $aname);
 	    }
-
-	return \%results;
+	$results{$tname} = \%tattrs;
 	}
+
+    return \%results;
     } # get_file_meta
 
 sub set_single_table_meta
