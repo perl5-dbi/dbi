@@ -3,6 +3,7 @@
 ^MANIFEST\.
 ^Makefile$
 ~$
+^\.aspell\.local\.pws$
 \.html$
 \.old$
 ^blib/
