@@ -236,7 +236,7 @@ it is associated to the derived driver name:
 
 Override it to add more version information about your module, (e.g.
 some kind of parser version in case of DBD::CSV, ...), if one line is not
-enought room to provide all relevant information.
+enough room to provide all relevant information.
 
 =item get_single_table_meta
 
@@ -354,7 +354,7 @@ statement is not discarded so the statement can be executed again.
 =item fetch
 
 Fetches the next row from the result-set. This method may be rewritten
-in a later version and if it's overriden in a derived class, the
+in a later version and if it's overridden in a derived class, the
 derived implementation should not rely on the storage details.
 
 =item fetchrow_arrayref
@@ -375,7 +375,7 @@ See L<DBD::CSV> or L<DBD::DBM> for some example.
 
 =item STORE
 
-Allowes storing of statement private attributes.
+Allows storing of statement private attributes.
 
 =item rows
 
@@ -394,7 +394,7 @@ Derives from DBI::SQL::Nano::Statement to provide following method:
 
 Implements the open_table method required by L<SQL::Statement> and
 L<DBI::SQL::Nano>. All the work for opening the file(s) belonging to the
-table is handled and parameterized in DBD::File::Table. Unless you intend
+table is handled and parametrized in DBD::File::Table. Unless you intend
 to add anything to the following implementation, an empty DBD::XXX::Statement
 package satisfies DBD::File.
 
@@ -437,9 +437,9 @@ undef.
 
 =item bootstrap_table_meta
 
-Initializes a table meta structure. Can be safely overriden in a
+Initializes a table meta structure. Can be safely overridden in a
 derived class, as long as the C<< SUPER >> method is called at the end
-of the overriden method.
+of the overridden method.
 
 It copies the following attributes from the database into the table meta data
 C<< f_dir >>, C<< f_ext >>, C<< f_encoding >>, C<< f_lock >>, C<< f_schema >>,
@@ -488,7 +488,7 @@ C<<f_fqln >> (full qualified lock name) is set, this file is opened,
 too. Depending on the value in C<< f_lock >>, the appropriate lock is
 set on the opened data file or lock file.
 
-After this is done, a derived class might add more steps in an overriden
+After this is done, a derived class might add more steps in an overridden
 C<< open_file >> method.
 
 =item new

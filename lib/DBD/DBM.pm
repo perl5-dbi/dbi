@@ -724,7 +724,7 @@ supports tables with any number of columns and insertion of Perl objects
 into tables.
 
 DBD::DBM has been tested with the following DBM types: SDBM_File,
-NDBM_File, ODBM_File, GDBM_File, DB_File, BerekeleyDB.  Each type was
+NDBM_File, ODBM_File, GDBM_File, DB_File, BerkeleyDB.  Each type was
 tested both with and without MLDBM and serializers Data::Dumper, Storable,
 FreezeThaw and YAML.
 
@@ -767,7 +767,7 @@ But here's a sample to get you started.
 This chapter will explain some use cases a bit deeper. To get an overview
 about the available attributes, see L</Metadata>.
 
-=head2 Specifiying Files and Directories
+=head2 Specifying Files and Directories
 
 DBD::DBM will automatically supply an appropriate file extension for the
 type of DBM you are using.  For example, if you use SDBM_File, a table
@@ -1313,8 +1313,8 @@ specify a table name as an argument to the method call.
 If you are using MLDBM, you can use DBD::DBM to take advantage of its
 serializing abilities to serialize any Perl object that MLDBM can handle.
 To store objects in columns, you should (but don't absolutely need to)
-declare it as a column of type BLOB (the type is *currently* ignored by the
-SQL engine, but heh, it's good form).
+declare it as a column of type BLOB (the type is *currently* ignored by
+the SQL engine, but it's good form).
 
 =head1 GOTCHAS AND WARNINGS
 
@@ -1377,7 +1377,7 @@ described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
 at rehsack@cpan.org for commercial support in Germany.
 
 Please don't bother Jochen Wiedmann or Jeff Zucker for support - they
-handed over further maintenence to H.Merijn Brand and Jens Rehsack.
+handed over further maintenance to H.Merijn Brand and Jens Rehsack.
 
 =head1 ACKNOWLEDGEMENTS
 
