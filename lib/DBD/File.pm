@@ -153,12 +153,12 @@ sub connect ($$;$$$)
 
 sub dsn_quote
 {
-    my $str = $_[0];
-    ref $str and return "";
-    defined $str or return "";
+    my $str = shift;
+    ref     $str and return "";
+    defined $str or  return "";
     $str =~ s/([;:])/\\$1/g;
     return $str;
-    }
+    } # dsn_quote
 
 sub data_sources ($;$)
 {
@@ -166,9 +166,10 @@ sub data_sources ($;$)
     my $dir = $attr && exists $attr->{f_dir}
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
-    $attr and my %attrs = %$attr;
+    my %attrs;
+    $attr and %attrs = %$attr;
     delete $attrs{f_dir};
-    my $dsnextra = join (";", map { $_ . "=" . dsn_quote ($attrs{$_}) } keys %attrs);
+    my $dsnextra = join ";", map { $_ . "=" . dsn_quote ($attrs{$_}) } keys %attrs;
     my ($dirh) = Symbol::gensym ();
     unless (opendir ($dirh, $dir)) {
 	$drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
@@ -177,12 +178,6 @@ sub data_sources ($;$)
 
     my ($file, @dsns, %names, $driver);
     $driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
-    #if ($drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i) {
-#	$driver = $1;
-#	}
-#    else {
-#	$driver = "File";
-#	}
 
     while (defined ($file = readdir ($dirh))) {
 	if ($^O eq "VMS") {
