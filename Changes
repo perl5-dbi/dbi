@@ -13,7 +13,7 @@ DBD::File and drivers that depend on it, like DBD::DBM and DBD::CSV.
 
 This is also the first release where the bulk of the development work
 has been done by other people. I'd like to thank (in no particular order)
-Jens Rehsack, Martin J. Evans, and H. Merijn Brand for all their contributions.
+Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
   Fixed DBD::DBM breakage with SQL::Statement (Jens Rehsack, fixes RT#56561)
   Fixed DBD::File file handle leak (Jens Rehsack)
@@ -21,7 +21,7 @@ Jens Rehsack, Martin J. Evans, and H. Merijn Brand for all their contributions.
     dbms (Martin J. Evans)
   Fixed DBD::DBM bugs found during tests (Jens Rehsack)
   Fixed DBD::File doesn't find files without extensions under some
-    circumstances (Jens Rehsack, H. Merijn Brand, fixes RT#59038)
+    circumstances (Jens Rehsack, H.Merijn Brand, fixes RT#59038)
 
   Changed Makefile.PL to modernize with CONFLICTS, recommended dependencies
     and resources (Jens Rehsack)
@@ -37,7 +37,7 @@ Jens Rehsack, Martin J. Evans, and H. Merijn Brand for all their contributions.
   Synchronize API between SQL::Statement and DBI::SQL::Nano (Jens Rehsack)
   Merged some optimizations from SQL::Statement into DBI::SQL::Nano
     (Jens Rehsack)
-  Added basic test for DBD::File (H. Merijn Brand, Jens Rehsack)
+  Added basic test for DBD::File (H.Merijn Brand, Jens Rehsack)
 
   Updated and clarified documentation for finish method (Tim Bunce).
   Changes to DBD::File for better English and hopefully better
