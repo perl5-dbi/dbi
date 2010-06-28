@@ -19,17 +19,19 @@
 #  General Public License or the Artistic License, as specified in
 #  the Perl README file.
 
-require 5.005;
+require 5.008;
 
 use strict;
+use warnings;
 
 use DBI ();
-require DBI::SQL::Nano;
 
 package DBD::File;
 
 use strict;
+use warnings;
 
+use base qw(DBI::DBD::SqlEngine);
 use Carp;
 use vars qw( @ISA $VERSION $drh );
 
@@ -37,10 +39,7 @@ $VERSION = "0.39";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
-DBI->setup_driver ("DBD::File"); # only needed once but harmless to repeat
-
 my %accessors = (
-    versions   => "get_versions",
     get_meta   => "get_file_meta",
     set_meta   => "set_file_meta",
     clear_meta => "clear_file_meta",
@@ -71,8 +70,7 @@ sub driver ($;$)
 	$attr->{Name} or ($attr->{Name} = $class) =~ s/^DBD\:\://;
 	}
 
-    $drh->{$class} = DBI::_new_drh ($class . "::dr", $attr);
-    $drh->{$class}->STORE (ShowErrorStatement => 1);
+    $drh->{$class} = $class->SUPER::driver ($attr);
 
     my $prefix = DBI->driver_prefix ($class);
     my $dbclass = $class . "::db";
@@ -105,7 +103,11 @@ sub CLONE
 package DBD::File::dr;
 
 use strict;
+use warnings;
 
+use vars qw(@ISA $imp_data_size);
+
+@DBD::File::dr::ISA           = qw(DBI::DBD::SqlEngine::dr);
 $DBD::File::dr::imp_data_size = 0;
 
 sub connect ($$;$$$)
@@ -207,82 +209,24 @@ sub DESTROY
 package DBD::File::db;
 
 use strict;
+use warnings;
+
+use vars qw(@ISA $imp_data_size);
+
 use Carp;
 require File::Spec;
 require Cwd;
 use Scalar::Util qw(refaddr); # in CORE since 5.7.3
 
-if (eval { require Clone; }) {
-    Clone->import ("clone");
-    }
-else {
-    require Storable; # in CORE since 5.7.3
-    *clone = \&Storable::dclone;
-    }
-
+@DBD::File::db::ISA           = qw(DBI::DBD::SqlEngine::db);
 $DBD::File::db::imp_data_size = 0;
-
-sub ping
-{
-    ($_[0]->FETCH ("Active")) ? 1 : 0;
-    } # ping
-
-sub prepare ($$;@)
-{
-    my ($dbh, $statement, @attribs) = @_;
-
-    # create a 'blank' sth
-    my $sth = DBI::_new_sth ($dbh, {Statement => $statement});
-
-    if ($sth) {
-	my $class = $sth->FETCH ("ImplementorClass");
-	$class =~ s/::st$/::Statement/;
-	my $stmt;
-
-	# if using SQL::Statement version > 1
-	# cache the parser object if the DBD supports parser caching
-	# SQL::Nano and older SQL::Statements don't support this
-
-	if ( $dbh->{sql_handler} eq "SQL::Statement" and
-	     $dbh->{sql_statement_version} > 1) {
-	    my $parser = $dbh->{sql_parser_object};
-	    $parser ||= eval { $dbh->func ("sql_parser_object") };
-	    if ($@) {
-		$stmt = eval { $class->new ($statement) };
-		}
-	    else {
-		$stmt = eval { $class->new ($statement, $parser) };
-		}
-	    }
-	else {
-	    $stmt = eval { $class->new ($statement) };
-	    }
-	if ($@) {
-	    $dbh->set_err ($DBI::stderr, $@);
-	    undef $sth;
-	    }
-	else {
-	    $sth->STORE ("f_stmt", $stmt);
-	    $sth->STORE ("f_params", []);
-	    $sth->STORE ("NUM_OF_PARAMS", scalar ($stmt->params ()));
-	    }
-	}
-    return $sth;
-    } # prepare
 
 sub set_versions
 {
     my $dbh = shift;
     $dbh->{f_version} = $DBD::File::VERSION;
-    for (qw( nano_version statement_version )) {
-	# strip development release version part
-	($dbh->{"sql_$_"} = $DBI::SQL::Nano::versions->{$_} || "") =~ s/_[0-9]+$//;
-	}
-    $dbh->{sql_handler} = $dbh->{sql_statement_version}
-	? "SQL::Statement"
-	: "DBI::SQL::Nano";
 
-    return $dbh;
+    return $dbh->SUPER::set_versions ();
     } # set_versions
 
 sub init_valid_attributes
@@ -336,9 +280,7 @@ sub init_default_attributes
     my $dbh = shift;
 
     # must be done first, because setting flags implicitly calls $dbdname::db->STORE
-    $dbh->func ("init_valid_attributes");
-
-    $dbh->func ("set_versions");
+    $dbh->SUPER::init_default_attributes ();
 
     # f_ext should not be initialized
     # f_map is deprecated (but might return)
@@ -346,16 +288,13 @@ sub init_default_attributes
     $dbh->{f_meta}     = {};
     $dbh->{f_meta_map} = {}; # choose new name because it contains other keys
 
-    $dbh->{sql_identifier_case}        = 2; # SQL_IC_LOWER
-    $dbh->{sql_quoted_identifier_case} = 3; # SQL_IC_SENSITIVE
-
     # complete derived attributes, if required
     (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
     my $drv_prefix = DBI->driver_prefix ($drv_class);
     my $valid_attrs = $drv_prefix . "valid_attrs";
     my $ro_attrs = $drv_prefix . "readonly_attrs";
 
-    my @comp_attrs = qw(valid_attrs version readonly_attrs);
+    my @comp_attrs = qw();
     if (exists $dbh->{$drv_prefix . "meta"}) {
 	my $attr = $dbh->{$drv_prefix . "meta"};
 	defined $attr and defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
@@ -401,151 +340,48 @@ sub disconnect ($)
     return 1;
     } # disconnect
 
-sub FETCH ($$)
-{
-    my ($dbh, $attrib) = @_;
-    $attrib eq "AutoCommit" and
-	return 1;
-
-    if ($attrib eq (lc $attrib)) {
-	# Driver private attributes are lower cased
-
-	# XXX Error-check for valid attributes
-	# not implemented yet, see STORE
-	#
-	# XXX return cloned value when readonly attr
-	# and not scalar type
-	# use: *clone = $haveClone ? \&Clone::clone : \&Storable::dclone;
-	#
-	my $attr_prefix;
-	$attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
-	unless ($attr_prefix) {
-	    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-	    $attr_prefix = DBI->driver_prefix ($drv_class);
-	    $attrib = $attr_prefix . $attrib;
-	    }
-	my $valid_attrs = $attr_prefix . "valid_attrs";
-	my $ro_attrs = $attr_prefix . "readonly_attrs";
-	exists $dbh->{$valid_attrs} and ($dbh->{$valid_attrs}{$attrib} or
-	   return $dbh->set_err ($DBI::stderr, "Invalid attribute '$attrib'"));
-	exists $dbh->{$ro_attrs} and $dbh->{$ro_attrs}{$attrib} and
-	    defined $dbh->{$attrib} and refaddr ($dbh->{$attrib}) and
-	    return clone ($dbh->{$attrib});
-
-	return $dbh->{$attrib};
-	}
-    # else pass up to DBI to handle
-    return $dbh->SUPER::FETCH ($attrib);
-    } # FETCH
-
-sub STORE ($$$)
+sub validate_STORE_attr
 {
     my ($dbh, $attrib, $value) = @_;
 
-    if ($attrib eq "AutoCommit") {
-	$value and return 1;    # is already set
-	croak "Can't disable AutoCommit";
+    if ($attrib eq "f_dir") {
+	-d $value or
+	    return $dbh->set_err ($DBI::stderr, "No such directory '$value'");
+	File::Spec->file_name_is_absolute ($value) or
+	    $value = Cwd::abs_path ($value);
 	}
 
-    if ($attrib eq lc $attrib) {
-	# Driver private attributes are lower cased
-
-	# I'm not implementing this yet because other drivers may be
-	# setting f_ and sql_ attrs I don't know about
-	# I'll investigate and publicize warnings to DBD authors
-	# then implement this
-
-	# return to implementor if not f_ or sql_
-	# not implemented yet
-	# my $class = $dbh->FETCH ("ImplementorClass");
-	#
-	my $attr_prefix;
-	$attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
-	unless ($attr_prefix) {
-	    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-	    $attr_prefix = DBI->driver_prefix ($drv_class);
-	    $attrib = $attr_prefix . $attrib;
-	    }
-	my $valid_attrs = $attr_prefix . "valid_attrs";
-	my $ro_attrs = $attr_prefix . "readonly_attrs";
-	exists $dbh->{$valid_attrs} and ($dbh->{$valid_attrs}{$attrib} or
-	   return $dbh->set_err ($DBI::stderr, "Invalid attribute '$attrib'"));
-	exists $dbh->{$ro_attrs} and $dbh->{$ro_attrs}{$attrib} and defined $dbh->{$attrib} and
-	   return $dbh->set_err ($DBI::stderr, "attribute '$attrib' is readonly and must not be modified");
-	#  $dbh->{$attrib} = $value;
-
-	if ($attrib eq "f_dir") {
-	    -d $value or
-		return $dbh->set_err ($DBI::stderr, "No such directory '$value'");
-	    File::Spec->file_name_is_absolute ($value) or
-	        $value = Cwd::abs_path ($value);
-	    }
-
-	if ($attrib eq "f_ext") {
-	    $value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
-		carp "'$value' doesn't look like a valid file extension attribute\n";
-	    }
-
-	if (    $attrib eq "sql_identifier_case" ||
-	        $attrib eq "sql_quoted_identifier_case"
-	    and
-		$value < 1 || $value > 4) {
-	    croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
-	    # XXX correctly a remap of all entries in f_meta/f_meta_map is required here
-	    }
-
-        # if (($attrib =~ m/^f_/   && $dbh->{f_readonly_attrs}{$attrib} or
-        #      $attrib =~ m/^sql_/ && $dbh->{sql_readonly_attrs}{$attrib}) and
-	#      defined $dbh->{$attrib}) {
-	#     croak "attribute '$attrib' is readonly and must not be modified";
-	#     }
-
-	$dbh->{$attrib} = $value;
-	return 1;
+    if ($attrib eq "f_ext") {
+	$value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
+	    carp "'$value' doesn't look like a valid file extension attribute\n";
 	}
 
-    return $dbh->SUPER::STORE ($attrib, $value);
-    } # STORE
+    return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
+}
 
-sub get_versions
+sub get_f_versions
 {
     my ($dbh, $table) = @_;
-    my %vsn = (
-	OS		=> "$^O ($Config::Config{osvers})",
-	Perl		=> "$] ($Config::Config{archname})",
-	DBI		=> $DBI::VERSION,
-	);
-    my %vmp;
 
-    my $dbd_file_verinfo = join " ",
-	$dbh->{f_version}, "using", $dbh->{sql_handler},
-	$dbh->{sql_handler} eq "SQL::Statement"
-	    ? $dbh->{sql_statement_version}
-	    : $dbh->{sql_nano_version};
+    my $class = $dbh->{ImplementorClass};
+    $class =~ s/::db$/::Table/;
+    $table and
+	my ( undef, $meta ) = $class->get_table_meta ($dbh, $table, 1);
+    $meta or ($meta = {} and $class->bootstrap_table_meta ($dbh, $meta, $table));
 
-    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-    my $drv_prefix = DBI->driver_prefix ($drv_class);
-    my $ddgv = $dbh->{ImplementorClass}->can ("get_${drv_prefix}versions");
-    if ($ddgv) {
-	$vsn{"DBD::File"} = $dbd_file_verinfo;
-	$vmp{"DBD::File"} = "  DBD::File";
-	$vsn{$drv_class}  = &$ddgv ($dbh, $table);
-	}
-    else {
-	$vsn{"DBD::File"} = $dbd_file_verinfo;
-	}
+    my $dbd_file_verinfo = $dbh->{f_version};
 
-    $DBI::PurePerl and $vsn{"DBI::PurePerl"} = $DBI::PurePerl::VERSION;
+    my $dver;
+    my $eval_str;
+    $eval_str = sprintf ('$dver = $%s::VERSION', "IO::File");
+    eval $eval_str;
+    my $dtype = "IO::File";
+    $dtype .= ' (' . $dver . ')' if $dver;
 
-    my @versions = map  { sprintf "%-16s %s", $vmp{$_} || $_, $vsn{$_} }
-		   sort {
-		       $a->isa ($b) and return -1;
-		       $b->isa ($a) and return  1;
-		       return $a cmp $b;
-		       } keys %vsn;
+    $meta->{f_encoding} and $dtype .= " + " . $meta->{f_encoding} . " encoding";
 
-    return wantarray ? @versions : join "\n", @versions;
-    } # get_versions
+    return sprintf ("%s using %s", $dbh->{f_version}, $dtype);
+    } # get_f_versions
 
 sub get_single_table_meta
 {
@@ -658,157 +494,40 @@ sub clear_file_meta
     return;
     } # clear_file_meta
 
-sub DESTROY ($)
+sub get_avail_tables
 {
-    my $dbh = shift;
-    $dbh->SUPER::FETCH ("Active") and $dbh->disconnect ;
-    undef $dbh->{sql_parser_object};
-    } # DESTROY
+    my $dbh  = $_[0];
 
-sub type_info_all ($)
-{
-    [ { TYPE_NAME          => 0,
-	DATA_TYPE          => 1,
-	PRECISION          => 2,
-	LITERAL_PREFIX     => 3,
-	LITERAL_SUFFIX     => 4,
-	CREATE_PARAMS      => 5,
-	NULLABLE           => 6,
-	CASE_SENSITIVE     => 7,
-	SEARCHABLE         => 8,
-	UNSIGNED_ATTRIBUTE => 9,
-	MONEY              => 10,
-	AUTO_INCREMENT     => 11,
-	LOCAL_TYPE_NAME    => 12,
-	MINIMUM_SCALE      => 13,
-	MAXIMUM_SCALE      => 14,
-	},
-      [ "VARCHAR",	DBI::SQL_VARCHAR (),
-	undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
-	],
-      [ "CHAR",		DBI::SQL_CHAR (),
-	undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
-	],
-      [ "INTEGER",	DBI::SQL_INTEGER (),
-	undef, "",  "",  undef, 0, 0, 1, 0, 0, 0, undef, 0, 0,
-	],
-      [ "REAL",		DBI::SQL_REAL (),
-	undef, "",  "",  undef, 0, 0, 1, 0, 0, 0, undef, 0, 0,
-	],
-      [ "BLOB",		DBI::SQL_LONGVARBINARY (),
-	undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
-	],
-      [ "BLOB",		DBI::SQL_LONGVARBINARY (),
-	undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
-	],
-      [ "TEXT",		DBI::SQL_LONGVARCHAR (),
-	undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
-	]];
-    } # type_info_all
+    my @tables = $dbh->SUPER::get_avail_tables ();
 
-{   my $names = [
-	qw( TABLE_QUALIFIER TABLE_OWNER TABLE_NAME TABLE_TYPE REMARKS )];
+    my $dir  = $dbh->{f_dir};
+    my $dirh = Symbol::gensym ();
 
-    sub table_info ($)
-    {
-	my $dbh  = shift;
-	my $dir  = $dbh->{f_dir};
-	my $dirh = Symbol::gensym ();
-
-	unless (opendir $dirh, $dir) {
-	    $dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
-	    return;
-	    }
-
-	my $class = $dbh->FETCH ("ImplementorClass");
-	$class =~ s/::db$/::Table/;
-	my ($file, @tables, %names);
-	my $schema = exists $dbh->{f_schema}
-	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
-		? $dbh->{f_schema} : undef
-	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
-	my %seen;
-	while (defined ($file = readdir ($dirh))) {
-	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
-	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    $seen{defined $schema ? $schema : "\0"}{$tbl}++ or
-		push @tables, [ undef, $schema, $tbl, "TABLE", undef ];
-	    }
-	unless (closedir $dirh) {
-	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
-	    return;
-	    }
-
-	my $dbh2 = $dbh->{csv_sponge_driver};
-	unless ($dbh2) {
-	    $dbh2 = $dbh->{csv_sponge_driver} = DBI->connect ("DBI:Sponge:");
-	    unless ($dbh2) {
-		$dbh->set_err ($DBI::stderr, $DBI::errstr);
-		return;
-		}
-	    }
-
-	# Temporary kludge: DBD::Sponge dies if @tables is empty. :-(
-	@tables or return;
-
-	my $sth = $dbh2->prepare ("TABLE_INFO", {
-				    rows  => \@tables,
-				    NAMES => $names,
-				    });
-	$sth or $dbh->set_err ($DBI::stderr, $dbh2->errstr);
-	return $sth;
-	} # table_info
-    }
-
-sub list_tables ($)
-{
-    my $dbh = shift;
-    my ($sth, @tables);
-    $sth = $dbh->table_info () or return;
-    while (my $ref = $sth->fetchrow_arrayref ()) {
-	push @tables, $ref->[2];
+    unless (opendir $dirh, $dir) {
+	$dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+	return @tables;
 	}
+
+    my $class = $dbh->FETCH ("ImplementorClass");
+    $class =~ s/::db$/::Table/;
+    my ($file, %names);
+    my $schema = exists $dbh->{f_schema}
+	? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
+	    ? $dbh->{f_schema} : undef
+	: eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
+    my %seen;
+    while (defined ($file = readdir ($dirh))) {
+	my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
+	# $tbl && $meta && -f $meta->{f_fqfn} or next;
+	$seen{defined $schema ? $schema : "\0"}{$tbl}++ or
+	    push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
+	}
+    unless (closedir $dirh) {
+	$dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
+	}
+
     return @tables;
-    } # list_tables
-
-sub quote ($$;$)
-{
-    my ($self, $str, $type) = @_;
-    defined $str or return "NULL";
-    defined $type && (
-	    $type == DBI::SQL_NUMERIC  ()
-	 || $type == DBI::SQL_DECIMAL  ()
-	 || $type == DBI::SQL_INTEGER  ()
-	 || $type == DBI::SQL_SMALLINT ()
-	 || $type == DBI::SQL_FLOAT    ()
-	 || $type == DBI::SQL_REAL     ()
-	 || $type == DBI::SQL_DOUBLE   ()
-	 || $type == DBI::SQL_TINYINT  ())
-	and return $str;
-
-    $str =~ s/\\/\\\\/sg;
-    $str =~ s/\0/\\0/sg;
-    $str =~ s/\'/\\\'/sg;
-    $str =~ s/\n/\\n/sg;
-    $str =~ s/\r/\\r/sg;
-    return "'$str'";
-    } # quote
-
-sub commit ($)
-{
-    my $dbh = shift;
-    $dbh->FETCH ("Warn") and
-	carp "Commit ineffective while AutoCommit is on", -1;
-    return 1;
-    } # commit
-
-sub rollback ($)
-{
-    my $dbh = shift;
-    $dbh->FETCH ("Warn") and
-	carp "Rollback ineffective while AutoCommit is on", -1;
-    return 0;
-    } # rollback
+    } # get_avail_tables
 
 # ====== Tie-Meta ==============================================================
 
@@ -963,163 +682,21 @@ sub SCALAR
 package DBD::File::st;
 
 use strict;
+use warnings;
 
+use vars qw(@ISA $imp_data_size);
+
+@DBD::File::st::ISA           = qw(DBI::DBD::SqlEngine::st);
 $DBD::File::st::imp_data_size = 0;
-
-sub bind_param ($$$;$)
-{
-    my ($sth, $pNum, $val, $attr) = @_;
-    if ($attr && defined $val) {
-	my $type = ref $attr eq "HASH" ? $attr->{TYPE} : $attr;
-	if (   $attr == DBI::SQL_BIGINT   ()
-	    || $attr == DBI::SQL_INTEGER  ()
-	    || $attr == DBI::SQL_SMALLINT ()
-	    || $attr == DBI::SQL_TINYINT  ()
-	       ) {
-	    $val += 0;
-	    }
-	elsif ($attr == DBI::SQL_DECIMAL ()
-	    || $attr == DBI::SQL_DOUBLE  ()
-	    || $attr == DBI::SQL_FLOAT   ()
-	    || $attr == DBI::SQL_NUMERIC ()
-	    || $attr == DBI::SQL_REAL    ()
-	       ) {
-	    $val += 0.;
-	    }
-	else {
-	    $val = "$val";
-	    }
-	}
-    $sth->{f_params}[$pNum - 1] = $val;
-    return 1;
-    } # bind_param
-
-sub execute
-{
-    my $sth = shift;
-    my $params = @_ ? ($sth->{f_params} = [ @_ ]) : $sth->{f_params};
-
-    $sth->finish;
-    my $stmt = $sth->{f_stmt};
-    unless ($sth->{f_params_checked}++) {
-	# bug in SQL::Statement 1.20 and below causes breakage
-	# on all but the first call
-	unless ((my $req_prm = $stmt->params ()) == (my $nparm = @$params)) {
-	    my $msg = "You passed $nparm parameters where $req_prm required";
-	    $sth->set_err ($DBI::stderr, $msg);
-	    return;
-	    }
-	}
-    my @err;
-    my $result = eval {
-	local $SIG{__WARN__} = sub { push @err, @_ };
-	$stmt->execute ($sth, $params);
-	};
-    if ($@ || @err) {
-	$sth->set_err ($DBI::stderr, $@ || $err[0]);
-	return undef;
-	}
-
-    if ($stmt->{NUM_OF_FIELDS}) {    # is a SELECT statement
-	$sth->STORE (Active => 1);
-	$sth->FETCH ("NUM_OF_FIELDS") or
-	    $sth->STORE ("NUM_OF_FIELDS", $stmt->{NUM_OF_FIELDS});
-	}
-    return $result;
-    } # execute
-
-sub finish
-{
-    my $sth = shift;
-    $sth->SUPER::STORE (Active => 0);
-    delete $sth->{f_stmt}{data};
-    return 1;
-    } # finish
-
-sub fetch ($)
-{
-    my $sth  = shift;
-    my $data = $sth->{f_stmt}{data};
-    if (!$data || ref $data ne "ARRAY") {
-	$sth->set_err ($DBI::stderr,
-	    "Attempt to fetch row without a preceeding execute () call or from a non-SELECT statement"
-	    );
-	return;
-	}
-    my $dav = shift @$data;
-    unless ($dav) {
-	$sth->finish;
-	return;
-	}
-    if ($sth->FETCH ("ChopBlanks")) {
-	$_ && $_ =~ s/\s+$// for @$dav;
-	}
-    return $sth->_set_fbav ($dav);
-    } # fetch
-*fetchrow_arrayref = \&fetch;
-
-my %unsupported_attrib = map { $_ => 1 } qw( TYPE PRECISION );
-
-sub FETCH ($$)
-{
-    my ($sth, $attrib) = @_;
-    exists $unsupported_attrib{$attrib}
-	and return undef;    # Workaround for a bug in DBI 0.93
-    $attrib eq "NAME" and
-	return $sth->FETCH ("f_stmt")->{NAME};
-    if ($attrib eq "NULLABLE") {
-	my ($meta) = $sth->FETCH ("f_stmt")->{NAME};    # Intentional !
-	$meta or return undef;
-	return [ (1) x @$meta ];
-	}
-    if ($attrib eq lc $attrib) {
-	# Private driver attributes are lower cased
-	return $sth->{$attrib};
-	}
-    # else pass up to DBI to handle
-    return $sth->SUPER::FETCH ($attrib);
-    } # FETCH
-
-sub STORE ($$$)
-{
-    my ($sth, $attrib, $value) = @_;
-    exists $unsupported_attrib{$attrib}
-	and return;    # Workaround for a bug in DBI 0.93
-    if ($attrib eq lc $attrib) {
-	# Private driver attributes are lower cased
-	$sth->{$attrib} = $value;
-	return 1;
-	}
-    return $sth->SUPER::STORE ($attrib, $value);
-    } # STORE
-
-sub DESTROY ($)
-{
-    my $sth = shift;
-    $sth->SUPER::FETCH ("Active") and $sth->finish;
-    undef $sth->{f_stmt};
-    undef $sth->{f_params};
-    } # DESTROY
-
-sub rows ($)
-{
-    return $_[0]->{f_stmt}{NUM_OF_ROWS};
-    } # rows
 
 # ====== SQL::STATEMENT ========================================================
 
 package DBD::File::Statement;
 
 use strict;
-use Carp;
+use warnings;
 
-# Jochen's old check for flock ()
-#
-# my $locking = $^O ne "MacOS"  &&
-#              ($^O ne "MSWin32" || !Win32::IsWin95 ())  &&
-#               $^O ne "VMS";
-
-@DBD::File::Statement::ISA = qw( DBI::SQL::Nano::Statement );
+@DBD::File::Statement::ISA = qw( DBI::DBD::SqlEngine::Statement );
 
 sub open_table ($$$$$)
 {
@@ -1142,6 +719,8 @@ sub open_table ($$$$$)
 package DBD::File::Table;
 
 use strict;
+use warnings;
+
 use Carp;
 require IO::File;
 require File::Basename;
@@ -1152,7 +731,7 @@ require Cwd;
 # will work on NFS (flock () may hang hard)
 my $locking = eval { flock STDOUT, 0; 1 };
 
-@DBD::File::Table::ISA = qw(DBI::SQL::Nano::Table);
+@DBD::File::Table::ISA = qw( DBI::DBD::SqlEngine::Table );
 
 # ====== FLYWEIGHT SUPPORT =====================================================
 
@@ -1186,8 +765,8 @@ sub file2table
 	$user_spec_file = 0;
 	}
 
-    (Cwd::abs_path ($dir) eq $meta->{f_dir} or $dir eq "./") and
-	$dir = "";
+    -d File::Spec->catdir ($meta->{f_dir}, $dir) or
+	croak (File::Spec->catdir ($meta->{f_dir}, $dir) . ": $!");
 
     !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
         $tbl = uc $tbl;
@@ -1195,7 +774,9 @@ sub file2table
         $tbl = lc $tbl;
     my $searchdir = File::Spec->file_name_is_absolute ($dir)
 	? $dir
-	: File::Spec->catdir ($meta->{f_dir}, $dir);
+	: Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
+    $searchdir eq $meta->{f_dir} and
+	$dir = "";
 
     unless ($user_spec_file) {
 	$file_is_table and $file = "$tbl$ext";

@@ -38,6 +38,9 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Merged some optimizations from SQL::Statement into DBI::SQL::Nano
     (Jens Rehsack)
   Added basic test for DBD::File (H.Merijn Brand, Jens Rehsack)
+  Extract dealing with Perl SQL engines from DBD::File into
+    DBI::DBD::SqlEngine for better subclassing of 3rd party non-db DBDs
+    (Jens Rehsack)
 
   Updated and clarified documentation for finish method (Tim Bunce).
   Changes to DBD::File for better English and hopefully better

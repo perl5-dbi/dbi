@@ -76,86 +76,32 @@ package DBD::DBM::db;
 $DBD::DBM::db::imp_data_size = 0;
 @DBD::DBM::db::ISA           = qw(DBD::File::db);
 
-# the ::db::STORE method is what gets called when you set
-# a lower-cased database handle attribute such as $dbh->{somekey}=$someval;
-#
-# STORE should check to make sure that "somekey" is a valid attribute name
-# but only if it is really one of our attributes (starts with dbm_ or foo_)
-# You can also check for valid values for the attributes if needed
-# and/or perform other operations
-#
-sub STORE ($$$)
+sub validate_STORE_attr
 {
     my ( $dbh, $attrib, $value ) = @_;
 
-    # use DBD::File's STORE unless its one of our own attributes
-    #
-    if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
-    {
-        # carp "Usage of '$attrib' is depreciated, use 'dbm_$attrib' instead" if( $^W );
-        $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
-    }
     if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
         ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
         # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
         $attrib = $newattrib;
     }
-    return $dbh->SUPER::STORE( $attrib, $value ) unless ( 0 == index( $attrib, 'dbm_' ) );
 
-    # throw an error if it has our prefix but isn't a valid attr name
-    #
-    if (
-           $dbh->{dbm_valid_attrs}->{$attrib}
-        or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
-       )
-    {
-        # check here if you need to validate values
-        # or conceivably do other things as well
-        #
-        $dbh->{$attrib} = $value;
-        return 1;
-    }
-    else
-    {
-        # throw an error if it has our prefix but isn't a valid attr name
-        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'!" );
-    }
+    return $dbh->SUPER::validate_STORE_attr( $attrib, $value );
 }
 
-# and FETCH is done similar to STORE
-#
-sub FETCH ($$)
+sub validate_FETCH_attr
 {
     my ( $dbh, $attrib ) = @_;
 
-    if ( ( $attrib eq lc($attrib) ) && ( -1 == index( $attrib, "_" ) ) )
-    {
-        $attrib = "dbm_" . $attrib;    # backward compatibility - would like to carp here
-    }
     if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
         ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
         # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
         $attrib = $newattrib;
     }
-    return $dbh->SUPER::FETCH($attrib) unless ( 0 == index( $attrib, 'dbm_' ) );
 
-    if (
-           $dbh->{dbm_valid_attrs}->{$attrib}
-        or $attrib eq 'dbm_valid_attrs'    # gotta start somewhere :-)
-       )
-    {
-        # check here if you need to validate values
-        # or conceivably do other things as well
-        #
-        return $dbh->{$attrib};
-    }
-    else
-    {
-        # throw an error if it has our prefix but isn't a valid attr name
-        return $dbh->set_err( $DBI::stderr, "Invalid attribute '$attrib'" );
-    }
+    return $dbh->SUPER::validate_FETCH_attr($attrib);
 }
 
 sub set_versions
@@ -185,17 +131,17 @@ sub init_valid_attributes
                                 dbm_version        => 1,    # verbose DBD::DBM version
                                 dbm_store_metadata => 1,    # column names, etc.
                                 dbm_berkeley_flags => 1,    # for BerkeleyDB
-				dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
-				dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
-				dbm_meta           => 1,    # DBD::DBM public access for f_meta
-				dbm_tables         => 1,    # DBD::DBM public access for f_meta
+                                dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
+                                dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
+                                dbm_meta           => 1,    # DBD::DBM public access for f_meta
+                                dbm_tables         => 1,    # DBD::DBM public access for f_meta
                               };
     $dbh->{dbm_readonly_attrs} = {
-                                dbm_version        => 1,    # verbose DBD::DBM version
-				dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
-				dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
-				dbm_meta           => 1,    # DBD::DBM public access for f_meta
-    };
+                                   dbm_version        => 1,    # verbose DBD::DBM version
+                                   dbm_valid_attrs    => 1,    # DBD::DBM::db valid attrs
+                                   dbm_readonly_attrs => 1,    # DBD::DBM::db r/o attrs
+                                   dbm_meta           => 1,    # DBD::DBM public access for f_meta
+                                 };
 
     $dbh->{dbm_meta} = "dbm_tables";
 
@@ -214,12 +160,13 @@ sub init_default_attributes
 
 sub get_dbm_versions
 {
-    my ($dbh, $table) = @_;
+    my ( $dbh, $table ) = @_;
     $table ||= '';
 
-    my $class = $dbh->FETCH ("ImplementorClass");
+    my $class = $dbh->{ImplementorClass};
     $class =~ s/::db$/::Table/;
-    my (undef, $meta) = $class->get_table_meta( $dbh, $table, 1 );
+    $table and
+	my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
     $meta or ( $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table ) );
 
     my $dver;
@@ -228,18 +175,17 @@ sub get_dbm_versions
     eval $eval_str;
     my $dtype = $meta->{dbm_type};
     $dtype .= ' (' . $dver . ')' if $dver;
-    if( $meta->{dbm_mldbm} )
+    if ( $meta->{dbm_mldbm} )
     {
-	$dtype .= ' + MLDBM';
-	$eval_str = '$dver = $MLDBM::VERSION';
-	eval $eval_str;
-	$dtype .= ' (' . $dver . ')' if $dver;
-	$dtype .= ' + ' . $meta->{dbm_mldbm};
-	$eval_str = sprintf( 'require MLDBM::Serializer::%s;' .
-	                     '$dver = $MLDBM::Serializer::%s::VERSION',
-			     $meta->{dbm_mldbm}, $meta->{dbm_mldbm} );
-	eval $eval_str;
-	$dtype .= ' (' . $dver . ')' if $dver;
+        $dtype .= ' + MLDBM';
+        $eval_str = '$dver = $MLDBM::VERSION';
+        eval $eval_str;
+        $dtype .= ' (' . $dver . ')' if $dver;
+        $dtype .= ' + ' . $meta->{dbm_mldbm};
+        $eval_str = sprintf( 'require MLDBM::Serializer::%s;' . '$dver = $MLDBM::Serializer::%s::VERSION',
+                             $meta->{dbm_mldbm}, $meta->{dbm_mldbm} );
+        eval $eval_str;
+        $dtype .= ' (' . $dver . ')' if $dver;
     }
     return sprintf( "%s using %s", $dbh->{dbm_version}, $dtype );
 }
@@ -258,17 +204,7 @@ sub FETCH
 {
     my ( $sth, $attr ) = @_;
 
-    # Being a bit dirty here, as neither SQL::Statement::Structure nor
-    # DBI::SQL::Nano::Statement_ does not offer an interface to the
-    # required data
-    my @colnames;
-    if ( $sth->{f_stmt}->isa('SQL::Statement') )
-    {
-        my $struct = $sth->{f_stmt}{struct} || {};
-        my @coldefs = @{ $struct->{column_defs} || [] };
-        @colnames = map { $_->{name} || $_->{value} } @coldefs;
-    }
-    @colnames = $sth->{f_stmt}->column_names() unless (@colnames);
+    my @colnames = $sth->sql_get_colnames();
 
     $attr eq "TYPE" and return [ map { "CHAR" } @colnames ];
 
@@ -408,8 +344,8 @@ sub open_file
         my @tie_args;
         if ( $meta->{dbm_type} eq 'BerkeleyDB' )
         {
-            my $DB_CREATE = 1;     # but import constants if supplied
-            my $DB_RDONLY = 16;    #
+            my $DB_CREATE = BerkeleyDB::DB_CREATE();
+            my $DB_RDONLY = BerkeleyDB::DB_RDONLY();
             my %tie_flags;
             if ( my $f = $meta->{dbm_berkeley_flags} )
             {
@@ -464,10 +400,10 @@ sub open_file
         $col_names = [ split /,/, $col_names ] if ( ref $col_names ne 'ARRAY' );
         if ( $meta->{dbm_store_metadata} and not $meta->{hash}->{"_metadata \0"} )
         {
-	    $schema or $schema = '';
+            $schema or $schema = '';
             $meta->{hash}->{"_metadata \0"} = join( "",
-                                                    "<dbd_metadata>", "<schema>$schema</schema>",
-                                                    "<col_names>", join( ",", @{$col_names} ) . "</col_names>",
+                                                    "<dbd_metadata>", "<schema>$schema</schema>", "<col_names>",
+                                                    join( ",", @{$col_names} ) . "</col_names>",
                                                     "</dbd_metadata>" );
         }
 
@@ -523,15 +459,17 @@ sub fetch_row ($$)
 sub insert_new_row ($$$)
 {
     my ( $self, $data, $row_aryref ) = @_;
-    my $meta = $self->{meta};
-    my $ncols = scalar(@{$meta->{col_names}});
-    my $nitems = scalar(@{$row_aryref});
-    $ncols == $nitems or
-        croak "You tried to insert $nitems, but table is created with $ncols columns";
+    my $meta   = $self->{meta};
+    my $ncols  = scalar( @{ $meta->{col_names} } );
+    my $nitems = scalar( @{$row_aryref} );
+    $ncols == $nitems
+      or croak "You tried to insert $nitems, but table is created with $ncols columns";
 
-    my $key  = shift @$row_aryref;
-    exists($meta->{hash}->{$key}) and
-	croak "Row with PK '$key' already exists";
+    my $key = shift @$row_aryref;
+    my $exists;
+    eval { $exists = exists( $meta->{hash}->{$key} ); };
+    $exists
+      and croak "Row with PK '$key' already exists";
 
     if ( $meta->{dbm_mldbm} )
     {
@@ -553,14 +491,15 @@ sub push_names ($$$)
     my $meta = $self->{meta};
 
     # some sanity checks ...
-    my $ncols = scalar( @$row_aryref );
+    my $ncols = scalar(@$row_aryref);
     $ncols < 2 and croak "At least 2 columns are required for DBD::DBM tables ...";
-    !$meta->{dbm_mldbm} and $ncols > 2 and
-	croak "Without serializing with MLDBM only 2 columns are supported, you give $ncols";
+    !$meta->{dbm_mldbm}
+      and $ncols > 2
+      and croak "Without serializing with MLDBM only 2 columns are supported, you give $ncols";
     $meta->{col_names} = $row_aryref;
     return unless $meta->{dbm_store_metadata};
 
-    my $stmt      = $data->{f_stmt};
+    my $stmt      = $data->{sql_stmt};
     my $col_names = join( ',', @{$row_aryref} );
     my $schema    = $data->{Database}->{Statement};
     $schema =~ s/^[^\(]+\((.+)\)$/$1/s;

@@ -31,7 +31,7 @@ BEGIN
     $VERSION = sprintf( "1.%06d", q$Revision$ =~ /(\d+)/o );
 
     $versions->{nano_version} = $VERSION;
-    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.27_01' } )
+    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.27_02' } )
     {
         @DBI::SQL::Nano::Statement::ISA = qw(DBI::SQL::Nano::Statement_);
         @DBI::SQL::Nano::Table::ISA     = qw(DBI::SQL::Nano::Table_);
@@ -287,7 +287,7 @@ sub execute
     my $command = $self->{command};
     ( $self->{'NUM_OF_ROWS'}, $self->{'NUM_OF_FIELDS'}, $self->{'data'}, ) = $self->$command( $data, $params );
     $self->{NAME} ||= $self->{column_names};
-    $self->{'NUM_OF_ROWS'} || '0E0';
+    return $self->{'NUM_OF_ROWS'} || '0E0';
 }
 
 my $enoentstr = "Cannot open .*\(" . Errno::ENOENT . "\)";

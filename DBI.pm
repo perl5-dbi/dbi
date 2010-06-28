@@ -349,7 +349,7 @@ my $dbd_prefix_registry = {
   sapdb_   => { class => 'DBD::SAP_DB',		},
   solid_   => { class => 'DBD::Solid',		},
   sponge_  => { class => 'DBD::Sponge',		},
-  sql_     => { class => 'SQL::Statement',	},
+  sql_     => { class => 'DBI::DBD::SqlEngine',	},
   sqlite_  => { class => 'DBD::SQLite',  	},
   syb_     => { class => 'DBD::Sybase',		},
   sys_     => { class => 'DBD::Sys',		},

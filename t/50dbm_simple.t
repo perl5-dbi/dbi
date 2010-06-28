@@ -244,11 +244,15 @@ sub do_test {
             skip "prepare failed: " . $dbh->errstr || 'unknown error',
 	        ($sql =~ /SELECT/) ? 2 : 1;
 	}
-        my @bind = split /,/, $comment if $sth->{NUM_OF_PARAMS};
+	my @bind;
+	if($sth->{NUM_OF_PARAMS})
+	{
+	    @bind = split /,/, $comment;
+	}
         # if execute errors we will handle it, not PrintError:
         $sth->{PrintError} = 0;
         my $n = $sth->execute(@bind);
-        if ($sth->err and $sql !~ /^DROP/ ) {
+        if ($sth->errstr and $sql !~ /^DROP/ ) {
             skip "execute failed: " . $sth->errstr || 'unknown error',
 	        ($sql =~ /^(?:SELECT|UPDATE|DELETE)/) ? 2 : 1;
         }

@@ -47,6 +47,7 @@ lib/DBI/Const/GetInfoReturn.pm	GetInfo return values plus tools based on standar
 lib/DBI/Const/GetInfoType.pm	GetInfo type code data based on standards
 lib/DBI/DBD.pm			Some basic help for people writing DBI drivers
 lib/DBI/DBD/Metadata.pm		Metadata tools for people writing DBI drivers
+lib/DBI/DBD/SqlEngine.pm	SQL Engine for drivers without an own
 lib/DBI/FAQ.pm			The DBI FAQ in module form for perldoc
 lib/DBI/Gofer/Execute.pm        Execution logic for DBD::Gofer server
 lib/DBI/Gofer/Request.pm        Request object from DBD::Gofer
