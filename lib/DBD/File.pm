@@ -33,7 +33,7 @@ use warnings;
 
 use base qw(DBI::DBD::SqlEngine);
 use Carp;
-use vars qw( @ISA $VERSION $drh );
+use vars qw(@ISA $VERSION $drh);
 
 $VERSION = "0.39";
 
@@ -173,7 +173,7 @@ sub data_sources ($;$)
     delete $attrs{f_dir};
     my $dsnextra = join ";", map { $_ . "=" . dsn_quote ($attrs{$_}) } keys %attrs;
     my ($dirh) = Symbol::gensym ();
-    unless (opendir ($dirh, $dir)) {
+    unless (opendir $dirh, $dir) {
 	$drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
 	return;
 	}
@@ -294,7 +294,7 @@ sub init_default_attributes
     my $valid_attrs = $drv_prefix . "valid_attrs";
     my $ro_attrs = $drv_prefix . "readonly_attrs";
 
-    my @comp_attrs = qw();
+    my @comp_attrs = ();
     if (exists $dbh->{$drv_prefix . "meta"}) {
 	my $attr = $dbh->{$drv_prefix . "meta"};
 	defined $attr and defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
@@ -365,20 +365,23 @@ sub get_f_versions
 
     my $class = $dbh->{ImplementorClass};
     $class =~ s/::db$/::Table/;
-    $table and
-	my ( undef, $meta ) = $class->get_table_meta ($dbh, $table, 1);
-    $meta or ($meta = {} and $class->bootstrap_table_meta ($dbh, $meta, $table));
+    my (undef, $meta);
+    $table and (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
+    unless ($meta) {
+	$meta = {};
+	$class->bootstrap_table_meta ($dbh, $meta, $table);
+	}
 
     my $dver;
     my $eval_str;
-    $eval_str = sprintf ('$dver = $%s::VERSION', "IO::File");
+    $eval_str = sprintf '$dver = $%s::VERSION', "IO::File";
     eval $eval_str;
     my $dtype = "IO::File";
-    $dtype .= ' (' . $dver . ')' if $dver;
+    $dver and $dtype .= " ($dver)";
 
     $meta->{f_encoding} and $dtype .= " + " . $meta->{f_encoding} . " encoding";
 
-    return sprintf ("%s using %s", $dbh->{f_version}, $dtype);
+    return sprintf "%s using %s", $dbh->{f_version}, $dtype;
     } # get_f_versions
 
 sub get_single_table_meta
@@ -494,12 +497,11 @@ sub clear_file_meta
 
 sub get_avail_tables
 {
-    my $dbh  = $_[0];
+    my $dbh = shift;
 
     my @tables = $dbh->SUPER::get_avail_tables ();
-
-    my $dir  = $dbh->{f_dir};
-    my $dirh = Symbol::gensym ();
+    my $dir    = $dbh->{f_dir};
+    my $dirh   = Symbol::gensym ();
 
     unless (opendir $dirh, $dir) {
 	$dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
@@ -520,9 +522,8 @@ sub get_avail_tables
 	$seen{defined $schema ? $schema : "\0"}{$tbl}++ or
 	    push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
 	}
-    unless (closedir $dirh) {
+    closedir $dirh or
 	$dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
-	}
 
     return @tables;
     } # get_avail_tables
@@ -1414,7 +1415,7 @@ Signature:
 Returns the value of a meta attribute set for a specific table, if any.
 See L<f_meta> for the possible attributes.
 
-A table name of C<'.'> (single dot) is interpreted as the default table.
+A table name of C<"."> (single dot) is interpreted as the default table.
 This will retrieve the appropriate attribute globally from the dbh.
 This has the same restrictions as C<< $dbh->{$attrib} >>.
 
@@ -1431,7 +1432,7 @@ Signature:
 Sets the value of a meta attribute set for a specific table.
 See L<f_meta> for the possible attributes.
 
-A table name of C<'.'> (single dot) is interpreted as the default table.
+A table name of C<"."> (single dot) is interpreted as the default table.
 This causes in setting the appropriate attribute globally for the dbh.
 This has the same restrictions as C<< $dbh->{$attrib} = $value >>.
 
@@ -1530,9 +1531,9 @@ computed when initializing the data area:
 
 =back
 
-For DBD::CSV tables this means, once opened 'foo.csv' as table named 'foo',
-another table named 'foo' accessing the file 'foo.txt' cannot be opened.
-Accessing 'foo' will always access the file 'foo.csv' in memorized
+For DBD::CSV tables this means, once opened "foo.csv" as table named "foo",
+another table named "foo" accessing the file "foo.txt" cannot be opened.
+Accessing "foo" will always access the file "foo.csv" in memorized
 C<f_dir>, locking C<f_lockfile> via memorized C<f_lock>.
 
 You can use L<f_clear_meta> or the C<f_file> attribute for a specific table
