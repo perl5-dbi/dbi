@@ -746,7 +746,7 @@ sub execute
 
 sub finish
 {
-    my $sth = shift;
+    my $sth = $_[0];
     $sth->SUPER::STORE( Active => 0 );
     delete $sth->{sql_stmt}{data};
     return 1;
@@ -754,7 +754,7 @@ sub finish
 
 sub fetch ($)
 {
-    my $sth  = shift;
+    my $sth  = $_[0];
     my $data = $sth->{sql_stmt}{data};
     if ( !$data || ref $data ne "ARRAY" )
     {
@@ -779,8 +779,6 @@ no warnings 'once';
 *fetchrow_arrayref = \&fetch;
 
 use warnings;
-
-my %unsupported_attrib = map { $_ => 1 } qw( TYPE PRECISION );
 
 sub sql_get_colnames
 {
@@ -807,21 +805,23 @@ sub sql_get_colnames
 sub FETCH ($$)
 {
     my ( $sth, $attrib ) = @_;
-    exists $unsupported_attrib{$attrib}
-      and return;    # Workaround for a bug in DBI 0.93
+
     $attrib eq "NAME"
       and return [ $sth->sql_get_colnames() ];
+
     if ( $attrib eq "NULLABLE" )
     {
         my @colnames = $sth->sql_get_colnames();
         @colnames or return;
         return [ (1) x @colnames ];
     }
+
     if ( $attrib eq lc $attrib )
     {
         # Private driver attributes are lower cased
         return $sth->{$attrib};
     }
+
     # else pass up to DBI to handle
     return $sth->SUPER::FETCH($attrib);
 }    # FETCH
@@ -829,11 +829,8 @@ sub FETCH ($$)
 sub STORE ($$$)
 {
     my ( $sth, $attrib, $value ) = @_;
-    exists $unsupported_attrib{$attrib}
-      and return;    # Workaround for a bug in DBI 0.93
-    if ( $attrib eq lc $attrib )
+    if ( $attrib eq lc $attrib ) # Private driver attributes are lower cased
     {
-        # Private driver attributes are lower cased
         $sth->{$attrib} = $value;
         return 1;
     }

@@ -369,8 +369,6 @@ sub get_f_versions
 	my ( undef, $meta ) = $class->get_table_meta ($dbh, $table, 1);
     $meta or ($meta = {} and $class->bootstrap_table_meta ($dbh, $meta, $table));
 
-    my $dbd_file_verinfo = $dbh->{f_version};
-
     my $dver;
     my $eval_str;
     $eval_str = sprintf ('$dver = $%s::VERSION', "IO::File");
