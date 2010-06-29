@@ -806,8 +806,13 @@ sub FETCH ($$)
 {
     my ( $sth, $attrib ) = @_;
 
-    $attrib eq "NAME"
-      and return [ $sth->sql_get_colnames() ];
+    if ( $attrib =~ m/^NAME(?:|_lc|_uc)$/ )
+    {
+	my @cn = $sth->sql_get_colnames();
+	return [ $attrib eq "NAME_lc" ? map { lc $_ } @cn
+	       : $attrib eq "NAME_uc" ? map { uc $_ } @cn
+	       : @cn ];
+    }
 
     if ( $attrib eq "NULLABLE" )
     {
