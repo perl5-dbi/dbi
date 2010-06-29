@@ -703,19 +703,21 @@ sub FETCH
 
 	if (exists $sth->{ImplementorClass} &&
 	    exists $sth->{sql_stmt} &&
-	    $sth->{sql_stmt}->isa("SQL::Statement")) {
+	    $sth->{sql_stmt}->isa ("SQL::Statement")) {
+
 	    # fill overall_defs unless we know
-	    unless (exists ($sth->{f_overall_defs}) && ref $sth->{f_overall_defs}) {
-		my $all_meta = $sth->{Database}->func( "*", "table_defs", "get_file_meta" );
+	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
+		my $all_meta =
+		    $sth->{Database}->func ("*", "table_defs", "get_file_meta");
 		while (my ($tbl, $meta) = each %$all_meta) {
-		    next unless exists $meta->{table_defs} && ref $meta->{table_defs};
-		    foreach my $col (keys %{$meta->{table_defs}{columns}}) {
-			$sth->{f_overall_defs}{$col} = $meta->{table_defs}{columns}{$col};
+		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
+		    foreach (keys %{$meta->{table_defs}{columns}}) {
+			$sth->{f_overall_defs}{$_} = $meta->{table_defs}{columns}{$_};
 			}
 		    }
 		}
 
-	    my @colnames = $sth->sql_get_colnames();
+	    my @colnames = $sth->sql_get_colnames ();
 
 	    $attr eq "TYPE"      and
 		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
@@ -734,7 +736,7 @@ sub FETCH
 	}
 
     return $sth->SUPER::FETCH ($attr);
-}
+    } # FETCH
 
 # ====== SQL::STATEMENT ========================================================
 
@@ -1053,9 +1055,8 @@ sub new
 
     # Being a bit dirty here, as SQL::Statement::Structure does not offer
     # me an interface to the data I want
-    if ($flags->{createMode} && $data->{sql_stmt}{table_defs}) {
+    $flags->{createMode} && $data->{sql_stmt}{table_defs} and
 	$meta->{table_defs} = $data->{sql_stmt}{table_defs};
-	}
 
     $className->open_file ($meta, $attrs, $flags);
 
