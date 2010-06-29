@@ -2131,8 +2131,8 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                     else av = newAV();
                     i = DBIc_NUM_FIELDS(imp_sth);
 		    if (DBIc_TRACE_LEVEL(imp_sth) >= 10)
-			PerlIO_printf(DBILOGFP,"    <- FETCH $h->{%s} from $h->{NAME} with $h->{NUM_OF_FIELDS} = %d"
-			                       " and %ld entries in $->{NAME}\n",
+			PerlIO_printf(DBILOGFP,"       FETCH $h->{%s} from $h->{NAME} with $h->{NUM_OF_FIELDS} = %d"
+			                       " and %ld entries in $h->{NAME}\n",
 				neatsvpv(keysv,0), i, AvFILL(name_av)+1);
                     assert((i == -1 && 0 == AvFILL(name_av)+1) || (i == AvFILL(name_av)+1));
                     while (--i >= 0) {
