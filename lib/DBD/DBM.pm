@@ -204,17 +204,15 @@ sub FETCH
 {
     my ( $sth, $attr ) = @_;
 
-    my @colnames = $sth->sql_get_colnames();
+    if( $attr eq "NULLABLE" )
+    {
+	my @colnames = $sth->sql_get_colnames();
 
-    $attr eq "TYPE" and return [ map { "CHAR" } @colnames ];
-
-    # XXX not really known ...
-    # $attr eq "PRECISION" and
-
-    # XXX only BerkeleyDB fails having NULL values for non-MLDBM databases,
-    #     none accept it for key - but it requires more knowledge between
-    #     queries and tables storage to return fully correct information
-    $attr eq "NULLABLE" and return [ map { 0 } @colnames ];
+	# XXX only BerkeleyDB fails having NULL values for non-MLDBM databases,
+	#     none accept it for key - but it requires more knowledge between
+	#     queries and tables storage to return fully correct information
+	$attr eq "NULLABLE" and return [ map { 0 } @colnames ];
+    }
 
     return $sth->SUPER::FETCH($attr);
 }    # FETCH

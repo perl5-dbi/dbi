@@ -688,6 +688,54 @@ use vars qw(@ISA $imp_data_size);
 @DBD::File::st::ISA           = qw(DBI::DBD::SqlEngine::st);
 $DBD::File::st::imp_data_size = 0;
 
+my %supported_attrs = (
+    TYPE      => 1,
+    PRECISION => 1,
+    NULLABLE  => 1,
+    );
+
+sub FETCH
+{
+    my ($sth, $attr) = @_;
+
+    if ($supported_attrs{$attr}) {
+	my $stmt = $sth->{sql_stmt};
+
+	if (exists $sth->{ImplementorClass} &&
+	    exists $sth->{sql_stmt} &&
+	    $sth->{sql_stmt}->isa("SQL::Statement")) {
+	    # fill overall_defs unless we know
+	    unless (exists ($sth->{f_overall_defs}) && ref $sth->{f_overall_defs}) {
+		my $all_meta = $sth->{Database}->func( "*", "table_defs", "get_file_meta" );
+		while (my ($tbl, $meta) = each %$all_meta) {
+		    next unless exists $meta->{table_defs} && ref $meta->{table_defs};
+		    foreach my $col (keys %{$meta->{table_defs}{columns}}) {
+			$sth->{f_overall_defs}{$col} = $meta->{table_defs}{columns}{$col};
+			}
+		    }
+		}
+
+	    my @colnames = $sth->sql_get_colnames();
+
+	    $attr eq "TYPE"      and
+		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
+			    @colnames ];
+
+	    $attr eq "PRECISION" and
+		return [ map { $sth->{f_overall_defs}{$_}{data_length} || 0 }
+			    @colnames ];
+
+	    $attr eq "NULLABLE"  and
+		return [ map { ( grep m/^NOT NULL$/ =>
+			    @{ $sth->{f_overall_defs}{$_}{constraints} || [] } )
+			       ? 0 : 1 }
+			    @colnames ];
+	    }
+	}
+
+    return $sth->SUPER::FETCH ($attr);
+}
+
 # ====== SQL::STATEMENT ========================================================
 
 package DBD::File::Statement;
@@ -1002,6 +1050,12 @@ sub new
     my ($tblnm, $meta) = $className->get_table_meta ($dbh, $attrs->{table}, 1) or
         croak "Cannot find appropriate file for table '$attrs->{table}'";
     $attrs->{table} = $tblnm;
+
+    # Being a bit dirty here, as SQL::Statement::Structure does not offer
+    # me an interface to the data I want
+    if ($flags->{createMode} && $data->{sql_stmt}{table_defs}) {
+	$meta->{table_defs} = $data->{sql_stmt}{table_defs};
+	}
 
     $className->open_file ($meta, $attrs, $flags);
 

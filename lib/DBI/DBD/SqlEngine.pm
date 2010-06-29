@@ -245,6 +245,8 @@ sub prepare ($$;@)
             $sth->STORE( "sql_stmt", $stmt );
             $sth->STORE( "sql_params", [] );
             $sth->STORE( "NUM_OF_PARAMS", scalar( $stmt->params() ) );
+	    my @colnames = $sth->sql_get_colnames();
+	    $sth->STORE( "NUM_OF_FIELDS", scalar @colnames );
         }
     }
     return $sth;
@@ -793,11 +795,13 @@ sub sql_get_colnames
     }
     elsif ( $sth->{sql_stmt}->isa('SQL::Statement') )
     {
-        my $struct  = $sth->{sql_stmt}{struct} || {};
-	my @coldefs = @{ $struct->{column_defs} || [] };
+        my $stmt    = $sth->{sql_stmt} || {};
+	my @coldefs = @{ $stmt->{column_defs} || [] };
           @colnames = map { $_->{name} || $_->{value} } @coldefs;
     }
     @colnames = $sth->{sql_stmt}->column_names() unless (@colnames);
+
+    @colnames = () if( grep { m/\*/ } @colnames );
 
     return @colnames;
 }
@@ -805,6 +809,8 @@ sub sql_get_colnames
 sub FETCH ($$)
 {
     my ( $sth, $attrib ) = @_;
+
+=pod
 
     if ( $attrib =~ m/^NAME(?:|_lc|_uc)$/ )
     {
@@ -814,12 +820,19 @@ sub FETCH ($$)
 	       : @cn ];
     }
 
-    if ( $attrib eq "NULLABLE" )
-    {
-        my @colnames = $sth->sql_get_colnames();
-        @colnames or return;
-        return [ (1) x @colnames ];
-    }
+=cut
+
+    $attrib eq "NAME" and return [ $sth->sql_get_colnames() ];
+
+    $attrib eq "TYPE"      and return [ ("CHAR") x scalar $sth->sql_get_colnames() ];
+    $attrib eq "PRECISION" and return [ (0) x scalar $sth->sql_get_colnames() ];
+    $attrib eq "NULLABLE"  and return [ (1) x scalar $sth->sql_get_colnames() ];
+#   if ( $attrib eq "NULLABLE" )
+#   {
+#       my @colnames = ;
+#       @colnames or return;
+#       return [ (1) x @colnames ];
+#   }
 
     if ( $attrib eq lc $attrib )
     {
