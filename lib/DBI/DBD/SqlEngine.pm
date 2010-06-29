@@ -768,9 +768,9 @@ sub fetch ($)
         $sth->finish;
         return;
     }
-    if ( $sth->FETCH("ChopBlanks") )
-    {
-        $_ && $_ =~ s/\s+$// for @$dav;
+    if ( $sth->FETCH("ChopBlanks") )	# XXX: (TODO) Only chop on CHAR fields,
+    {					# not on VARCHAR or NUMERIC (see DBI docs)
+        $_ && $_ =~ s/ +$// for @$dav;
     }
     return $sth->_set_fbav($dav);
 }    # fetch
