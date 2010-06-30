@@ -892,7 +892,7 @@ use warnings;
 
 =head1 NAME
 
-DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL engine
+DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine
 
 =head1 SYNOPSIS
 
@@ -948,20 +948,21 @@ DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL engine
 
 =head1 DESCRIPTION
 
-DBI::DBD::SqlEngine abstracts the usage of SQL engines from the DBD. DBD
-authors can concentrate themselves to the data retrieving they want to
+DBI::DBD::SqlEngine abstracts the usage of SQL engines from the
+DBD. DBD authors can concentrate on the data retrieval they want to
 provide.
 
-It's strongly recommended to read L<DBD::File::Developers> and
+It is strongly recommended that you read L<DBD::File::Developers> and
 L<DBD::File::Roadmap>, because many of the DBD::File API is provided
 by DBI::DBD::SqlEngine.
 
-Currently the API of DBI::DBD::SqlEngine is experimental and will move
-fast to provide the table meta data basics like DBD::File.
+Currently the API of DBI::DBD::SqlEngine is experimental and will
+likely change in the near future to provide the table meta data basics
+like DBD::File.
 
 =head1 SUPPORT
 
-You can find documentation for this module and with the perldoc command.
+You can find documentation for this module with the perldoc command.
 
     perldoc DBI::DBD::SqlEngine
 
@@ -994,20 +995,21 @@ L<http://search.cpan.org/dist/DBI/>
 For questions about installation or usage, please ask on the
 dbi-dev@perl.org mailing list.
 
-If you have a bug report, a patch, a suggestion, please open
-a new report ticket at CPAN, if there isn't already a one for
+If you have a bug report, patch or suggestion, please open
+a new report ticket on CPAN, if there is not already one for
 the issue you want to report. Of course, you can mail any of the
-module maintainers, but you'll be sure that you're report will
-not be "forgotten" or reach an (temporarily) inactive maintainer.
-Report tickets should contain a detailed description of the
-bug or enhancement request you want to report and at least an
-easy to verify and use test to reproduce the issue and verify the
-applied fix. Patches are always welcome, too.
+module maintainers, but it is less likely to be missed if
+it is reported on RT.
+
+Report tickets should contain a detailed description of the bug or
+enhancement request you want to report and at least an easy way to
+verify/reproduce the issue and any supplied fix. Patches are always
+welcome, too.
 
 =head1 ACKNOWLEDGEMENTS
 
 Thanks to Tim Bunce, Martin Evans and H.Merijn Brand for their continued
-support while writing on the DBD::File, DBD::DBM and DBD::AnyData updates.
+support while developing DBD::File, DBD::DBM and DBD::AnyData.
 Their support, hints and feedback helped to design and implement this
 module.
 
@@ -1018,7 +1020,7 @@ This module is currently maintained by
 H.Merijn Brand < h.m.brand at xs4all.nl > and
 Jens Rehsack  < rehsack at googlemail.com >
 
-The original authors of code parts are Jochen Wiedmann and Jeff Zucker.
+The original authors are Jochen Wiedmann and Jeff Zucker.
 
 =head1 COPYRIGHT AND LICENSE
 
