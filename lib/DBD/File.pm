@@ -110,49 +110,6 @@ use vars qw(@ISA $imp_data_size);
 @DBD::File::dr::ISA           = qw(DBI::DBD::SqlEngine::dr);
 $DBD::File::dr::imp_data_size = 0;
 
-sub connect ($$;$$$)
-{
-    my ($drh, $dbname, $user, $auth, $attr)= @_;
-
-    # create a 'blank' dbh
-    my $this = DBI::_new_dbh ($drh, {
-	Name		=> $dbname,
-	USER		=> $user,
-	CURRENT_USER	=> $user,
-	});
-
-    if ($this) {
-	# must be done first, because setting flags implicitly calls $dbdname::db->STORE
-	$this->func ("init_default_attributes");
-
-	my ($var, $val);
-	while (length $dbname) {
-	    if ($dbname =~ s/^((?:[^\\;]|\\.)*?);//s) {
-		$var    = $1;
-		}
-	    else {
-		$var    = $dbname;
-		$dbname = "";
-		}
-	    if ($var =~ m/^(.+?)=(.*)/s) {
-		$var = $1;
-		($val = $2) =~ s/\\(.)/$1/g;
-		$this->{$var} = $val;
-		}
-	    elsif ($var =~ m/^(.+?)=>(.*)/s) {
-		$var = $1;
-		($val = $2) =~ s/\\(.)/$1/g;
-		my $ref = eval $val;
-		$this->$var ($ref);
-		}
-	    }
-
-	$this->STORE (Active => 1);
-	}
-
-    return $this;
-    } # connect
-
 sub dsn_quote
 {
     my $str = shift;
@@ -317,21 +274,6 @@ sub init_default_attributes
 
     return $dbh;
     } # init_default_attributes
-
-sub sql_parser_object
-{
-    my $dbh    = shift;
-    my $parser = {
-	dialect    => "CSV",
-	RaiseError => $dbh->FETCH ("RaiseError"),
-	PrintError => $dbh->FETCH ("PrintError"),
-	};
-    my $sql_flags = $dbh->FETCH ("sql_flags") || {};
-    %$parser = (%$parser, %$sql_flags);
-    $parser = SQL::Parser->new ($parser->{dialect}, $parser);
-    $dbh->{sql_parser_object} = $parser;
-    return $parser;
-    } # cache_sql_parser_object
 
 sub disconnect ($)
 {
@@ -949,6 +891,20 @@ sub get_table_meta ($$$$;$)
     return ($table, $meta);
     } # get_table_meta
 
+my %reset_on_modify = (
+    f_file     => "f_fqfn",
+    f_dir      => "f_fqfn",
+    f_ext      => "f_fqfn",
+    f_lockfile => "f_fqfn", # forces new file2table call
+);
+
+sub register_reset_on_modify
+{
+    my ($proto, $extra_resets) = @_;
+    %reset_on_modify = (%reset_on_modify, %$extra_resets);
+    return;
+    } # register_reset_on_modify
+
 sub get_table_meta_attr
 {
     my ($class, $meta, $attrib) = @_;
@@ -956,13 +912,6 @@ sub get_table_meta_attr
 	return $meta->{$attrib};
     return;
     } # get_table_meta_attr
-
-my %reset_on_modify = (
-    f_file     => "f_fqfn",
-    f_dir      => "f_fqfn",
-    f_ext      => "f_fqfn",
-    f_lockfile => "f_fqfn", # forces new file2table call
-);
 
 sub set_table_meta_attr
 {
@@ -1126,7 +1075,7 @@ __END__
 
 =head1 NAME
 
-DBD::File - Base class for writing DBI drivers
+DBD::File - Base class for writing file based DBI drivers
 
 =head1 SYNOPSIS
 

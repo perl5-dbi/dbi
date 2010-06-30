@@ -257,6 +257,12 @@ sub file2table
     return $tbl;
 }
 
+my %reset_on_modify = (
+    dbm_type     => "dbm_tietype",
+    dbm_mldbm    => "dbm_tietype",
+);
+__PACKAGE__->register_reset_on_modify(\%reset_on_modify);
+
 sub bootstrap_table_meta
 {
     my ( $self, $dbh, $meta, $table ) = @_;
