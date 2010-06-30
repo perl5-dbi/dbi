@@ -1099,7 +1099,7 @@ or L<DBD::AnyData|DBD::AnyData> for example drivers.
 =head2 Metadata
 
 The following attributes are handled by DBI itself and not by DBD::File,
-thus they all work like expected:
+thus they all work as expected:
 
     Active
     ActiveKids
@@ -1115,19 +1115,19 @@ thus they all work like expected:
 
 =head4 AutoCommit
 
-Always on
+Always on.
 
 =head4 ChopBlanks
 
-Works
+Works.
 
 =head4 NUM_OF_FIELDS
 
-Valid after C<< $sth->execute >>
+Valid after C<< $sth->execute >>.
 
 =head4 NUM_OF_PARAMS
 
-Valid after C<< $sth->prepare >>
+Valid after C<< $sth->prepare >>.
 
 =head4 NAME
 
@@ -1135,9 +1135,9 @@ Valid after C<< $sth->execute >>; undef for Non-Select statements.
 
 =head4 NULLABLE
 
-Not really working, always returns an array ref of one's, as DBD::CSV
-doesn't verify input data. Valid after C<< $sth->execute >>; undef for
-Non-Select statements.
+Not really working, always returns an array ref of ones, as DBD::CSV
+does not verify input data. Valid after C<< $sth->execute >>; undef for
+non-select statements.
 
 =head3 The following DBI attributes and methods are not supported:
 
@@ -1164,9 +1164,9 @@ This attribute is used for setting the directory where the files are
 opened and it defaults to the current directory (F<.>). Usually you set
 it on the dbh but it may be overridden per table (see L<f_meta>).
 
-When the value for C<f_dir> is a relative path, it's converted into the
-appropriate absolute path name (based on the current working directory)
-when the dbh attribute is set.
+When the value for C<f_dir> is a relative path, it is converted into
+the appropriate absolute path name (based on the current working
+directory) when the dbh attribute is set.
 
 See L<KNOWN BUGS AND LIMITATIONS>.
 
@@ -1225,7 +1225,7 @@ C<undef>.
         f_ext    => ".csv/r",
         }) or die $DBI::errstr;
 
-By setting the schema you effect the results from the tables call:
+By setting the schema you affect the results from the tables call:
 
     my @tables = $dbh->tables ();
 
@@ -1282,9 +1282,9 @@ This is implemented using C<< binmode $fh, ":encoding(<f_encoding>)" >>.
 =head4 f_meta
 
 Private data area which contains information about the tables this
-module handles. Meta data of a table might not be available until the
+module handles. Table meta data might not be available until the
 table has been accessed for the first time e.g., by issuing a select
-on it however it's possible to pre-initialize attributes for each table
+on it however it is possible to pre-initialize attributes for each table
 you use.
 
 DBD::File recognizes the (public) attributes C<f_ext>, C<f_dir>,
@@ -1295,18 +1295,19 @@ destroyed or corrupted table.
 
 C<f_file> is an attribute applicable to table meta data only and you
 will not find a corresponding attribute in the dbh. Whilst it may be
-reasonable to have several tables with the same column names, it's not
-for the same file name. If you need access to the same file using
+reasonable to have several tables with the same column names, it is
+not for the same file name. If you need access to the same file using
 different table names, use C<SQL::Statement> as the SQL engine and the
 C<AS> keyword:
 
     SELECT * FROM tbl AS t1, tbl AS t2 WHERE t1.id = t2.id
 
-C<f_file> can be an absolute path name or a relative path name. If
-it's relative, it's interpreted as being relative to the C<f_dir>
-attribute of the table meta data. When C<f_file> is set DBD::File
-will use C<f_file> as specified and will not attempt to work out an
-alternative for C<f_file> using the C<table name> and C<f_ext> attribute.
+C<f_file> can be an absolute path name or a relative path name but if
+it is relative, it is interpreted as being relative to the C<f_dir>
+attribute of the table meta data. When C<f_file> is set DBD::File will
+use C<f_file> as specified and will not attempt to work out an
+alternative for C<f_file> using the C<table name> and C<f_ext>
+attribute.
 
 While C<f_meta> is a private and readonly attribute (which means, you
 cannot modify it's values), derived drivers might provide restricted
@@ -1318,16 +1319,16 @@ C<dbm_tables> for L<DBD::DBM>.
 
 Do not modify any of these private attributes unless you understand
 the implications of doing so. The behavior of DBD::File and derived
-DBD's might be unpredictable when one or more of those attributes are
+DBDs might be unpredictable when one or more of those attributes are
 modified.
 
 =head4 sql_nano_version
 
-Contains the version of loaded DBI::SQL::Nano
+Contains the version of loaded DBI::SQL::Nano.
 
 =head4 sql_statement_version
 
-Contains the version of loaded SQL::Statement
+Contains the version of loaded SQL::Statement.
 
 =head4 sql_handler
 
@@ -1402,7 +1403,7 @@ of the SQL engine in use.
 Called in list context, f_versions will return an array containing each
 line as single entry.
 
-Some drivers might use the optional (table name) argument and modify some
+Some drivers might use the optional (table name) argument and modify
 version information related to the table (e.g. DBD::DBM provides storage
 backend information for the requested table, when it has a table name).
 
@@ -1436,8 +1437,8 @@ Signature:
 Sets the value of a meta attribute set for a specific table.
 See L<f_meta> for the possible attributes.
 
-A table name of C<"."> (single dot) is interpreted as the default table.
-This causes in setting the appropriate attribute globally for the dbh.
+A table name of C<"."> (single dot) is interpreted as the default table
+which will set the specified attribute globally for the dbh.
 This has the same restrictions as C<< $dbh->{$attrib} = $value >>.
 
 =head4 f_clear_meta
@@ -1479,7 +1480,7 @@ user).
 =item *
 
 The module stores details about the handled tables in a private area
-of the driver handle (C<$drh>). This data area isn't shared between
+of the driver handle (C<$drh>). This data area is not shared between
 different driver instances, so several C<< DBI->connect () >> calls will
 cause different table instances and private data areas.
 
