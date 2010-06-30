@@ -28,7 +28,7 @@ support.
 
 =item Transaction support
 
-While DBD::AnyData recommends explicitely committing by importing and
+While DBD::AnyData recommends explicitly committing by importing and
 exporting tables, DBD::File might be enhanced in a future version to allow
 transparent transactions using the temporary tables of SQL::Statement as
 shadow (dirty) table.
@@ -47,7 +47,7 @@ dictionaries, but you can have several dictionaries in one directory.
 
 =item SQL Engine selecting on connect
 
-Currently the SQL engine to use is choosen during the load of the module
+Currently the SQL engine to use is chosen during the load of the module
 L<DBI::SQL::Nano>. Ideally end users will be enabled to select the engine
 to use in C<< DBI->connect () >> with a special DBD::File attribute.
 
@@ -112,7 +112,7 @@ all emulation DBI needs (as getinfo, SQL engine handling, ...)
 
 Provide a DBD::File derived to walk with fixed table definitions through the
 file system to demonstrate how DBI / Pure Perl DBD's could handle databases
-with hierarchical structues.
+with hierarchical structures.
 
 =item DBD::Join
 

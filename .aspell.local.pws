@@ -1,7 +1,16 @@
-personal_ws-1.1 en_EN 110
+personal_ws-1.1 en_EN 121
+# checked files:
+# - lib/DBD/DBM.pm
+# - lib/DBD/File.pm
+# - lib/DBD/File/Developers.pod
+# - lib/DBD/File/Roadmap.pod
+# - lib/DBI/DBD/Metadata.pm
+# - lib/DBI/DBD/SqlEngine.pm
+# - lib/DBI/SQL/Nano.pm
 AIX
 ALRM
 Alzabo
+AnnoCPAN
 API
 APIs
 aren
@@ -40,11 +49,15 @@ dir
 doesn
 dr
 drh
+dsn
 DSN
 Dunlop
 EINTR
 eval
 filename
+getinfo
+GetInfo
+Goeldner
 googlemail
 GPL
 HandleError
@@ -60,6 +73,8 @@ isn
 iso
 JDBC
 Jochen
+JOINs
+jrehsack
 jzucker
 lang
 latin
@@ -71,6 +86,7 @@ LongReadLen
 LongTruncOk
 lookup
 lookups
+Makefile
 Mergl
 metadata
 microsoft
@@ -84,12 +100,14 @@ namespace
 Nano
 nl
 NULLABLE
+ODBC
 pag
 pre
+precompiled
 readonly
 refactoring
-Rehsack
 rehsack
+Rehsack
 serializer
 serializers
 Solaris
@@ -99,6 +117,7 @@ sth
 Storable
 subdirectories
 txt
+TypeInfo
 unrecognised
 usenet
 UTF

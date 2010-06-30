@@ -896,7 +896,7 @@ my %reset_on_modify = (
     f_dir      => "f_fqfn",
     f_ext      => "f_fqfn",
     f_lockfile => "f_fqfn", # forces new file2table call
-);
+    );
 
 sub register_reset_on_modify
 {

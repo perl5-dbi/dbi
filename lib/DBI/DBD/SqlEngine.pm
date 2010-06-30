@@ -892,7 +892,7 @@ use warnings;
 
 =head1 NAME
 
-DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL eninge
+DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL engine
 
 =head1 SYNOPSIS
 
@@ -949,7 +949,7 @@ DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL eninge
 =head1 DESCRIPTION
 
 DBI::DBD::SqlEngine abstracts the usage of SQL engines from the DBD. DBD
-authors can concentrate themself to the data retrieving they want to
+authors can concentrate themselves to the data retrieving they want to
 provide.
 
 It's strongly recommended to read L<DBD::File::Developers> and

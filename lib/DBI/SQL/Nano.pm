@@ -988,7 +988,7 @@ In contrast to SQL::Statement, temporary tables are not supported.
 
 Tim Bunce provided the original idea for this module, helped me out of the
 tangled trap of namespace, and provided help and advice all along the way.
-Although I wrote it from the ground up, it is based on Jochen Weidmann's
+Although I wrote it from the ground up, it is based on Jochen Wiedmann's
 original design of SQL::Statement, so much of the credit for the API goes
 to him.
 
