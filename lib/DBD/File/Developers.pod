@@ -82,7 +82,7 @@ initialized or from the derived class.
       return $drh;
   }
 
-It is not necessary to implement your own driver method, as long as
+It is not necessary to implement your own driver method as long as
 additional initialization (e.g. installing more private driver
 methods) is not required.  You do not need to call C<< setup_driver >>
 as DBD::File takes care of it.
@@ -127,13 +127,13 @@ recommended to override this method.
 Fetches an attribute of a DBI database object. Private handle attributes
 must have a prefix (this is mandatory). If a requested attribute is
 detected as a private attribute without a valid prefix, the driver prefix
-(further written as C<$drv_prefix>) is added.
+(written as C<$drv_prefix>) is added.
 
 The driver prefix is extracted from the attribute name and verified against
-C<< $dbh->{ $drv_prefix . "valid_attrs" } >> (when exists). If the
-requested attribute value isn't listed as valid attribute, this method
+C<< $dbh->{ $drv_prefix . "valid_attrs" } >> (when it exists). If the
+requested attribute value is not listed as a valid attribute, this method
 croaks. If the attribute is valid and readonly (listed in C<< $dbh->{
-$drv_prefix . "readonly_attrs" } >> when exists), a real copy of the
+$drv_prefix . "readonly_attrs" } >> when it exists), a real copy of the
 attribute value is returned. So it's not possible to modify
 C<f_valid_attrs> from outside of DBD::File::db or a derived class.
 
@@ -141,7 +141,7 @@ C<f_valid_attrs> from outside of DBD::File::db or a derived class.
 
 Stores a database private attribute. Private handle attributes must have a
 prefix (this is mandatory). If a requested attribute is detected as a private
-attribute without a valid prefix, the driver prefix (further written as
+attribute without a valid prefix, the driver prefix (written as
 C<$drv_prefix>) is added. If the database handle has an attribute
 C<${drv_prefix}_valid_attrs> - for attribute names which are not listed in
 that hash, this method croaks. If the database handle has an attribute
@@ -204,11 +204,11 @@ If C<drv_meta> is set, an attribute with the name in C<drv_meta> is
 initialized providing restricted read/write access to the meta data of the
 tables using C<DBD::File::TieTables> in the first (table) level and
 C<DBD::File::TieMeta> for the meta attribute level. C<DBD::File::TieTables>
-is using C<DBD::DRV::Table::get_table_meta> to initialize the second level
+uses C<DBD::DRV::Table::get_table_meta> to initialize the second level
 tied hash on FETCH/STORE. The C<DBD::File::TieMeta> class uses
 C<DBD::DRV::Table::get_table_meta_attr> to FETCH attribute values and
 C<DBD::DRV::Table::set_table_meta_attr> to STORE attribute values. This
-allows to map meta attributes for compatibility reasons.
+allows it to map meta attributes for compatibility reasons.
 
 =item get_versions
 
@@ -242,23 +242,24 @@ enough room to provide all relevant information.
 
 =item get_file_meta
 
-Retrieve an attribute from a table's meta information. Method signature is
-C<< get_file_meta ($dbh, $table, $attr) >>. This method is called by the
-injected db handle method C<< ${drv_prefix}get_meta >>.
+Retrieve an attribute from a table's meta information. The method
+signature is C<< get_file_meta ($dbh, $table, $attr) >>. This method
+is called by the injected db handle method C<< ${drv_prefix}get_meta
+>>.
 
 While get_file_meta allows C<$table> or C<$attr> to be a list of tables or
 attributes to retrieve, get_single_table_meta allows only one table name
 and only one attribute name. A table name of C<'.'> (single dot) is
-interpreted as the default table. This will retrieve the appropriate
+interpreted as the default table and this will retrieve the appropriate
 attribute globally from the dbh. This has the same restrictions as
 C<< $dbh->{$attrib} >>.
 
 get_file_meta allows C<'+'> and C<'*'> as wildcards for table names and
 C<$table> being a regular expression matching against the table names
-(evaluated without the default table). The table name C<'*'> is taken
-as I<all currently known tables, including the default one>. The table
-name C<'+'> is taken as I<all table names with names conform to ANSI
-file name restriction> (/^[_A-Za-z0-9]+$/).
+(evaluated without the default table). The table name C<'*'> is
+I<all currently known tables, including the default one>. The table
+name C<'+'> is I<all table names which conform to
+ANSI file name restrictions> (/^[_A-Za-z0-9]+$/).
 
 The table meta information is retrieved using the get_table_meta and
 get_table_meta_attr methods of the table class of the implementation.
@@ -267,11 +268,11 @@ get_table_meta_attr methods of the table class of the implementation.
 
 =item set_file_meta
 
-Sets an attribute in table's meta information. Method signature is
+Sets an attribute in a table's meta information. The method signature is
 C<< set_file_meta ($dbh, $table, $attr, $value) >>. This method is called
 by the injected db handle method C<< ${drv_prefix}set_meta >>.
 
-While set_file_meta allows C<$table> to be a list of tables or C<$attr>
+While set_file_meta allows C<$table> to be a list of tables and C<$attr>
 to be a hash of several attributes to set, set_single_table_meta allows
 only one table name and only one attribute name/value pair.
 
@@ -283,13 +284,13 @@ set_table_meta_attr methods of the table class of the implementation.
 
 =item clear_file_meta
 
-Clears all meta information cached about a table. Method signature is
+Clears all meta information cached about a table. The method signature is
 C<< clear_file_meta ($dbh, $table) >>. This method is called
 by the injected db handle method C<< ${drv_prefix}clear_meta >>.
 
 =item sql_parser_object
 
-Delivers an L<SQL::Parser> instance, when C<< sql_handler >> is set to
+Returns a L<SQL::Parser> instance, when C<< sql_handler >> is set to
 "SQL::Statement". The parser instance is stored in C<< sql_parser_object >>.
 
 It is not recommended to override this method.
@@ -301,11 +302,11 @@ the C<< Active >> attribute is set to 0.
 
 =item type_info_all
 
-Delivers the information about all supported types by DBD::File.
+Returns information about all the types supported by DBD::File.
 
 =item table_info
 
-Return a statement handle which is prepared to deliver information about
+Returns a statement handle which is prepared to deliver information about
 all known tables.
 
 =item list_tables
@@ -365,7 +366,7 @@ Alias for C<< fetch >>.
 
 Fetches statement handle attributes. Supported attributes (for full overview
 see L<DBI/Statement Handle Attributes>) are C<< NAME >> and C<< NULLABLE >>.
-Each column is returned being C<< NULLABLE >> which might be wrong depending
+Each column is returned as C<< NULLABLE >> which might be wrong depending
 on the derived backend storage. If the statement handle has private attributes,
 they can be fetched using this method, too. B<Note> that statement attributes
 are not associated with any table used in this statement.
@@ -394,7 +395,7 @@ Derives from DBI::SQL::Nano::Statement to provide following method:
 
 Implements the open_table method required by L<SQL::Statement> and
 L<DBI::SQL::Nano>. All the work for opening the file(s) belonging to the
-table is handled and parametrized in DBD::File::Table. Unless you intend
+table is handled and parameterized in DBD::File::Table. Unless you intend
 to add anything to the following implementation, an empty DBD::XXX::Statement
 package satisfies DBD::File.
 
@@ -426,7 +427,7 @@ the table data which are stored in the files.
 =item file2table
 
 This method tries to map a filename to the associated table
-name.  It is called with a partly filled meta structure for the
+name.  It is called with a partially filled meta structure for the
 resulting table containing at least the following attributes:
 C<< f_ext >>, C<< f_dir >>, C<< f_lockfile >> and C<< sql_identifier_case >>.
 
@@ -452,27 +453,27 @@ used.
 
 =item init_table_meta
 
-Initializes more attributes of the table meta data - usually more expensive
-ones (e.g. those which requires class instantiations) - when the file name
-and the table name could mapped.
+Initializes more attributes of the table meta data - usually more
+expensive ones (e.g. those which require class instantiations) - when
+the file name and the table name could mapped.
 
 =item get_table_meta
 
-Delivers the table meta data. If there are none for the required
+Returns the table meta data. If there are none for the required
 table, a new one is initialized. When it fails, nothing is
 returned. On success, the name of the table and the meta data
 structure is returned.
 
 =item get_table_meta_attr
 
-Delivers a single attribute from the table meta data. This method should
-be overwritten when mapped attribute names shall be returned for
+Returns a single attribute from the table meta data. This method should
+be overridden when mapped attribute names should be returned for
 compatibility reasons.
 
 =item set_table_meta_attr
 
 Sets a single attribute in the table meta data. This method should
-be overwritten when mapped attribute names shall be modified for
+be overridden when mapped attribute names should be modified for
 compatibility reasons.
 
 If the modified attribute requires to reset a calculated attribute, the
@@ -482,11 +483,11 @@ the I<initialized> flag is removed, too.
 =item register_reset_on_modify
 
 Allows C<set_table_meta_attr> to reset meta attributes when special
-attributes are modified. For DBD::File modifying one of C<f_file>, C<f_dir>,
+attributes are modified. For DBD::File, modifying one of C<f_file>, C<f_dir>,
 C<f_ext> or C<f_lockfile> will reset C<f_fqfn>. DBD::DBM extends the
 list for C<dbm_type> and C<dbm_mldbm> to reset the value of C<dbm_tietype>.
 
-If you're DBD has calculated values in the meta data area, too - call
+If your DBD has calculated values in the meta data area, then call
 C<register_reset_on_modify>:
 
     my %reset_on_modify = ( "xxx_foo" => "xxx_bar" );
@@ -494,7 +495,7 @@ C<register_reset_on_modify>:
 
 =item open_file
 
-Is called to open the table's data file.
+Called to open the table's data file.
 
 Depending on the attributes set in the table's meta data, the
 following steps are performed. Unless C<< f_dontopen >> is set to a
