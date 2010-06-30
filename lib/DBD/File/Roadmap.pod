@@ -35,6 +35,16 @@ shadow (dirty) table.
 
 Transaction support will heavily rely on lock table support.
 
+=item Data Dictionary Persistence
+
+SQL::Statement provides dictionary information when a "CREATE TABLE ..."
+statement is executed. This dictionary is conserved for some statement
+handle attribute fetches (as C<NULLABLE> or C<PRECISION>).
+
+It's planned to extend DBD::File to support data dictionaries to work
+on the tables in it. It's not planned to support one table in different
+dictionaries, but you can have several dictionaries in one directory.
+
 =item SQL Engine selecting on connect
 
 Currently the SQL engine to use is choosen during the load of the module
