@@ -828,8 +828,8 @@ for some B<very> simple tasks.
 
 DBI::SQL::Nano, like SQL::Statement is primarily intended to provide a SQL
 engine for use with some pure perl DBDs including L<DBD::DBM>, L<DBD::CSV>,
-L<DBD::AnyData>, and L<DBD::Excel>. It isn't of much use in and of itself.
-You can dump out the structure of a parsed SQL statement, but that's about
+L<DBD::AnyData>, and L<DBD::Excel>. It is not of much use in and of itself.
+You can dump out the structure of a parsed SQL statement, but that is about
 it.
 
 =head1 USAGE
@@ -909,7 +909,7 @@ script by putting this at the top of the script:
        * note: leading and trailing percent mark (%) and underscore (_)
          can be used as wildcards in quoted strings for use with
          the LIKE and CLIKE operators
-       * note: escaped single quote marks within strings are not
+       * note: escaped single quotation marks within strings are not
          supported, neither are embedded commas, use placeholders instead
 
   set_clause ::=
@@ -933,7 +933,7 @@ script by putting this at the top of the script:
 =head1 TABLES
 
 DBI::SQL::Nano::Statement operates on exactly one table. This table will be
-opened by inherit from DBI::SQL::Nano::Statement and implement the
+opened by inherit from DBI::SQL::Nano::Statement and implements the
 C<< open_table >> method.
 
   sub open_table ($$$$$)
@@ -963,15 +963,15 @@ otherwise.
 
 =head1 BUGS AND LIMITATIONS
 
-There are no know bugs in DBI::SQL::Nano::Statement. If you find a one
-and want to report, please see L<DBI> how to report bugs.
+There are no known bugs in DBI::SQL::Nano::Statement. If you find a one
+and want to report, please see L<DBI> for how to report bugs.
 
 DBI::SQL::Nano::Statement is designed to provide a minimal subset for
 executing SQL statements.
 
-The most important limitation might be the restriction to one table per
-statement. This implies, that no JOINs are supported and there can no
-foreign key relation between tables.
+The most important limitation might be the restriction on one table per
+statement. This implies, that no JOINs are supported and there cannot be
+any foreign key relation between tables.
 
 The where clause evaluation of DBI::SQL::Nano::Statement is very slow
 (SQL::Statement uses a precompiled evaluation).
@@ -979,15 +979,16 @@ The where clause evaluation of DBI::SQL::Nano::Statement is very slow
 INSERT can handle only one row per statement. To insert multiple rows,
 use placeholders as explained in DBI.
 
-The parser of DBI::SQL::Nano is very limited and support no extras as
-brackets, comments, functions, aggregations etc.
+The DBI::SQL::Nano parser is very limited and does not support any
+additional syntax such as brackets, comments, functions, aggregations
+etc.
 
 In contrast to SQL::Statement, temporary tables are not supported.
 
 =head1 ACKNOWLEDGEMENTS
 
 Tim Bunce provided the original idea for this module, helped me out of the
-tangled trap of namespace, and provided help and advice all along the way.
+tangled trap of namespaces, and provided help and advice all along the way.
 Although I wrote it from the ground up, it is based on Jochen Wiedmann's
 original design of SQL::Statement, so much of the credit for the API goes
 to him.
