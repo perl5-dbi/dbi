@@ -888,3 +888,152 @@ use warnings;
 
 @DBI::DBD::SqlEngine::Table::ISA = qw(DBI::SQL::Nano::Table);
 
+=pod
+
+=head1 NAME
+
+DBI::DBD::SqlEngine - Base class for DBI drivers without own SQL eninge
+
+=head1 SYNOPSIS
+
+    package DBD::myDriver;
+
+    use base qw(DBI::DBD::SqlEngine);
+
+    sub driver
+    {
+	...
+	my $drh = $proto->SUPER::driver($attr);
+	...
+	return $drh->{class};
+	}
+
+    package DBD::myDriver::dr;
+
+    @ISA = qw(DBI::DBD::SqlEngine::dr);
+
+    sub data_sources { ... }
+    ...
+
+    package DBD::myDriver::db;
+
+    @ISA = qw(DBI::DBD::SqlEngine::db);
+
+    sub init_valid_attributes { ... }
+    sub init_default_attributes { ... }
+    sub set_versions { ... }
+    sub validate_STORE_attr { my ($dbh, $attrib, $value) = @_; ... }
+    sub validate_FETCH_attr { my ($dbh, $attrib) = @_; ... }
+    sub get_myd_versions { ... }
+    sub get_avail_tables { ... }
+
+    package DBD::myDriver::st;
+
+    @ISA = qw(DBI::DBD::SqlEngine::st);
+
+    sub FETCH { ... }
+    sub STORE { ... }
+
+    package DBD::myDriver::Statement;
+
+    @ISA = qw(DBI::DBD::SqlEngine::Statement);
+
+    sub open_table { ... }
+
+    package DBD::myDriver::Table;
+
+    @ISA = qw(DBI::DBD::SqlEngine::Table);
+
+    sub new { ... }
+
+=head1 DESCRIPTION
+
+DBI::DBD::SqlEngine abstracts the usage of SQL engines from the DBD. DBD
+authors can concentrate themself to the data retrieving they want to
+provide.
+
+It's strongly recommended to read L<DBD::File::Developers> and
+L<DBD::File::Roadmap>, because many of the DBD::File API is provided
+by DBI::DBD::SqlEngine.
+
+Currently the API of DBI::DBD::SqlEngine is experimental and will move
+fast to provide the table meta data basics like DBD::File.
+
+=head1 SUPPORT
+
+You can find documentation for this module and with the perldoc command.
+
+    perldoc DBI::DBD::SqlEngine
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBI>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=SQL-Statement>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/DBI>
+L<http://annocpan.org/dist/SQL-Statement>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/DBI>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/DBI/>
+
+=back
+
+=head2 Where can I go for more help?
+
+For questions about installation or usage, please ask on the
+dbi-dev@perl.org mailing list.
+
+If you have a bug report, a patch, a suggestion, please open
+a new report ticket at CPAN, if there isn't already a one for
+the issue you want to report. Of course, you can mail any of the
+module maintainers, but you'll be sure that you're report will
+not be "forgotten" or reach an (temporarily) inactive maintainer.
+Report tickets should contain a detailed description of the
+bug or enhancement request you want to report and at least an
+easy to verify and use test to reproduce the issue and verify the
+applied fix. Patches are always welcome, too.
+
+=head1 ACKNOWLEDGEMENTS
+
+Thanks to Tim Bunce, Martin Evans and H.Merijn Brand for their continued
+support while writing on the DBD::File, DBD::DBM and DBD::AnyData updates.
+Their support, hints and feedback helped to design and implement this
+module.
+
+=head1 AUTHOR
+
+This module is currently maintained by
+
+H.Merijn Brand < h.m.brand at xs4all.nl > and
+Jens Rehsack  < rehsack at googlemail.com >
+
+The original authors of code parts are Jochen Wiedmann and Jeff Zucker.
+
+=head1 COPYRIGHT AND LICENSE
+
+ Copyright (C) 2009-2010 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2004-2009 by Jeff Zucker
+ Copyright (C) 1998-2004 by Jochen Wiedmann
+
+All rights reserved.
+
+You may freely distribute and/or modify this module under the terms of
+either the GNU General Public License (GPL) or the Artistic License, as
+specified in the Perl README file.
+
+=head1 SEE ALSO
+
+L<DBI>, L<DBD::File>, L<DBD::AnyData> and L<DBD::Sys>.
+
+=cut
