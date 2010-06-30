@@ -1,6 +1,6 @@
 =head1 NAME
 
-DBD::File::Roadmap - Planned Enhancements for the DBD::File and Pure Perl DBD's
+DBD::File::Roadmap - Planned Enhancements for DBD::File and pure Perl DBD's
 
 Jens Rehsack - May 2010
 
@@ -16,14 +16,15 @@ extensibility and more.
 
 =head2 Features
 
-There're some features missing we would like to add (without time plan):
+There are some features missing we would like to add, but there is
+no time plan:
 
 =over 4
 
 =item LOCK TABLE
 
 The newly implemented internal common table meta storage area would allow
-us to implement a LOCK TABLE support based on file system C<flock ()>
+us to implement LOCK TABLE support based on file system C<flock ()>
 support.
 
 =item Transaction support
@@ -31,25 +32,25 @@ support.
 While DBD::AnyData recommends explicitly committing by importing and
 exporting tables, DBD::File might be enhanced in a future version to allow
 transparent transactions using the temporary tables of SQL::Statement as
-shadow (dirty) table.
+shadow (dirty) tables.
 
 Transaction support will heavily rely on lock table support.
 
 =item Data Dictionary Persistence
 
 SQL::Statement provides dictionary information when a "CREATE TABLE ..."
-statement is executed. This dictionary is conserved for some statement
+statement is executed. This dictionary is preserved for some statement
 handle attribute fetches (as C<NULLABLE> or C<PRECISION>).
 
-It's planned to extend DBD::File to support data dictionaries to work
-on the tables in it. It's not planned to support one table in different
+It is planned to extend DBD::File to support data dictionaries to work
+on the tables in it. It is not planned to support one table in different
 dictionaries, but you can have several dictionaries in one directory.
 
 =item SQL Engine selecting on connect
 
-Currently the SQL engine to use is chosen during the load of the module
-L<DBI::SQL::Nano>. Ideally end users will be enabled to select the engine
-to use in C<< DBI->connect () >> with a special DBD::File attribute.
+Currently the SQL engine selected is chosen during the loading of the module
+L<DBI::SQL::Nano>. Ideally end users should be able to select the engine
+used in C<< DBI->connect () >> with a special DBD::File attribute.
 
 =back
 
@@ -58,42 +59,43 @@ SQL::Statement engine) are shown in L<SQL::Statement::Roadmap>.
 
 =head2 Testing
 
-DBD::File and the dependent DBD::DBM requires much more automated tests,
-covering stability of current API and compatibility with optional modules
+DBD::File and the dependent DBD::DBM requires a lot more automated tests
+covering API stability and compatibility with optional modules
 like SQL::Statement.
 
 =head2 Performance
 
-Several discussions about support for features like index on columns or
-cursors are made for DBD::CSV (which is a DBD::File based driver, too).
-Same discussions could be made for DBD::DBM, DBD::AnyData, DBD::RAM or
-DBD::PO etc.
+Several arguments for support of features like indexes on columns
+and cursors are made for DBD::CSV (which is a DBD::File based driver,
+too).  Similar arguments could be made for DBD::DBM, DBD::AnyData,
+DBD::RAM or DBD::PO etc.
 
 To improve the performance of the underlying SQL engines, a clean
-reimplementation seems to be required. Currently both engines are premature
-optimized and therefore it's not trivial to optimize even more without
-high risk of breaking running features.
+reimplementation seems to be required. Currently both engines are
+prematurely optimized and therefore it is not trivial to provide
+further optimization without the risk of breaking existing features.
 
 Join the DBI developers IRC channel at L<irc://irc.perl.org/dbi> to
-participate or write us to the DBI Developers Mailing List.
+participate or post to the DBI Developers Mailing List.
 
 =head2 Reliability
 
-DBD::File currently lacks following points:
+DBD::File currently lacks the following points:
 
 =over 4
 
 =item duplicate table names
 
-It's currently possible to access a table quoted with a relative path (a)
-and second time using an absolute path (b). If the absolute path of (a)
-points to the path of (b), it's not recognized (except flock protection
-handled by the Operating System) and two independent tables are handled.
+It is currently possible to access a table quoted with a relative path
+(a) and additionally using an absolute path (b). If (a) and (b) are
+the same file that is not recognized (except for
+flock protection handled by the Operating System) and two independent
+tables are handled.
 
 =item invalid table names
 
-Current implementation doesn't protect from choosing a directory name
-as physical file name for the table to open.
+The current implementation does not prevent someone choosing a
+directory name as a physical file name for the table to open.
 
 =back
 
@@ -105,13 +107,13 @@ I (Jens Rehsack) have some (partially for example only) DBD's in mind:
 
 =item DBD::Sys
 
-Derive DBD::Sys from a common code base shared with DBD::File which handled
-all emulation DBI needs (as getinfo, SQL engine handling, ...)
+Derive DBD::Sys from a common code base shared with DBD::File which handles
+all the emulation DBI needs (as getinfo, SQL engine handling, ...)
 
 =item DBD::Dir
 
-Provide a DBD::File derived to walk with fixed table definitions through the
-file system to demonstrate how DBI / Pure Perl DBD's could handle databases
+Provide a DBD::File derived to work with fixed table definitions through the
+file system to demonstrate how DBI / Pure Perl DBDs could handle databases
 with hierarchical structures.
 
 =item DBD::Join
@@ -140,10 +142,10 @@ sources and allow joins between the tables of them:
 
 =head1 PRIORITIES
 
-Our priorities are localized to our current issues. At first, many new test
-cases for DBD::File and DBD::DBM should be added to DBI test suite. After
-it, some additional documentation how to use the DBD::File API will be
-provided.
+Our priorities are focussed on current issues. Initially many new test
+cases for DBD::File and DBD::DBM should be added to the DBI test
+suite. After that some additional documentation on how to use the
+DBD::File API will be provided.
 
 Any additional priorities will come later and can be modified by (paying)
 users.
@@ -152,12 +154,12 @@ users.
 
 See L<http://dbi.perl.org/contributing> for I<how you can help>.
 
-If your company has benefited from the DBI, please consider if
+If your company has benefited from DBI, please consider if
 it could make a donation to The Perl Foundation "DBI Development"
 fund at L<http://dbi.perl.org/donate> to secure future development.
 
 Alternatively, if your company would benefit from a specific new
-DBI feature, please consider sponsoring its development through
+DBI feature, please consider sponsoring it's development through
 the options listed in the section "Commercial Support from the Author"
 on L<http://dbi.perl.org/support/>.
 
