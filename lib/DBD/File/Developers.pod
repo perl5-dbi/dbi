@@ -475,6 +475,23 @@ Sets a single attribute in the table meta data. This method should
 be overwritten when mapped attribute names shall be modified for
 compatibility reasons.
 
+If the modified attribute requires to reset a calculated attribute, the
+calculated attribute is reset (deleted from meta data structure) and
+the I<initialized> flag is removed, too.
+
+=item register_reset_on_modify
+
+Allows C<set_table_meta_attr> to reset meta attributes when special
+attributes are modified. For DBD::File modifying one of C<f_file>, C<f_dir>,
+C<f_ext> or C<f_lockfile> will reset C<f_fqfn>. DBD::DBM extends the
+list for C<dbm_type> and C<dbm_mldbm> to reset the value of C<dbm_tietype>.
+
+If you're DBD has calculated values in the meta data area, too - call
+C<register_reset_on_modify>:
+
+    my %reset_on_modify = ( "xxx_foo" => "xxx_bar" );
+    __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+
 =item open_file
 
 Is called to open the table's data file.
