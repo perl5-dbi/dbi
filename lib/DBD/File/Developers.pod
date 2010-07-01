@@ -537,9 +537,9 @@ for iterating over the table content.
 
 =item truncate
 
-Implements the abstract table method used when dumb table algorithms for
-C<< UPDATE >> or C<< DELETE >> to truncate the table storage after last
-written row.
+Implements the abstract table method used when dumb table algorithms
+for C<< UPDATE >> or C<< DELETE >> need to truncate the table storage
+after the last written row.
 
 =back
 
