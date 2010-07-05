@@ -37,7 +37,7 @@ sub driver ($;$)
     # do the real work in DBD::File
     #
     $attr->{Attribution} = 'DBD::DBM by Jens Rehsack';
-    my $this = $class->SUPER::driver($attr);
+    $drh = $class->SUPER::driver($attr);
 
     # install private methods
     #
@@ -50,7 +50,7 @@ sub driver ($;$)
         DBD::DBM::st->install_method('dbm_schema');
     }
 
-    $this;
+    return $drh;
 }
 
 sub CLONE
