@@ -203,30 +203,10 @@ sub init_valid_attributes
 	f_valid_attrs    => 1, # File valid attributes
 	f_readonly_attrs => 1, # File readonly attributes
 	};
-    $dbh->{sql_valid_attrs} = {
-	sql_handler                => 1, # Nano or S:S
-	sql_nano_version           => 1, # Nano version
-	sql_statement_version      => 1, # S:S version
-	sql_flags                  => 1, # flags for SQL::Parser
-	sql_quoted_identifier_case => 1, # case for quoted identifiers
-	sql_identifier_case        => 1, # case for non-quoted identifiers
-	sql_parser_object          => 1, # SQL::Parser instance
-	sql_valid_attrs            => 1, # SQL valid attributes
-	sql_readonly_attrs         => 1, # SQL readonly attributes
-	};
     $dbh->{f_readonly_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_valid_attrs    => 1, # File valid attributes
 	f_readonly_attrs => 1, # File readonly attributes
-	};
-    $dbh->{sql_readonly_attrs} = {
-	sql_handler                => 1, # Nano or S:S
-	sql_nano_version           => 1, # Nano version
-	sql_statement_version      => 1, # S:S version
-	sql_quoted_identifier_case => 1, # case for quoted identifiers
-	sql_parser_object          => 1, # SQL::Parser instance
-	sql_valid_attrs            => 1, # SQL valid attributes
-	sql_readonly_attrs         => 1, # SQL readonly attributes
 	};
 
     return $dbh;
@@ -277,9 +257,8 @@ sub init_default_attributes
 
 sub disconnect ($)
 {
-    $_[0]->STORE (Active => 0);
     %{$_[0]->{f_meta}} = ();
-    return 1;
+    return $_[0]->SUPER::disconnect ();
     } # disconnect
 
 sub validate_STORE_attr
@@ -299,7 +278,7 @@ sub validate_STORE_attr
 	}
 
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
-}
+    } # validate_STORE_attr
 
 sub get_f_versions
 {
