@@ -31,7 +31,7 @@ BEGIN
     $VERSION = sprintf( "1.%06d", q$Revision$ =~ /(\d+)/o );
 
     $versions->{nano_version} = $VERSION;
-    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.27_02' } )
+    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.28' } )
     {
         @DBI::SQL::Nano::Statement::ISA = qw(DBI::SQL::Nano::Statement_);
         @DBI::SQL::Nano::Table::ISA     = qw(DBI::SQL::Nano::Table_);
