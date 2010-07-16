@@ -785,7 +785,7 @@ You can also tell DBD::DBM to use a specified path for a specific table:
 
   $dbh->{dbm_tables}->{f}->{file} = q(/foo/bar/fruit);
 
-Please be aware that you can't specify this during connecting.
+Please be aware that you cannot specify this during connection.
 
 If you have SQL::Statement installed, you can use table aliases:
 
@@ -886,8 +886,8 @@ MLDBM is by default distributed with three serializers - Data::Dumper,
 Storable, and FreezeThaw. Data::Dumper is the default and Storable is the
 fastest. MLDBM can also make use of user-defined serialization methods or
 other serialization modules (e.g. L<YAML::MLDBM> or
-L<MLDBM::Serializer::JSON>. All of this is available to you through
-DBD::DBM with just one attribute setting: I<dbm_mldbm>.
+L<MLDBM::Serializer::JSON>. You select the serializer using the
+I<dbm_mldbm> attribute.
 
 Some examples:
 
@@ -1187,13 +1187,13 @@ Pure Perl serializer, requires L<FreezeThaw> to be installed.
 
 =item YAML
 
-Very portable serializer (between languages, not between architectures).
-Requires L<YAML::MLDBM> being installed.
+Portable serializer (between languages but not architectures).
+Requires L<YAML::MLDBM> installation.
 
 =item JSON
 
-Very portable, fast serializer (between languages, not between
-architectures).  Requires L<MLDBM::Serializer::JSON> being installed.
+Portable, fast serializer (between languages but not architectures).
+Requires L<MLDBM::Serializer::JSON> installation.
 
 =back
 
@@ -1275,38 +1275,38 @@ the SQL engine, but it's good form).
 
 =head1 EXTENSIBILITY
 
-All extensibility with one look:
-
 =over 8
 
 =item C<SQL::Statement>
 
-Improved SQL engine compared to built-in DBI::SQL::Nano - see
+Improved SQL engine compared to the built-in DBI::SQL::Nano - see
 L<Supported SQL syntax>.
 
 =item C<DB_File>
 
-Berkeley DB version 1 - the database library is available on many systems
-without extra installations and most systems are supported.
+Berkeley DB version 1. This database library is available on many
+systems without additional installation and most systems are
+supported.
 
 =item C<GDBM_File>
 
-Simple dbm type (compareable to C<DB_File>) under GNU license.
+Simple dbm type (comparable to C<DB_File>) under the GNU license.
 Typically not available (or requires extra installation) on non-GNU
 operating systems.
 
 =item C<BerkeleyDB>
 
-Berkeley DB version up to v4 (or maybe higher) - requires extra
-installation (but compared to GDBM_File on non-GNU systems it's easy).
+Berkeley DB version up to v4 (and maybe higher) - requires additional
+installation but is easier than GDBM_File on non-GNU systems.
 
-db4 comes with a lot of tools which allow repairing or migrating databases.
-This is the B<recommended> dbm type for production use.
+db4 comes with a many tools which allow repairing and migrating
+databases.  This is the B<recommended> dbm type for production use.
 
 =item C<MLDBM>
 
-Serializer wrapper to support more than one column for the dbm files.
-Comes with serializers using C<Data::Dumper>, C<FreezeThaw> and C<Storable>.
+Serializer wrapper to support more than one column for the files.
+Comes with serializers using C<Data::Dumper>, C<FreezeThaw> and
+C<Storable>.
 
 =item C<YAML::MLDBM>
 
@@ -1356,10 +1356,10 @@ warnings about the use of flock().
 
 =head1 BUGS AND LIMITATIONS
 
-This modules uses hash interfaces of two column file databases. While
-none of supported SQL engines have a support for indices, following
+This module uses hash interfaces of two column file databases. While
+none of supported SQL engines have support for indices, the following
 statements really do the same (even if they mean something completely
-different) for each dbm type which lacks the C<EXISTS> support:
+different) for each dbm type which lacks C<EXISTS> support:
 
   $sth->do( "insert into foo values (1, 'hello')" );
 
@@ -1368,10 +1368,10 @@ different) for each dbm type which lacks the C<EXISTS> support:
   # ... the same as this statement
   $sth->do( "insert into foo values (1, 'world')" );
 
-This is considered as a bug and might change in a future release.
+This is considered to be a bug and might change in a future release.
 
-Known affected dbm types are C<ODBM_File> and C<NDBM_File>. It's
-highly recommended to use a more modern dbm type, as C<DB_File>.
+Known affected dbm types are C<ODBM_File> and C<NDBM_File>. We highly
+recommended you use a more modern dbm type such as C<DB_File>.
 
 =head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 
