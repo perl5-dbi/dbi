@@ -107,6 +107,9 @@ my %opts = (
 	    'DB_File'        => 0,
 	},
     },
+    PREREQ_PM => {
+	  ( $^O eq 'MSWin32' ? ( 'PathTools' => 3.31, ) : () ),
+    },
     CONFLICTS => {
 	'SQL::Statement' => '1.27',
 	'DBD::AnyData' => '0.09',
