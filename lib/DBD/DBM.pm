@@ -886,7 +886,7 @@ MLDBM is by default distributed with three serializers - Data::Dumper,
 Storable, and FreezeThaw. Data::Dumper is the default and Storable is the
 fastest. MLDBM can also make use of user-defined serialization methods or
 other serialization modules (e.g. L<YAML::MLDBM> or
-L<MLDBM::Serializer::JSON). All of this is available to you through
+L<MLDBM::Serializer::JSON>. All of this is available to you through
 DBD::DBM with just one attribute setting: I<dbm_mldbm>.
 
 Some examples:
