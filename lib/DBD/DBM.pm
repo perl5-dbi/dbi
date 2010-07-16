@@ -669,7 +669,8 @@ of Perl objects into tables.
 DBD::DBM has been tested with the following DBM types: SDBM_File,
 NDBM_File, ODBM_File, GDBM_File, DB_File, BerkeleyDB.  Each type was
 tested both with and without MLDBM and with the Data::Dumper,
-Storable, FreezeThaw and YAML serializers.
+Storable, FreezeThaw, YAML and JSON serializers using the DBI::SQL::Nano
+or the SQL::Statement engines.
 
 =head1 QUICK START
 
@@ -780,6 +781,12 @@ without setting I<f_dir>:
        SELECT x FROM "/foo/bar/fruit"
    });
 
+You can also tell DBD::DBM to use a specified path for a specific table:
+
+  $dbh->{dbm_tables}->{f}->{file} = q(/foo/bar/fruit);
+
+Please be aware that you can't specify this during connecting.
+
 If you have SQL::Statement installed, you can use table aliases:
 
    my $dbh = DBI->connect('dbi:DBM:');
@@ -878,8 +885,9 @@ for many platforms and is easy to install.
 MLDBM is by default distributed with three serializers - Data::Dumper,
 Storable, and FreezeThaw. Data::Dumper is the default and Storable is the
 fastest. MLDBM can also make use of user-defined serialization methods or
-other serialization modules (e.g. L<YAML::MLDBM>). All of this is available
-to you through DBD::DBM with just one attribute setting: I<dbm_mldbm>.
+other serialization modules (e.g. L<YAML::MLDBM> or
+L<MLDBM::Serializer::JSON). All of this is available to you through
+DBD::DBM with just one attribute setting: I<dbm_mldbm>.
 
 Some examples:
 
@@ -1182,6 +1190,11 @@ Pure Perl serializer, requires L<FreezeThaw> to be installed.
 Very portable serializer (between languages, not between architectures).
 Requires L<YAML::MLDBM> being installed.
 
+=item JSON
+
+Very portable, fast serializer (between languages, not between
+architectures).  Requires L<MLDBM::Serializer::JSON> being installed.
+
 =back
 
 =head4 dbm_store_metadata
@@ -1260,6 +1273,52 @@ To store objects in columns, you should (but don't absolutely need to)
 declare it as a column of type BLOB (the type is *currently* ignored by
 the SQL engine, but it's good form).
 
+=head1 EXTENSIBILITY
+
+All extensibility with one look:
+
+=over 8
+
+=item C<SQL::Statement>
+
+Improved SQL engine compared to built-in DBI::SQL::Nano - see
+L<Supported SQL syntax>.
+
+=item C<DB_File>
+
+Berkeley DB version 1 - the database library is available on many systems
+without extra installations and most systems are supported.
+
+=item C<GDBM_File>
+
+Simple dbm type (compareable to C<DB_File>) under GNU license.
+Typically not available (or requires extra installation) on non-GNU
+operating systems.
+
+=item C<BerkeleyDB>
+
+Berkeley DB version up to v4 (or maybe higher) - requires extra
+installation (but compared to GDBM_File on non-GNU systems it's easy).
+
+db4 comes with a lot of tools which allow repairing or migrating databases.
+This is the B<recommended> dbm type for production use.
+
+=item C<MLDBM>
+
+Serializer wrapper to support more than one column for the dbm files.
+Comes with serializers using C<Data::Dumper>, C<FreezeThaw> and C<Storable>.
+
+=item C<YAML::MLDBM>
+
+Additional serializer for MLDBM. YAML is very portable between languanges.
+
+=item C<MLDBM::Serializer::JSON>
+
+Additional serializer for MLDBM. JSON is very portable between languanges,
+probably more than YAML.
+
+=back
+
 =head1 GOTCHAS AND WARNINGS
 
 Using the SQL DROP command will remove any file that has the name specified
@@ -1294,6 +1353,25 @@ MLDBM turned on!
 
 See the entire section on L<Table locking and flock()> for gotchas and
 warnings about the use of flock().
+
+=head1 BUGS AND LIMITATIONS
+
+This modules uses hash interfaces of two column file databases. While
+none of supported SQL engines have a support for indices, following
+statements really do the same (even if they mean something completely
+different) for each dbm type which lacks the C<EXISTS> support:
+
+  $sth->do( "insert into foo values (1, 'hello')" );
+
+  # this statement does ...
+  $sth->do( "update foo set v='world' where k=1" );
+  # ... the same as this statement
+  $sth->do( "insert into foo values (1, 'world')" );
+
+This is considered as a bug and might change in a future release.
+
+Known affected dbm types are C<ODBM_File> and C<NDBM_File>. It's
+highly recommended to use a more modern dbm type, as C<DB_File>.
 
 =head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 
@@ -1353,6 +1431,9 @@ specified in the Perl README file.
 
 =head1 SEE ALSO
 
-L<DBI>, L<SQL::Statement>, L<DBI::SQL::Nano>, L<AnyDBM_File>, L<MLDBM>
+L<DBI>,
+L<SQL::Statement>, L<DBI::SQL::Nano>,
+L<AnyDBM_File>, L<DB_File>, L<BerkeleyDB>,
+L<MLDBM>, L<YAML::MLDBM>, L<MLDBM::Serializer::JSON>
 
 =cut
