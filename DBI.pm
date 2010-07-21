@@ -3491,7 +3491,9 @@ Example:
   $h->{AttributeName} = ...;	# set/write
   ... = $h->{AttributeName};	# get/read
 
-=head3 C<Warn> (boolean, inherited)
+=head3 C<Warn>
+
+Type: boolean, inherited
 
 The C<Warn> attribute enables useful warnings for certain bad
 practices. It is enabled by default and should only be disabled in
@@ -3501,7 +3503,9 @@ hook.
 
 The C<Warn> attribute is not related to the C<PrintWarn> attribute.
 
-=head3 C<Active> (boolean, read-only)
+=head3 C<Active>
+
+Type: boolean, read-only
 
 The C<Active> attribute is true if the handle object is "active". This is rarely used in
 applications. The exact meaning of active is somewhat vague at the
@@ -3511,7 +3515,9 @@ a statement handle it typically means that the handle is a C<SELECT>
 that may have more data to fetch. (Fetching all the data or calling C<$sth-E<gt>finish>
 sets C<Active> off.)
 
-=head3 C<Executed> (boolean)
+=head3 C<Executed>
+
+Type: boolean
 
 The C<Executed> attribute is true if the handle object has been "executed".
 Currently only the $dbh do() method and the $sth execute(), execute_array(),
@@ -3528,7 +3534,9 @@ as a permanent record of whether the statement handle was ever used.
 
 The C<Executed> attribute was added in DBI 1.41.
 
-=head3 C<Kids> (integer, read-only)
+=head3 C<Kids>
+
+Type: integer, read-only
 
 For a driver handle, C<Kids> is the number of currently existing database
 handles that were created from that driver handle.  For a database
@@ -3536,24 +3544,32 @@ handle, C<Kids> is the number of currently existing statement handles that
 were created from that database handle.
 For a statement handle, the value is zero.
 
-=head3 C<ActiveKids> (integer, read-only)
+=head3 C<ActiveKids>
+
+Type: integer, read-only
 
 Like C<Kids>, but only counting those that are C<Active> (as above).
 
-=head3 C<CachedKids> (hash ref)
+=head3 C<CachedKids>
+
+Type: hash ref
 
 For a database handle, C<CachedKids> returns a reference to the cache (hash) of
 statement handles created by the L</prepare_cached> method.  For a
 driver handle, returns a reference to the cache (hash) of
 database handles created by the L</connect_cached> method.
 
-=head3 C<Type> (scalar, read-only)
+=head3 C<Type>
+
+Type: scalar, read-only
 
 The C<Type> attribute identifies the type of a DBI handle.  Returns
 "dr" for driver handles, "db" for database handles and "st" for
 statement handles.
 
-=head3 C<ChildHandles> (array ref)
+=head3 C<ChildHandles>
+
+Type: array ref
 
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
@@ -3577,7 +3593,9 @@ statement handles:
     my %drivers = DBI->installed_drivers();
     show_child_handles($_, 0) for (values %drivers);
 
-=head3 C<CompatMode> (boolean, inherited)
+=head3 C<CompatMode>
+
+Type: boolean, inherited
 
 The C<CompatMode> attribute is used by emulation layers (such as
 Oraperl) to enable compatible behaviour in the underlying driver
@@ -3588,7 +3606,9 @@ values from the handles attribute cache. So all attribute values
 are handled by the drivers own FETCH method. This makes them slightly
 slower but is useful for special-purpose drivers like DBD::Multiplex.
 
-=head3 C<InactiveDestroy> (boolean)
+=head3 C<InactiveDestroy>
+
+Type: boolean
 
 The default value, false, means a handle will be fully destroyed
 as normal when the last reference to it is removed, just as you'd expect.
@@ -3616,7 +3636,9 @@ The process id also shown for I<every> method call if the DBI trace
 level (not handle trace level) is set high enough to show the trace
 from the DBI's method dispatcher, e.g. >= 9.
 
-=head3 C<PrintWarn> (boolean, inherited)
+=head3 C<PrintWarn>
+
+Type: boolean, inherited
 
 The C<PrintWarn> attribute controls the printing of warnings recorded
 by the driver.  When set to a true value the DBI will check method
@@ -3643,7 +3665,9 @@ attribute is true. If C<PrintWarn> is false then these drivers should
 still indicate the fact that there were warnings by setting the
 warning string to, for example: "3 warnings".
 
-=head3 C<PrintError> (boolean, inherited)
+=head3 C<PrintError>
+
+Type: boolean, inherited
 
 The C<PrintError> attribute can be used to force errors to generate warnings (using
 C<warn>) in addition to returning error codes in the normal way.  When set
@@ -3658,7 +3682,9 @@ By default, C<DBI-E<gt>connect> sets C<PrintError> "on".
 If desired, the warnings can be caught and processed using a C<$SIG{__WARN__}>
 handler or modules like CGI::Carp and CGI::ErrorWrap.
 
-=head3 C<RaiseError> (boolean, inherited)
+=head3 C<RaiseError>
+
+Type: boolean, inherited
 
 The C<RaiseError> attribute can be used to force errors to raise exceptions rather
 than simply return error codes in the normal way. It is "off" by default.
@@ -3706,7 +3732,9 @@ The original value will automatically and reliably be restored by Perl,
 regardless of how the block is exited.
 The same logic applies to other attributes, including C<PrintError>.
 
-=head3 C<HandleError> (code ref, inherited)
+=head3 C<HandleError>
+
+Type: code ref, inherited
 
 The C<HandleError> attribute can be used to provide your own alternative behaviour
 in case of errors. If set to a reference to a subroutine then that
@@ -3771,7 +3799,9 @@ to make reliable (avoiding infinite loops, for example) and so isn't
 recommended for general use!  If you find a I<good> use for it then
 please let me know.
 
-=head3 C<HandleSetErr> (code ref, inherited)
+=head3 C<HandleSetErr>
+
+Type: code ref, inherited
 
 The C<HandleSetErr> attribute can be used to intercept
 the setting of handle C<err>, C<errstr>, and C<state> values.
@@ -3807,7 +3837,9 @@ documentation and discussed on the dbi-dev mailing list.
 
 The C<HandleSetErr> attribute was added in DBI 1.41.
 
-=head3 C<ErrCount> (unsigned integer)
+=head3 C<ErrCount>
+
+Type: unsigned integer
 
 The C<ErrCount> attribute is incremented whenever the set_err()
 method records an error. It isn't incremented by warnings or
@@ -3818,7 +3850,9 @@ not have been updated to use set_err() to record errors and so this
 attribute may not be incremented when using them.
 
 
-=head3 C<ShowErrorStatement> (boolean, inherited)
+=head3 C<ShowErrorStatement>
+
+Type: boolean, inherited
 
 The C<ShowErrorStatement> attribute can be used to cause the relevant
 Statement text to be appended to the error messages generated by
@@ -3831,7 +3865,9 @@ If C<$h-E<gt>{ParamValues}> returns a hash reference of parameter
 (placeholder) values then those are formatted and appended to the
 end of the Statement text in the error message.
 
-=head3 C<TraceLevel> (integer, inherited)
+=head3 C<TraceLevel>
+
+Type: integer, inherited
 
 The C<TraceLevel> attribute can be used as an alternative to the
 L</trace> method to set the DBI trace level and trace flags for a
@@ -3840,7 +3876,9 @@ specific handle.  See L</TRACING> for more details.
 The C<TraceLevel> attribute is especially useful combined with
 C<local> to alter the trace settings for just a single block of code.
 
-=head3 C<FetchHashKeyName> (string, inherited)
+=head3 C<FetchHashKeyName>
+
+Type: string, inherited
 
 The C<FetchHashKeyName> attribute is used to specify whether the fetchrow_hashref()
 method should perform case conversion on the field names used for
@@ -3851,7 +3889,9 @@ It can only be set for driver and database handles.  For statement
 handles the value is frozen when prepare() is called.
 
 
-=head3 C<ChopBlanks> (boolean, inherited)
+=head3 C<ChopBlanks>
+
+Type: boolean, inherited
 
 The C<ChopBlanks> attribute can be used to control the trimming of trailing space
 characters from fixed width character (CHAR) fields. No other field
@@ -3865,7 +3905,9 @@ Drivers are not required to support this attribute, but any driver which
 does not support it must arrange to return C<undef> as the attribute value.
 
 
-=head3 C<LongReadLen> (unsigned integer, inherited)
+=head3 C<LongReadLen>
+
+Type: unsigned integer, inherited
 
 The C<LongReadLen> attribute may be used to control the maximum
 length of 'long' type fields (LONG, BLOB, CLOB, MEMO, etc.) which the driver will
@@ -3912,7 +3954,9 @@ for Oracle use LENGTHB().
 
 See also L</LongTruncOk> for information on truncation of long types.
 
-=head3 C<LongTruncOk> (boolean, inherited)
+=head3 C<LongTruncOk>
+
+Type: boolean, inherited
 
 The C<LongTruncOk> attribute may be used to control the effect of
 fetching a long field value which has been truncated (typically
@@ -3930,7 +3974,9 @@ false, many drivers will allow you to continue fetching further rows.
 
 See also L</LongReadLen>.
 
-=head3 C<TaintIn> (boolean, inherited)
+=head3 C<TaintIn>
+
+Type: boolean, inherited
 
 If the C<TaintIn> attribute is set to a true value I<and> Perl is running in
 taint mode (e.g., started with the C<-T> option), then all the arguments
@@ -3945,7 +3991,9 @@ for that statement handle, for the duration of the fetch loop.
 
 The C<TaintIn> attribute was added in DBI 1.31.
 
-=head3 C<TaintOut> (boolean, inherited)
+=head3 C<TaintOut>
+
+Type: boolean, inherited
 
 If the C<TaintOut> attribute is set to a true value I<and> Perl is running in
 taint mode (e.g., started with the C<-T> option), then most data fetched
@@ -3966,7 +4014,9 @@ please report your experience and any suggestions for changes.
 
 The C<TaintOut> attribute was added in DBI 1.31.
 
-=head3 C<Taint> (boolean, inherited)
+=head3 C<Taint>
+
+Type: boolean, inherited
 
 The C<Taint> attribute is a shortcut for L</TaintIn> and L</TaintOut> (it is also present
 for backwards compatibility).
@@ -3975,14 +4025,19 @@ Setting this attribute sets both L</TaintIn> and L</TaintOut>, and retrieving
 it returns a true value if and only if L</TaintIn> and L</TaintOut> are
 both set to true values.
 
-=head3 C<Profile> (inherited)
+=head3 C<Profile>
 
-The C<Profile> attribute enables the collection and reporting of method call timing statistics.
-See the L<DBI::Profile> module documentation for I<much> more detail.
+Type: inherited
+
+The C<Profile> attribute enables the collection and reporting of
+method call timing statistics.  See the L<DBI::Profile> module
+documentation for I<much> more detail.
 
 The C<Profile> attribute was added in DBI 1.24.
 
-=head3 C<ReadOnly> (boolean, inherited)
+=head3 C<ReadOnly>
+
+Type: boolean, inherited
 
 An application can set the C<ReadOnly> attribute of a handle to a true value to
 indicate that it will not be attempting to make any changes using that handle
@@ -3999,13 +4054,16 @@ Otherwise the attribute is simply advisory.
 A driver can set the C<ReadOnly> attribute itself to indicate that the data it
 is connected to cannot be changed for some reason.
 
-Library modules and proxy drivers can use the attribute to influence their behavior.
-For example, the DBD::Gofer driver considers the C<ReadOnly> attribute when
-making a decision about whether to retry an operation that failed.
+Library modules and proxy drivers can use the attribute to influence
+their behavior.  For example, the DBD::Gofer driver considers the
+C<ReadOnly> attribute when making a decision about whether to retry an
+operation that failed.
 
 The attribute should be set to 1 or 0 (or undef). Other values are reserved.
 
-=head3 C<Callbacks> (hash ref)
+=head3 C<Callbacks>
+
+Type: hash ref
 
 The DBI callback mechanism lets you intercept, and optionally replace, any
 method call on a DBI handle. At the extreme, it lets you become a puppet
@@ -5649,7 +5707,9 @@ Example:
   $h->{AutoCommit} = ...;	# set/write
   ... = $h->{AutoCommit};	# get/read
 
-=head3 C<AutoCommit>  (boolean)
+=head3 C<AutoCommit>
+
+Type: boolean
 
 If true, then database changes cannot be rolled-back (undone).  If false,
 then database changes automatically occur within a "transaction", which
@@ -5719,7 +5779,9 @@ See L</commit>, L</disconnect> and L</Transactions> for other important
 notes about transactions.
 
 
-=head3 C<Driver>  (handle)
+=head3 C<Driver>
+
+Type: handle
 
 Holds the handle of the parent driver. The only recommended use for this
 is to find the name of the driver using:
@@ -5727,14 +5789,18 @@ is to find the name of the driver using:
   $dbh->{Driver}->{Name}
 
 
-=head3 C<Name>  (string)
+=head3 C<Name>
+
+Type: string
 
 Holds the "name" of the database. Usually (and recommended to be) the
 same as the "C<dbi:DriverName:...>" string used to connect to the database,
 but with the leading "C<dbi:DriverName:>" removed.
 
 
-=head3 C<Statement>  (string, read-only)
+=head3 C<Statement>
+
+Type: string, read-only
 
 Returns the statement string passed to the most recent L</prepare> method
 called in this database handle, even if that method failed. This is especially
@@ -5742,7 +5808,9 @@ useful where C<RaiseError> is enabled and the exception handler checks $@
 and sees that a 'prepare' method call failed.
 
 
-=head3 C<RowCacheSize>  (integer)
+=head3 C<RowCacheSize>
+
+Type: integer
 
 A hint to the driver indicating the size of the local row cache that the
 application would like the driver to use for future C<SELECT> statements.
@@ -5763,7 +5831,9 @@ cache needs refilling.
 
 See also the L</RowsInCache> statement handle attribute.
 
-=head3 C<Username>  (string)
+=head3 C<Username>
+
+Type: string
 
 Returns the username used to connect to the database.
 
@@ -6641,20 +6711,26 @@ For drivers which support stored procedures and multiple result sets
 See also L</finish> to learn more about the effect it
 may have on some attributes.
 
-=head3 C<NUM_OF_FIELDS>  (integer, read-only)
+=head3 C<NUM_OF_FIELDS>
+
+Type: integer, read-only
 
 Number of fields (columns) in the data the prepared statement may return.
 Statements that don't return rows of data, like C<DELETE> and C<CREATE>
 set C<NUM_OF_FIELDS> to 0 (though it may be undef in some drivers).
 
 
-=head3 C<NUM_OF_PARAMS>  (integer, read-only)
+=head3 C<NUM_OF_PARAMS>
+
+Type: integer, read-only
 
 The number of parameters (placeholders) in the prepared statement.
 See SUBSTITUTION VARIABLES below for more details.
 
 
-=head3 C<NAME>  (array-ref, read-only)
+=head3 C<NAME>
+
+Type: array-ref, read-only
 
 Returns a reference to an array of field names for each column. The
 names may contain spaces but should not be truncated or have any
@@ -6668,19 +6744,29 @@ Also note that the name returned for (aggregate) functions like C<count(*)>
 or C<max(c_foo)> is determined by the database server and not by C<DBI> or
 the C<DBD> backend.
 
-=head3 C<NAME_lc>  (array-ref, read-only)
+=head3 C<NAME_lc>
+
+Type: array-ref, read-only
 
 Like L</NAME> but always returns lowercase names.
 
-=head3 C<NAME_uc>  (array-ref, read-only)
+=head3 C<NAME_uc>
+
+Type: array-ref, read-only
 
 Like L</NAME> but always returns uppercase names.
 
-=head3 C<NAME_hash>  (hash-ref, read-only)
+=head3 C<NAME_hash>
 
-=head3 C<NAME_lc_hash>  (hash-ref, read-only)
+Type: hash-ref, read-only
 
-=head3 C<NAME_uc_hash>  (hash-ref, read-only)
+=head3 C<NAME_lc_hash>
+
+Type: hash-ref, read-only
+
+=head3 C<NAME_uc_hash>
+
+Type: hash-ref, read-only
 
 The C<NAME_hash>, C<NAME_lc_hash>, and C<NAME_uc_hash> attributes
 return column name information as a reference to a hash.
@@ -6698,7 +6784,9 @@ corresponding column (counting from 0). For example:
   print "Name $row[ $sth->{NAME_lc_hash}{name} ]\n";
 
 
-=head3 C<TYPE>  (array-ref, read-only)
+=head3 C<TYPE>
+
+Type: array-ref, read-only
 
 Returns a reference to an array of integer values for each
 column. The value indicates the data type of the corresponding column.
@@ -6719,7 +6807,9 @@ officially reserved for use by the DBI: -9999 to -9000.
 All possible values for C<TYPE> should have at least one entry in the
 output of the C<type_info_all> method (see L</type_info_all>).
 
-=head3 C<PRECISION>  (array-ref, read-only)
+=head3 C<PRECISION>
+
+Type: array-ref, read-only
 
 Returns a reference to an array of integer values for each column.
 
@@ -6735,12 +6825,16 @@ in other words the number of bytes, not characters.
 (More recent standards refer to this as COLUMN_SIZE but we stick
 with PRECISION for backwards compatibility.)
 
-=head3 C<SCALE>  (array-ref, read-only)
+=head3 C<SCALE>
+
+Type: array-ref, read-only
 
 Returns a reference to an array of integer values for each column.
 NULL (C<undef>) values indicate columns where scale is not applicable.
 
-=head3 C<NULLABLE>  (array-ref, read-only)
+=head3 C<NULLABLE>
+
+Type: array-ref, read-only
 
 Returns a reference to an array indicating the possibility of each
 column returning a null.  Possible values are C<0>
@@ -6749,24 +6843,32 @@ column returning a null.  Possible values are C<0>
   print "First column may return NULL\n" if $sth->{NULLABLE}->[0];
 
 
-=head3 C<CursorName>  (string, read-only)
+=head3 C<CursorName>
+
+Type: string, read-only
 
 Returns the name of the cursor associated with the statement handle, if
 available. If not available or if the database driver does not support the
 C<"where current of ..."> SQL syntax, then it returns C<undef>.
 
 
-=head3 C<Database>  (dbh, read-only)
+=head3 C<Database>
+
+Type: dbh, read-only
 
 Returns the parent $dbh of the statement handle.
 
 
-=head3 C<Statement>  (string, read-only)
+=head3 C<Statement>
+
+Type: string, read-only
 
 Returns the statement string passed to the L</prepare> method.
 
 
-=head3 C<ParamValues>  (hash ref, read-only)
+=head3 C<ParamValues>
+
+Type: hash ref, read-only
 
 Returns a reference to a hash containing the values currently bound
 to placeholders.  The keys of the hash are the 'names' of the
@@ -6800,7 +6902,9 @@ database as the same value. See also L</ParamTypes> below.
 
 The C<ParamValues> attribute was added in DBI 1.28.
 
-=head3 C<ParamTypes>  (hash ref, read-only)
+=head3 C<ParamTypes>
+
+Type: hash ref, read-only
 
 Returns a reference to a hash containing the type information
 currently bound to placeholders.
@@ -6851,7 +6955,9 @@ is the responsibility of individual drivers; the DBI layer default
 implementation simply returns undef.
 
 
-=head3 C<ParamArrays>  (hash ref, read-only)
+=head3 C<ParamArrays>
+
+Type: hash ref, read-only
 
 Returns a reference to a hash containing the values currently bound to
 placeholders with L</execute_array> or L</bind_param_array>.  The
@@ -6885,7 +6991,9 @@ C<ParamArrays> are not exactly the same as those implied by the
 prepared statement.  For example, DBD::Oracle translates 'C<?>'
 placeholders into 'C<:pN>' where N is a sequence number starting at 1.
 
-=head3 C<RowsInCache>  (integer, read-only)
+=head3 C<RowsInCache>
+
+Type: integer, read-only
 
 If the driver supports a local row cache for C<SELECT> statements, then
 this attribute holds the number of un-fetched rows in the cache. If the
