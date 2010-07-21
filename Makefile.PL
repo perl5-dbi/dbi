@@ -108,7 +108,7 @@ my %opts = (
 	},
     },
     PREREQ_PM => {
-	  ( $^O eq 'MSWin32' ? ( 'PathTools' => 3.31, ) : () ),
+	  ( $^O eq 'MSWin32' ? ( 'File::Spec' => 3.31, ) : () ),
     },
     CONFLICTS => {
 	'SQL::Statement' => '1.27',
