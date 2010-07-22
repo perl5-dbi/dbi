@@ -9,7 +9,7 @@
 require 5.008_001;
 
 BEGIN {
-$DBI::VERSION = "1.612"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.613"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -121,7 +121,7 @@ Tim he is very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.612
+This is the DBI specification that corresponds to the DBI version 1.613
 ($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
