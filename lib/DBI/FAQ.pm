@@ -63,10 +63,10 @@ the DBI Mailing Lists and personally to members of the DBI development team.
 
 To quote Tim Bunce, the architect and author of DBI:
 
-    ``DBI is a database access Application Programming Interface (API)
+      DBI is a database access Application Programming Interface (API)
       for the Perl Language. The DBI API Specification defines a set
       of functions, variables and conventions that provide a consistent
-      database interface independant of the actual database being used.''
+      database interface independent of the actual database being used.
 
 In simple language, the DBI interface allows users to access multiple database
 types transparently. So, if you connecting to an Oracle, Informix, mSQL, Sybase

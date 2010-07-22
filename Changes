@@ -8,7 +8,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.613 (svn rNNNNN) NNth XXXX 2010
 
-  Fixed attribute references in DBI pod (Martin J. Evans)
+  Changed attribute headings and fixed references in DBI pod (Martin J. Evans)
+  Corrected typos in DBI::FAQ and DBI::ProxyServer (Ansgar Burchardt)
 
 =head2 Changes in DBI 1.612 (svn r14254) 16th July 2010
 

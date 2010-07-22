@@ -651,7 +651,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 		},
 
 		# rule: employee_workplace
-		# desc: get detailled informations
+		# desc: get detailled information
 		{
 			# any IP-address is meant here
 			mask => '^10\.95\.81\.(\d+)$',
