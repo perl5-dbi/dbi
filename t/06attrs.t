@@ -286,7 +286,7 @@ is $sth->{examplep_private_sth_attrib}, 24, 'should see driver-private sth attri
 
 # $h->{TraceLevel} tests are in t/09trace.t
 
-diag "Checking inheritance\n";
+note "Checking inheritance\n";
 
 SKIP: {
     skip "drh->dbh->sth inheritance test skipped with DBI_AUTOPROXY", 2 if $ENV{DBI_AUTOPROXY};
