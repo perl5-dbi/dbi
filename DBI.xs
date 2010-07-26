@@ -1247,6 +1247,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
     DBIc_MY_H(imp) = (HV*)SvRV(orv);    /* take _copy_ of pointer, not new ref  */
     DBIc_IMP_DATA(imp) = (imp_datasv) ? newSVsv(imp_datasv) : &PL_sv_undef;
+    _imp2com(imp, std.pid) = (U32)PerlProc_getpid();
 
     if (DBIc_TYPE(imp) <= DBIt_ST) {
         SV **tmp_svp;
@@ -3200,8 +3201,9 @@ XS(XS_DBI_dispatch)
             }
         }
 
-        if (DBIc_AIADESTROY(imp_xxh)) { /* wants ineffective after fork */
-            /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
+        if (DBIc_AIADESTROY(imp_xxh)) { /* wants ineffective destroy after fork */
+            if ((U32)PerlProc_getpid() != _imp2com(imp_xxh, std.pid))
+                DBIc_set(imp_xxh, DBIcf_IADESTROY, 1);
         }
         if (DBIc_IADESTROY(imp_xxh)) {  /* wants ineffective destroy    */
             DBIc_ACTIVE_off(imp_xxh);
@@ -5036,9 +5038,6 @@ DESTROY(sth)
     D_imp_sth(sth);
     ST(0) = &PL_sv_yes;
     /* we don't test IMPSET here because this code applies to pure-perl drivers */
-    if (DBIc_AIADESTROY(imp_sth)) { /* wants ineffective after fork */
-        /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
-    }
     if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
         DBIc_ACTIVE_off(imp_sth);
         if (DBIc_DBISTATE(imp_sth)->debug)

@@ -350,9 +350,6 @@ DESTROY(dbh)
                     SvPV(dbh,lna));
     }
     else {
-        if (DBIc_AIADESTROY(imp_dbh)) {           /* wants ineffective after fork */
-            /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
-        }
         if (DBIc_IADESTROY(imp_dbh)) {            /* wants ineffective destroy */
             DBIc_ACTIVE_off(imp_dbh);
             if (DBIc_DBISTATE(imp_dbh)->debug)
@@ -754,9 +751,6 @@ DESTROY(sth)
                     SvPV(sth,lna));
     }
     else {
-        if (DBIc_AIADESTROY(imp_sth)) { /* wants ineffective after fork */
-            /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
-        }
         if (DBIc_IADESTROY(imp_sth)) {  /* wants ineffective destroy    */
             DBIc_ACTIVE_off(imp_sth);
             if (DBIc_DBISTATE(imp_sth)->debug)

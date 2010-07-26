@@ -25,8 +25,10 @@ ok $dbh->{Active}, 'Should still be active';
 ok $dbh = DBI->connect($dsn, '', '', { InactiveDestroy => 1 }),
     'Create with ActiveDestroy';
 ok $dbh->{Active}, 'Should start active';
+#DBI->trace(9);
 $dbh->DESTROY;
 ok !$dbh->{Active}, 'Should no longer be active';
+#DBI->trace(0);
 
 # Try AutoInactiveDestroy.
 ok $dbh = DBI->connect($dsn, '', '', { AutoInactiveDestroy => 1 }),

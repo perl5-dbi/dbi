@@ -97,7 +97,7 @@ typedef struct dbih_com_std_st {
 
     I32  kids;          /* count of db's for dr's, st's for db's etc    */
     I32  active_kids;   /* kids which are currently DBIc_ACTIVE         */
-    U32 pad;            /* keep binary compat */
+    U32  pid;           /* pid of process that created handle */
     dbistate_t *dbistate;
 } dbih_com_std_t;
 
@@ -176,7 +176,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 } dbih_fdc_t;
 
 
-#define _imp2com(p,f)           ((p)->com.f)
+#define _imp2com(p,f)           ((p)->com.f) /* private */
 
 #define DBIc_FLAGS(imp)         _imp2com(imp, std.flags)
 #define DBIc_TYPE(imp)          _imp2com(imp, std.type)
