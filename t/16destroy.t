@@ -120,9 +120,14 @@ FORK: {
     ok $dbh->{AutoInactiveDestroy}, 'InactiveDestroy should be set';
     ok $dbh->{Active}, 'Should start active';
 
-    # XXX Add code to skip where fork() is unimplemented.
-    my $pid = fork();
-    if ($pid) {
+    my $pid = eval { fork() };
+    if (not defined $pid) {
+        chomp $@;
+        my $msg = "AutoInactiveDestroy destroy test skipped";
+        diag "$msg because $@\n";
+        pass $msg; # in lieu of the child status test
+    }
+    elsif ($pid) {
         # parent.
         $expect_active = 1;
         wait;
