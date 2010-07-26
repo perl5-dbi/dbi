@@ -166,7 +166,7 @@ sub _connect {
 
     # delete attributes we don't want to affect the server-side
     # (Could just do this on client-side and trust the client. DoS?)
-    delete @{$attr}{qw(Profile InactiveDestroy HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
+    delete @{$attr}{qw(Profile InactiveDestroy AutoInactiveDestroy HandleError HandleSetErr TraceLevel Taint TaintIn TaintOut)};
 
     $dsn = $self->forced_connect_dsn || $dsn || $self->default_connect_dsn
         or die "No forced_connect_dsn, requested dsn, or default_connect_dsn for request";

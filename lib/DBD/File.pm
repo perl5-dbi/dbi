@@ -1085,6 +1085,7 @@ thus they all work as expected:
     CachedKids
     CompatMode             (Not used)
     InactiveDestroy
+    AutoInactiveDestroy
     Kids
     PrintError
     RaiseError

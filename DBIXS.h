@@ -244,6 +244,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_IMPSET      0x000002      /* has implementor data to be clear'd   */
 #define DBIcf_ACTIVE      0x000004      /* needs finish/disconnect before clear */
 #define DBIcf_IADESTROY   0x000008      /* do DBIc_ACTIVE_off before DESTROY    */
+#define DBIcf_AIADESTROY  0x000009      /* autod DBIc_ACTIVE_off before DESTROY */
 #define DBIcf_WARN        0x000010      /* warn about poor practice etc         */
 #define DBIcf_COMPAT      0x000020      /* compat/emulation mode (eg oraperl)   */
 #define DBIcf_ChopBlanks  0x000040      /* rtrim spaces from fetch char columns */
@@ -265,7 +266,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 /* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK               /* what NOT to pass on to children */   \
-  (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY           \
+  (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY | DBIcf_AIADESTROY \
   | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed | DBIcf_Callbacks )
 
 /* general purpose bit setting and testing macros                       */
@@ -316,6 +317,10 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIc_IADESTROY(imp)     (DBIc_FLAGS(imp) &   DBIcf_IADESTROY)
 #define DBIc_IADESTROY_on(imp)  (DBIc_FLAGS(imp) |=  DBIcf_IADESTROY)
 #define DBIc_IADESTROY_off(imp) (DBIc_FLAGS(imp) &= ~DBIcf_IADESTROY)
+
+#define DBIc_AIADESTROY(imp)     (DBIc_FLAGS(imp) &   DBIcf_AIADESTROY)
+#define DBIc_AIADESTROY_on(imp)  (DBIc_FLAGS(imp) |=  DBIcf_AIADESTROY)
+#define DBIc_AIADESTROY_off(imp) (DBIc_FLAGS(imp) &= ~DBIcf_AIADESTROY)
 
 #define DBIc_WARN(imp)          (DBIc_FLAGS(imp) &   DBIcf_WARN)
 #define DBIc_WARN_on(imp)       (DBIc_FLAGS(imp) |=  DBIcf_WARN)

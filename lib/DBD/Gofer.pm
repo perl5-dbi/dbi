@@ -29,6 +29,7 @@
         FetchHashKeyName
         HandleError HandleSetErr
         InactiveDestroy
+        AutoInactiveDestroy
         PrintError PrintWarn
         Profile
         RaiseError

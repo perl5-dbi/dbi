@@ -143,6 +143,7 @@ my %is_flag_attribute = map {$_ =>1 } qw(
 	TaintIn
 	TaintOut
 	InactiveDestroy
+	AutoInactiveDestroy
 	LongTruncOk
 	MultiThread
 	PrintError
@@ -1168,6 +1169,7 @@ functionality:
 
   ActiveKids
   InactiveDestroy
+  AutoInactiveDestroy
   Kids
   Taint
   TaintIn

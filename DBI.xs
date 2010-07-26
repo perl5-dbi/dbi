@@ -1866,6 +1866,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "Warn")) {
         (on) ? DBIc_WARN_on(imp_xxh) : DBIc_WARN_off(imp_xxh);
     }
+    else if (strEQ(key, "AutoInactiveDestroy")) {
+        (on) ? DBIc_AIADESTROY_on(imp_xxh) : DBIc_AIADESTROY_off(imp_xxh);
+    }
     else if (strEQ(key, "InactiveDestroy")) {
         (on) ? DBIc_IADESTROY_on(imp_xxh) : DBIc_IADESTROY_off(imp_xxh);
     }
@@ -2225,6 +2228,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             else if (keylen==10 && strEQ(key, "ActiveKids")) {
                 valuesv = newSViv(DBIc_ACTIVE_KIDS(imp_xxh));
+            }
+            else if (strEQ(key, "AutoInactiveDestroy")) {
+                valuesv = boolSV(DBIc_AIADESTROY(imp_xxh));
             }
             break;
 
@@ -3194,7 +3200,10 @@ XS(XS_DBI_dispatch)
             }
         }
 
-        if (DBIc_IADESTROY(imp_xxh)) { /* want's ineffective destroy    */
+        if (DBIc_AIADESTROY(imp_xxh)) { /* wants ineffective after fork */
+            /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
+        }
+        if (DBIc_IADESTROY(imp_xxh)) {  /* wants ineffective destroy    */
             DBIc_ACTIVE_off(imp_xxh);
         }
         call_depth = 0;
@@ -5027,6 +5036,9 @@ DESTROY(sth)
     D_imp_sth(sth);
     ST(0) = &PL_sv_yes;
     /* we don't test IMPSET here because this code applies to pure-perl drivers */
+    if (DBIc_AIADESTROY(imp_sth)) { /* wants ineffective after fork */
+        /* Compare $$ to its value set in constructor ans set IADESTROY if different. */
+    }
     if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
         DBIc_ACTIVE_off(imp_sth);
         if (DBIc_DBISTATE(imp_sth)->debug)

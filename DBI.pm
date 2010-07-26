@@ -1520,7 +1520,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    # explicitly set attributes which are unlikely to be in the
 	    # attribute cache, i.e., boolean's and some others
 	    $attr->{$_} = $old_dbh->FETCH($_) for (qw(
-		AutoCommit ChopBlanks InactiveDestroy
+		AutoCommit ChopBlanks InactiveDestroy AutoInactiveDestroy
 		LongTruncOk PrintError PrintWarn Profile RaiseError
 		ShowErrorStatement TaintIn TaintOut
 	    ));
@@ -3635,6 +3635,34 @@ the trace log whenever a DBI or handle trace() method is called.
 The process id also shown for I<every> method call if the DBI trace
 level (not handle trace level) is set high enough to show the trace
 from the DBI's method dispatcher, e.g. >= 9.
+
+=head3 C<AutoInactiveDestroy>
+
+Type: boolean
+
+While its best to set C<InactiveDestroy> on a handle when you've C<fork>ed off
+a child process, sometimes you might call code that C<fork>s without your
+knowledge. In such a case, if a the child exits and then the parent tries to
+use the original handle, it might fail, as the child might have closed the
+socket the parent was using.
+
+Use C<AutoInactiveDestroy> to get around this situation. Like
+C<InactiveDestroy>, when set to a true value the handle will be treated by the
+DESTROY as if it was no longer Active, and so the I<database engine> related
+effects of DESTROYing a handle will be skipped. This only happens, however, if
+the DBI detects that the process ID in which the handle is being DESTROYed is
+different than the process ID in which it was created.
+
+This is the example it's designed to deal with:
+
+    my $dbh = DBI->connect(...);
+    some_code_that_forks(); # Perhaps without your knowlege.
+    $dbh->do(...); # dies.
+
+The issue is that C<$dbh> is DESTROYed in the fork and closes the socket from
+the parent, too. Pass a true value for C<AutoInactiveDestroy> and the DBI will
+automatically detect when a forked database handle is being DESTROYed and
+treat the handle as non-active.
 
 =head3 C<PrintWarn>
 
