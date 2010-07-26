@@ -107,6 +107,9 @@ Before asking any questions, reread this document, consult the
 archives and read the DBI FAQ. The archives are listed
 at the end of this document and on the DBI home page.
 
+You might also like to read the Advanced DBI Tutorial at
+L<http://www.slideshare.net/Tim.Bunce/dbi-advanced-tutorial-2007>
+
 This document often uses terms like I<references>, I<objects>,
 I<methods>.  If you're not familiar with those terms then it would
 be a good idea to read at least the following perl manuals first:
@@ -3615,20 +3618,21 @@ as normal when the last reference to it is removed, just as you'd expect.
 
 If set true then the handle will be treated by the DESTROY as if it was no
 longer Active, and so the I<database engine> related effects of DESTROYing a
-handle will be skipped.
-
-Think of the name as meaning 'treat the handle as not-Active in the DESTROY
-method'.
+handle will be skipped.  Think of the name as meaning 'treat the handle as
+not-Active in the DESTROY method'.
 
 For a database handle, this attribute does not disable an I<explicit>
 call to the disconnect method, only the implicit call from DESTROY
 that happens if the handle is still marked as C<Active>.
 
 This attribute is specifically designed for use in Unix applications
-that "fork" child processes. Either the parent or the child process,
-but not both, should set C<InactiveDestroy> true on all their shared handles.
-(Note that some databases, including Oracle, don't support passing a
-database connection across a fork.)
+that "fork" child processes.  For some drivers, when the child process exits
+the destruction of inherited handles cause the corresponding handles in the
+perent process to cease working.
+
+Either the parent or the child process, but not both, should set
+C<InactiveDestroy> true on all their shared handles. Alternatively the
+L</AutoInactiveDestroy> can be set in the parent on connect.
 
 To help tracing applications using fork the process id is shown in
 the trace log whenever a DBI or handle trace() method is called.
@@ -3638,31 +3642,24 @@ from the DBI's method dispatcher, e.g. >= 9.
 
 =head3 C<AutoInactiveDestroy>
 
-Type: boolean
+Type: boolean, inherited
 
-While its best to set C<InactiveDestroy> on a handle when you've C<fork>ed off
-a child process, sometimes you might call code that C<fork>s without your
-knowledge. In such a case, if a the child exits and then the parent tries to
-use the original handle, it might fail, as the child might have closed the
-socket the parent was using.
+The L</InactiveDestroy> attribute, described above, needs to be explicitly set
+in the child process after a fork(). This is a problem if the code that performs
+the fork() is not under your control, perhaps in a third-party module.
+Use C<AutoInactiveDestroy> to get around this situation.
 
-Use C<AutoInactiveDestroy> to get around this situation. Like
-C<InactiveDestroy>, when set to a true value the handle will be treated by the
-DESTROY as if it was no longer Active, and so the I<database engine> related
-effects of DESTROYing a handle will be skipped. This only happens, however, if
-the DBI detects that the process ID in which the handle is being DESTROYed is
-different than the process ID in which it was created.
+If set true, the DESTROY method will check the process id of the handle and, if
+different from the current process id, it will set the I<InactiveDestroy> attribute.
 
 This is the example it's designed to deal with:
 
     my $dbh = DBI->connect(...);
-    some_code_that_forks(); # Perhaps without your knowlege.
-    $dbh->do(...); # dies.
+    some_code_that_forks(); # Perhaps without your knowledge
+    # Child process dies, destroying the inherited dbh
+    $dbh->do(...); # Breaks because parent $dbh is now broken
 
-The issue is that C<$dbh> is DESTROYed in the fork and closes the socket from
-the parent, too. Pass a true value for C<AutoInactiveDestroy> and the DBI will
-automatically detect when a forked database handle is being DESTROYed and
-treat the handle as non-active.
+The C<AutoInactiveDestroy> attribute was added in DBI 1.614.
 
 =head3 C<PrintWarn>
 

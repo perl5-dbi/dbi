@@ -244,7 +244,6 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_IMPSET      0x000002      /* has implementor data to be clear'd   */
 #define DBIcf_ACTIVE      0x000004      /* needs finish/disconnect before clear */
 #define DBIcf_IADESTROY   0x000008      /* do DBIc_ACTIVE_off before DESTROY    */
-#define DBIcf_AIADESTROY  0x000009      /* autod DBIc_ACTIVE_off before DESTROY */
 #define DBIcf_WARN        0x000010      /* warn about poor practice etc         */
 #define DBIcf_COMPAT      0x000020      /* compat/emulation mode (eg oraperl)   */
 #define DBIcf_ChopBlanks  0x000040      /* rtrim spaces from fetch char columns */
@@ -263,10 +262,11 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_Executed    0x080000      /* do/execute called since commit/rollb */
 #define DBIcf_PrintWarn   0x100000      /* warn() on warning (err="0")          */
 #define DBIcf_Callbacks   0x200000      /* has Callbacks attribute hash         */
+#define DBIcf_AIADESTROY  0x400000      /* auto DBIcf_IADESTROY if pid changes  */
 /* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK               /* what NOT to pass on to children */   \
-  (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY | DBIcf_AIADESTROY \
+  (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY \
   | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed | DBIcf_Callbacks )
 
 /* general purpose bit setting and testing macros                       */
