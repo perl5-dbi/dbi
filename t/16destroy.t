@@ -27,6 +27,8 @@ my $expect_active;
         }, 77 );
         return $drh;
     }
+
+    sub CLONE { undef $drh }
 }
 
 ## Test Driver
