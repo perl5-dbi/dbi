@@ -17,10 +17,9 @@ BEGIN { $tbl = "db_". $$ . "_" };
 use_ok ("DBI");
 use_ok ("DBD::File");
 
-my $dir = File::Spec->catdir (getcwd (), "test_output");
+do "t/lib.pl";
 
-rmtree $dir;
-mkpath $dir;
+my $dir = test_dir ();
 
 my $rowidx = 0;
 my @rows = ( [ "Hello World" ], [ "Hello DBI Developers" ], );

@@ -20,6 +20,8 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
         if $ap !~ /policy=pedantic\b/i;
 }
 
+do "t/lib.pl";
+
 # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
 # next line forces use of Nano rather than default behaviour
 # $ENV{DBI_SQL_NANO}=1;
@@ -45,12 +47,15 @@ if (!$opt_dbm) {
     }
     plan skip_all => 'No DBM modules available' if !$opt_dbm;
 }
-my $remote_driver_dsn = "dbm_type=$opt_dbm;lockfile=0";
-my $remote_dsn = "dbi:DBM:$remote_driver_dsn";
+
+my @remote_dsns = DBI->data_sources( "dbi:DBM:", {
+    dbm_type => $opt_dbm,
+    f_lockfile => 0,
+    f_dir => test_dir() } );
+my $remote_dsn = $remote_dsns[0];
+( my $remote_driver_dsn = $remote_dsn ) =~ s/dbi:dbm://i;
 # Long timeout for slow/overloaded systems (incl virtual machines with low priority)
 my $timeout = 240;
-
-plan 'no_plan';
 
 if ($ENV{DBI_AUTOPROXY}) {
     # this means we have DBD::Gofer => DBD::Gofer => DBD::DBM!
@@ -254,5 +259,6 @@ sub _load_class { # return true or false+$@
     undef; # error in $@
 }   
 
+done_testing;
 
 1;

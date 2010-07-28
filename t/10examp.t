@@ -18,7 +18,7 @@ do {
     # provide some protection against growth in size of '.' during the test
     # which was probable cause of this failure
     # http://www.nntp.perl.org/group/perl.cpan.testers/2009/09/msg5297317.html
-    my $tmpfile = "deleteme";
+    my $tmpfile = "deleteme_$$";
     open my $fh, ">$tmpfile";
     close $fh;
     unlink $tmpfile;
@@ -137,13 +137,14 @@ ok("@{[sort values %{$csr_b->{NAME_lc_hash}}]}" eq "0 1 2");
 ok("@{[sort keys   %{$csr_b->{NAME_uc_hash}}]}" eq "MODE NAME SIZE");
 ok("@{[sort values %{$csr_b->{NAME_uc_hash}}]}" eq "0 1 2");
 
+do "t/lib.pl";
 
 # get a dir always readable on all platforms
-my $dir = getcwd() || cwd();
-$dir = VMS::Filespec::unixify($dir) if $^O eq 'VMS';
+#my $dir = getcwd() || cwd();
+#$dir = VMS::Filespec::unixify($dir) if $^O eq 'VMS';
 # untaint $dir
 #$dir =~ m/(.*)/; $dir = $1 || die;
-
+my $dir = test_dir ();
 
 # ---
 

@@ -75,10 +75,9 @@ EOP
     }
 }
 
-my $dir = File::Spec->catdir(getcwd(),'test_output');
+do "t/lib.pl";
 
-rmtree $dir; END { rmtree $dir }
-mkpath $dir;
+my $dir = test_dir ();
 
 my %tests_statement_results = (
     2 => [

@@ -10,6 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Added $h->{AutoInactiveDestroy} as simpler safer form of
     $h->{InactiveDestroy} (David E. Wheeler)
+  Fix tests failing when ran parallel (Jens Rehsack)
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 

@@ -87,11 +87,9 @@ EOP
     }
 }
 
-my $dir = File::Spec->catdir( getcwd(), 'test_output' );
+do "t/lib.pl";
 
-rmtree $dir;
-END { rmtree $dir }
-mkpath $dir;
+my $dir = test_dir ();
 
 plan skip_all => "Not running with SQL::Statement" unless ( $haveSS and @mldbm_types );
 plan skip_all => "Needs more love to run with Gofer, too" if( $using_dbd_gofer );

@@ -11,10 +11,9 @@ my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
 
 use DBI;
 
-my $dir = File::Spec->catdir(getcwd(),'test_output');
+do "t/lib.pl";
 
-rmtree $dir; END { rmtree $dir }
-mkpath $dir;
+my $dir = test_dir ();
 
 my $dbh = DBI->connect('dbi:DBM:', undef, undef, {
     f_dir => $dir,
