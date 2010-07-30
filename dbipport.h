@@ -4103,7 +4103,6 @@ extern U32 DPPP_(my_PL_signals);
 #  define PL_debstash               debstash
 #  define PL_defgv                  defgv
 #  define PL_diehook                diehook
-#  define PL_dirty                  dirty
 #  define PL_dowarn                 dowarn
 #  define PL_errgv                  errgv
 #  define PL_error_count            error_count
@@ -4120,14 +4119,11 @@ extern U32 DPPP_(my_PL_signals);
 #  define PL_perldb                 perldb
 #  define PL_rsfp_filters           rsfp_filters
 #  define PL_rsfp                   rsfp
-#  define PL_stack_base             stack_base
 #  define PL_stack_sp               stack_sp
 #  define PL_statcache              statcache
 #  define PL_stdingv                stdingv
 #  define PL_sv_arenaroot           sv_arenaroot
-#  define PL_sv_no                  sv_no
 #  define PL_sv_undef               sv_undef
-#  define PL_sv_yes                 sv_yes
 #  define PL_tainted                tainted
 #  define PL_tainting               tainting
 #  define PL_tokenbuf               tokenbuf

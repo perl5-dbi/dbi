@@ -3441,16 +3441,16 @@ XS(XS_DBI_dispatch)
             (void)(*CvXSUB(xscv))(aTHXo_ xscv); /* Call the C code directly */
 
             if (gimme == G_SCALAR) {    /* Enforce sanity in scalar context */
-                if (++markix != PL_stack_sp - stack_base ) {
-                    if (markix > PL_stack_sp - stack_base)
-                         *(stack_base + markix) = &PL_sv_undef;
-                    else *(stack_base + markix) = *PL_stack_sp;
-                    PL_stack_sp = stack_base + markix;
+                if (++markix != PL_stack_sp - PL_stack_base ) {
+                    if (markix > PL_stack_sp - PL_stack_base)
+                         *(PL_stack_base + markix) = &PL_sv_undef;
+                    else *(PL_stack_base + markix) = *PL_stack_sp;
+                    PL_stack_sp = PL_stack_base + markix;
                 }
                 outitems = 1;
             }
             else {
-                outitems = PL_stack_sp - (stack_base + markix);
+                outitems = PL_stack_sp - (PL_stack_base + markix);
             }
 
         }
@@ -3463,7 +3463,7 @@ XS(XS_DBI_dispatch)
 
         /* XXX restore local vars so ST(n) works below  */
         SP -= outitems;
-        ax = (SP - stack_base) + 1;
+        ax = (SP - PL_stack_base) + 1;
 
 #ifdef DBI_save_hv_fetch_ent
         if (is_FETCH)

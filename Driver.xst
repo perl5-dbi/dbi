@@ -47,7 +47,7 @@ discon_all_(drh)
     CODE:
     D_imp_drh(drh);
     if (0) ix = ix;     /* avoid unused variable warning */
-    ST(0) = dbd_discon_all(drh, imp_drh) ? &sv_yes : &sv_no;
+    ST(0) = dbd_discon_all(drh, imp_drh) ? &PL_sv_yes : &PL_sv_no;
 
 #endif /* dbd_discon_all */
 
@@ -95,11 +95,11 @@ _login(dbh, dbname, username, password, attribs=Nullsv)
     char *u = (SvOK(username)) ? SvPV(username,lna) : "";
     char *p = (SvOK(password)) ? SvPV(password,lna) : "";
 #ifdef dbd_db_login6_sv
-    ST(0) = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs) ? &PL_sv_yes : &PL_sv_no;
 #elif defined(dbd_db_login6)
-    ST(0) = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs) ? &PL_sv_yes : &PL_sv_no;
 #else
-    ST(0) = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p) ? &PL_sv_yes : &PL_sv_no;
 #endif
     }
 
@@ -274,7 +274,7 @@ commit(dbh)
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
         warn("commit ineffective with AutoCommit enabled");
-    ST(0) = dbd_db_commit(dbh, imp_dbh) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_commit(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -284,7 +284,7 @@ rollback(dbh)
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
         warn("rollback ineffective with AutoCommit enabled");
-    ST(0) = dbd_db_rollback(dbh, imp_dbh) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_rollback(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
 
 
 void
@@ -297,14 +297,14 @@ disconnect(dbh)
     }
     /* Check for disconnect() being called whilst refs to cursors       */
     /* still exists. This possibly needs some more thought.             */
-    if (DBIc_ACTIVE_KIDS(imp_dbh) && DBIc_WARN(imp_dbh) && !dirty) {
+    if (DBIc_ACTIVE_KIDS(imp_dbh) && DBIc_WARN(imp_dbh) && !PL_dirty) {
         STRLEN lna;
         char *plural = (DBIc_ACTIVE_KIDS(imp_dbh)==1) ? "" : "s";
         warn("%s->disconnect invalidates %d active statement handle%s %s",
             SvPV(dbh,lna), (int)DBIc_ACTIVE_KIDS(imp_dbh), plural,
             "(either destroy statement handles or call finish on them before disconnecting)");
     }
-    ST(0) = dbd_db_disconnect(dbh, imp_dbh) ? &sv_yes : &sv_no;
+    ST(0) = dbd_db_disconnect(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
     DBIc_ACTIVE_off(imp_dbh);   /* ensure it's off, regardless */
 
 
@@ -317,10 +317,10 @@ STORE(dbh, keysv, valuesv)
     D_imp_dbh(dbh);
     if (SvGMAGICAL(valuesv))
         mg_get(valuesv);
-    ST(0) = &sv_yes;
+    ST(0) = &PL_sv_yes;
     if (!dbd_db_STORE_attrib(dbh, imp_dbh, keysv, valuesv))
         if (!DBIc_DBISTATE(imp_dbh)->set_attr(dbh, keysv, valuesv))
-            ST(0) = &sv_no;
+            ST(0) = &PL_sv_no;
 
 
 void
@@ -341,10 +341,10 @@ DESTROY(dbh)
     PPCODE:
     /* keep in sync with default DESTROY in DBI.xs */
     D_imp_dbh(dbh);
-    ST(0) = &sv_yes;
+    ST(0) = &PL_sv_yes;
     if (!DBIc_IMPSET(imp_dbh)) {        /* was never fully set up       */
         STRLEN lna;
-        if (DBIc_WARN(imp_dbh) && !dirty && DBIc_DBISTATE(imp_dbh)->debug >= 2)
+        if (DBIc_WARN(imp_dbh) && !PL_dirty && DBIc_DBISTATE(imp_dbh)->debug >= 2)
              PerlIO_printf(DBIc_LOGPIO(imp_dbh),
                 "         DESTROY for %s ignored - handle not initialised\n",
                     SvPV(dbh,lna));
@@ -370,7 +370,7 @@ DESTROY(dbh)
                 if (DBIc_WARN(imp_dbh) /* only warn if likely to be useful... */
                 &&  DBIc_is(imp_dbh, DBIcf_Executed) /* has not just called commit/rollback */
             /*  && !DBIc_is(imp_dbh, DBIcf_ReadOnly) -- is not read only */
-                && (!dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
+                && (!PL_dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
                 ) {
                     warn("Issuing rollback() due to DESTROY without explicit disconnect() of %s handle %s",
                         SvPV_nolen(*hv_fetch((HV*)SvRV(dbh), "ImplementorClass", 16, 1)),
@@ -449,9 +449,9 @@ _prepare(sth, statement, attribs=Nullsv)
     D_imp_sth(sth);
     DBD_ATTRIBS_CHECK("_prepare", sth, attribs);
 #ifdef dbd_st_prepare_sv
-    ST(0) = dbd_st_prepare_sv(sth, imp_sth, statement, attribs) ? &sv_yes : &sv_no;
+    ST(0) = dbd_st_prepare_sv(sth, imp_sth, statement, attribs) ? &PL_sv_yes : &PL_sv_no;
 #else
-    ST(0) = dbd_st_prepare(sth, imp_sth, SvPV_nolen(statement), attribs) ? &sv_yes : &sv_no;
+    ST(0) = dbd_st_prepare(sth, imp_sth, SvPV_nolen(statement), attribs) ? &PL_sv_yes : &PL_sv_no;
 #endif
     }
 
@@ -495,13 +495,13 @@ bind_col(sth, col, ref, attribs=Nullsv)
         }
     }
     switch(dbd_st_bind_col(sth, imp_sth, col, ref, sql_type, attribs)) {
-    case 2:     ST(0) = &sv_yes;        /* job done completely */
+    case 2:     ST(0) = &PL_sv_yes;        /* job done completely */
                 break;
     case 1:     /* fallback to DBI default */
                 ST(0) = (DBIc_DBISTATE(imp_sth)->bind_col(sth, col, ref, attribs))
-                    ? &sv_yes : &sv_no;
+                    ? &PL_sv_yes : &PL_sv_no;
                 break;
-    default:    ST(0) = &sv_no;         /* dbd_st_bind_col has called set_err */
+    default:    ST(0) = &PL_sv_no;         /* dbd_st_bind_col has called set_err */
                 break;
     }
     }
@@ -533,7 +533,7 @@ bind_param(sth, param, value, attribs=Nullsv)
         }
     }
     ST(0) = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, FALSE, 0)
-                ? &sv_yes : &sv_no;
+                ? &PL_sv_yes : &PL_sv_no;
     }
 
 
@@ -568,7 +568,7 @@ bind_param_inout(sth, param, value_ref, maxlen, attribs=Nullsv)
         }
     }
     ST(0) = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, TRUE, maxlen)
-                ? &sv_yes : &sv_no;
+                ? &PL_sv_yes : &PL_sv_no;
     }
 
 
@@ -679,9 +679,9 @@ finish(sth)
         XSRETURN_YES;
     }
 #ifdef dbd_st_finish3
-    ST(0) = dbd_st_finish3(sth, imp_sth, 0) ? &sv_yes : &sv_no;
+    ST(0) = dbd_st_finish3(sth, imp_sth, 0) ? &PL_sv_yes : &PL_sv_no;
 #else
-    ST(0) = dbd_st_finish(sth, imp_sth) ? &sv_yes : &sv_no;
+    ST(0) = dbd_st_finish(sth, imp_sth) ? &PL_sv_yes : &PL_sv_no;
 #endif
 
 
@@ -713,10 +713,10 @@ STORE(sth, keysv, valuesv)
     D_imp_sth(sth);
     if (SvGMAGICAL(valuesv))
         mg_get(valuesv);
-    ST(0) = &sv_yes;
+    ST(0) = &PL_sv_yes;
     if (!dbd_st_STORE_attrib(sth, imp_sth, keysv, valuesv))
         if (!DBIc_DBISTATE(imp_sth)->set_attr(sth, keysv, valuesv))
-            ST(0) = &sv_no;
+            ST(0) = &PL_sv_no;
 
 
 # FETCH renamed and ALIAS'd to avoid case clash on VMS :-(
@@ -742,10 +742,10 @@ DESTROY(sth)
     PPCODE:
     /* keep in sync with default DESTROY in DBI.xs */
     D_imp_sth(sth);
-    ST(0) = &sv_yes;
+    ST(0) = &PL_sv_yes;
     if (!DBIc_IMPSET(imp_sth)) {        /* was never fully set up       */
         STRLEN lna;
-        if (DBIc_WARN(imp_sth) && !dirty && DBIc_DBISTATE(imp_sth)->debug >= 2)
+        if (DBIc_WARN(imp_sth) && !PL_dirty && DBIc_DBISTATE(imp_sth)->debug >= 2)
              PerlIO_printf(DBIc_LOGPIO(imp_sth),
                 "         DESTROY for %s ignored - handle not initialised\n",
                     SvPV(sth,lna));
@@ -758,7 +758,7 @@ DESTROY(sth)
         }
         if (DBIc_ACTIVE(imp_sth)) {
             D_imp_dbh_from_sth;
-            if (!dirty && DBIc_ACTIVE(imp_dbh)) {
+            if (!PL_dirty && DBIc_ACTIVE(imp_dbh)) {
 #ifdef dbd_st_finish3
                 dbd_st_finish3(sth, imp_sth, 1);
 #else
