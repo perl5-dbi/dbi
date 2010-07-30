@@ -6,6 +6,7 @@ use strict;
 use DBI;
 use Config;
 use Test::More;
+use Data::Dumper;
 
 BEGIN {
     plan skip_all => 'profiling not supported for DBI::PurePerl'
@@ -28,8 +29,10 @@ BEGIN {
 
 my $sql = "select mode,size,name from ?";
 
+my $prof_file = "dbi$$.prof";
+
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', 
-                       { RaiseError=>1, Profile=>"6/DBI::ProfileDumper" });
+                       { RaiseError=>1, Profile=>"6/DBI::ProfileDumper/File:$prof_file" });
 isa_ok( $dbh, 'DBI::db', 'Created connection' );
 
 # do a little work, but enough to ensure we don't get 0's on systems with low res timers
@@ -48,10 +51,11 @@ undef $dbh;
 
 
 # wrote the profile to disk?
-ok(-s "dbi.prof", "Profile written to disk, non-zero size" );
+ok(-s $prof_file, "Profile written to disk, non-zero size" );
 
 # load up
 my $prof = DBI::ProfileData->new(
+    File => $prof_file,
     Filter => sub {
         my ($path_ref, $data_ref) = @_;
         $path_ref->[0] =~ s/set dummy=\d/set dummy=N/;
@@ -95,15 +99,16 @@ ok($clone->count == 1);
 # take a look through Data
 my $Data = $prof->Data;
 print "SQL: $_\n" for keys %$Data;
-ok(exists($Data->{$sql}));
-ok(exists($Data->{$sql}{execute}));
+ok(exists($Data->{$sql}), "Data for '$sql' should exist")
+    or print Dumper($Data);
+ok(exists($Data->{$sql}{execute}), "Data for '$sql'->{execute} should exist");
 
 # did the Filter convert set dummy=1 (etc) into set dummy=N?
 ok(exists($Data->{"set dummy=N"}));
 
 # test escaping of \n and \r in keys
 $dbh = DBI->connect("dbi:ExampleP:", '', '', 
-                    { RaiseError=>1, Profile=>"6/DBI::ProfileDumper" });
+                    { RaiseError=>1, Profile=>"6/DBI::ProfileDumper/File:$prof_file" });
 isa_ok( $dbh, 'DBI::db', 'Created connection' );
 
 my $sql2 = 'select size from . where name = "LITERAL: \r\n"';
@@ -126,15 +131,17 @@ $dbh->disconnect;
 undef $dbh;
 
 # load dbi.prof
-$prof = DBI::ProfileData->new( DeleteFiles => 1 );
+$prof = DBI::ProfileData->new( File => $prof_file, DeleteFiles => 1 );
 isa_ok( $prof, 'DBI::ProfileData' );
 
-ok(not(-e "dbi.prof"), "file should be deleted when DeleteFiles set" );
+ok(not(-e $prof_file), "file should be deleted when DeleteFiles set" );
 
 
 # make sure the keys didn't get garbled
 $Data = $prof->Data;
-ok(exists $Data->{$sql2});
-ok(exists $Data->{$sql3});
+ok(exists $Data->{$sql2}, "Data for '$sql2' should exist")
+    or print Dumper($Data);
+ok(exists $Data->{$sql3}, "Data for '$sql3' should exist")
+    or print Dumper($Data);
 
 1;

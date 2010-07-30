@@ -32,8 +32,9 @@ BEGIN {
     use_ok( 'DBI::ProfileDumper' );
 }
 
+my $prof_file = "dbi$$.prof";
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', 
-                       { RaiseError=>1, Profile=>"2/DBI::ProfileDumper" });
+                       { RaiseError=>1, Profile=>"2/DBI::ProfileDumper/File:$prof_file" });
 isa_ok( $dbh, 'DBI::db' );
 isa_ok( $dbh->{Profile}, "DBI::ProfileDumper" );
 isa_ok( $dbh->{Profile}{Data}, 'HASH' );
@@ -62,10 +63,10 @@ $dbh->disconnect;
 undef $dbh;
 
 # wrote the profile to disk?
-ok( -s "dbi.prof", 'Profile is on disk and nonzero size' );
+ok( -s $prof_file, 'Profile is on disk and nonzero size' );
 
 # XXX We're breaking encapsulation here
-open(PROF, "dbi.prof") or die $!;
+open(PROF, $prof_file) or die $!;
 my @prof = <PROF>;
 close PROF;
 
@@ -85,7 +86,7 @@ ok( $prof[2] =~ m{^Program\s+=\s+(\S+)}, 'Found the Program');
 # check that expected key is there
 like(join('', @prof), qr/\+\s+1\s+\Q$sql\E/m);
 
-# unlink("dbi.prof"); # now done by 'make clean'
+# unlink($prof_file); # now done by 'make clean'
 
 # should be able to load DBI::ProfileDumper::Apache outside apache
 # this also naturally checks for syntax errors etc.

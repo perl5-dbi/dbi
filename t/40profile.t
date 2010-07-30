@@ -38,7 +38,7 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
 
 # log file to store profile results 
-my $LOG_FILE = "profile.log";
+my $LOG_FILE = "profile$$.log";
 my $orig_dbi_debug = $DBI::dbi_debug;
 DBI->trace($DBI::dbi_debug, $LOG_FILE);
 END {
