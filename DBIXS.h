@@ -15,8 +15,10 @@
 #define DBIS    dbis    /* default name for dbistate_t variable */
 #endif
 
-/* first pull in the standard Perl header files for extensions  */
+/* Here for backwards compat. PERL_POLLUTE was removed in perl 5.13.3 */
 #define PERL_POLLUTE
+
+/* first pull in the standard Perl header files for extensions  */
 #include <EXTERN.h>
 #include <perl.h>
 #include <XSUB.h>
