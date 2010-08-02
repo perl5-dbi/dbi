@@ -19,7 +19,7 @@ BEGIN {
 $|=1;
 
 
-my $trace_file = "dbitrace.log";
+my $trace_file = "dbitrace$$.log";
 
 1 while unlink $trace_file;
 warn "Can't unlink existing $trace_file: $!" if -e $trace_file;
