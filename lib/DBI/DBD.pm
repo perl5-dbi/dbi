@@ -1849,7 +1849,7 @@ of code. (Of course keep an eye on other people's work.)
   };
 
   /*  Rename functions for avoiding name clashes; prototypes are  */
-  /*  in dbd_xst.h                                                */
+  /*  in dbd_xsh.h                                                */
   #define dbd_init            drv_dr_init
   #define dbd_db_login6_sv    drv_db_login_sv
   #define dbd_db_do           drv_db_do
