@@ -5,6 +5,8 @@
 
     use DBI qw(:sql_types);
 
+    require File::Spec;
+
     @EXPORT = qw(); # Do NOT @EXPORT anything.
     $VERSION = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
 
@@ -137,8 +139,7 @@
 
 	# Return a list of all subdirectories
 	my $dh = Symbol::gensym(); # "DBD::ExampleP::".++$DBD::ExampleP::gensym;
-	my $haveFileSpec = eval { require File::Spec };
-	my $dir = $catalog || ($haveFileSpec ? File::Spec->curdir() : ".");
+	my $dir = $catalog || File::Spec->curdir();
 	my @list;
 	if ($types{VIEW}) {	# for use by test harness
 	    push @list, [ undef, "schema",  "table",  'VIEW', undef ];
@@ -157,7 +158,7 @@
                     # (not a dir) as the item below
                     next if $item !~ /\.dir$/oi;
                 }
-                my $file = ($haveFileSpec) ? File::Spec->catdir($dir,$item) : $item;
+                my $file = File::Spec->catdir($dir,$item);
 		next unless -d $file;
 		my($dev, $ino, $mode, $nlink, $uid) = lstat($file);
 		my $pwnam = undef; # eval { scalar(getpwnam($uid)) } || $uid;
@@ -292,8 +293,6 @@
     $imp_data_size = 0;
     use strict; no strict 'refs'; # cause problems with filehandles
 
-    my $haveFileSpec = eval { require File::Spec };
-
     sub bind_param {
 	my($sth, $param, $value, $attribs) = @_;
 	$sth->{'dbd_param'}->[$param-1] = $value;
@@ -369,8 +368,7 @@
 	    }
 	    # untaint $f so that we can use this for DBI taint tests
 	    ($f) = ($f =~ m/^(.*)$/);
-	    my $file = $haveFileSpec
-		? File::Spec->catfile($dir, $f) : "$dir/$f";
+	    my $file = File::Spec->catfile($dir, $f);
 	    # put in all the data fields
 	    @s{ @DBD::ExampleP::statnames } = (lstat($file), $f);
 	}
