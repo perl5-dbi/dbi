@@ -9,7 +9,8 @@ use strict;
 $^W = 1;
 $| = 1;
 
-my $haveFileSpec = eval { require File::Spec };
+require File::Basename;
+require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
 use Test::More tests => 210;
@@ -438,7 +439,7 @@ ok(!$dbh->{HandleError});
 	
 	isa_ok($sth, "DBI::st");
 	
-	if ($haveFileSpec && length(File::Spec->updir)) {
+	if (length(File::Spec->updir)) {
 	  ok($sth->execute(File::Spec->updir));
 	} else {
 	  ok($sth->execute('../'));
@@ -457,16 +458,17 @@ ok(!$dbh->{HandleError});
 
 }
 
-print "table_info\n";
+note "table_info\n";
 # First generate a list of all subdirectories
-$dir = getcwd();
-ok(opendir(DIR, $dir));
+$dir = File::Basename::dirname( $INC{"DBI.pm"} );
+my $dh;
+ok(opendir($dh, $dir));
 my(%dirs, %unexpected, %missing);
-while (defined(my $file = readdir(DIR))) {
-    $dirs{$file} = 1 if -d $file;
+while (defined(my $file = readdir($dh))) {
+    $dirs{$file} = 1 if -d File::Spec->catdir($dir,$file);
 }
-print "Local $dir subdirs: @{[ keys %dirs ]}\n";
-closedir(DIR);
+note( "Local $dir subdirs: @{[ keys %dirs ]}" );
+closedir($dh);
 my $sth = $dbh->table_info($dir, undef, "%", "TABLE");
 ok($sth);
 %unexpected = %dirs;
@@ -479,11 +481,11 @@ while (my $ref = $sth->fetchrow_hashref()) {
     }
 }
 ok(keys %unexpected == 0)
-    or print "Unexpected directories: ", join(",", keys %unexpected), "\n";
+    or diag "Unexpected directories: ", join(",", keys %unexpected), "\n";
 ok(keys %missing == 0)
-    or print "Missing directories: ", join(",", keys %missing), "\n";
+    or diag "Missing directories: ", join(",", keys %missing), "\n";
 
-print "tables\n";
+note "tables\n";
 my @tables_expected = (
     q{"schema"."table"},
     q{"sch-ema"."table"},
@@ -497,7 +499,7 @@ ok($tables[$_] eq $tables_expected[$_], "$tables[$_] ne $tables_expected[$_]")
 	foreach (0..$#tables_expected);
 
 for (my $i = 0;  $i < 300;  $i += 100) {
-	print "Testing the fake directories ($i).\n";
+	note "Testing the fake directories ($i).\n";
     ok($csr_a = $dbh->prepare("SELECT name, mode FROM long_list_$i"));
     ok($csr_a->execute(), $DBI::errstr);
     my $ary = $csr_a->fetchall_arrayref;
@@ -516,7 +518,7 @@ for (my $i = 0;  $i < 300;  $i += 100) {
 SKIP: {
     skip "test not tested with Multiplex", 1
         if $dbh->{mx_handle_list};
-    print "Testing \$dbh->func().\n";
+    note "Testing \$dbh->func().\n";
     my %tables;
     %tables = map { $_ =~ /lib/ ? ($_, 1) : () } $dbh->tables();
     my @func_tables = $dbh->func('lib', 'examplep_tables');
