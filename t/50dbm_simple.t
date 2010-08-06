@@ -93,12 +93,14 @@ my %tests_statement_results = (
 	"DELETE FROM  fruit WHERE dVal='to delete'", 2,
 	"UPDATE fruit SET dVal='apples' WHERE dKey=2", 1,
 	"DELETE FROM  fruit WHERE dKey=7", 1,
-	'SELECT * FROM fruit ORDER BY dKey DESC', [
+	"SELECT * FROM fruit ORDER BY dKey DESC", [
 	    [ 5, 'via placeholders' ],
 	    [ 3, '' ],
 	    [ 2, 'apples' ],
 	    [ 1, 'oranges' ],
 	],
+	"DELETE FROM fruit", 4,
+	"SELECT COUNT(*) FROM fruit", [ [ 0 ] ],
 	"DROP TABLE fruit", -1,
     ],
     3 => [
@@ -116,12 +118,14 @@ my %tests_statement_results = (
 	"DELETE FROM  multi_fruit WHERE dVal='to_delete'", 2,
 	"DELETE FROM  multi_fruit WHERE qux=17", 1,
 	"DELETE FROM  multi_fruit WHERE dKey=8", 1,
-	'SELECT * FROM multi_fruit ORDER BY dKey DESC', [
+	"SELECT * FROM multi_fruit ORDER BY dKey DESC", [
 	    [ 5, 'via placeholders', 15 ],
 	    [ 3, undef, 13 ],
 	    [ 2, 'apples', 12 ],
 	    [ 1, 'oranges', 11 ],
 	],
+	"DELETE FROM multi_fruit", 4,
+	"SELECT COUNT(*) FROM multi_fruit", [ [ 0 ] ],
 	"DROP TABLE multi_fruit", -1,
     ],
 );

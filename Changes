@@ -21,6 +21,7 @@ XXX either (temporarily) remove it or test with blead-perl.
   Added $h->{AutoInactiveDestroy} as simpler safer form of
     $h->{InactiveDestroy} (David E. Wheeler)
   Added ability for parallel testing "prove -j4 ..." (Jens Rehsack)
+  Added tests for delete in DBM (H.Merijn Brand)
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 
