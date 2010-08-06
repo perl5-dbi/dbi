@@ -85,6 +85,7 @@ t/12quote.t
 t/13taint.t
 t/14utf8.t
 t/15array.t
+t/16destroy.t
 t/19fhtrace.t
 t/20meta.t
 t/30subclass.t
