@@ -290,6 +290,10 @@ is(data_diff(pack("C",0xEA), pack("U",0xEA), 1), ""); # no logical difference
 SKIP: {
 	skip 'developer tests', 4 unless -d ".svn" || -d ".git";
 
+    if ($^O eq "MSWin32" && eval { require Win32API::File }) {
+        Win32API::File::SetErrorMode(Win32API::File::SEM_FAILCRITICALERRORS());
+    }
+
 	print "Test DBI->installed_versions (for @drivers)\n";
 	print "(If one of those drivers, or the configuration for it, is bad\n";
 	print "then these tests can kill or freeze the process here. That's not the DBI's fault.)\n";
