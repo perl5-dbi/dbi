@@ -144,25 +144,8 @@ for my $columns ( 2 .. 3 )
     @{ $expected_results{$columns} } = @{$tests[1]};
 }
 
-my $tests_offsets_group = 5;
-my $ndbm_types = scalar @dbm_types;
-my $nmldbm_types = scalar @mldbm_types;
-my $tests_without_mldbm = $tests_offsets_group + scalar(@{$test_statements{2}});
-   $tests_without_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{2} };
-my $tests_per_mldbm = $tests_offsets_group + scalar(@{$test_statements{3}});
-   $tests_per_mldbm += grep { m/^(?:SELECT|UPDATE|DELETE)/ } @{ $test_statements{3} };
-my $tests_with_mldbm = $tests_per_mldbm * ($nmldbm_types - 1);
-my $num_tests = $ndbm_types * ( $tests_without_mldbm + $tests_with_mldbm );
-printf "Test count: %d x ( ( %d + %d ) + %d x ( %d + %d ) ) = %d\n",
-    $ndbm_types, $tests_offsets_group, $tests_without_mldbm - $tests_offsets_group,
-                 $nmldbm_types - 1, $tests_offsets_group, $tests_per_mldbm - $tests_offsets_group,
-    $num_tests;
-    
-if (!$num_tests) {
+unless (@dbm_types) {
     plan skip_all => "No DBM modules available";
-}
-else {
-    plan tests => $num_tests;
 }
 
 for my $mldbm ( @mldbm_types ) {
@@ -174,11 +157,11 @@ for my $mldbm ( @mldbm_types ) {
     }
 }
 
+done_testing();
+
 sub do_test {
     my ($dtype, $mldbm, $columns) = @_;
 
-    my $test_builder = Test::More->builder;
-    my $starting_test_no = $test_builder->current_test;
     #diag ("Starting test: " . $starting_test_no);
 
     # The DBI can't test locking here, sadly, because of the risk it'll hang
@@ -244,10 +227,8 @@ sub do_test {
         my $comment = $1;
 
         my $sth = $dbh->prepare($sql);
-	unless( $sth ) {
-            skip "prepare failed: " . $dbh->errstr || 'unknown error',
-	        ($sql =~ /SELECT/) ? 2 : 1;
-	}
+        ok($sth, "prepare $sql") or diag($dbh->errstr || 'unknown error');
+
 	my @bind;
 	if($sth->{NUM_OF_PARAMS})
 	{
@@ -256,10 +237,9 @@ sub do_test {
         # if execute errors we will handle it, not PrintError:
         $sth->{PrintError} = 0;
         my $n = $sth->execute(@bind);
-        if ($sth->errstr and $sql !~ /^DROP/ ) {
-            skip "execute failed: " . $sth->errstr || 'unknown error',
-	        ($sql =~ /^(?:SELECT|UPDATE|DELETE)/) ? 2 : 1;
-        }
+        ok($n, 'execute') or diag($sth->errstr || 'unknown error');
+        next if (!defined($n));
+
 	is( $n, $results[$idx], $sql ) unless( 'ARRAY' eq ref $results[$idx] );
 	TODO: {
 	    local $TODO = "AUTOPROXY drivers might throw away sth->rows()" if($ENV{DBI_AUTOPROXY});

@@ -22,6 +22,9 @@ XXX either (temporarily) remove it or test with blead-perl.
     $h->{InactiveDestroy} (David E. Wheeler)
   Added ability for parallel testing "prove -j4 ..." (Jens Rehsack)
   Added tests for delete in DBM (H.Merijn Brand)
+  Changed 50dbm_simple to delete all test counting code as it is getting
+    far too complicated and switched to done_testing. Fixed problems
+    skipping errors on prepare and execute. (Martin J. Evans)
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 
