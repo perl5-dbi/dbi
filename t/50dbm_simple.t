@@ -100,7 +100,7 @@ my %tests_statement_results = (
 	    [ 1, 'oranges' ],
 	],
 	"DELETE FROM fruit", 4,
-	"SELECT COUNT(*) FROM fruit", [ [ 0 ] ],
+	$ENV{DBI_SQL_NANO} ? () : ( "SELECT COUNT(*) FROM fruit", [ [ 0 ] ] ),
 	"DROP TABLE fruit", -1,
     ],
     3 => [
@@ -125,7 +125,7 @@ my %tests_statement_results = (
 	    [ 1, 'oranges', 11 ],
 	],
 	"DELETE FROM multi_fruit", 4,
-	"SELECT COUNT(*) FROM multi_fruit", [ [ 0 ] ],
+	$ENV{DBI_SQL_NANO} ? () : ( "SELECT COUNT(*) FROM multi_fruit", [ [ 0 ] ] ),
 	"DROP TABLE multi_fruit", -1,
     ],
 );
