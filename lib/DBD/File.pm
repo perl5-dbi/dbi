@@ -705,6 +705,8 @@ my $locking = eval { flock STDOUT, 0; 1 };
 
 # ====== FLYWEIGHT SUPPORT =====================================================
 
+my $fn_any_ext_regex = qr/\.[^.]*/;
+
 # Flyweight support for table_info
 # The functions file2table, init_table_meta, default_table_meta and
 # get_table_meta are using $self arguments for polymorphism only. The
@@ -735,16 +737,17 @@ sub file2table
 	$user_spec_file = 0;
 	}
 
-    -d File::Spec->catdir ($meta->{f_dir}, $dir) or
-	croak (File::Spec->catdir ($meta->{f_dir}, $dir) . ": $!");
-
     !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
         $tbl = uc $tbl;
     !$respect_case and $meta->{sql_identifier_case} == 2 and # XXX SQL_IC_LOWER
         $tbl = lc $tbl;
+
     my $searchdir = File::Spec->file_name_is_absolute ($dir)
-	? $dir
+	? ($dir =~ s|/$||, $dir)
 	: Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
+    -d $searchdir or
+	croak "-d $searchdir: $!";
+
     $searchdir eq $meta->{f_dir} and
 	$dir = "";
 
@@ -755,7 +758,7 @@ sub file2table
 	my $cmpsub;
 	if ($respect_case) {
 	    $cmpsub = sub {
-		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, qr/\.[^.]*/);
+		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
 		$fn eq $tbl and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;
@@ -763,7 +766,7 @@ sub file2table
 	    }
 	else {
 	    $cmpsub = sub {
-		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, qr/\.[^.]*/);
+		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
 		lc $fn eq lc $tbl and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;
