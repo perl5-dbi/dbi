@@ -75,6 +75,15 @@ EOP
     }
 }
 
+my $dbi_sql_nano = $ENV{DBI_SQL_NANO};
+unless( $dbi_sql_nano ) {
+    $@ = undef;
+    eval {
+	require SQL::Statement;
+    };
+    $@ and $dbi_sql_nano = 1;
+}
+
 do "t/lib.pl";
 
 my $dir = test_dir ();
@@ -100,7 +109,7 @@ my %tests_statement_results = (
 	    [ 1, 'oranges' ],
 	],
 	"DELETE FROM fruit", 4,
-	$ENV{DBI_SQL_NANO} ? () : ( "SELECT COUNT(*) FROM fruit", [ [ 0 ] ] ),
+	$dbi_sql_nano ? () : ( "SELECT COUNT(*) FROM fruit", [ [ 0 ] ] ),
 	"DROP TABLE fruit", -1,
     ],
     3 => [
@@ -125,7 +134,7 @@ my %tests_statement_results = (
 	    [ 1, 'oranges', 11 ],
 	],
 	"DELETE FROM multi_fruit", 4,
-	$ENV{DBI_SQL_NANO} ? () : ( "SELECT COUNT(*) FROM multi_fruit", [ [ 0 ] ] ),
+	$dbi_sql_nano ? () : ( "SELECT COUNT(*) FROM multi_fruit", [ [ 0 ] ] ),
 	"DROP TABLE multi_fruit", -1,
     ],
 );
