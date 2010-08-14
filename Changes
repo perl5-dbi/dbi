@@ -17,6 +17,8 @@ XXX either (temporarily) remove it or test with blead-perl.
   Fixed internals to not refer to old perl symbols that
     will no longer be visible in perl >5.13.3 (Andreas Koenig)
     Many compiled drivers are likely to need updating.
+  Fixed issue in DBD::File when absolute filename is used as table name
+    (Jens Rehsack)
 
   Added $h->{AutoInactiveDestroy} as simpler safer form of
     $h->{InactiveDestroy} (David E. Wheeler)
@@ -25,6 +27,10 @@ XXX either (temporarily) remove it or test with blead-perl.
   Changed 50dbm_simple to delete all test counting code as it is getting
     far too complicated and switched to done_testing. Fixed problems
     skipping errors on prepare and execute. (Martin J. Evans)
+  Changed 50dbm_simple to skip aggregation tests when not using
+    SQL::Statement (Jens Rehsack)
+  Added test for absolute filename as table to 51dbm_file (Jens Rehsack)
+  Minor speed improvements of DBD::File (Jens Rehsack)
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 
