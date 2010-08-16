@@ -6,10 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.614 (svn r14297) 30th July 2010
+=head2 Changes in DBI 1.614 (svn r14333) 16th August 2010
 
 XXX Removed PERL_POLUTE to emulate perl 5.13.3+ where it has been removed.
-XXX This is temprary for testing. Driver authors should test their code
+XXX This is temporary for testing. Driver authors should test their code
 XXX against this version of the DBI to ensure it'll work with 5.13.3+
 XXX Driver authors should also check if they define PERL_POLUTE and
 XXX either (temporarily) remove it or test with blead-perl.
