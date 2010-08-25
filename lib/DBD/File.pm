@@ -209,7 +209,7 @@ sub init_valid_attributes
 	f_readonly_attrs => 1, # File readonly attributes
 	};
 
-    return $dbh;
+    return $dbh->SUPER::init_valid_attributes ();
     } # init_valid_attributes
 
 sub init_default_attributes
