@@ -35,7 +35,7 @@ use base qw(DBI::DBD::SqlEngine);
 use Carp;
 use vars qw(@ISA $VERSION $drh);
 
-$VERSION = "0.39";
+$VERSION = "0.40";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
@@ -214,42 +214,49 @@ sub init_valid_attributes
 
 sub init_default_attributes
 {
-    my $dbh = shift;
+    my ($dbh, $phase) = @_;
 
     # must be done first, because setting flags implicitly calls $dbdname::db->STORE
-    $dbh->SUPER::init_default_attributes ();
+    $dbh->SUPER::init_default_attributes ($phase);
 
-    # f_ext should not be initialized
-    # f_map is deprecated (but might return)
-    $dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
-    $dbh->{f_meta}     = {};
-    $dbh->{f_meta_map} = {}; # choose new name because it contains other keys
+    # DBI::BD::SqlEngine::dr::connect will detect old-style drivers and
+    # don't call twice
+    defined $phase or $phase = 0;
 
-    # complete derived attributes, if required
-    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-    my $drv_prefix = DBI->driver_prefix ($drv_class);
-    my $valid_attrs = $drv_prefix . "valid_attrs";
-    my $ro_attrs = $drv_prefix . "readonly_attrs";
+    if( 0 == $phase ) {
+	# f_ext should not be initialized
+	# f_map is deprecated (but might return)
+	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
+	$dbh->{f_meta}     = {};
+	$dbh->{f_meta_map} = {}; # choose new name because it contains other keys
 
-    my @comp_attrs = ();
-    if (exists $dbh->{$drv_prefix . "meta"}) {
-	my $attr = $dbh->{$drv_prefix . "meta"};
-	defined $attr and defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
-	    $dbh->{$valid_attrs}{$attr} = 1;
+	# complete derived attributes, if required
+	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+	my $drv_prefix = DBI->driver_prefix ($drv_class);
+	my $valid_attrs = $drv_prefix . "valid_attrs";
+	my $ro_attrs = $drv_prefix . "readonly_attrs";
 
-	my %h;
-	tie %h, "DBD::File::TieTables", $dbh;
-	$dbh->{$attr} = \%h;
+	my @comp_attrs = ();
+	if (exists $dbh->{$drv_prefix . "meta"}) {
+	    my $attr = $dbh->{$drv_prefix . "meta"};
+	    defined $attr and defined $dbh->{$valid_attrs} and
+		!defined $dbh->{$valid_attrs}{$attr} and
+		$dbh->{$valid_attrs}{$attr} = 1;
 
-        push @comp_attrs, "meta";
-	}
+	    my %h;
+	    tie %h, "DBD::File::TieTables", $dbh;
+	    $dbh->{$attr} = \%h;
 
-    foreach my $comp_attr (@comp_attrs) {
-	my $attr = $drv_prefix . $comp_attr;
-	defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
-	    $dbh->{$valid_attrs}{$attr} = 1;
-	defined $dbh->{$ro_attrs} and !defined $dbh->{$ro_attrs}{$attr} and
-	    $dbh->{$ro_attrs}{$attr} = 1;
+	    push @comp_attrs, "meta";
+	    }
+
+	foreach my $comp_attr (@comp_attrs) {
+	    my $attr = $drv_prefix . $comp_attr;
+	    defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
+		$dbh->{$valid_attrs}{$attr} = 1;
+	    defined $dbh->{$ro_attrs} and !defined $dbh->{$ro_attrs}{$attr} and
+		$dbh->{$ro_attrs}{$attr} = 1;
+	    }
 	}
 
     return $dbh;
@@ -294,11 +301,11 @@ sub get_f_versions
 	}
 
     my $dver;
-    my $eval_str;
-    $eval_str = sprintf '$dver = $%s::VERSION', "IO::File";
-    eval $eval_str;
     my $dtype = "IO::File";
-    $dver and $dtype .= " ($dver)";
+    eval {
+	$dver = IO::File->VERSION ();
+	$dtype .= " ($dver)";
+	};
 
     $meta->{f_encoding} and $dtype .= " + " . $meta->{f_encoding} . " encoding";
 

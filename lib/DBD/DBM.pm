@@ -24,7 +24,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.05';
+$VERSION     = '0.06';
 $ATTRIBUTION = 'DBD::DBM by Jens Rehsack';
 
 # no need to have driver() unless you need private methods
@@ -150,9 +150,9 @@ sub init_valid_attributes
 
 sub init_default_attributes
 {
-    my $dbh = shift;
+    my ( $dbh, $phase ) = @_;
 
-    $dbh->SUPER::init_default_attributes();
+    $dbh->SUPER::init_default_attributes($phase);
     $dbh->{f_lockfile} = '.lck';
 
     return $dbh;
@@ -163,29 +163,35 @@ sub get_dbm_versions
     my ( $dbh, $table ) = @_;
     $table ||= '';
 
+    my $meta;
     my $class = $dbh->{ImplementorClass};
     $class =~ s/::db$/::Table/;
-    $table and
-	my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
+    $table and ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
     $meta or ( $meta = {} and $class->bootstrap_table_meta( $dbh, $meta, $table ) );
 
     my $dver;
-    my $eval_str;
-    $eval_str = sprintf( '$dver = $%s::VERSION', $meta->{dbm_type} );
-    eval $eval_str;
     my $dtype = $meta->{dbm_type};
-    $dtype .= ' (' . $dver . ')' if $dver;
+    eval {
+        $dver = $meta->{dbm_type}->VERSION();
+        $dtype .= " ($dver)";
+    };
     if ( $meta->{dbm_mldbm} )
     {
         $dtype .= ' + MLDBM';
-        $eval_str = '$dver = $MLDBM::VERSION';
-        eval $eval_str;
-        $dtype .= ' (' . $dver . ')' if $dver;
+        eval {
+            $dver = MLDBM->VERSION();
+            $dtype .= " ($dver)";
+        };
         $dtype .= ' + ' . $meta->{dbm_mldbm};
-        $eval_str = sprintf( 'require MLDBM::Serializer::%s;' . '$dver = $MLDBM::Serializer::%s::VERSION',
-                             $meta->{dbm_mldbm}, $meta->{dbm_mldbm} );
-        eval $eval_str;
-        $dtype .= ' (' . $dver . ')' if $dver;
+        eval {
+            my $ser_class = "MLDBM::Serializer::" . $meta->{dbm_mldbm};
+            my $ser_mod   = $ser_class;
+            $ser_mod =~ s|::|/|g;
+            $ser_mod .= ".pm";
+            require $ser_mod;
+            $dver = $ser_class->VERSION();
+            $dver and $dtype .= " ($dver)";
+        };
     }
     return sprintf( "%s using %s", $dbh->{dbm_version}, $dtype );
 }
@@ -204,14 +210,14 @@ sub FETCH
 {
     my ( $sth, $attr ) = @_;
 
-    if( $attr eq "NULLABLE" )
+    if ( $attr eq "NULLABLE" )
     {
-	my @colnames = $sth->sql_get_colnames();
+        my @colnames = $sth->sql_get_colnames();
 
-	# XXX only BerkeleyDB fails having NULL values for non-MLDBM databases,
-	#     none accept it for key - but it requires more knowledge between
-	#     queries and tables storage to return fully correct information
-	$attr eq "NULLABLE" and return [ map { 0 } @colnames ];
+        # XXX only BerkeleyDB fails having NULL values for non-MLDBM databases,
+        #     none accept it for key - but it requires more knowledge between
+        #     queries and tables storage to return fully correct information
+        $attr eq "NULLABLE" and return [ map { 0 } @colnames ];
     }
 
     return $sth->SUPER::FETCH($attr);
@@ -258,10 +264,10 @@ sub file2table
 }
 
 my %reset_on_modify = (
-    dbm_type     => "dbm_tietype",
-    dbm_mldbm    => "dbm_tietype",
-);
-__PACKAGE__->register_reset_on_modify(\%reset_on_modify);
+                        dbm_type  => "dbm_tietype",
+                        dbm_mldbm => "dbm_tietype",
+                      );
+__PACKAGE__->register_reset_on_modify( \%reset_on_modify );
 
 sub bootstrap_table_meta
 {
@@ -405,10 +411,13 @@ sub open_file
         if ( $meta->{dbm_store_metadata} and not $meta->{hash}->{"_metadata \0"} )
         {
             $schema or $schema = '';
-            $meta->{hash}->{"_metadata \0"} = join( "",
-                                                    "<dbd_metadata>", "<schema>$schema</schema>", "<col_names>",
-                                                    join( ",", @{$col_names} ) . "</col_names>",
-                                                    "</dbd_metadata>" );
+            $meta->{hash}->{"_metadata \0"} =
+                "<dbd_metadata>"
+              . "<schema>$schema</schema>"
+              . "<col_names>"
+              . join( ",", @{$col_names} )
+              . "</col_names>"
+              . "</dbd_metadata>";
         }
 
         $meta->{schema}    = $schema;
@@ -426,7 +435,9 @@ sub drop ($$)
     untie %{ $meta->{hash} } if ( $meta->{hash} );
     $self->SUPER::drop($data);
     # XXX extra_files
-    unlink $meta->{f_fqbn} . '.dir' if ( -f $meta->{f_fqbn} . '.dir' and $meta->{f_ext} eq '.pag/r' );
+    -f $meta->{f_fqbn} . '.dir'
+      and $meta->{f_ext} eq '.pag/r'
+      and unlink( $meta->{f_fqbn} . '.dir' );
     return 1;
 }
 
@@ -444,7 +455,10 @@ sub fetch_row ($$)
     # fetch with %each
     #
     my @ary = each %{ $meta->{hash} };
-    @ary = each %{ $meta->{hash} } if ( $meta->{dbm_store_metadata} and $ary[0] and $ary[0] eq "_metadata \0" );
+          $meta->{dbm_store_metadata}
+      and $ary[0]
+      and $ary[0] eq "_metadata \0"
+      and @ary = each %{ $meta->{hash} };
 
     my ( $key, $val ) = @ary;
     unless ($key)
@@ -472,18 +486,11 @@ sub insert_new_row ($$$)
     my $key = shift @$row_aryref;
     my $exists;
     eval { $exists = exists( $meta->{hash}->{$key} ); };
-    $exists
-      and croak "Row with PK '$key' already exists";
+    $exists and croak "Row with PK '$key' already exists";
 
-    if ( $meta->{dbm_mldbm} )
-    {
-        $meta->{hash}->{$key} = $row_aryref;
-    }
-    else
-    {
-        $meta->{hash}->{$key} = $row_aryref->[0];
-    }
-    1;
+    $meta->{hash}->{$key} = $meta->{dbm_mldbm} ? $row_aryref : $row_aryref->[0];
+
+    return 1;
 }
 
 # this is where you grab the column names from a CREATE statement
@@ -509,7 +516,10 @@ sub push_names ($$$)
     $schema =~ s/^[^\(]+\((.+)\)$/$1/s;
     $schema = $stmt->schema_str() if ( $stmt->can('schema_str') );
     $meta->{hash}->{"_metadata \0"} =
-      "<dbd_metadata>" . "<schema>$schema</schema>" . "<col_names>$col_names</col_names>" . "</dbd_metadata>";
+        "<dbd_metadata>"
+      . "<schema>$schema</schema>"
+      . "<col_names>$col_names</col_names>"
+      . "</dbd_metadata>";
 }
 
 # fetch_one_row, delete_one_row, update_one_row
