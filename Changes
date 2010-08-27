@@ -31,6 +31,8 @@ XXX either (temporarily) remove it or test with blead-perl.
     SQL::Statement (Jens Rehsack)
   Added test for absolute filename as table to 51dbm_file (Jens Rehsack)
   Minor speed improvements of DBD::File (Jens Rehsack)
+  Added two initialization phases to DBI::DBD::SqlEngine
+  Added improved developers documentation for DBI::DBD::SqlEngine
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 
