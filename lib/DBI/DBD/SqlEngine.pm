@@ -33,7 +33,7 @@ use strict;
 use Carp;
 use vars qw( @ISA $VERSION $drh %methods_installed);
 
-$VERSION = "0.01";
+$VERSION = "0.02";
 
 $drh = undef;    # holds driver handle(s) once initialized
 
@@ -71,21 +71,24 @@ sub driver ($;$)
     $drh->{$class} = DBI::_new_drh( $class . "::dr", $attr );
     $drh->{$class}->STORE( ShowErrorStatement => 1 );
 
-    my $prefix  = DBI->driver_prefix($class);
-    my $dbclass = $class . "::db";
-    while ( my ( $accessor, $funcname ) = each %accessors )
+    my $prefix = DBI->driver_prefix($class);
+    if ($prefix)
     {
-        my $method = $prefix . $accessor;
-        $dbclass->can($method) and next;
-        my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
+        my $dbclass = $class . "::db";
+        while ( my ( $accessor, $funcname ) = each %accessors )
+        {
+            my $method = $prefix . $accessor;
+            $dbclass->can($method) and next;
+            my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
 sub %s::%s
 {
     my $func = %s->can (q{%s});
     goto &$func;
     }
 EOI
-        eval $inject;
-        $dbclass->install_method($method);
+            eval $inject;
+            $dbclass->install_method($method);
+        }
     }
 
     # XXX inject DBD::XXX::Statement unless exists
@@ -117,19 +120,21 @@ sub connect ($$;$$$)
     my ( $drh, $dbname, $user, $auth, $attr ) = @_;
 
     # create a 'blank' dbh
-    my $this = DBI::_new_dbh(
-                              $drh,
-                              {
-                                 Name         => $dbname,
-                                 USER         => $user,
-                                 CURRENT_USER => $user,
-                              }
-                            );
+    my $dbh = DBI::_new_dbh(
+                             $drh,
+                             {
+                                Name         => $dbname,
+                                USER         => $user,
+                                CURRENT_USER => $user,
+                             }
+                           );
 
-    if ($this)
+    if ($dbh)
     {
         # must be done first, because setting flags implicitly calls $dbdname::db->STORE
-        $this->func("init_default_attributes");
+        $dbh->func( 0, "init_default_attributes" );
+        my $two_phased_init = defined $dbh->{sql_init_phase};
+        my %second_phase_attrs;
 
         my ( $var, $val );
         while ( length $dbname )
@@ -147,21 +152,57 @@ sub connect ($$;$$$)
             {
                 $var = $1;
                 ( $val = $2 ) =~ s/\\(.)/$1/g;
-                $this->{$var} = $val;
+                if ($two_phased_init)
+                {
+                    $@ = undef;
+                    eval { $dbh->STORE( $var, $val ); };
+                    $@ and $second_phase_attrs{$var} = $val;
+                }
+                else
+                {
+                    $dbh->STORE( $var, $val );
+                }
             }
             elsif ( $var =~ m/^(.+?)=>(.*)/s )
             {
                 $var = $1;
                 ( $val = $2 ) =~ s/\\(.)/$1/g;
                 my $ref = eval $val;
-                $this->$var($ref);
+                $dbh->$var($ref);
             }
         }
 
-        $this->STORE( Active => 1 );
+        if ($two_phased_init)
+        {
+            foreach $a (qw(Profile RaiseError PrintError AutoCommit))
+            {    # do these first
+                exists $attr->{$a} or next;
+                $@ = undef;
+                eval {
+                    $dbh->{$a} = $attr->{$a};
+                    delete $attr->{$a};
+                };
+                $@ and $second_phase_attrs{$a} = delete $attr->{$a};
+            }
+            while ( my ( $a, $v ) = each %$attr )
+            {
+                $@ = undef;
+                eval { $dbh->{$a} = $v };
+                $@ and $second_phase_attrs{$a} = $v;
+            }
+
+            $dbh->func( 1, "init_default_attributes" );
+            %$attr = %second_phase_attrs;
+        }
+        else
+        {
+            $dbh->func("init_done");
+        }
+
+        $dbh->STORE( Active => 1 );
     }
 
-    return $this;
+    return $dbh;
 }    # connect
 
 sub disconnect_all
@@ -245,8 +286,8 @@ sub prepare ($$;@)
             $sth->STORE( "sql_stmt", $stmt );
             $sth->STORE( "sql_params", [] );
             $sth->STORE( "NUM_OF_PARAMS", scalar( $stmt->params() ) );
-	    my @colnames = $sth->sql_get_colnames();
-	    $sth->STORE( "NUM_OF_FIELDS", scalar @colnames );
+            my @colnames = $sth->sql_get_colnames();
+            $sth->STORE( "NUM_OF_FIELDS", scalar @colnames );
         }
     }
     return $sth;
@@ -255,7 +296,7 @@ sub prepare ($$;@)
 sub set_versions
 {
     my $dbh = $_[0];
-    $dbh->{sql_version} = $DBI::DBD::SqlEngine::VERSION;
+    $dbh->{sql_engine_version} = $DBI::DBD::SqlEngine::VERSION;
     for (qw( nano_version statement_version ))
     {
         defined $DBI::SQL::Nano::versions->{$_} or next;
@@ -274,28 +315,28 @@ sub init_valid_attributes
     my $dbh = $_[0];
 
     $dbh->{sql_valid_attrs} = {
-                                sql_version                => 1,    # DBI::DBD::SqlEngine version
-                                sql_handler                => 1,    # Nano or S:S
-                                sql_nano_version           => 1,    # Nano version
-                                sql_statement_version      => 1,    # S:S version
-                                sql_flags                  => 1,    # flags for SQL::Parser
-                                sql_quoted_identifier_case => 1,    # case for quoted identifiers
-                                sql_identifier_case        => 1,    # case for non-quoted identifiers
-                                sql_parser_object          => 1,    # SQL::Parser instance
-                                sql_sponge_driver          => 1,    # Sponge driver for table_info ()
-                                sql_valid_attrs            => 1,    # SQL valid attributes
-                                sql_readonly_attrs         => 1,    # SQL readonly attributes
+                               sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
+                               sql_handler                => 1,    # Nano or S:S
+                               sql_nano_version           => 1,    # Nano version
+                               sql_statement_version      => 1,    # S:S version
+                               sql_flags                  => 1,    # flags for SQL::Parser
+                               sql_quoted_identifier_case => 1,    # case for quoted identifiers
+                               sql_identifier_case        => 1,    # case for non-quoted identifiers
+                               sql_parser_object          => 1,    # SQL::Parser instance
+                               sql_sponge_driver          => 1,    # Sponge driver for table_info ()
+                               sql_valid_attrs            => 1,    # SQL valid attributes
+                               sql_readonly_attrs         => 1,    # SQL readonly attributes
                               };
     $dbh->{sql_readonly_attrs} = {
-                                   sql_version                => 1,    # DBI::DBD::SqlEngine version
-                                   sql_handler                => 1,    # Nano or S:S
-                                   sql_nano_version           => 1,    # Nano version
-                                   sql_statement_version      => 1,    # S:S version
-                                   sql_quoted_identifier_case => 1,    # case for quoted identifiers
-                                   sql_parser_object          => 1,    # SQL::Parser instance
-                                   sql_sponge_driver          => 1,    # Sponge driver for table_info ()
-                                   sql_valid_attrs            => 1,    # SQL valid attributes
-                                   sql_readonly_attrs         => 1,    # SQL readonly attributes
+                               sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
+                               sql_handler                => 1,    # Nano or S:S
+                               sql_nano_version           => 1,    # Nano version
+                               sql_statement_version      => 1,    # S:S version
+                               sql_quoted_identifier_case => 1,    # case for quoted identifiers
+                               sql_parser_object          => 1,    # SQL::Parser instance
+                               sql_sponge_driver          => 1,    # Sponge driver for table_info ()
+                               sql_valid_attrs            => 1,    # SQL valid attributes
+                               sql_readonly_attrs         => 1,    # SQL readonly attributes
                                  };
 
     return $dbh;
@@ -303,37 +344,59 @@ sub init_valid_attributes
 
 sub init_default_attributes
 {
-    my $dbh = shift;
+    my ( $dbh, $phase ) = @_;
+    my $given_phase = $phase;
 
-    # must be done first, because setting flags implicitly calls $dbdname::db->STORE
-    $dbh->func("init_valid_attributes");
-
-    $dbh->func("set_versions");
-
-    $dbh->{sql_identifier_case}        = 2;    # SQL_IC_LOWER
-    $dbh->{sql_quoted_identifier_case} = 3;    # SQL_IC_SENSITIVE
-
-    # complete derived attributes, if required
-    ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
-    my $drv_prefix  = DBI->driver_prefix($drv_class);
-    my $valid_attrs = $drv_prefix . "valid_attrs";
-    my $ro_attrs    = $drv_prefix . "readonly_attrs";
-
-    my @comp_attrs = qw(valid_attrs version readonly_attrs);
-
-    foreach my $comp_attr (@comp_attrs)
+    unless ( defined($phase) )
     {
-        my $attr = $drv_prefix . $comp_attr;
-        defined $dbh->{$valid_attrs}
-          and !defined $dbh->{$valid_attrs}{$attr}
-          and $dbh->{$valid_attrs}{$attr} = 1;
-        defined $dbh->{$ro_attrs}
-          and !defined $dbh->{$ro_attrs}{$attr}
-          and $dbh->{$ro_attrs}{$attr} = 1;
+        # we have an "old" driver here
+        $phase = defined $dbh->{sql_init_phase};
+    }
+
+    if ( 0 == $phase )
+    {
+        # must be done first, because setting flags implicitly calls $dbdname::db->STORE
+        $dbh->func("init_valid_attributes");
+
+        $dbh->func("set_versions");
+
+        $dbh->{sql_identifier_case}        = 2;    # SQL_IC_LOWER
+        $dbh->{sql_quoted_identifier_case} = 3;    # SQL_IC_SENSITIVE
+
+        $dbh->{sql_init_phase} = $given_phase;
+
+        # complete derived attributes, if required
+        ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
+        my $drv_prefix  = DBI->driver_prefix($drv_class);
+        my $valid_attrs = $drv_prefix . "valid_attrs";
+        my $ro_attrs    = $drv_prefix . "readonly_attrs";
+
+        my @comp_attrs = qw(valid_attrs version readonly_attrs);
+
+        foreach my $comp_attr (@comp_attrs)
+        {
+            my $attr = $drv_prefix . $comp_attr;
+            defined $dbh->{$valid_attrs}
+              and !defined $dbh->{$valid_attrs}{$attr}
+              and $dbh->{$valid_attrs}{$attr} = 1;
+            defined $dbh->{$ro_attrs}
+              and !defined $dbh->{$ro_attrs}{$attr}
+              and $dbh->{$ro_attrs}{$attr} = 1;
+        }
+    }
+    else
+    {
+        delete $dbh->{sql_init_phase};
     }
 
     return $dbh;
 }    # init_default_attributes
+
+sub init_done
+{
+    delete $_[0]->{sql_init_phase};
+    return;
+}
 
 sub sql_parser_object
 {
@@ -464,7 +527,7 @@ sub STORE ($$$)
         my $ro_attrs    = $attr_prefix . "readonly_attrs";
 
         ( $attrib, $value ) = $dbh->func( $attrib, $value, "validate_STORE_attr" );
-	$attrib or return;
+        $attrib or return;
 
         exists $dbh->{$valid_attrs}
           and ( $dbh->{$valid_attrs}{$attrib}
@@ -472,7 +535,8 @@ sub STORE ($$$)
         exists $dbh->{$ro_attrs}
           and $dbh->{$ro_attrs}{$attrib}
           and defined $dbh->{$attrib}
-          and return $dbh->set_err( $DBI::stderr, "attribute '$attrib' is readonly and must not be modified" );
+          and return $dbh->set_err( $DBI::stderr,
+                                    "attribute '$attrib' is readonly and must not be modified" );
 
         $dbh->{$attrib} = $value;
         return 1;
@@ -493,7 +557,7 @@ sub get_driver_versions
 
     my $sql_engine_verinfo =
       join " ",
-      $dbh->{sql_version}, "using", $dbh->{sql_handler},
+      $dbh->{sql_engine_version}, "using", $dbh->{sql_handler},
       $dbh->{sql_handler} eq "SQL::Statement"
       ? $dbh->{sql_statement_version}
       : $dbh->{sql_nano_version};
@@ -512,7 +576,8 @@ sub get_driver_versions
         my $drv_prefix  = DBI->driver_prefix($drv_class);
         my $ddgv        = $dbh->{ImplementorClass}->can("get_${drv_prefix}versions");
         my $drv_version = $ddgv ? &$ddgv( $dbh, $table ) : $dbh->{ $drv_prefix . "version" };
-        $drv_version ||= eval "\$" . $derived . "::VERSION";;    # XXX access $drv_class::VERSION via symbol table
+        $drv_version ||= eval "\$" . $derived . "::VERSION";
+        ;    # XXX access $drv_class::VERSION via symbol table
         $vsn{$drv_class} = $drv_version;
         $indent and $vmp{$drv_class} = " " x $indent . $drv_class;
         $indent += 2;
@@ -563,13 +628,13 @@ sub type_info_all ($)
           MINIMUM_SCALE      => 13,
           MAXIMUM_SCALE      => 14,
        },
-       [ "VARCHAR", DBI::SQL_VARCHAR(),       undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "CHAR",    DBI::SQL_CHAR(),          undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "INTEGER", DBI::SQL_INTEGER(),       undef, "",  "",  undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
-       [ "REAL",    DBI::SQL_REAL(),          undef, "",  "",  undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
-       [ "BLOB",    DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "BLOB",    DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "TEXT",    DBI::SQL_LONGVARCHAR(),   undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ]
+       [ "VARCHAR", DBI::SQL_VARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [ "CHAR", DBI::SQL_CHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [ "INTEGER", DBI::SQL_INTEGER(), undef, "", "", undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
+       [ "REAL",    DBI::SQL_REAL(),    undef, "", "", undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
+       [ "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [ "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [ "TEXT", DBI::SQL_LONGVARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
     ];
 }    # type_info_all
 
@@ -760,8 +825,10 @@ sub fetch ($)
     my $data = $sth->{sql_stmt}{data};
     if ( !$data || ref $data ne "ARRAY" )
     {
-        $sth->set_err( $DBI::stderr,
-                       "Attempt to fetch row without a preceeding execute () call or from a non-SELECT statement" );
+        $sth->set_err(
+            $DBI::stderr,
+            "Attempt to fetch row without a preceeding execute () call or from a non-SELECT statement"
+        );
         return;
     }
     my $dav = shift @$data;
@@ -770,8 +837,8 @@ sub fetch ($)
         $sth->finish;
         return;
     }
-    if ( $sth->FETCH("ChopBlanks") )	# XXX: (TODO) Only chop on CHAR fields,
-    {					# not on VARCHAR or NUMERIC (see DBI docs)
+    if ( $sth->FETCH("ChopBlanks") )    # XXX: (TODO) Only chop on CHAR fields,
+    {                                   # not on VARCHAR or NUMERIC (see DBI docs)
         $_ && $_ =~ s/ +$// for @$dav;
     }
     return $sth->_set_fbav($dav);
@@ -789,19 +856,19 @@ sub sql_get_colnames
     # DBI::SQL::Nano::Statement_ does not offer an interface to the
     # required data
     my @colnames;
-    if( $sth->{sql_stmt}->{NAME} and "ARRAY" eq ref($sth->{sql_stmt}->{NAME}) )
+    if ( $sth->{sql_stmt}->{NAME} and "ARRAY" eq ref( $sth->{sql_stmt}->{NAME} ) )
     {
-	@colnames = @{$sth->{sql_stmt}->{NAME}};
+        @colnames = @{ $sth->{sql_stmt}->{NAME} };
     }
     elsif ( $sth->{sql_stmt}->isa('SQL::Statement') )
     {
-        my $stmt    = $sth->{sql_stmt} || {};
-	my @coldefs = @{ $stmt->{column_defs} || [] };
-          @colnames = map { $_->{name} || $_->{value} } @coldefs;
+        my $stmt = $sth->{sql_stmt} || {};
+        my @coldefs = @{ $stmt->{column_defs} || [] };
+        @colnames = map { $_->{name} || $_->{value} } @coldefs;
     }
     @colnames = $sth->{sql_stmt}->column_names() unless (@colnames);
 
-    @colnames = () if( grep { m/\*/ } @colnames );
+    @colnames = () if ( grep { m/\*/ } @colnames );
 
     return @colnames;
 }
@@ -810,29 +877,11 @@ sub FETCH ($$)
 {
     my ( $sth, $attrib ) = @_;
 
-=pod
-
-    if ( $attrib =~ m/^NAME(?:|_lc|_uc)$/ )
-    {
-	my @cn = $sth->sql_get_colnames();
-	return [ $attrib eq "NAME_lc" ? map { lc $_ } @cn
-	       : $attrib eq "NAME_uc" ? map { uc $_ } @cn
-	       : @cn ];
-    }
-
-=cut
-
     $attrib eq "NAME" and return [ $sth->sql_get_colnames() ];
 
     $attrib eq "TYPE"      and return [ ("CHAR") x scalar $sth->sql_get_colnames() ];
     $attrib eq "PRECISION" and return [ (0) x scalar $sth->sql_get_colnames() ];
     $attrib eq "NULLABLE"  and return [ (1) x scalar $sth->sql_get_colnames() ];
-#   if ( $attrib eq "NULLABLE" )
-#   {
-#       my @colnames = ;
-#       @colnames or return;
-#       return [ (1) x @colnames ];
-#   }
 
     if ( $attrib eq lc $attrib )
     {
@@ -847,7 +896,7 @@ sub FETCH ($$)
 sub STORE ($$$)
 {
     my ( $sth, $attrib, $value ) = @_;
-    if ( $attrib eq lc $attrib ) # Private driver attributes are lower cased
+    if ( $attrib eq lc $attrib )    # Private driver attributes are lower cased
     {
         $sth->{$attrib} = $value;
         return 1;
