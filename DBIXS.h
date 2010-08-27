@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- * Copyright (c) 1994-2009  Tim Bunce  Ireland
+ * Copyright (c) 1994-2010  Tim Bunce  Ireland
  *
  * See COPYRIGHT section in DBI.pm for usage and distribution rights.
  */
@@ -17,7 +17,6 @@
 
 /* Here for backwards compat. PERL_POLLUTE was removed in perl 5.13.3 */
 #define PERL_POLLUTE
-#undef PERL_POLLUTE /* XXX temp undef to simplify testing */
 
 /* first pull in the standard Perl header files for extensions  */
 #include <EXTERN.h>
