@@ -30,6 +30,9 @@ BEGIN {
 my $sql = "select mode,size,name from ?";
 
 my $prof_file = "dbi$$.prof";
+my $prof_backup = $prof_file . ".prev";
+END { 1 while unlink $prof_file;
+      1 while unlink $prof_backup; }
 
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', 
                        { RaiseError=>1, Profile=>"6/DBI::ProfileDumper/File:$prof_file" });
