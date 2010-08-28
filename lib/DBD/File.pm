@@ -304,6 +304,8 @@ sub get_f_versions
     my $dtype = "IO::File";
     eval {
 	$dver = IO::File->VERSION ();
+
+	# when we're still alive here, everthing went ok - no need to check for $@
 	$dtype .= " ($dver)";
 	};
 

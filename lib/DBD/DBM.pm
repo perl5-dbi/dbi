@@ -173,6 +173,8 @@ sub get_dbm_versions
     my $dtype = $meta->{dbm_type};
     eval {
         $dver = $meta->{dbm_type}->VERSION();
+
+        # *) when we're still alive here, everthing went ok - no need to check for $@
         $dtype .= " ($dver)";
     };
     if ( $meta->{dbm_mldbm} )
@@ -180,9 +182,8 @@ sub get_dbm_versions
         $dtype .= ' + MLDBM';
         eval {
             $dver = MLDBM->VERSION();
-            $dtype .= " ($dver)";
+            $dtype .= " ($dver)";    # (*)
         };
-        $dtype .= ' + ' . $meta->{dbm_mldbm};
         eval {
             my $ser_class = "MLDBM::Serializer::" . $meta->{dbm_mldbm};
             my $ser_mod   = $ser_class;
@@ -190,7 +191,8 @@ sub get_dbm_versions
             $ser_mod .= ".pm";
             require $ser_mod;
             $dver = $ser_class->VERSION();
-            $dver and $dtype .= " ($dver)";
+            $dtype .= ' + ' . $ser_class;    # (*)
+            $dver and $dtype .= " ($dver)";  # (*)
         };
     }
     return sprintf( "%s using %s", $dbh->{dbm_version}, $dtype );
