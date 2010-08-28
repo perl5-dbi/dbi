@@ -45,7 +45,8 @@ DBI->trace($orig_trace_level);  # no way to restore previous outfile XXX
 
 
 # Clean up when we're done.
-END { $dbh->disconnect if $dbh };
+END { $dbh->disconnect if $dbh;
+      1 while unlink $trace_file; };
 
 ## ----------------------------------------------------------------------------
 # Check the database handle attributes.

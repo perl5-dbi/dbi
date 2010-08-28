@@ -17,6 +17,13 @@ BEGIN {
 
 $|=1;
 
+our $fancylogfn = "fancylog$$.log";
+our $trace_file = "dbitrace$$.log";
+
+# Clean up when we're done.
+END { 1 while unlink $fancylogfn;
+      1 while unlink $trace_file; };
+
 package PerlIO::via::TraceDBI;
 
 our $logline;
@@ -112,7 +119,7 @@ sub new
 {
 	my $self = {};
 	my $fh = gensym();
-	open $fh, '>', 'fancylog.log';
+	open $fh, '>', $fancylogfn;
 	$self->{_fh} = $fh;
 	$self->{_buf} = '';
 	return bless $self, shift;
@@ -160,8 +167,6 @@ END { $dbh->disconnect if $dbh };
 # Check the database handle attributes.
 
 cmp_ok($dbh->{TraceLevel}, '==', $DBI::dbi_debug & 0xF, '... checking TraceLevel attribute');
-
-my $trace_file = "dbitrace.log";
 
 1 while unlink $trace_file;
 
@@ -293,8 +298,6 @@ $dbh->trace_msg("Next logline\n", 1);
 ok 1, "... logger: trace_msg after change trace output\n";
 
 close $fh;
-
-1 while unlink 'fancylog.log';
 
 }
 
