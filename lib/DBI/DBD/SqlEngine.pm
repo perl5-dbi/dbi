@@ -154,7 +154,6 @@ sub connect ($$;$$$)
                 ( $val = $2 ) =~ s/\\(.)/$1/g;
                 if ($two_phased_init)
                 {
-                    $@ = undef;
                     eval { $dbh->STORE( $var, $val ); };
                     $@ and $second_phase_attrs{$var} = $val;
                 }
@@ -177,7 +176,6 @@ sub connect ($$;$$$)
             foreach $a (qw(Profile RaiseError PrintError AutoCommit))
             {    # do these first
                 exists $attr->{$a} or next;
-                $@ = undef;
                 eval {
                     $dbh->{$a} = $attr->{$a};
                     delete $attr->{$a};
@@ -186,7 +184,6 @@ sub connect ($$;$$$)
             }
             while ( my ( $a, $v ) = each %$attr )
             {
-                $@ = undef;
                 eval { $dbh->{$a} = $v };
                 $@ and $second_phase_attrs{$a} = $v;
             }
