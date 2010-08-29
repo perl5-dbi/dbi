@@ -73,19 +73,21 @@ sub driver ($;$)
     $drh->{$class} = $class->SUPER::driver ($attr);
 
     my $prefix = DBI->driver_prefix ($class);
-    my $dbclass = $class . "::db";
-    while (my ($accessor, $funcname) = each %accessors) {
-	my $method = $prefix . $accessor;
-	$dbclass->can ($method) and next;
-	my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
+    if ($prefix) {
+	my $dbclass = $class . "::db";
+	while (my ($accessor, $funcname) = each %accessors) {
+	    my $method = $prefix . $accessor;
+	    $dbclass->can ($method) and next;
+	    my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
 sub %s::%s
 {
     my $func = %s->can (q{%s});
     goto &$func;
     }
 EOI
-	eval $inject;
-	$dbclass->install_method ($method);
+	    eval $inject;
+	    $dbclass->install_method ($method);
+	    }
 	}
 
     # XXX inject DBD::XXX::Statement unless exists
