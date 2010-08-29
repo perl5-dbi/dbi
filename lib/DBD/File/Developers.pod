@@ -4,17 +4,89 @@ DBD::File::Developers - Developers documentation for DBD::File
 
 =head1 SYNOPSIS
 
-  perldoc DBD::File::Developers
+    package DBD::myDriver;
 
-  perldoc DBD::File::Roadmap
+    use base qw(DBD::File);
+
+    sub driver
+    {
+	...
+	my $drh = $proto->SUPER::driver($attr);
+	...
+	return $drh->{class};
+	}
+
+    sub CLONE { ... }
+
+    package DBD::myDriver::dr;
+
+    @ISA = qw(DBD::File::dr);
+
+    sub data_sources { ... }
+    ...
+
+    package DBD::myDriver::db;
+
+    @ISA = qw(DBD::File::db);
+
+    sub init_valid_attributes { ... }
+    sub init_default_attributes { ... }
+    sub set_versions { ... }
+    sub validate_STORE_attr { my ($dbh, $attrib, $value) = @_; ... }
+    sub validate_FETCH_attr { my ($dbh, $attrib) = @_; ... }
+    sub get_myd_versions { ... }
+
+    package DBD::myDriver::st;
+
+    @ISA = qw(DBD::File::st);
+
+    sub FETCH { ... }
+    sub STORE { ... }
+
+    package DBD::myDriver::Statement;
+
+    @ISA = qw(DBD::File::Statement);
+
+    package DBD::myDriver::Table;
+
+    @ISA = qw(DBD::File::Table);
+
+    my %reset_on_modify = (
+			    myd_abc => "myd_foo",
+			    myd_mno => "myd_bar",
+			  );
+    __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+
+    sub bootstrap_table_meta { ... }
+    sub init_table_meta { ... }
+    sub open_file { ... }
+
+    sub fetch_row { ... }
+    sub push_row { ... }
+    sub push_names { ... }
+
+    # optimize the SQL engine by add one or more of
+    sub update_current_row { ... }
+    # or
+    sub update_specific_row { ... }
+    # or
+    sub update_one_row { ... }
+    # or
+    sub insert_new_row { ... }
+    # or
+    sub delete_current_row { ... }
+    # or
+    sub delete_one_row { ... }
+
+=head1 DESCRIPTION
 
 This document describes how DBD developers can write DBD::File based DBI
 drivers. It supplements L<DBI::DBD>, which you should read first.
 
 =head1 CLASSES
 
-Each DBI driver must provide a package global C<< driver >> method and
-three DBI related classes:
+Each DBI driver must provide a package global C<driver> method and three
+DBI related classes:
 
 =over 4
 
@@ -154,11 +226,9 @@ C<< DBD::File::db::init_valid_attributes >>.
 
 =item set_versions
 
-This method sets the attributes C<< f_version >>, C<< sql_nano_version >>,
-C<< sql_statement_version >> and (if not prohibited by a restrictive
-C<< ${prefix}_valid_attrs >>) C<< ${prefix}_version >>.
+This method sets the attribute C<f_version> with the version of DBD::File.
 
-This method is called at the end of the C<< connect () >> phase.
+This method is called at the begin of the C<connect ()> phase.
 
 When overriding this method, do not forget to invoke the superior one.
 
@@ -168,8 +238,7 @@ This method is called after the database handle is instantiated as the
 first attribute initialization.
 
 C<< DBD::File::db::init_valid_attributes >> initializes the attributes
-C<f_valid_attrs>, C<sql_valid_attrs>, C<f_readonly_attrs>
-and C<sql_readonly_attrs>.
+C<f_valid_attrs> and C<f_readonly_attrs>.
 
 When overriding this method, do not forget to invoke the superior one,
 preferably before doing anything else. Compatibility table attribute
@@ -189,8 +258,7 @@ This method is called after the database handle is instantiated to
 initialize the default attributes.
 
 C<< DBD::File::db::init_default_attributes >> initializes the attributes
-C<f_dir>, C<f_meta>, C<f_meta_map>, C<f_version>, C<sql_identifier_case>,
-C<sql_quoted_identifier_case> and C<sql_handler>.
+C<f_dir>, C<f_meta>, C<f_meta_map>, C<f_version>.
 
 When the derived implementor class provides the attribute to validate
 attributes (e.g. C<< $dbh->{dbm_valid_attrs} = {...}; >>) or the attribute
@@ -209,34 +277,6 @@ tied hash on FETCH/STORE. The C<DBD::File::TieMeta> class uses
 C<DBD::DRV::Table::get_table_meta_attr> to FETCH attribute values and
 C<DBD::DRV::Table::set_table_meta_attr> to STORE attribute values. This
 allows it to map meta attributes for compatibility reasons.
-
-=item get_versions
-
-This method is called by the code injected into the instantiated driver to
-provide the user callable driver method C<< ${prefix}versions >> (e.g.
-C<< dbm_versions >>, C<< csv_versions >>, ...).
-
-The DBD::File implementation returns all version information known by
-DBD::File (e.g. DBI version, Perl version, DBD::File version and
-the SQL handler version).
-
-C<get_versions> takes the C<$dbh> as the first argument and optionally a
-second argument containing a table name. The second argument is not
-evaluated in C<< DBD::File::db::get_versions >> itself - but might be in
-the future.
-
-If the derived implementor class provides a method named
-C<get_${drv_prefix}versions>, this is invoked and the return value of
-it is associated to the derived driver name:
-
-    if (my $dgv = $dbh->{ImplementorClass}->can ("get_" . $drv_prefix . "versions") {
-	(my $derived_driver = $dbh->{ImplementorClass}) =~ s/::db$//;
-	$versions{$derived_driver} = &$dgv ($dbh, $table);
-    }
-
-Override it to add more version information about your module, (e.g.
-some kind of parser version in case of DBD::CSV, ...), if one line is not
-enough room to provide all relevant information.
 
 =item get_single_table_meta
 
@@ -288,47 +328,6 @@ Clears all meta information cached about a table. The method signature is
 C<< clear_file_meta ($dbh, $table) >>. This method is called
 by the injected db handle method C<< ${drv_prefix}clear_meta >>.
 
-=item sql_parser_object
-
-Returns a L<SQL::Parser> instance, when C<< sql_handler >> is set to
-"SQL::Statement". The parser instance is stored in C<< sql_parser_object >>.
-
-It is not recommended to override this method.
-
-=item disconnect
-
-Disconnects from a database. All local table information is discarded and
-the C<< Active >> attribute is set to 0.
-
-=item type_info_all
-
-Returns information about all the types supported by DBD::File.
-
-=item table_info
-
-Returns a statement handle which is prepared to deliver information about
-all known tables.
-
-=item list_tables
-
-Returns a list of all known table names.
-
-=item quote
-
-Quotes a string for use in SQL statements.
-
-=item commit
-
-Warns about a useless call (if warnings enabled) and returns.
-DBD::File is typically a driver which commits every action instantly when
-executed.
-
-=item rollback
-
-Warns about a useless call (if warnings enabled) and returns.
-DBD::File is typically a driver which commits every action instantly when
-executed.
-
 =back
 
 =head2 DBD::File::st
@@ -337,51 +336,17 @@ Contains the methods to deal with prepared statement handles:
 
 =over 4
 
-=item bind_param
-
-Common routine to bind placeholders to a statement for execution. It
-is dangerous to override this method without detailed knowledge about
-the DBD::File internal storage structure.
-
-=item execute
-
-Executes a previously prepared statement (with placeholders, if any).
-
-=item finish
-
-Finishes a statement handle, discards all buffered results. The prepared
-statement is not discarded so the statement can be executed again.
-
-=item fetch
-
-Fetches the next row from the result-set. This method may be rewritten
-in a later version and if it's overridden in a derived class, the
-derived implementation should not rely on the storage details.
-
-=item fetchrow_arrayref
-
-Alias for C<< fetch >>.
-
 =item FETCH
 
 Fetches statement handle attributes. Supported attributes (for full overview
-see L<DBI/Statement Handle Attributes>) are C<< NAME >> and C<< NULLABLE >>.
-Each column is returned as C<< NULLABLE >> which might be wrong depending
-on the derived backend storage. If the statement handle has private attributes,
-they can be fetched using this method, too. B<Note> that statement attributes
-are not associated with any table used in this statement.
+see L<DBI/Statement Handle Attributes>) are C<NAME>, C<TYPE>, C<PRECISION>
+and C<NULLABLE> in case that SQL::Statement is used as SQL execution engine
+and a statement is successful prepared.  When SQL::Statement has additional
+information about a table, those information are returned. Otherwise, the
+same defaults as in L<DBI::DBD::SqlEngine> are used.
 
 This method usually requires extending in a derived implementation.
 See L<DBD::CSV> or L<DBD::DBM> for some example.
-
-=item STORE
-
-Allows storing of statement private attributes.
-
-=item rows
-
-Returns the number of rows affected by the last execute. This method might
-return C<< undef >>.
 
 =back
 
