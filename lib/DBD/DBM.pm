@@ -302,7 +302,7 @@ sub bootstrap_table_meta
             }
             # else wrapped GDBM
         }
-        $meta->{f_ext} = $ext if ( defined($ext) );
+        defined($ext) and $meta->{f_ext} = $ext;
     }
 
     $self->SUPER::bootstrap_table_meta( $dbh, $meta, $table );
@@ -315,12 +315,12 @@ sub init_table_meta
     unless ( defined( $meta->{dbm_tietype} ) )
     {
         my $tie_type = $meta->{dbm_type};
-        require "$tie_type.pm" unless ( $INC{"$tie_type.pm"} );
-        $tie_type = 'BerkeleyDB::Hash' if ( $tie_type eq 'BerkeleyDB' );
+        $INC{"$tie_type.pm"} or require "$tie_type.pm";
+        $tie_type eq 'BerkeleyDB' and $tie_type = 'BerkeleyDB::Hash';
 
         if ( $meta->{dbm_mldbm} )
         {
-            require "MLDBM.pm" unless ( $INC{"MLDBM.pm"} );
+            $INC{"MLDBM.pm"} or require "MLDBM.pm";
             $meta->{dbm_usedb} = $tie_type;
             $tie_type = 'MLDBM';
         }
@@ -331,13 +331,13 @@ sub init_table_meta
     unless ( defined( $meta->{dbm_store_metadata} ) )
     {
         my $store = $dbh->{dbm_store_metadata};
-        $store = 1 unless ( defined($store) );
+        defined($store) or $store = 1;
         $meta->{dbm_store_metadata} = $store;
     }
 
     unless ( defined( $meta->{col_names} ) )
     {
-        $meta->{col_names} = $dbh->{dbm_cols} if ( defined( $dbh->{dbm_cols} ) );
+        defined( $dbh->{dbm_cols} ) and $meta->{col_names} = $dbh->{dbm_cols};
     }
 
     $self->SUPER::init_table_meta( $dbh, $table );
@@ -361,24 +361,22 @@ sub open_file
             my %tie_flags;
             if ( my $f = $meta->{dbm_berkeley_flags} )
             {
-                $DB_CREATE = $f->{DB_CREATE} if ( $f->{DB_CREATE} );
-                $DB_RDONLY = $f->{DB_RDONLY} if ( $f->{DB_RDONLY} );
-                delete $f->{DB_CREATE};
-                delete $f->{DB_RDONLY};
+                defined( $f->{DB_CREATE} ) and $DB_CREATE = delete $f->{DB_CREATE};
+                defined( $f->{DB_RDONLY} ) and $DB_RDONLY = delete $f->{DB_RDONLY};
                 %tie_flags = %$f;
             }
-            $tie_flags{'-Flags'} = $DB_RDONLY;
-            $tie_flags{'-Flags'} = $DB_CREATE if ( $flags->{lockMode} or $flags->{createMode} );
+            my $open_mode = $flags->{lockMode} || $flags->{createMode} ? $DB_CREATE : $DB_RDONLY;
             @tie_args = (
                           -Filename => $meta->{f_fqbn},
+                          -Flags    => $open_mode,
                           %tie_flags
                         );
         }
         else
         {
             my $open_mode = O_RDONLY;
-            $open_mode = O_RDWR if ( $flags->{lockMode} );
-            $open_mode = O_RDWR | O_CREAT | O_TRUNC if ( $flags->{createMode} );
+            $flags->{lockMode}   and $open_mode = O_RDWR;
+            $flags->{createMode} and $open_mode = O_RDWR | O_CREAT | O_TRUNC;
 
             @tie_args = ( $meta->{f_fqbn}, $open_mode, 0666 );
         }
@@ -392,7 +390,7 @@ sub open_file
         $meta->{hash} = {};
         my $tie_class = $meta->{dbm_tietype};
         eval { tie %{ $meta->{hash} }, $tie_class, @tie_args };
-        croak "Cannot tie(\%h $tie_class @tie_args): $@" if ($@);
+        $@ and croak "Cannot tie(\%h $tie_class @tie_args): $@";
     }
 
     unless ( $flags->{createMode} )
@@ -434,7 +432,7 @@ sub drop ($$)
 {
     my ( $self, $data ) = @_;
     my $meta = $self->{meta};
-    untie %{ $meta->{hash} } if ( $meta->{hash} );
+    $meta->{hash} and untie %{ $meta->{hash} };
     $self->SUPER::drop($data);
     # XXX extra_files
     -f $meta->{f_fqbn} . '.dir'
@@ -534,8 +532,8 @@ sub fetch_one_row ($$;$)
 {
     my ( $self, $key_only, $key ) = @_;
     my $meta = $self->{meta};
-    return $meta->{col_names}->[0] if ($key_only);
-    return undef unless ( exists $meta->{hash}->{$key} );
+    $key_only and return $meta->{col_names}->[0];
+    exists $meta->{hash}->{$key} or return;
     my $val = $meta->{hash}->{$key};
     $val = ( ref($val) eq 'ARRAY' ) ? $val : [$val];
     my $row = [ $key, @$val ];
@@ -554,7 +552,7 @@ sub update_one_row ($$$)
     my ( $self, $data, $aryref ) = @_;
     my $meta = $self->{meta};
     my $key  = shift @$aryref;
-    return unless ( defined $key );
+    defined $key or return;
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $meta->{hash}->{$key} = $meta->{dbm_mldbm} ? $row : $row->[0];
 }
@@ -566,7 +564,7 @@ sub update_specific_row ($$$$)
     my $key    = shift @$origary;
     my $newkey = shift @$aryref;
     return unless ( defined $key );
-    delete $meta->{hash}->{$key} unless ( $key eq $newkey );
+    $key eq $newkey or delete $meta->{hash}->{$key};
     my $row = ( ref($aryref) eq 'ARRAY' ) ? $aryref : [$aryref];
     $meta->{hash}->{$newkey} = $meta->{dbm_mldbm} ? $row : $row->[0];
 }
@@ -578,7 +576,7 @@ sub DESTROY ($)
 {
     my $self = shift;
     my $meta = $self->{meta};
-    untie %{ $meta->{hash} } if ( $meta->{hash} );
+    $meta->{hash} and untie %{ $meta->{hash} };
 
     $self->SUPER::DESTROY();
 }
@@ -595,8 +593,8 @@ sub DESTROY ($)
 #
 sub truncate ($$)
 {
-    my ( $self, $data ) = @_;
-    1;
+    # my ( $self, $data ) = @_;
+    return 1;
 }
 
 # seek() is only needed if you use IO::File
@@ -605,7 +603,8 @@ sub truncate ($$)
 #
 sub seek ($$$$)
 {
-    my ( $self, $data, $pos, $whence ) = @_;
+    # my ( $self, $data, $pos, $whence ) = @_;
+    return 1;
 }
 
 # Th, th, th, that's all folks!  See DBD::File and DBD::CSV for other
