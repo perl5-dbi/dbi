@@ -4,7 +4,77 @@ DBI::DBD::SqlEngine::Developers - Developers documentation for DBI::DBD::SqlEngi
 
 =head1 SYNOPSIS
 
-  perldoc DBI::DBD::SqlEngine::Developers
+    package DBD::myDriver;
+
+    use base qw(DBI::DBD::SqlEngine);
+
+    sub driver
+    {
+	...
+	my $drh = $proto->SUPER::driver($attr);
+	...
+	return $drh->{class};
+    }
+
+    sub CLONE { ... }
+
+    package DBD::myDriver::dr;
+
+    @ISA = qw(DBI::DBD::SqlEngine::dr);
+
+    sub data_sources { ... }
+    ...
+
+    package DBD::myDriver::db;
+
+    @ISA = qw(DBI::DBD::SqlEngine::db);
+
+    sub init_valid_attributes { ... }
+    sub init_default_attributes { ... }
+    sub set_versions { ... }
+    sub validate_STORE_attr { my ($dbh, $attrib, $value) = @_; ... }
+    sub validate_FETCH_attr { my ($dbh, $attrib) = @_; ... }
+    sub get_myd_versions { ... }
+    sub get_avail_tables { ... }
+
+    package DBD::myDriver::st;
+
+    @ISA = qw(DBI::DBD::SqlEngine::st);
+
+    sub FETCH { ... }
+    sub STORE { ... }
+
+    package DBD::myDriver::Statement;
+
+    @ISA = qw(DBI::DBD::SqlEngine::Statement);
+
+    sub open_table { ... }
+
+    package DBD::myDriver::Table;
+
+    @ISA = qw(DBI::DBD::SqlEngine::Table);
+
+    sub new { ... }
+
+    sub fetch_row { ... }
+    sub push_row { ... }
+    sub push_names { ... }
+    sub seek { ... }
+    sub truncate { ... }
+    sub drop { ... }
+
+    # optimize the SQL engine by add one or more of
+    sub update_current_row { ... }
+    # or
+    sub update_specific_row { ... }
+    # or
+    sub update_one_row { ... }
+    # or
+    sub insert_new_row { ... }
+    # or
+    sub delete_current_row { ... }
+    # or
+    sub delete_one_row { ... }
 
 =head1 DESCRIPTION
 

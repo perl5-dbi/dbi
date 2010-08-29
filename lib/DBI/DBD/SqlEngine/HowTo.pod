@@ -1,16 +1,22 @@
 =head1 NAME
 
-DBI::DBD::SqlEngine::Developers - Developers documentation for DBI::DBD::SqlEngine
+DBI::DBD::SqlEngine::HowTo - Guide to create DBI::DBD::SqlEngine based driver
 
 =head1 SYNOPSIS
 
+  perldoc DBI::DBD::SqlEngine::HowTo
+  perldoc DBI
+  perldoc DBI::DBD
   perldoc DBI::DBD::SqlEngine::Developers
+  perldoc DBI::DBD::SqlEngine
+  perldoc DBI::DBD::SqlEngine::HowTo
+  perldoc DBD::File::Developers
 
 =head1 DESCRIPTION
 
 This document provides a step-by-step guide, how to create a new
 C<DBI::DBD::SqlEngine> based DBD. It expects that you carefully read the
-L<DBI> documentation and that you're familiar with L<DBI::DBI> and had
+L<DBI> documentation and that you're familiar with L<DBI::DBD> and had
 read and understood L<DBD::ExampleP>.
 
 This document addresses experienced developers who are really sure that
@@ -183,8 +189,9 @@ fine with SQL::Statement and DBI::SQL::Nano.
 
 =head2 Testing
 
-Now you should have your first own DBD. Was easy, wasn't it?
-
+Now you should have your first own DBD. Was easy, wasn't it?  But does
+it work well? Prove it by writing tests and remember to use
+dbd_edit_mm_attribs from L<DBI::DBD> to ensure testing even rare cases.
 
 =head1 AUTHOR
 
