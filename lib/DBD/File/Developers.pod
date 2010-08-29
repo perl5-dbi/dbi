@@ -81,7 +81,8 @@ DBD::File::Developers - Developers documentation for DBD::File
 =head1 DESCRIPTION
 
 This document describes how DBD developers can write DBD::File based DBI
-drivers. It supplements L<DBI::DBD>, which you should read first.
+drivers. It supplements L<DBI::DBD> and L<DBI::DBD::SqlEngine::Developers>,
+which you should read first.
 
 =head1 CLASSES
 
