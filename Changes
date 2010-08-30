@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.614 (svn r14333) 16th August 2010
+=head2 Changes in DBI 1.614 (svn r14355) 30th August 2010
 
   Fixed internals to not refer to old perl symbols that
     will no longer be visible in perl >5.13.3 (Andreas Koenig)
@@ -14,17 +14,16 @@ DBI::Changes - List of significant changes to the DBI
   Fixed issue in DBD::File when absolute filename is used as table name
     (Jens Rehsack)
 
+  Changed 50dbm_simple to simplify and fix problems (Martin J. Evans)
+  Changed 50dbm_simple to skip aggregation tests when not using
+    SQL::Statement (Jens Rehsack)
+  Minor speed improvements in DBD::File (Jens Rehsack)
+
   Added $h->{AutoInactiveDestroy} as simpler safer form of
     $h->{InactiveDestroy} (David E. Wheeler)
   Added ability for parallel testing "prove -j4 ..." (Jens Rehsack)
   Added tests for delete in DBM (H.Merijn Brand)
-  Changed 50dbm_simple to delete all test counting code as it is getting
-    far too complicated and switched to done_testing. Fixed problems
-    skipping errors on prepare and execute. (Martin J. Evans)
-  Changed 50dbm_simple to skip aggregation tests when not using
-    SQL::Statement (Jens Rehsack)
   Added test for absolute filename as table to 51dbm_file (Jens Rehsack)
-  Minor speed improvements of DBD::File (Jens Rehsack)
   Added two initialization phases to DBI::DBD::SqlEngine
   Added improved developers documentation for DBI::DBD::SqlEngine
 
