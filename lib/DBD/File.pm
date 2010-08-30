@@ -225,7 +225,7 @@ sub init_default_attributes
     # don't call twice
     defined $phase or $phase = 0;
 
-    if( 0 == $phase ) {
+    if (0 == $phase) {
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
@@ -661,7 +661,7 @@ sub FETCH
 
 	    $attr eq "NULLABLE"  and
 		return [ map { ( grep m/^NOT NULL$/ =>
-			    @{ $sth->{f_overall_defs}{$_}{constraints} || [] } )
+			    @{ $sth->{f_overall_defs}{$_}{constraints} || [] })
 			       ? 0 : 1 }
 			    @colnames ];
 	    }
@@ -1350,7 +1350,7 @@ directory in the form "dbi:CSV:f_dir=$dirname".
 If you want to read the subdirectories of another directory, use
 
     my ($drh)  = DBI->install_driver ("CSV");
-    my (@list) = $drh->data_sources (f_dir => "/usr/local/csv_data" );
+    my (@list) = $drh->data_sources (f_dir => "/usr/local/csv_data");
 
 =head4 list_tables
 
