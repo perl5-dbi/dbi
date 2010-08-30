@@ -16,7 +16,7 @@
 #  DBD AUTHORS - see the comments in the code
 #
 #######################################################################
-require 5.005_03;
+require 5.008;
 use strict;
 
 #################
@@ -340,7 +340,7 @@ sub init_table_meta
         defined( $dbh->{dbm_cols} ) and $meta->{col_names} = $dbh->{dbm_cols};
     }
 
-    $self->SUPER::init_table_meta( $dbh, $table );
+    $self->SUPER::init_table_meta( $dbh, $meta, $table );
 }
 
 sub open_file
