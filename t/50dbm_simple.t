@@ -77,11 +77,12 @@ EOP
 
 my $dbi_sql_nano = $ENV{DBI_SQL_NANO};
 unless( $dbi_sql_nano ) {
-    $@ = undef;
+    my $haveSS = 0;
     eval {
 	require SQL::Statement;
+	$haveSS = DBD::DBM::Statement->isa('SQL::Statement');
     };
-    $@ and $dbi_sql_nano = 1;
+    $dbi_sql_nano = !$haveSS;
 }
 
 do "t/lib.pl";
