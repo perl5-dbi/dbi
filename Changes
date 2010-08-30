@@ -26,6 +26,8 @@ DBI::Changes - List of significant changes to the DBI
   Added test for absolute filename as table to 51dbm_file (Jens Rehsack)
   Added two initialization phases to DBI::DBD::SqlEngine
   Added improved developers documentation for DBI::DBD::SqlEngine
+  Added guides how to write DBI drivers using DBI::DBD::SqlEngine
+    or DBD::File 
 
 =head2 Changes in DBI 1.613 (svn r14271) 22nd July 2010
 
