@@ -357,24 +357,17 @@ dbixs_rev.h: DBIXS.h Driver_xst.h dbipport.h dbivport.h dbixs_rev.pl
 DBI.c: Perl$(OBJ_EXT)
 
 # make Changes file available as installed pod docs "perldoc DBI::Changes"
-# make Roadmap.pod file available as installed pod docs "perldoc DBI::Roadmap"
 inst_libdbi = ' . File::Spec->catdir($self->{INST_LIB}, 'DBI') . '
 changes_pm = '  . File::Spec->catfile($self->{INST_LIB}, 'DBI', 'Changes.pm') . '
-roadmap_pm = '  . File::Spec->catfile($self->{INST_LIB}, 'DBI', 'Roadmap.pm') . '
 '.q{
 
-config :: $(changes_pm) $(roadmap_pm)
+config :: $(changes_pm)
 	$(NOECHO) $(NOOP)
 
 $(changes_pm): Changes
 	$(MKPATH) $(inst_libdbi)
 	$(RM_F) $(changes_pm)
 	$(CP) Changes $(changes_pm)
-
-$(roadmap_pm): Roadmap.pod
-	$(MKPATH) $(inst_libdbi)
-	$(RM_F) $(roadmap_pm)
-	$(CP) Roadmap.pod $(roadmap_pm)
 
 ptest:  all
 	prove --blib --jobs 4 --shuffle
