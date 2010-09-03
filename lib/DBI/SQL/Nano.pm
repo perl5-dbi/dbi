@@ -309,7 +309,7 @@ sub DROP ($$$)
         return ( -1, 0 );
     }
 
-    $self->do_err( $@ || $err[0] ) if ( $@ || @err );
+    croak( $@ || $err[0] ) if ( $@ || @err );
     return ( -1, 0 ) unless $table;
 
     $table->drop($data);
