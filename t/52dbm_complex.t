@@ -2,6 +2,10 @@
 $| = 1;
 
 use strict;
+use warnings;
+
+require DBD::DBM;
+
 use File::Path;
 use File::Spec;
 use Test::More;
@@ -10,7 +14,6 @@ use Config qw(%Config);
 use Storable qw(dclone);
 
 my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i;
-my $haveSS;
 
 use DBI;
 use vars qw( @mldbm_types @dbm_types );
@@ -67,8 +70,6 @@ BEGIN
         }
     }
 
-    eval { require SQL::Statement; require DBD::DBM; $haveSS = DBD::DBM::Statement->isa('SQL::Statement'); };
-
     if ( eval { require List::MoreUtils; } )
     {
         List::MoreUtils->import("part");
@@ -87,12 +88,15 @@ EOP
     }
 }
 
+my $haveSS = DBD::DBM::Statement->isa('SQL::Statement');
+
+plan skip_all => "Not running with SQL::Statement" unless ( $haveSS );
+plan skip_all => "Not running with MLDBM" unless ( @mldbm_types );
+plan skip_all => "Needs more love to run with Gofer, too" if( $using_dbd_gofer );
+
 do "t/lib.pl";
 
 my $dir = test_dir ();
-
-plan skip_all => "Not running with SQL::Statement" unless ( $haveSS and @mldbm_types );
-plan skip_all => "Needs more love to run with Gofer, too" if( $using_dbd_gofer );
 
 my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, { f_dir => $dir, } );
 

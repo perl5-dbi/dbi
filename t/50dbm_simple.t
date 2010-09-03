@@ -2,6 +2,10 @@
 $|=1;
 
 use strict;
+use warnings;
+
+require DBD::DBM;
+
 use File::Path;
 use File::Spec;
 use Test::More;
@@ -75,15 +79,7 @@ EOP
     }
 }
 
-my $dbi_sql_nano = $ENV{DBI_SQL_NANO};
-unless( $dbi_sql_nano ) {
-    my $haveSS = 0;
-    eval {
-	require SQL::Statement;
-	$haveSS = DBD::DBM::Statement->isa('SQL::Statement');
-    };
-    $dbi_sql_nano = !$haveSS;
-}
+my $dbi_sql_nano = not DBD::DBM::Statement->isa('SQL::Statement');
 
 do "t/lib.pl";
 
