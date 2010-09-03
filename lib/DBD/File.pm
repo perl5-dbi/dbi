@@ -791,22 +791,11 @@ sub file2table
 	    ($tbl = $file) =~ s/$ext$//i;
 	closedir $dh or croak "Can't close '$searchdir': $!";
 
-	#(my $tdir = $dir) =~ s{^\./}{};	# XXX We do not want all tables to start with ./
-	#$tdir and $tbl = File::Spec->catfile ($tdir, $tbl);
-	$dir and $tbl = File::Spec->catfile ($dir, $tbl);
-
 	my $tmpfn = $file;
-	if ($ext) {
-	    if ($req) {
-		# File extension required
-		$tmpfn =~ s/$ext$//i			or  return;
-		}
-#	    else {
-#		# File extension optional, skip if file with extension exists
-#		grep m/$ext$/i, glob "$fqfn.*"	and return;
-#		$tmpfn =~ s/$ext$//i;
-#		}
-	    }
+	if ($ext and $req ) {
+            # File extension required
+            $tmpfn =~ s/$ext$//i			or  return;
+            }
 	}
 
     my $fqfn = File::Spec->catfile ($searchdir, $file);
@@ -814,9 +803,10 @@ sub file2table
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $fqbn;
-    !defined $meta->{f_lockfile} && $meta->{f_lockfile} and
+    defined $meta->{f_lockfile} && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
+    $dir and $tbl = File::Spec->catfile ($dir, $tbl) unless ($user_spec_file);
     $meta->{table_name} = $tbl;
 
     return $tbl;
