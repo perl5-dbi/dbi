@@ -55,7 +55,9 @@ ok($dbh->do(q/insert into FRED (a,b) values(2,1)/));
 my $r = $dbh->selectall_arrayref(q/select * from Fred/);
 ok(@$r == 2);
 
-   $r = $dbh->selectall_arrayref(sprintf(q|select * from "%s"|, File::Spec->catfile($dir, 'fred')));
+my $abs_tbl = File::Spec->catfile($dir, 'fred');
+   $abs_tbl =~ s|\\|/|g; # work around SQL::Statement bug
+   $r = $dbh->selectall_arrayref(sprintf(q|select * from "%s"|, $abs_tbl));
 ok(@$r == 2);
 
 ok($dbh->do(q/drop table if exists FRED/));
