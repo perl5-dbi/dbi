@@ -18,9 +18,9 @@ my $dir = test_dir ();
 my $dbh = DBI->connect('dbi:DBM:', undef, undef, {
     f_dir => $dir,
     sql_identifier_case => 1, # SQL_IC_UPPER
-} ); 
+} );
 
-ok($dbh->do(q/drop table if exists FRED/));
+ok($dbh->do(q/drop table if exists FRED/), 'drop table');
 
 $dbh->do(q/create table fred (a integer, b integer)/);
 ok(-f File::Spec->catfile( $dir, "FRED.dir" ), "FRED.dir exists");
@@ -35,7 +35,7 @@ if( $using_dbd_gofer )
     $dbh = DBI->connect('dbi:DBM:', undef, undef, {
 	f_dir => $dir,
 	sql_identifier_case => 2, # SQL_IC_LOWER
-    } ); 
+    } );
 }
 else
 {
@@ -46,20 +46,22 @@ else
 $dbh->do(q/create table FRED (a integer, b integer)/);
 ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists");
 
-ok($dbh->do(q/insert into fRED (a,b) values(1,2)/));
+ok($dbh->do(q/insert into fRED (a,b) values(1,2)/),
+   'insert into mixed case table');
 
 # but change fRED to FRED and it works.
 
-ok($dbh->do(q/insert into FRED (a,b) values(2,1)/));
+ok($dbh->do(q/insert into FRED (a,b) values(2,1)/),
+   'insert into uppercase table');
 
 my $r = $dbh->selectall_arrayref(q/select * from Fred/);
-ok(@$r == 2);
+ok(@$r == 2, 'rows found via mixed case table');
 
 my $abs_tbl = File::Spec->catfile($dir, 'fred');
    $abs_tbl =~ s|\\|/|g; # work around SQL::Statement bug
    $r = $dbh->selectall_arrayref(sprintf(q|select * from "%s"|, $abs_tbl));
-ok(@$r == 2);
+ok(@$r == 2, 'rows found via select via fully qualified path' );
 
-ok($dbh->do(q/drop table if exists FRED/));
+ok($dbh->do(q/drop table if exists FRED/), 'drop table');
 
 done_testing();
