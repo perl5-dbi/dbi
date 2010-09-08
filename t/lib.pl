@@ -19,7 +19,6 @@ sub test_dir
     {
 	$test_dir = File::Spec->rel2abs( File::Spec->curdir () );
 	$test_dir = File::Spec->catdir ( $test_dir, "test_output_" . $$ );
-	$test_dir .= "_" . basename($0, qr/\.[^.]*/);
 	$test_dir = VMS::Filespec::unixify($test_dir) if $^O eq 'VMS';
 	rmtree $test_dir;
 	mkpath $test_dir;
