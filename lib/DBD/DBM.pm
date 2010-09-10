@@ -391,6 +391,7 @@ sub open_file
         my $tie_class = $meta->{dbm_tietype};
         eval { tie %{ $meta->{hash} }, $tie_class, @tie_args };
         $@ and croak "Cannot tie(\%h $tie_class @tie_args): $@";
+	-f $meta->{f_fqfn} or croak( "No such file: '" . $meta->{f_fqfn} . "'" );
     }
 
     unless ( $flags->{createMode} )
