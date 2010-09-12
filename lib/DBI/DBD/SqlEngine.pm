@@ -573,8 +573,7 @@ sub get_driver_versions
         my $drv_prefix  = DBI->driver_prefix($drv_class);
         my $ddgv        = $dbh->{ImplementorClass}->can("get_${drv_prefix}versions");
         my $drv_version = $ddgv ? &$ddgv( $dbh, $table ) : $dbh->{ $drv_prefix . "version" };
-        $drv_version ||= eval "\$" . $derived . "::VERSION";
-        ;    # XXX access $drv_class::VERSION via symbol table
+        $drv_version ||= eval { $derived->VERSION() };    # XXX access $drv_class::VERSION via symbol table
         $vsn{$drv_class} = $drv_version;
         $indent and $vmp{$drv_class} = " " x $indent . $drv_class;
         $indent += 2;
