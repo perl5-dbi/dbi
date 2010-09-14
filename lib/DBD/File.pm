@@ -792,9 +792,9 @@ sub file2table
 	closedir $dh or croak "Can't close '$searchdir': $!";
 
 	my $tmpfn = $file;
-	if ($ext and $req ) {
+	if ($ext && $req) {
             # File extension required
-            $tmpfn =~ s/$ext$//i			or  return;
+            $tmpfn =~ s/$ext$//i or return;
             }
 	}
 
@@ -806,7 +806,7 @@ sub file2table
     defined $meta->{f_lockfile} && $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
-    $dir and $tbl = File::Spec->catfile ($dir, $tbl) unless ($user_spec_file);
+    $dir && !$user_spec_file  and $tbl = File::Spec->catfile ($dir, $tbl);
     $meta->{table_name} = $tbl;
 
     return $tbl;
