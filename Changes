@@ -8,6 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.614 (svn r14385) 9th September 2010
 
+  Fixed bind_param () in DBI::DBD::SqlEngine (rt#61281)
   Fixed internals to not refer to old perl symbols that
     will no longer be visible in perl >5.13.3 (Andreas Koenig)
     Many compiled drivers are likely to need updating.
