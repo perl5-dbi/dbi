@@ -1,5 +1,5 @@
 #!perl -w
-$|=1;
+$| = 1;
 
 use strict;
 use File::Path;
@@ -7,61 +7,62 @@ use File::Spec;
 use Test::More;
 use Cwd;
 
-my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
+my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i;
 
 use DBI;
 
 do "t/lib.pl";
 
-my $dir = test_dir ();
+my $dir = test_dir();
 
-my $dbh = DBI->connect('dbi:DBM:', undef, undef, {
-    f_dir => $dir,
-    sql_identifier_case => 1, # SQL_IC_UPPER
-} );
+my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+      f_dir               => $dir,
+      sql_identifier_case => 1,      # SQL_IC_UPPER
+    }
+);
 
-ok($dbh->do(q/drop table if exists FRED/), 'drop table');
+ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
 
 $dbh->do(q/create table fred (a integer, b integer)/);
-ok(-f File::Spec->catfile( $dir, "FRED.dir" ), "FRED.dir exists");
+ok( -f File::Spec->catfile( $dir, "FRED.dir" ), "FRED.dir exists" );
 
 rmtree $dir;
 mkpath $dir;
 
-if( $using_dbd_gofer )
+if ($using_dbd_gofer)
 {
     # can't modify attributes when connect through a Gofer instance
     $dbh->disconnect();
-    $dbh = DBI->connect('dbi:DBM:', undef, undef, {
-	f_dir => $dir,
-	sql_identifier_case => 2, # SQL_IC_LOWER
-    } );
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+          f_dir               => $dir,
+          sql_identifier_case => 2,      # SQL_IC_LOWER
+        }
+    );
 }
 else
 {
-    $dbh->dbm_clear_meta( 'fred' ); # otherwise the col_names are still known!
-    $dbh->{sql_identifier_case} = 2; # SQL_IC_LOWER
+    $dbh->dbm_clear_meta('fred');         # otherwise the col_names are still known!
+    $dbh->{sql_identifier_case} = 2;      # SQL_IC_LOWER
 }
 
 $dbh->do(q/create table FRED (a integer, b integer)/);
-ok(-f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists");
+ok( -f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists" );
 
-ok($dbh->do(q/insert into fRED (a,b) values(1,2)/),
-   'insert into mixed case table');
+ok( $dbh->do(q/insert into fRED (a,b) values(1,2)/), 'insert into mixed case table' );
 
 # but change fRED to FRED and it works.
 
-ok($dbh->do(q/insert into FRED (a,b) values(2,1)/),
-   'insert into uppercase table');
+ok( $dbh->do(q/insert into FRED (a,b) values(2,1)/), 'insert into uppercase table' );
 
 my $r = $dbh->selectall_arrayref(q/select * from Fred/);
-ok(@$r == 2, 'rows found via mixed case table');
+ok( @$r == 2, 'rows found via mixed case table' );
 
-my $abs_tbl = File::Spec->catfile($dir, 'fred');
-   $abs_tbl =~ s|\\|/|g; # work around SQL::Statement bug
-   $r = $dbh->selectall_arrayref(sprintf(q|select * from "%s"|, $abs_tbl));
-ok(@$r == 2, 'rows found via select via fully qualified path' );
+my $abs_tbl = File::Spec->catfile( $dir, 'fred' );
+   # work around SQL::Statement bug
+   DBD::DBM::Statement->isa("SQL::Statement") and SQL::Statement->VERSION() lt "1.32" and $abs_tbl =~ s|\\|/|g;
+   $r = $dbh->selectall_arrayref( sprintf( q|select * from "%s"|, $abs_tbl ) );
+ok( @$r == 2, 'rows found via select via fully qualified path' );
 
-ok($dbh->do(q/drop table if exists FRED/), 'drop table');
+ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
 
 done_testing();
