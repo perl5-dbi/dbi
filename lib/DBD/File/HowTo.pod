@@ -204,6 +204,16 @@ methods:
     sub get_table_meta_attr { ... }
     sub set_table_meta_attr { ... }
 
+Both methods can adjust the attribute name for compatibility reasons, e.g.
+when former versions of the DBD allowed different names to be used for the
+same flag:
+
+    my %compat_map = (
+		       abc => 'foo_abc',
+		       xyz => 'foo_xyz',
+		     );
+    __PACKAGE__->register_compat_map( \%compat_map );
+
 If any user modification on a meta attribute needs reinitialization of
 the meta structure (in case of C<DBD::File> these are the attributes
 C<f_file>, C<f_dir>, C<f_ext> and C<f_lockfile>), inform DBD::File by
@@ -217,6 +227,19 @@ doing
 
 The next access to the table meta data will force DBD::File to re-do the
 entire meta initialization process.
+
+Any further action which needs to be taken can handled in
+C<table_meta_attr_changed>:
+
+    sub table_meta_attr_changed
+    {
+	my ($class, $meta, $attrib, $value) = @_;
+	...
+	$class->SUPER::table_meta_attr_changed ($meta, $attrib, $value);
+    }
+
+This is done before the new value is set in C<$meta>, so the attribute
+changed handler can act depending on the old value.
 
 =head2 Testing
 

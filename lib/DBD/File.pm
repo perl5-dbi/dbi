@@ -881,6 +881,10 @@ my %reset_on_modify = (
     f_lockfile => "f_fqfn", # forces new file2table call
     );
 
+my %compat_map = (
+    map { $_ => "f_$_" } qw( file ext lock lockfile )
+);
+
 sub register_reset_on_modify
 {
     my ($proto, $extra_resets) = @_;
@@ -888,9 +892,18 @@ sub register_reset_on_modify
     return;
     } # register_reset_on_modify
 
+sub register_compat_map
+{
+    my ($proto, $extra_compat_map) = @_;
+    %compat_map = (%compat_map, %$extra_compat_map);
+    return;
+    } # register_compat_map
+
 sub get_table_meta_attr
 {
     my ($class, $meta, $attrib) = @_;
+    exists $compat_map{$attrib} and
+	$attrib = $compat_map{$attrib};
     exists $meta->{$attrib} and
 	return $meta->{$attrib};
     return;
@@ -899,11 +912,19 @@ sub get_table_meta_attr
 sub set_table_meta_attr
 {
     my ($class, $meta, $attrib, $value) = @_;
+    exists $compat_map{$attrib} and
+	$attrib = $compat_map{$attrib};
+    $class->table_meta_attr_changed ($meta, $attrib, $value);
+    $meta->{$attrib} = $value;
+    } # set_table_meta_attr
+
+sub table_meta_attr_changed
+{
+    my ($class, $meta, $attrib, $value) = @_;
     defined $reset_on_modify{$attrib} and
 	delete $meta->{$reset_on_modify{$attrib}} and
 	delete $meta->{initialized};
-    $meta->{$attrib} = $value;
-    } # set_table_meta_attr
+    } # table_meta_attr_changed
 
 # ====== FILE OPEN =============================================================
 

@@ -56,9 +56,15 @@ DBD::File::Developers - Developers documentation for DBD::File
 			    myd_mno => "myd_bar",
 			  );
     __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+    my %compat_map = (
+		       abc => 'foo_abc',
+		       xyz => 'foo_xyz',
+		     );
+    __PACKAGE__->register_compat_map( \%compat_map );
 
     sub bootstrap_table_meta { ... }
     sub init_table_meta { ... }
+    sub table_meta_attr_changed { ... }
     sub open_file { ... }
 
     sub fetch_row { ... }
@@ -432,19 +438,24 @@ structure is returned.
 
 =item get_table_meta_attr
 
-Returns a single attribute from the table meta data. This method should
-be overridden when mapped attribute names should be returned for
-compatibility reasons.
+Returns a single attribute from the table meta data. If the attribute
+name appears in C<%compat_map>, the attribute name is updated from
+there.
 
 =item set_table_meta_attr
 
-Sets a single attribute in the table meta data. This method should
-be overridden when mapped attribute names should be modified for
-compatibility reasons.
+Sets a single attribute in the table meta data. If the attribute
+name appears in C<%compat_map>, the attribute name is updated from
+there.
+
+=item table_meta_attr_changed
+
+Called when an attribute of the meta data is modified.
 
 If the modified attribute requires to reset a calculated attribute, the
 calculated attribute is reset (deleted from meta data structure) and
-the I<initialized> flag is removed, too.
+the I<initialized> flag is removed, too. The decision is made based on
+C<%register_reset_on_modify>.
 
 =item register_reset_on_modify
 
@@ -458,6 +469,15 @@ C<register_reset_on_modify>:
 
     my %reset_on_modify = ( "xxx_foo" => "xxx_bar" );
     __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+
+=item register_compat_map
+
+Allows C<get_table_meta_attr> and C<set_table_meta_attr> to update the
+attribute name to the current favored one:
+
+    # from DBD::DBM
+    my %compat_map = ( "dbm_ext" => "f_ext" );
+    __PACKAGE__->register_compat_map( \%compat_map );
 
 =item open_file
 
