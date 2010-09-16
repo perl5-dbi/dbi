@@ -881,9 +881,7 @@ my %reset_on_modify = (
     f_lockfile => "f_fqfn", # forces new file2table call
     );
 
-my %compat_map = (
-    map { $_ => "f_$_" } qw( file ext lock lockfile )
-);
+my %compat_map = map { $_ => "f_$_" } qw( file ext lock lockfile );
 
 sub register_reset_on_modify
 {
