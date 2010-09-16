@@ -737,21 +737,27 @@ sub file2table
 	}
 
     # (my $tbl = $file) =~ s/$ext$//i;
-    my ($tbl, $dir, $user_spec_file);
+    my ($tbl, $basename, $dir, $fn_ext, $user_spec_file);
     if ($file_is_table and defined $meta->{f_file}) {
 	$tbl = $file;
-	($file, $dir, undef) = File::Basename::fileparse ($meta->{f_file});
+	($basename, $dir, $fn_ext) = File::Basename::fileparse ($meta->{f_file}, $fn_any_ext_regex);
+	$file = $basename . $fn_ext;
 	$user_spec_file = 1;
 	}
     else {
-	($tbl, $dir, undef) = File::Basename::fileparse ($file, $ext);
+	($basename, $dir, undef) = File::Basename::fileparse ($file, $ext);
+	$file = $tbl = $basename;
 	$user_spec_file = 0;
 	}
 
-    !$respect_case and $meta->{sql_identifier_case} == 1 and # XXX SQL_IC_UPPER
+    if (!$respect_case and $meta->{sql_identifier_case} == 1) { # XXX SQL_IC_UPPER
+        $basename = uc $basename;
         $tbl = uc $tbl;
-    !$respect_case and $meta->{sql_identifier_case} == 2 and # XXX SQL_IC_LOWER
+	}
+    if( !$respect_case and $meta->{sql_identifier_case} == 2) { # XXX SQL_IC_LOWER
+        $basename = lc $basename;
         $tbl = lc $tbl;
+	}
 
     my $searchdir = File::Spec->file_name_is_absolute ($dir)
 	? ($dir =~ s|/$||, $dir)
@@ -763,14 +769,14 @@ sub file2table
 	$dir = "";
 
     unless ($user_spec_file) {
-	$file_is_table and $file = "$tbl$ext";
+	$file_is_table and $file = "$basename$ext";
 
 	# Fully Qualified File Name
 	my $cmpsub;
 	if ($respect_case) {
 	    $cmpsub = sub {
 		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
-		$fn eq $tbl and
+		$fn eq $basename and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;
 		}
@@ -778,7 +784,7 @@ sub file2table
 	else {
 	    $cmpsub = sub {
 		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
-		lc $fn eq lc $tbl and
+		lc $fn eq lc $basename and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;
 		}
@@ -799,7 +805,7 @@ sub file2table
 	}
 
     my $fqfn = File::Spec->catfile ($searchdir, $file);
-    my $fqbn = File::Spec->catfile ($searchdir, $tbl);
+    my $fqbn = File::Spec->catfile ($searchdir, $basename);
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $fqbn;
@@ -842,7 +848,9 @@ sub get_table_meta ($$$$;$)
 	$table =~ s/\"$//;
 	}
 
-    defined $dbh->{f_meta_map}{$table} and $table = $dbh->{f_meta_map}{$table};
+    unless ($respect_case) {
+	defined $dbh->{f_meta_map}{$table} and $table = $dbh->{f_meta_map}{$table};
+	}
 
     my $meta = {};
     defined $dbh->{f_meta}{$table} and $meta = $dbh->{f_meta}{$table};
@@ -861,10 +869,12 @@ sub get_table_meta ($$$$;$)
 
 	# now we know a bit more - let's check if user can't use consequent spelling
 	# XXX add know issue about reset sql_identifier_case here ...
-	if (defined $dbh->{f_meta}{$table} && $dbh->{f_meta}{$table}{initialized}) {
+	if (defined $dbh->{f_meta}{$table} && defined($dbh->{f_meta}{$table}{initialized})) {
 	    $meta = $dbh->{f_meta}{$table};
+	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or
+		return unless ($dbh->{f_meta}{$table}{initialized});
 	    }
-	else {
+	unless ($dbh->{f_meta}{$table}{initialized}) {
 	    $self->init_table_meta ($dbh, $meta, $table);
 	    $meta->{initialized} = 1;
 	    $dbh->{f_meta}{$table} = $meta;
@@ -921,7 +931,7 @@ sub table_meta_attr_changed
     my ($class, $meta, $attrib, $value) = @_;
     defined $reset_on_modify{$attrib} and
 	delete $meta->{$reset_on_modify{$attrib}} and
-	delete $meta->{initialized};
+	$meta->{initialized} = 0;
     } # table_meta_attr_changed
 
 # ====== FILE OPEN =============================================================

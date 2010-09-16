@@ -2,10 +2,12 @@
 $| = 1;
 
 use strict;
+use warnings;
+
+use File::Copy ();
 use File::Path;
-use File::Spec;
+use File::Spec ();
 use Test::More;
-use Cwd;
 
 my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i;
 
@@ -54,6 +56,16 @@ ok( $dbh->do(q/insert into fRED (a,b) values(1,2)/), 'insert into mixed case tab
 
 ok( $dbh->do(q/insert into FRED (a,b) values(2,1)/), 'insert into uppercase table' );
 
+my $fn_tbl2 = $dbh->{dbm_tables}->{fred}->{f_fqfn};
+   $fn_tbl2 =~ s/fred(\.[^.]*)?/freddy$1/;
+foreach my $fn (glob($dbh->{dbm_tables}->{fred}->{f_fqbn} . "*"))
+{
+    my $tgt_fn = $fn;
+    $tgt_fn =~ s/fred(\.[^.]*)?/freddy$1/;
+    File::Copy::copy( $fn, $tgt_fn );
+}
+$dbh->{dbm_tables}->{krueger}->{file} = $fn_tbl2;
+
 my $r = $dbh->selectall_arrayref(q/select * from Fred/);
 ok( @$r == 2, 'rows found via mixed case table' );
 
@@ -64,5 +76,10 @@ my $abs_tbl = File::Spec->catfile( $dir, 'fred' );
 ok( @$r == 2, 'rows found via select via fully qualified path' );
 
 ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
+
+my $r = $dbh->selectall_arrayref(q/select * from Krueger/);
+ok( @$r == 2, 'rows found via cloned mixed case table' );
+
+ok( $dbh->do(q/drop table if exists KRUeGEr/), 'drop table' );
 
 done_testing();
