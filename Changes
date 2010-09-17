@@ -6,6 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.XXX (svn nnnnn) nth Month 2010
+
+  Fixed compiler warnings from ignored hv_store result (Martin J. Evans)
+
 =head2 Changes in DBI 1.614 (svn r14385) 9th September 2010
 
   Fixed bind_param () in DBI::DBD::SqlEngine (rt#61281)

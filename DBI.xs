@@ -1277,7 +1277,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
             && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
             ) {
                 /* XXX mirrors behaviour of dbih_set_attr_k() of Callbacks */
-                hv_store((HV*)SvRV(h), "Callbacks", 9, newRV_inc(SvRV(*tmp_svp)), 0);
+                (void)hv_store((HV*)SvRV(h), "Callbacks", 9, newRV_inc(SvRV(*tmp_svp)), 0);
                 DBIc_set(imp, DBIcf_Callbacks, 1);
             }
 
@@ -1315,16 +1315,16 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
         switch (DBIc_TYPE(imp)) {
         case DBIt_DB:
             /* cache _inner_ handle, but also see quick_FETCH */
-            hv_store((HV*)SvRV(h), "Driver", 6, newRV_inc(SvRV(parent)), 0);
-            hv_fetch((HV*)SvRV(h), "Statement", 9, 1); /* store writable undef */
+            (void)hv_store((HV*)SvRV(h), "Driver", 6, newRV_inc(SvRV(parent)), 0);
+            (void)hv_fetch((HV*)SvRV(h), "Statement", 9, 1); /* store writable undef */
             break;
         case DBIt_ST:
             DBIc_NUM_FIELDS((imp_sth_t*)imp) = -1;
             /* cache _inner_ handle, but also see quick_FETCH */
-            hv_store((HV*)SvRV(h), "Database", 8, newRV_inc(SvRV(parent)), 0);
+            (void)hv_store((HV*)SvRV(h), "Database", 8, newRV_inc(SvRV(parent)), 0);
             /* copy (alias) Statement from the sth up into the dbh      */
             tmp_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
-            hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(*tmp_svp), 0);
+            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(*tmp_svp), 0);
             break;
         }
     }
@@ -2059,7 +2059,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         cacheit = 1;
     }
     if (cacheit) {
-        hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
+        (void)hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
     }
     return TRUE;
 }
@@ -2154,7 +2154,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                         if (av)
                             av_store(av, i, sv);
                         else {
-                            hv_store(hv, name, SvCUR(sv), newSViv(i), 0);
+                            (void)hv_store(hv, name, SvCUR(sv), newSViv(i), 0);
                             sv_free(sv);
                         }
                     }
@@ -2381,7 +2381,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
     }
 
     if (cacheit) {
-        hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
+        (void)hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
     }
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 3)
         PerlIO_printf(DBILOGFP,"    .. FETCH %s %s = %s%s\n", neatsvpv(h,0),
@@ -2587,7 +2587,7 @@ _profile_next_node(SV *node, const char *name)
             char *key = "(demoted)";
             warn("Profile data element %s replaced with new hash ref (for %s) and original value stored with key '%s'",
                 neatsvpv(orig_node,0), name, key);
-            hv_store(hv, key, strlen(key), SvREFCNT_inc(orig_node), 0);
+            (void)hv_store(hv, key, strlen(key), SvREFCNT_inc(orig_node), 0);
         }
         sv_setsv(node, newRV_noinc((SV*)hv));
         node = (SV*)hv;
@@ -3140,7 +3140,7 @@ XS(XS_DBI_dispatch)
                 keep_error = TRUE;
             if (ima_flags & IMA_CLEAR_STMT) {
                 /* don't use SvOK_off: dbh's Statement may be ref to sth's */
-                hv_store((HV*)SvRV(h), "Statement", 9, &PL_sv_undef, 0);
+                (void)hv_store((HV*)SvRV(h), "Statement", 9, &PL_sv_undef, 0);
             }
             if (ima_flags & IMA_CLEAR_CACHED_KIDS)
                 clear_cached_kids(aTHX_ h, imp_xxh, meth_name, trace_flags);
@@ -3219,7 +3219,7 @@ XS(XS_DBI_dispatch)
             SV *parent = DBIc_PARENT_H(imp_xxh);
             SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
             /* XXX sv_copy() if Profiling? */
-            hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
+            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
         }
     }
 
@@ -4240,7 +4240,7 @@ _new_handle(class, parent, attr_ref, imp_datasv, imp_class)
         (void)cv; /* avoid unused warning */
     }
 
-    hv_store((HV*)SvRV(attr_ref), "ImplementorClass", 16, SvREFCNT_inc(imp_class), 0);
+    (void)hv_store((HV*)SvRV(attr_ref), "ImplementorClass", 16, SvREFCNT_inc(imp_class), 0);
 
     /* make attr into inner handle by blessing it into class */
     sv_bless(attr_ref, class_stash);
@@ -4962,7 +4962,7 @@ fetchrow_hashref(sth, keyattrib=Nullch)
         hv    = newHV();
         for (i=0; i < num_fields; ++i) {        /* honor the original order as sent by the database */
             SV  **field_name_svp = av_fetch(ka_av, i, 1);
-            hv_store_ent(hv, *field_name_svp, newSVsv((SV*)(AvARRAY(rowav)[i])), 0);
+            (void)hv_store_ent(hv, *field_name_svp, newSVsv((SV*)(AvARRAY(rowav)[i])), 0);
         }
         RETVAL = newRV_inc((SV*)hv);
         SvREFCNT_dec(hv);       /* since newRV incremented it   */
