@@ -60,7 +60,8 @@ unless ($using_dbd_gofer)
 {
     my $fn_tbl2 = $dbh->{dbm_tables}->{fred}->{f_fqfn};
        $fn_tbl2 =~ s/fred(\.[^.]*)?/freddy$1/;
-    foreach my $fn (glob($dbh->{dbm_tables}->{fred}->{f_fqbn} . "*"))
+    my @dbfiles = glob('"' . $dbh->{dbm_tables}->{fred}->{f_fqbn} . "*" . '"');
+    foreach my $fn (@dbfiles)
     {
 	my $tgt_fn = $fn;
 	$tgt_fn =~ s/fred(\.[^.]*)?/freddy$1/;
