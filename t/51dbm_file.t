@@ -60,7 +60,11 @@ unless ($using_dbd_gofer)
 {
     my $fn_tbl2 = $dbh->{dbm_tables}->{fred}->{f_fqfn};
        $fn_tbl2 =~ s/fred(\.[^.]*)?/freddy$1/;
-    my @dbfiles = glob('"' . $dbh->{dbm_tables}->{fred}->{f_fqbn} . "*" . '"');
+    my @dbfiles = grep { -f $_ } (
+				     $dbh->{dbm_tables}->{fred}->{f_fqfn},
+				     $dbh->{dbm_tables}->{fred}->{f_fqln},
+				     $dbh->{dbm_tables}->{fred}->{f_fqbn} . ".dir"
+				 );
     foreach my $fn (@dbfiles)
     {
 	my $tgt_fn = $fn;
@@ -78,11 +82,15 @@ unless ($using_dbd_gofer)
 my $r = $dbh->selectall_arrayref(q/select * from Fred/);
 ok( @$r == 2, 'rows found via mixed case table' );
 
-my $abs_tbl = File::Spec->catfile( $dir, 'fred' );
-   # work around SQL::Statement bug
-   DBD::DBM::Statement->isa("SQL::Statement") and SQL::Statement->VERSION() lt "1.32" and $abs_tbl =~ s|\\|/|g;
-   $r = $dbh->selectall_arrayref( sprintf( q|select * from "%s"|, $abs_tbl ) );
-ok( @$r == 2, 'rows found via select via fully qualified path' );
+SKIP:
+{
+    DBD::DBM::Statement->isa("SQL::Statement") or skip("quoted identifiers aren't supported by DBI::SQL::Nano",1);
+    my $abs_tbl = File::Spec->catfile( $dir, 'fred' );
+       # work around SQL::Statement bug
+       DBD::DBM::Statement->isa("SQL::Statement") and SQL::Statement->VERSION() lt "1.32" and $abs_tbl =~ s|\\|/|g;
+       $r = $dbh->selectall_arrayref( sprintf( q|select * from "%s"|, $abs_tbl ) );
+    ok( @$r == 2, 'rows found via select via fully qualified path' );
+}
 
 ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
 
