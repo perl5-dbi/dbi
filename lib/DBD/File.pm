@@ -141,11 +141,6 @@ sub data_sources ($;$)
     $driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
 
     while (defined ($file = readdir ($dirh))) {
-	if ($^O eq "VMS") {
-	    # if on VMS then avoid warnings from catdir if you use a file
-	    # (not a dir) as the file below
-	    $file !~ m/\.dir$/oi and next;
-	    }
 	my $d = File::Spec->catdir ($dir, $file);
 	# allow current dir ... it can be a data_source too
 	$file ne File::Spec->updir () && -d $d and
@@ -776,6 +771,7 @@ sub file2table
 	if ($respect_case) {
 	    $cmpsub = sub {
 		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
+		$sfx = '' if $^O eq 'VMS' and $sfx eq '.';  # no extension turns up as a dot
 		$fn eq $basename and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;
@@ -784,6 +780,7 @@ sub file2table
 	else {
 	    $cmpsub = sub {
 		my ($fn, undef, $sfx) = File::Basename::fileparse ($_, $fn_any_ext_regex);
+		$sfx = '' if $^O eq 'VMS' and $sfx eq '.';  # no extension turns up as a dot
 		lc $fn eq lc $basename and
 		    return (lc $sfx eq lc $ext or !$req && !$sfx);
 		return 0;

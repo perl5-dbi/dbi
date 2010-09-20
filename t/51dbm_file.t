@@ -25,8 +25,10 @@ my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
 
 ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
 
+my $dirfext = $^O eq 'VMS' ? '.sdbm_dir' : '.dir';
+
 $dbh->do(q/create table fred (a integer, b integer)/);
-ok( -f File::Spec->catfile( $dir, "FRED.dir" ), "FRED.dir exists" );
+ok( -f File::Spec->catfile( $dir, "FRED$dirfext" ), "FRED$dirfext exists" );
 
 rmtree $dir;
 mkpath $dir;
@@ -48,7 +50,7 @@ else
 }
 
 $dbh->do(q/create table FRED (a integer, b integer)/);
-ok( -f File::Spec->catfile( $dir, "fred.dir" ), "fred.dir exists" );
+ok( -f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext exists" );
 
 ok( $dbh->do(q/insert into fRED (a,b) values(1,2)/), 'insert into mixed case table' );
 

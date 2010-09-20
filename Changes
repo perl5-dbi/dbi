@@ -8,9 +8,11 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.XXX (svn nnnnn) nth Month 2010
 
+  Fixed test for file/directory names with whitespaces in them
   Fixed compiler warnings from ignored hv_store result (Martin J. Evans)
+  Fixed portability to VMS (Craig A. Berry)
 
-=head2 Changes in DBI 1.614 (svn r14385) 9th September 2010
+=head2 Changes in DBI 1.614 (svn r14408) 17th September 2010
 
   Fixed bind_param () in DBI::DBD::SqlEngine (rt#61281)
   Fixed internals to not refer to old perl symbols that

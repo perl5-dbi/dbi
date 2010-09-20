@@ -99,7 +99,7 @@ SKIP: {
 my @tfhl;
 
 # Now test some basic SQL statements
-my $tbl_file = File::Spec->catfile ($dir, "$tbl.txt");
+my $tbl_file = File::Spec->catfile (Cwd::abs_path( $dir ), "$tbl.txt");
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl") or diag $dbh->errstr;
 ok (-f $tbl_file, "Test table exists");
 

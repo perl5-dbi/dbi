@@ -22,6 +22,9 @@ sub test_dir
 	$test_dir = VMS::Filespec::unixify($test_dir) if $^O eq 'VMS';
 	rmtree $test_dir;
 	mkpath $test_dir;
+	# There must be at least one directory in the test directory,
+	# and nothing guarantees that dot or dot-dot directories will exist.
+	mkpath ( File::Spec->catdir( $test_dir, '000_just_testing' ) );
     }
 
     return $test_dir;
