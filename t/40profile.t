@@ -79,7 +79,7 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 my $t_file = __FILE__;
 $dbh->do("set foo=1"); my $line = __LINE__;
 my $expected_caller = "40profile.t line $line";
-$expected_caller .= " via ${1}40profile.t line 3"
+$expected_caller .= " via ${1}40profile.t line 4"
     if $0 =~ /(zv\w+_)/;
 print Dumper($dbh->{Profile});
 is_deeply sanitize_tree($dbh->{Profile}), bless {
@@ -87,8 +87,8 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 	'Data' => { 'do' => {
 	    $expected_caller => [ 1, 0, 0, 0, 0, 0, 0 ]
 	} }
-} => 'DBI::Profile';
-#die Dumper $dbh->{Profile};
+} => 'DBI::Profile'
+    or warn Dumper $dbh->{Profile};
 
 
 # can turn it on at connect
