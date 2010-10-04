@@ -2130,15 +2130,28 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                     int upcase = (key[5] == 'u');
                     AV *av = Nullav;
                     HV *hv = Nullhv;
+                    int num_fields_mismatch = 0;
+
                     if (strEQ(&key[strlen(key)-5], "_hash"))
                         hv = newHV();
                     else av = newAV();
                     i = DBIc_NUM_FIELDS(imp_sth);
-		    if (DBIc_TRACE_LEVEL(imp_sth) >= 10)
+
+                    /* catch invalid NUM_FIELDS */
+                    if (i != AvFILL(name_av)+1) {
+                        /* flag as mismatch, except for "-1 and empty" case */
+                        if ( ! (i == -1 && 0 == AvFILL(name_av)+1) )
+                            num_fields_mismatch = 1;
+                        i = AvFILL(name_av)+1; /* limit for safe iteration over array */
+                    }
+
+		    if (DBIc_TRACE_LEVEL(imp_sth) >= 10 || (num_fields_mismatch && DBIc_WARN(imp_xxh))) {
 			PerlIO_printf(DBILOGFP,"       FETCH $h->{%s} from $h->{NAME} with $h->{NUM_OF_FIELDS} = %d"
-			                       " and %ld entries in $h->{NAME}\n",
-				neatsvpv(keysv,0), i, AvFILL(name_av)+1);
-                    assert((i == -1 && 0 == AvFILL(name_av)+1) || (i == AvFILL(name_av)+1));
+			                       " and %ld entries in $h->{NAME}%s\n",
+				neatsvpv(keysv,0), DBIc_NUM_FIELDS(imp_sth), AvFILL(name_av)+1,
+                                (num_fields_mismatch) ? " (possible bug in driver)" : "");
+                    }
+
                     while (--i >= 0) {
                         sv = newSVsv(AvARRAY(name_av)[i]);
                         name = SvPV_nolen(sv);
