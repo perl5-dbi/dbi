@@ -33,7 +33,7 @@ use strict;
 use Carp;
 use vars qw( @ISA $VERSION $drh %methods_installed);
 
-$VERSION = "0.02";
+$VERSION = "0.03";
 
 $drh = undef;    # holds driver handle(s) once initialized
 
@@ -273,9 +273,9 @@ sub prepare ($$;@)
         {
             $stmt = eval { $class->new($statement) };
         }
-        if ($@)
+        if ($@ || $stmt->{errstr})
         {
-            $dbh->set_err( $DBI::stderr, $@ );
+            $dbh->set_err( $DBI::stderr, $@ || $stmt->{errstr} );
             undef $sth;
         }
         else
