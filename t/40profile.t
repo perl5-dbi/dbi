@@ -180,7 +180,7 @@ $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count
 is_deeply $tmp, bless {
 	'Path' => [ '!Statement' ],
 	'Data' => {
-		''   => [ 7, 0, 0, 0, 0, 0, 0 ],
+		''   => [ 6, 0, 0, 0, 0, 0, 0 ],
 		$sql => [ -1, 0, 0, 0, 0, 0, 0 ],
 		'set foo=1' => [ 1, 0, 0, 0, 0, 0, 0 ],
 	}
@@ -247,12 +247,11 @@ is_deeply $tmp, bless {
 } => 'DBI::Profile';
 
 $tmp = [ $dbh->{Profile}->as_node_path_list() ];
-is @$tmp, 9, 'should have 9 nodes';
+is @$tmp, 8, 'should have 8 nodes';
 sanitize_profile_data_nodes($_->[0]) for @$tmp;
 #warn Dumper($dbh->{Profile}->{Data});
 is_deeply $tmp, [
   [ [ 3, 0, 0, 0, 0, 0, 0 ], '', '', 'foo', 'STORE' ],
-  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'FETCH' ],
   [ [ 2, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'STORE' ],
   [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'connected' ],
   [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'bar', 'DESTROY' ],
@@ -351,10 +350,10 @@ sub run_test1 {
 }
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'bar' }, 'baz' ] });
-is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 12, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 11, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'ping','pong' } ] });
-is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 12, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 11, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { \undef } ] });
 is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
@@ -362,7 +361,7 @@ is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
 # check what code ref sees in $_
 $tmp = run_test1( { Path => [ sub { $_ } ] });
 is_deeply $tmp, {
-  '' => [ 7, 0, 0, 0, 0, 0, 0 ],
+  '' => [ 6, 0, 0, 0, 0, 0, 0 ],
   'select name from .' => [ 5, 0, 0, 0, 0, 0, 0 ]
 }, '$_ should contain statement';
 
@@ -421,7 +420,6 @@ $as_text = $dbh->{Profile}->as_text();
 $as_text =~ s/\.00+/.0/g;
 #warn "[$as_text]";
 is $as_text, q{foo > DESTROY > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
-foo > FETCH > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > STORE > baz: 0.0s / 5 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > connected > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > execute > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
