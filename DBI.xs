@@ -3526,7 +3526,7 @@ XS(XS_DBI_dispatch)
             if (is_DESTROY) /* show handle as first arg to DESTROY */
                 /* want to show outer handle so trace makes sense       */
                 /* but outer handle has been destroyed so we fake it    */
-                PerlIO_printf(logfp,"(%s=HASH(%p)", HvNAME(SvSTASH(SvRV(orig_h))), (void*)DBIc_MY_H(imp_xxh));
+                PerlIO_printf(logfp,"(%s=HASH(0x%p)", HvNAME(SvSTASH(SvRV(orig_h))), (void*)DBIc_MY_H(imp_xxh));
             else
                 PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
             if (items >= 3)
