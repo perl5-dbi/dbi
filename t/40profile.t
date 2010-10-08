@@ -95,7 +95,7 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1, Profile=>6 });
 is_deeply $dbh->{Profile}{Path}, [ '!Statement', '!MethodName' ];
 cmp_ok(keys %{ $dbh->{Profile}{Data} },     '==', 1, 'on at connect, 1 key');
-cmp_ok(keys %{ $dbh->{Profile}{Data}{""} }, '>=', 1), 'on at connect, 1 key'; # at least STORE
+cmp_ok(keys %{ $dbh->{Profile}{Data}{""} }, '>=', 1, 'on at connect, 1 key'); # at least STORE
 ok(ref $dbh->{Profile}{Data}{""}{STORE}, 'STORE is ref');
 
 print "dbi_profile\n";
