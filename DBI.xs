@@ -2674,7 +2674,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     statement_pv = SvPV_nolen(statement_sv);
 
     if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%fs %s %s\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%" NVff "s %s %s\n",
             ti, method_pv, neatsvpv(statement_sv,0));
 
     dest_node = _profile_next_node(profile, "Data");
@@ -4429,7 +4429,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
         set_trace_file(file);
     if (level != RETVAL) {
         if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
-            PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d pi %p) at %s\n",
+            PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d pi %u) at %s\n",
                 XS_VERSION, dbi_build_opt,
                 (long)(level & DBIc_TRACE_FLAGS_MASK),
                 (long)(level & DBIc_TRACE_LEVEL_MASK),
