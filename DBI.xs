@@ -4429,7 +4429,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
         set_trace_file(file);
     if (level != RETVAL) {
         if ((level & DBIc_TRACE_LEVEL_MASK) > 0) {
-            PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d pi %u) at %s\n",
+            PerlIO_printf(DBILOGFP,"    DBI %s%s default trace level set to 0x%lx/%ld (pid %d pi %p) at %s\n",
                 XS_VERSION, dbi_build_opt,
                 (long)(level & DBIc_TRACE_FLAGS_MASK),
                 (long)(level & DBIc_TRACE_LEVEL_MASK),
@@ -4437,7 +4437,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
 #ifdef MULTIPLICITY
                 (void *)my_perl,
 #else
-                0,
+                NULL,
 #endif
                 log_where(Nullsv, 0, "", "", 1, 1, 0)
             );
