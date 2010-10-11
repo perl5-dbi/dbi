@@ -866,10 +866,10 @@ sub get_table_meta ($$$$;$)
 
 	# now we know a bit more - let's check if user can't use consequent spelling
 	# XXX add know issue about reset sql_identifier_case here ...
-	if (defined $dbh->{f_meta}{$table} && defined($dbh->{f_meta}{$table}{initialized})) {
+	if (defined $dbh->{f_meta}{$table} && defined $dbh->{f_meta}{$table}{initialized}) {
 	    $meta = $dbh->{f_meta}{$table};
 	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or
-		return unless ($dbh->{f_meta}{$table}{initialized});
+		return unless $dbh->{f_meta}{$table}{initialized};
 	    }
 	unless ($dbh->{f_meta}{$table}{initialized}) {
 	    $self->init_table_meta ($dbh, $meta, $table);

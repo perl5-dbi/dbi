@@ -3,7 +3,7 @@ $|=1;
 
 #
 # test script for DBI::Profile
-# 
+#
 
 use strict;
 
@@ -37,7 +37,7 @@ BEGIN {
 $Data::Dumper::Indent = 1;
 $Data::Dumper::Terse = 1;
 
-# log file to store profile results 
+# log file to store profile results
 my $LOG_FILE = "profile$$.log";
 my $orig_dbi_debug = $DBI::dbi_debug;
 DBI->trace($DBI::dbi_debug, $LOG_FILE);
@@ -51,8 +51,8 @@ print "Test enabling the profile\n";
 
 # make sure profiling starts disabled
 my $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1 });
-ok($dbh);
-ok(!$dbh->{Profile} && !$ENV{DBI_PROFILE});
+ok($dbh, 'connect');
+ok(!$dbh->{Profile} && !$ENV{DBI_PROFILE}, 'Profile and DBI_PROFILE not set');
 
 
 # can turn it on after the fact using a path number
@@ -94,23 +94,25 @@ is_deeply sanitize_tree($dbh->{Profile}), bless {
 # can turn it on at connect
 $dbh = DBI->connect("dbi:ExampleP:", '', '', { RaiseError=>1, Profile=>6 });
 is_deeply $dbh->{Profile}{Path}, [ '!Statement', '!MethodName' ];
-cmp_ok(keys %{ $dbh->{Profile}{Data} },     '==', 1);
-cmp_ok(keys %{ $dbh->{Profile}{Data}{""} }, '>=', 1); # at least STORE
-ok(        ref $dbh->{Profile}{Data}{""}{STORE}    );
+cmp_ok(keys %{ $dbh->{Profile}{Data} },     '==', 1, 'on at connect, 1 key');
+cmp_ok(keys %{ $dbh->{Profile}{Data}{""} }, '>=', 1, 'on at connect, 1 key'); # at least STORE
+ok(ref $dbh->{Profile}{Data}{""}{STORE}, 'STORE is ref');
 
 print "dbi_profile\n";
 # Try to avoid rounding problem on double precision systems
 #   $got->[5]      = '1150962858.01596498'
 #   $expected->[5] = '1150962858.015965'
 # by treating as a string (because is_deeply stringifies)
-my $t1 = DBI::dbi_time() . ""; 
+my $t1 = DBI::dbi_time() . "";
 my $dummy_statement = "Hi mom";
 my $dummy_methname  = "my_method_name";
 my $leaf = dbi_profile($dbh, $dummy_statement, $dummy_methname, $t1, $t1 + 1);
 print Dumper($dbh->{Profile});
-cmp_ok(keys %{ $dbh->{Profile}{Data} }, '==', 2);
-cmp_ok(keys %{ $dbh->{Profile}{Data}{$dummy_statement} }, '==', 1);
-is(        ref($dbh->{Profile}{Data}{$dummy_statement}{$dummy_methname}), 'ARRAY');
+cmp_ok(keys %{ $dbh->{Profile}{Data} }, '==', 2, 'avoid rounding, 1 key');
+cmp_ok(keys %{ $dbh->{Profile}{Data}{$dummy_statement} }, '==', 1,
+       'avoid rounding, 1 dummy statement');
+is(ref($dbh->{Profile}{Data}{$dummy_statement}{$dummy_methname}), 'ARRAY',
+   'dummy method name is array');
 
 ok $leaf, "should return ref to leaf node";
 is ref $leaf, 'ARRAY', "should return ref to leaf node";
@@ -144,23 +146,27 @@ print Dumper($dbh->{Profile});
 
 # check that the proper key was set in Data
 my $data = $dbh->{Profile}{Data}{$sql};
-ok($data);
-is(ref $data, 'ARRAY');
-ok(@$data == 7);
-ok((grep { defined($_)                } @$data) == 7);
-ok((grep { DBI::looks_like_number($_) } @$data) == 7);
+ok($data, 'profile data');
+is(ref $data, 'ARRAY', 'ARRAY ref');
+ok(@$data == 7, '7 elements');
+ok((grep { defined($_)                } @$data) == 7, 'all 7 defined');
+ok((grep { DBI::looks_like_number($_) } @$data) == 7, 'all 7 numeric');
 my ($count, $total, $first, $shortest, $longest, $time1, $time2) = @$data;
-ok($count > 3);
-ok($total > $first);
-ok($total > $longest) or warn "total $total > longest $longest: failed\n";
-ok($longest > 0) or warn "longest $longest > 0: failed\n"; # XXX theoretically not reliable
-ok($longest > $shortest);
-ok($time1 >= $^T);
-ok($time2 >= $^T);
-ok($time1 <= $time2);
+ok($count > 3, 'count is 3');
+ok($total > $first, ' total > first');
+ok($total > $longest, 'total > longest') or
+    warn "total $total > longest $longest: failed\n";
+ok($longest > 0, 'longest > 0') or
+    warn "longest $longest > 0: failed\n"; # XXX theoretically not reliable
+ok($longest > $shortest, 'longest > shortest');
+ok($time1 >= $^T, 'time1 later than start time');
+ok($time2 >= $^T, 'time2 later than start time');
+ok($time1 <= $time2, 'time1 <= time2');
 my $next = int(dbi_time()) + 1;
-ok($next > $time1) or warn "next $next > first $time1: failed\n";
-ok($next > $time2) or warn "next $next > last $time2: failed\n";
+ok($next > $time1, 'next > time1') or
+    warn "next $next > first $time1: failed\n";
+ok($next > $time2, 'next > time2') or
+    warn "next $next > last $time2: failed\n";
 if ($shortest < 0) {
     my $sys = "$Config{archname} $Config{osvers}"; # ie sparc-linux 2.4.20-2.3sparcsmp
     warn <<EOT;
@@ -177,24 +183,24 @@ EOT
 
 my $tmp = sanitize_tree($dbh->{Profile});
 $tmp->{Data}{$sql}[0] = -1; # make test insensitive to local file count
-is_deeply $tmp, bless {
+is_deeply $tmp, (bless {
 	'Path' => [ '!Statement' ],
 	'Data' => {
-		''   => [ 7, 0, 0, 0, 0, 0, 0 ],
+		''   => [ 6, 0, 0, 0, 0, 0, 0 ],
 		$sql => [ -1, 0, 0, 0, 0, 0, 0 ],
 		'set foo=1' => [ 1, 0, 0, 0, 0, 0, 0 ],
 	}
-} => 'DBI::Profile';
+} => 'DBI::Profile'), 'profile';
 
 print "Test profile format\n";
 my $output = $dbh->{Profile}->format();
 print "Profile Output\n$output";
 
 # check that output was produced in the expected format
-ok(length $output);
-ok($output =~ /^DBI::Profile:/);
-ok($output =~ /\((\d+) calls\)/);
-ok($1 >= $count);
+ok(length $output, 'non zero length');
+ok($output =~ /^DBI::Profile:/, 'DBI::Profile');
+ok($output =~ /\((\d+) calls\)/, 'some calls');
+ok($1 >= $count, 'calls >= count');
 
 # -----------------------------------------------------------------------------------
 
@@ -213,7 +219,7 @@ $sth->finish;
 undef $sth; # DESTROY
 
 $tmp = sanitize_tree($dbh->{Profile});
-ok $tmp->{Data}{usrnam}{""}{foo}{STORE};
+ok $tmp->{Data}{usrnam}{""}{foo}{STORE}, 'username stored';
 $tmp->{Data}{usrnam}{""}{foo} = {};
 # make test insentitive to number of local files
 #warn Dumper($tmp);
@@ -247,12 +253,11 @@ is_deeply $tmp, bless {
 } => 'DBI::Profile';
 
 $tmp = [ $dbh->{Profile}->as_node_path_list() ];
-is @$tmp, 9, 'should have 9 nodes';
+is @$tmp, 8, 'should have 8 nodes';
 sanitize_profile_data_nodes($_->[0]) for @$tmp;
 #warn Dumper($dbh->{Profile}->{Data});
 is_deeply $tmp, [
   [ [ 3, 0, 0, 0, 0, 0, 0 ], '', '', 'foo', 'STORE' ],
-  [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'FETCH' ],
   [ [ 2, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'STORE' ],
   [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', '', 'foo', 'connected' ],
   [ [ 1, 0, 0, 0, 0, 0, 0 ], 'usrnam', 'select name from .', 'bar', 'DESTROY' ],
@@ -351,10 +356,10 @@ sub run_test1 {
 }
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'bar' }, 'baz' ] });
-is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 12, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'bar' => { 'baz' => [ 11, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { 'ping','pong' } ] });
-is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 12, 0,0,0,0,0,0 ] } } };
+is_deeply $tmp, { 'foo' => { 'ping' => { 'pong' => [ 11, 0,0,0,0,0,0 ] } } };
 
 $tmp = run_test1( { Path => [ 'foo', sub { \undef } ] });
 is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
@@ -362,7 +367,7 @@ is_deeply $tmp, { 'foo' => undef }, 'should be vetoed';
 # check what code ref sees in $_
 $tmp = run_test1( { Path => [ sub { $_ } ] });
 is_deeply $tmp, {
-  '' => [ 7, 0, 0, 0, 0, 0, 0 ],
+  '' => [ 6, 0, 0, 0, 0, 0, 0 ],
   'select name from .' => [ 5, 0, 0, 0, 0, 0, 0 ]
 }, '$_ should contain statement';
 
@@ -401,7 +406,7 @@ my $as_text = $dbh->{Profile}->as_text({
     separator => ':',
     format    => '%1$s %2$d [ %10$d %11$d %12$d %13$d %14$d %15$d %16$d %17$d ]',
 });
-is($as_text, "top:P1:P2 4 [ 100 400 42 43 44 45 46 47 ]");
+is($as_text, "top:P1:P2 4 [ 100 400 42 43 44 45 46 47 ]", 'as_text');
 
 # test sortsub
 $dbh->{Profile}->{Data} = {
@@ -413,7 +418,7 @@ $as_text = $dbh->{Profile}->as_text({
     format    => '%1$s %10$d ',
     sortsub   => sub { my $ary=shift; @$ary = sort { $a->[2] cmp $b->[2] } @$ary }
 });
-is($as_text, "B:Y 102 A:Z 101 ");
+is($as_text, "B:Y 102 A:Z 101 ", 'as_text sortsub');
 
 # general test, including defaults
 ($tmp, $dbh) = run_test1( { Path => [ 'foo', '!MethodName', 'baz' ] });
@@ -421,14 +426,13 @@ $as_text = $dbh->{Profile}->as_text();
 $as_text =~ s/\.00+/.0/g;
 #warn "[$as_text]";
 is $as_text, q{foo > DESTROY > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
-foo > FETCH > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > STORE > baz: 0.0s / 5 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > connected > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > execute > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > fetchrow_hashref > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > finish > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
 foo > prepare > baz: 0.0s / 1 = 0.0s avg (first 0.0s, min 0.0s, max 0.0s)
-};
+}, 'as_text general';
 
 # -----------------------------------------------------------------------------------
 
@@ -437,20 +441,22 @@ my $total_time = dbi_profile_merge_nodes(
     my $totals=[],
     [ 10, 0.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
     [ 15, 0.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
-);        
+);
 $_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
-is("@$totals", "25.00 0.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
-is($total_time, 0.93);
+is("@$totals", "25.00 0.93 0.11 0.01 0.23 1023110000.00 1023110010.00",
+   'merged nodes');
+is($total_time, 0.93, 'merged time');
 
 $total_time = dbi_profile_merge_nodes(
     $totals=[], {
 	foo => [ 10, 1.51, 0.11, 0.01, 0.22, 1023110000, 1023110010 ],
         bar => [ 17, 1.42, 0.12, 0.02, 0.23, 1023110005, 1023110009 ],
     }
-);        
+);
 $_ = sprintf "%.2f", $_ for @$totals; # avoid precision issues
-is("@$totals", "27.00 2.93 0.11 0.01 0.23 1023110000.00 1023110010.00");
-is($total_time, 2.93);
+is("@$totals", "27.00 2.93 0.11 0.01 0.23 1023110000.00 1023110010.00",
+   'merged time foo/bar');
+is($total_time, 2.93, 'merged nodes foo/bar time');
 
 exit 0;
 

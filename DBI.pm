@@ -717,7 +717,8 @@ sub connect {
 		$dbh->{$a} = delete $apply->{$a};
 	    }
 	    while ( my ($a, $v) = each %$apply) {
-		eval { $dbh->{$a} = $v } or $@ && warn $@;
+		eval { $dbh->{$a} = $v }; # assign in void context to avoid re-FETCH
+                warn $@ if $@;
 	    }
 	}
 

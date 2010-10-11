@@ -2674,7 +2674,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     statement_pv = SvPV_nolen(statement_sv);
 
     if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%fs %s %s\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%" NVff "s %s %s\n",
             ti, method_pv, neatsvpv(statement_sv,0));
 
     dest_node = _profile_next_node(profile, "Data");
@@ -3526,7 +3526,7 @@ XS(XS_DBI_dispatch)
             if (is_DESTROY) /* show handle as first arg to DESTROY */
                 /* want to show outer handle so trace makes sense       */
                 /* but outer handle has been destroyed so we fake it    */
-                PerlIO_printf(logfp,"(%s=HASH(%p)", HvNAME(SvSTASH(SvRV(orig_h))), (void*)DBIc_MY_H(imp_xxh));
+                PerlIO_printf(logfp,"(%s=HASH(0x%p)", HvNAME(SvSTASH(SvRV(orig_h))), (void*)DBIc_MY_H(imp_xxh));
             else
                 PerlIO_printf(logfp,"(%s", neatsvpv(st1,0));
             if (items >= 3)
@@ -4437,7 +4437,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
 #ifdef MULTIPLICITY
                 (void *)my_perl,
 #else
-                0,
+                NULL,
 #endif
                 log_where(Nullsv, 0, "", "", 1, 1, 0)
             );
