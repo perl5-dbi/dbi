@@ -9,6 +9,8 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.616 (svn rNNN) XXX
 
   Optimized connect() to remove redundant FETCH of \%attrib values.
+  Adding fix to recognize SQL::Statement errors even if instantiated
+    with RaiseError=0 (Jens Rehsack)
 
 =head2 Changes in DBI 1.615 (svn r14438) 21st September 2010
 
