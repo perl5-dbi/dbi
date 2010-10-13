@@ -317,6 +317,7 @@ sub init_valid_attributes
                                sql_nano_version           => 1,    # Nano version
                                sql_statement_version      => 1,    # S:S version
                                sql_flags                  => 1,    # flags for SQL::Parser
+                               sql_dialect                => 1,    # dialect for SQL::Parser
                                sql_quoted_identifier_case => 1,    # case for quoted identifiers
                                sql_identifier_case        => 1,    # case for non-quoted identifiers
                                sql_parser_object          => 1,    # SQL::Parser instance
@@ -360,6 +361,8 @@ sub init_default_attributes
         $dbh->{sql_identifier_case}        = 2;    # SQL_IC_LOWER
         $dbh->{sql_quoted_identifier_case} = 3;    # SQL_IC_SENSITIVE
 
+	$dbh->{sql_dialect} = "CSV";
+
         $dbh->{sql_init_phase} = $given_phase;
 
         # complete derived attributes, if required
@@ -399,7 +402,7 @@ sub sql_parser_object
 {
     my $dbh = $_[0];
     my $parser = {
-                   dialect    => "CSV",
+                   dialect    => $dbh->{sql_dialect} || "CSV",
                    RaiseError => $dbh->FETCH("RaiseError"),
                    PrintError => $dbh->FETCH("PrintError"),
                  };

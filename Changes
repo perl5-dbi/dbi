@@ -11,6 +11,8 @@ DBI::Changes - List of significant changes to the DBI
   Optimized connect() to remove redundant FETCH of \%attrib values.
   Adding fix to recognize SQL::Statement errors even if instantiated
     with RaiseError=0 (Jens Rehsack)
+  Adding new attribute "sql_dialect" to DBI::DBD::SqlEngine to allow
+    users control used SQL dialect (ANSI, CSV or AnyData), defaults to CSV
 
 =head2 Changes in DBI 1.615 (svn r14438) 21st September 2010
 
