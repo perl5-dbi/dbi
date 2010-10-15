@@ -8,6 +8,8 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.616 (svn rNNN) XXX
 
+  Fixed spurious dbi_profile lines written to the log when
+    profiling is enabled and a trace flag, like SQL, is used.
   Optimized connect() to remove redundant FETCH of \%attrib values.
   Adding fix to recognize SQL::Statement errors even if instantiated
     with RaiseError=0 (Jens Rehsack)

@@ -2673,7 +2673,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     }
     statement_pv = SvPV_nolen(statement_sv);
 
-    if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
+    if (DBIc_TRACE_LEVEL(imp_xxh) >= 4)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%" NVff "s %s %s\n",
             ti, method_pv, neatsvpv(statement_sv,0));
 
@@ -5053,7 +5053,7 @@ DESTROY(sth)
     /* we don't test IMPSET here because this code applies to pure-perl drivers */
     if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
         DBIc_ACTIVE_off(imp_sth);
-        if (DBIc_DBISTATE(imp_sth)->debug)
+        if (DBIc_TRACE_LEVEL(imp_sth))
                 PerlIO_printf(DBIc_LOGPIO(imp_sth), "         DESTROY %s skipped due to InactiveDestroy\n", SvPV_nolen(sth));
     }
     if (DBIc_ACTIVE(imp_sth)) {
