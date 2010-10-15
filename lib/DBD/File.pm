@@ -218,7 +218,11 @@ sub init_default_attributes
 
     # DBI::BD::SqlEngine::dr::connect will detect old-style drivers and
     # don't call twice
-    defined $phase or $phase = 0;
+    unless (defined $phase) {
+        # we have an "old" driver here
+        $phase = defined $dbh->{sql_init_phase};
+	$phase and $phase = $dbh->{sql_init_phase};
+	}
 
     if (0 == $phase) {
 	# f_ext should not be initialized
@@ -279,6 +283,18 @@ sub validate_STORE_attr
     if ($attrib eq "f_ext") {
 	$value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
 	    carp "'$value' doesn't look like a valid file extension attribute\n";
+	}
+
+    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+    my $drv_prefix = DBI->driver_prefix ($drv_class);
+
+    if (exists $dbh->{$drv_prefix . "meta"}) {
+	my $attr = $dbh->{$drv_prefix . "meta"};
+	if ($attrib eq $attr) {
+	    while (my ($k, $v) = each %$value) {
+		$dbh->{$attrib}{$k} = $v;
+		}
+	    }
 	}
 
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
@@ -1145,9 +1161,9 @@ Valid after C<< $sth->execute >>; undef for Non-Select statements.
 
 =head4 NULLABLE
 
-Not really working, always returns an array ref of ones, as DBD::CSV
-does not verify input data. Valid after C<< $sth->execute >>; undef for
-non-select statements.
+Not really working, always returns an array ref of ones, except the
+affected table has been created in this session.  Valid after
+C<< $sth->execute >>; undef for non-select statements.
 
 =head3 The following DBI attributes and methods are not supported:
 
