@@ -397,17 +397,17 @@ sub init_done
 sub sql_parser_object
 {
     my $dbh = $_[0];
+    my $dialect = $dbh->{sql_dialect} || "CSV";
     my $parser = {
-                   dialect    => $dbh->{sql_dialect} || "CSV",
                    RaiseError => $dbh->FETCH("RaiseError"),
                    PrintError => $dbh->FETCH("PrintError"),
                  };
     my $sql_flags = $dbh->FETCH("sql_flags") || {};
     %$parser = ( %$parser, %$sql_flags );
-    $parser = SQL::Parser->new( $parser->{dialect}, $parser );
+    $parser = SQL::Parser->new( $dialect, $parser );
     $dbh->{sql_parser_object} = $parser;
     return $parser;
-}    # cache_sql_parser_object
+}    # sql_parser_object
 
 sub sql_sponge_driver
 {
@@ -1141,8 +1141,10 @@ state of SQL::Statement):
   * CSV
   * AnyData
 
-Defaults to "CSV".  Because an SQL::Parser is instantiated only once,
-it's recommended to set this flag before any statement is executed.
+Defaults to "CSV".  Because an SQL::Parser is instantiated only once and
+SQL::Parser doesn't allow to modify the dialect once instantiated,
+it's strongly recommended to set this flag before any statement is
+executed (best place is connect attribute hash).
 
 =head1 SUPPORT
 
