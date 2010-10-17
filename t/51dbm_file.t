@@ -52,9 +52,13 @@ else
 $dbh->do(q/create table FRED (a integer, b integer)/);
 ok( -f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext exists" );
 
-my $tblfext = $dbh->{dbm_tables}->{fred}->{f_ext} || '';
-   $tblfext =~ s{/r$}{};
-ok( -f File::Spec->catfile( $dir, "fred$tblfext" ), "fred$tblfext exists" );
+my $tblfext;
+#unless( $using_dbd_gofer )
+#{
+       $tblfext = $dbh->{dbm_tables}->{fred}->{f_ext} || '';
+       $tblfext =~ s{/r$}{};
+    ok( -f File::Spec->catfile( $dir, "fred$tblfext" ), "fred$tblfext exists" );
+#}
 
 ok( $dbh->do(q/insert into fRED (a,b) values(1,2)/), 'insert into mixed case table' );
 
@@ -98,27 +102,29 @@ SKIP:
     ok( @$r == 2, 'rows found via select via fully qualified path' );
 }
 
-my $tbl_info;
-%{$tbl_info}= %{$dbh->{dbm_tables}->{fred}};
-foreach my $k (qw(f_fqbn f_fqln schema initialized lockfh f_dontopen f_lockfile col_names f_fqfn f_schema hash fh dbm_tietype table_name))
-{
-    delete $tbl_info->{$k};
-}
-$tbl_info->{file} = "fred$tblfext";
+#if( $using_dbd_gofer )
+#{
+#    ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
+#    ok( !-f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext removed" );
+#}
+#else
+#{
+    my $tbl_info = { file => "fred$tblfext" };
 
-ok( $dbh->disconnect(), "disconnect" );
-$dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
-      f_dir               => $dir,
-      sql_identifier_case => 2,      # SQL_IC_LOWER
-      dbm_tables          => { fred => $tbl_info },
-    }
-);
+    ok( $dbh->disconnect(), "disconnect" );
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+	  f_dir               => $dir,
+	  sql_identifier_case => 2,      # SQL_IC_LOWER
+	  dbm_tables          => { fred => $tbl_info },
+	}
+    );
 
-my $r = $dbh->selectall_arrayref(q/select * from Fred/);
-ok( @$r == 2, 'rows found after reconnect using "dbm_tables"' );
+       $r = $dbh->selectall_arrayref(q/select * from Fred/);
+    ok( @$r == 2, 'rows found after reconnect using "dbm_tables"' );
 
-ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
-ok( !-f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext removed" );
-ok( !-f File::Spec->catfile( $dir, "fred$tblfext" ), "fred$tblfext removed" );
+    ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
+    ok( !-f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext removed" );
+    ok( !-f File::Spec->catfile( $dir, "fred$tblfext" ), "fred$tblfext removed" );
+#}
 
 done_testing();
