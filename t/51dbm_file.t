@@ -98,7 +98,6 @@ SKIP:
     ok( @$r == 2, 'rows found via select via fully qualified path' );
 }
 
-use Data::Dumper;
 my $tbl_info;
 %{$tbl_info}= %{$dbh->{dbm_tables}->{fred}};
 foreach my $k (qw(f_fqbn f_fqln schema initialized lockfh f_dontopen f_lockfile col_names f_fqfn f_schema hash fh dbm_tietype table_name))
