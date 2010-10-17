@@ -26,3 +26,4 @@ valgrind.log
 xx*
 ModList
 git-svn-modlist
+git-dpull
