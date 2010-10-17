@@ -323,6 +323,7 @@ sub init_valid_attributes
                                sql_sponge_driver          => 1,    # Sponge driver for table_info ()
                                sql_valid_attrs            => 1,    # SQL valid attributes
                                sql_readonly_attrs         => 1,    # SQL readonly attributes
+			       sql_init_phase             => 1,    # Only during initialization
                               };
     $dbh->{sql_readonly_attrs} = {
                                sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
@@ -390,7 +391,8 @@ sub init_default_attributes
 
 sub init_done
 {
-    delete $_[0]->{sql_init_phase};
+    defined $_[0]->{sql_init_phase} and delete $_[0]->{sql_init_phase};
+    delete $_[0]->{sql_valid_attrs}->{sql_init_phase};
     return;
 }
 
