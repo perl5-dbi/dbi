@@ -2512,6 +2512,7 @@ work on various database engines:
   Sybase           Y  N  N  N  N  N  Y
   AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y
   SQLite 3.3       N  N  N  N  Y  N  N
+  MSAccess         N  N  N  N  Y  N  Y
 
 * Works only because Example 0 works.
 
