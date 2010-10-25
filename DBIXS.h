@@ -35,7 +35,7 @@
 #include "dbixs_rev.h"
 
 /* Perl backwards compatibility definitions */
-#include "dbipport.h"
+#include <dbipport.h>
 
 /* DBI SQL_* type definitions */
 #include "dbi_sql.h"
