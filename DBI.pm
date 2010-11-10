@@ -3630,7 +3630,7 @@ that happens if the handle is still marked as C<Active>.
 This attribute is specifically designed for use in Unix applications
 that "fork" child processes.  For some drivers, when the child process exits
 the destruction of inherited handles cause the corresponding handles in the
-perent process to cease working.
+parent process to cease working.
 
 Either the parent or the child process, but not both, should set
 C<InactiveDestroy> true on all their shared handles. Alternatively the

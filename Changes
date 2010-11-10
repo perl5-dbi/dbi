@@ -6,6 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.617 (svn rXXX) XXX
+
+  Fixed typo in InactiveDestroy thanks to Emmanuel Rodriguez.
+
 =head2 Changes in DBI 1.616 (svn r14486) 15th October 2010
 
   Documented dbd_st_execute return (Martin J. Evans)
