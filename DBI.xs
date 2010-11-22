@@ -3088,11 +3088,12 @@ XS(XS_DBI_dispatch)
 
 #ifdef DBI_USE_THREADS
 {
-    PerlInterpreter * h_perl = DBIc_THR_USER(imp_xxh) ;
+    PerlInterpreter * h_perl;
+    is_DESTROY_wrong_thread:
+    h_perl = DBIc_THR_USER(imp_xxh) ;
     if (h_perl != my_perl) {
         /* XXX could call a 'handle clone' method here?, for dbh's at least */
         if (is_DESTROY) {
-    is_DESTROY_wrong_thread:
             if (trace_level >= 3) {
                 PerlIO_printf(DBILOGFP,"    DESTROY ignored because DBI %sh handle (%s) is owned by thread %p not current thread %p\n",
                       dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)),
