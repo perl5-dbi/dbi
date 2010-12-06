@@ -127,7 +127,7 @@ sub transmit_request_by_transport {
 
     # send frozen request
     local $\;
-    print $wfh $encoded_request # autoflush enabled
+    $wfh->print($encoded_request) # autoflush enabled
         or do {
             # XXX should make new connection and retry
             $self->_connection_kill;
