@@ -445,9 +445,10 @@ sub FETCH ($$)
     $attrib eq "AutoCommit"
       and return 1;
 
+    # Driver private attributes are lower cased
     if ( $attrib eq ( lc $attrib ) )
     {
-        # Driver private attributes are lower cased
+        $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         my $attr_prefix;
         $attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
@@ -459,8 +460,6 @@ sub FETCH ($$)
         }
         my $valid_attrs = $attr_prefix . "valid_attrs";
         my $ro_attrs    = $attr_prefix . "readonly_attrs";
-
-        $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         exists $dbh->{$valid_attrs}
           and ( $dbh->{$valid_attrs}{$attrib}
