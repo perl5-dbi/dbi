@@ -92,7 +92,6 @@ my $haveSS = DBD::DBM::Statement->isa('SQL::Statement');
 
 plan skip_all => "Not running with SQL::Statement" unless ( $haveSS );
 plan skip_all => "Not running with MLDBM" unless ( @mldbm_types );
-plan skip_all => "Needs more love to run with Gofer, too" if( $using_dbd_gofer );
 
 do "t/lib.pl";
 
@@ -103,22 +102,30 @@ my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, { f_dir => $dir, } );
 my $suffix;
 my $tbl_meta;
 
+sub break_at_warn
+{
+    note "break here";
+}
+$SIG{__WARN__} = \&break_at_warn;
+$SIG{__DIE__} = \&break_at_warn;
+
 sub load_tables
 {
     my ( $dbmtype, $dbmmldbm ) = @_;
+    my $last_suffix;
 
     if ($using_dbd_gofer)
     {
 	$dbh->disconnect();
-	$dbh = DBI->connect( "dbi:DBM:", undef, undef, { f_dir => $dir, f_meta => $tbl_meta, dbm_type => $dbmtype, dbm_mldbm => $dbmmldbm } );
+	$dbh = DBI->connect( "dbi:DBM:", undef, undef, { f_dir => $dir, dbm_type => $dbmtype, dbm_mldbm => $dbmmldbm } );
     }
     else
     {
+	$last_suffix = $suffix;
 	$dbh->{dbm_type}  = $dbmtype;
 	$dbh->{dbm_mldbm} = $dbmmldbm;
     }
 
-    my $last_suffix = $suffix;
     (my $serializer = $dbmmldbm ) =~ s/::/_/g;
     $suffix = join( "_", $$, $dbmtype, $serializer );
 
@@ -131,7 +138,7 @@ sub load_tables
             my ($readsth);
             ok( $readsth = $dbh->prepare($readsql), "prepare: $readsql" );
             ok( $readsth->execute(), "execute: $readsql" );
-            ok( $dbh->do( $impsql, {}, $readsth ), $impsql );
+            ok( $dbh->do( $impsql, {}, $readsth ), $impsql ) or warn $dbh->errstr();
         }
     }
     else
