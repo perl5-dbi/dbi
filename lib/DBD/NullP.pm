@@ -118,6 +118,15 @@
             $sth->{dbd_nullp_data} = [ @{$params}{ sort keys %$params } ];
             $sth->STORE(Active => 1); 
         }
+        elsif ($sth->{Statement} =~ m/^ \s* SLEEP \s+ (\S+) /xmsi) {
+            my $secs = $1;
+            if (eval { require Time::HiRes; defined &Time::HiRes::sleep }) {
+                Time::HiRes::sleep($secs);
+            }
+            else {
+                sleep $secs;
+            }
+        }
 	1;
     }
 

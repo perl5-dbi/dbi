@@ -2673,7 +2673,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     }
     statement_pv = SvPV_nolen(statement_sv);
 
-    if (DBIc_DBISTATE(imp_xxh)->debug >= 4)
+    if (DBIc_TRACE_LEVEL(imp_xxh) >= 4)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh), "       dbi_profile +%" NVff "s %s %s\n",
             ti, method_pv, neatsvpv(statement_sv,0));
 
@@ -3088,11 +3088,12 @@ XS(XS_DBI_dispatch)
 
 #ifdef DBI_USE_THREADS
 {
-    PerlInterpreter * h_perl = DBIc_THR_USER(imp_xxh) ;
+    PerlInterpreter * h_perl;
+    is_DESTROY_wrong_thread:
+    h_perl = DBIc_THR_USER(imp_xxh) ;
     if (h_perl != my_perl) {
         /* XXX could call a 'handle clone' method here?, for dbh's at least */
         if (is_DESTROY) {
-    is_DESTROY_wrong_thread:
             if (trace_level >= 3) {
                 PerlIO_printf(DBILOGFP,"    DESTROY ignored because DBI %sh handle (%s) is owned by thread %p not current thread %p\n",
                       dbih_htype_name(DBIc_TYPE(imp_xxh)), HvNAME(DBIc_IMP_STASH(imp_xxh)),
@@ -5053,7 +5054,7 @@ DESTROY(sth)
     /* we don't test IMPSET here because this code applies to pure-perl drivers */
     if (DBIc_IADESTROY(imp_sth)) { /* want's ineffective destroy    */
         DBIc_ACTIVE_off(imp_sth);
-        if (DBIc_DBISTATE(imp_sth)->debug)
+        if (DBIc_TRACE_LEVEL(imp_sth))
                 PerlIO_printf(DBIc_LOGPIO(imp_sth), "         DESTROY %s skipped due to InactiveDestroy\n", SvPV_nolen(sth));
     }
     if (DBIc_ACTIVE(imp_sth)) {

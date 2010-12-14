@@ -9,7 +9,7 @@
 require 5.008_001;
 
 BEGIN {
-$DBI::VERSION = "1.615"; # ==> ALSO update the version in the pod text below!
+$DBI::VERSION = "1.616"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -124,7 +124,7 @@ Tim he is very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.615
+This is the DBI specification that corresponds to the DBI version 1.616
 ($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -2512,6 +2512,7 @@ work on various database engines:
   Sybase           Y  N  N  N  N  N  Y
   AnyData,DBM,CSV  Y  N  N  N  Y  Y* Y
   SQLite 3.3       N  N  N  N  Y  N  N
+  MSAccess         N  N  N  N  Y  N  Y
 
 * Works only because Example 0 works.
 
@@ -3629,7 +3630,7 @@ that happens if the handle is still marked as C<Active>.
 This attribute is specifically designed for use in Unix applications
 that "fork" child processes.  For some drivers, when the child process exits
 the destruction of inherited handles cause the corresponding handles in the
-perent process to cease working.
+parent process to cease working.
 
 Either the parent or the child process, but not both, should set
 C<InactiveDestroy> true on all their shared handles. Alternatively the
@@ -4392,6 +4393,11 @@ The C<q{...}> style quoting used in this example avoids clashing with
 quotes that may be used in the SQL statement. Use the double-quote-like
 C<qq{...}> operator if you want to interpolate variables into the string.
 See L<perlop/"Quote and Quote-like Operators"> for more details.
+
+Note drivers are free to avoid the overhead of creating an DBI
+statement handle for do(), especially if there are no parameters. In
+this case error handlers, if invoked during do(), will be passed the
+database handle.
 
 =head3 C<last_insert_id>
 
@@ -5828,10 +5834,11 @@ but with the leading "C<dbi:DriverName:>" removed.
 
 Type: string, read-only
 
-Returns the statement string passed to the most recent L</prepare> method
-called in this database handle, even if that method failed. This is especially
-useful where C<RaiseError> is enabled and the exception handler checks $@
-and sees that a 'prepare' method call failed.
+Returns the statement string passed to the most recent L</prepare> or
+L</do> method called in this database handle, even if that method
+failed. This is especially useful where C<RaiseError> is enabled and
+the exception handler checks $@ and sees that a 'prepare' method call
+failed.
 
 
 =head3 C<RowCacheSize>

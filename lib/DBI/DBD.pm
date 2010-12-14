@@ -2308,6 +2308,10 @@ This is where a statement will really be executed.
 
   int dbd_st_execute(SV* sth, imp_sth_t* imp_sth);
 
+C<dbd_st_execute> should return -2 for any error, -1 if the number of
+rows affected is unknown else it should be the number of affected
+(updated, inserted) rows.
+
 Note that you must be aware a statement may be executed repeatedly.
 Also, you should not expect that C<finish()> will be called between two
 executions, so you might need code, like the following, near the start
