@@ -4394,6 +4394,11 @@ quotes that may be used in the SQL statement. Use the double-quote-like
 C<qq{...}> operator if you want to interpolate variables into the string.
 See L<perlop/"Quote and Quote-like Operators"> for more details.
 
+Note drivers are free to avoid the overhead of creating an DBI
+statement handle for do(), especially if there are no parameters. In
+this case error handlers, if invoked during do(), will be passed the
+database handle.
+
 =head3 C<last_insert_id>
 
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
@@ -5829,10 +5834,11 @@ but with the leading "C<dbi:DriverName:>" removed.
 
 Type: string, read-only
 
-Returns the statement string passed to the most recent L</prepare> method
-called in this database handle, even if that method failed. This is especially
-useful where C<RaiseError> is enabled and the exception handler checks $@
-and sees that a 'prepare' method call failed.
+Returns the statement string passed to the most recent L</prepare> or
+L</do> method called in this database handle, even if that method
+failed. This is especially useful where C<RaiseError> is enabled and
+the exception handler checks $@ and sees that a 'prepare' method call
+failed.
 
 
 =head3 C<RowCacheSize>
