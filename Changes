@@ -23,6 +23,8 @@ DBI::Changes - List of significant changes to the DBI
   Add documentation for DBI::DBD::SqlEngine attributes (Jens Rehsack)
   Fixed RT#61513 by catching attribute assignment to tied table access
     interface (Jens Rehsack)
+  Fixing some misbehavior of DBD::File when running within the Gofer
+    server.
 
   Fixed typo in InactiveDestroy thanks to Emmanuel Rodriguez.
   Added additional notes on DBDs which avoid creating a statement in
