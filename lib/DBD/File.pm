@@ -227,7 +227,7 @@ sub init_default_attributes
     if (0 == $phase) {
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
-	$dbh->{f_in_gofer} = (defined ($INC{'DBD/Gofer.pm'}) and ((caller(5))[0] eq 'DBI::Gofer::Execute'));
+	$dbh->{f_in_gofer} = (defined $INC{"DBD/Gofer.pm"} && (caller(5))[0] eq "DBI::Gofer::Execute");
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
 	$dbh->{f_meta}     = {};
 	$dbh->{f_meta_map} = {}; # choose new name because it contains other keys
@@ -272,18 +272,17 @@ sub disconnect ($)
 
 sub validate_FETCH_attr
 {
-    my ( $dbh, $attrib ) = @_;
+    my ($dbh, $attrib) = @_;
 
     if ($dbh->{f_in_gofer}) {
 	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
 	my $drv_prefix = DBI->driver_prefix ($drv_class);
-	if (exists $dbh->{$drv_prefix . "meta"} and ($attrib eq $dbh->{$drv_prefix . "meta"})) {
-	    $attrib = 'f_meta';
-	    }
+	exists $dbh->{$drv_prefix . "meta"} && $attrib eq $dbh->{$drv_prefix . "meta"} and
+	    $attrib = "f_meta";
 	}
 
     return $attrib;
-    }
+    } # validate_FETCH_attr
 
 sub validate_STORE_attr
 {
