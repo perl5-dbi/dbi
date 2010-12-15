@@ -225,9 +225,11 @@ sub init_default_attributes
 	}
 
     if (0 == $phase) {
+	# check whether we're running in a Gofer server or not (see
+	# validate_FETCH_attr for details)
+	$dbh->{f_in_gofer} = (defined $INC{"DBD/Gofer.pm"} && (caller(5))[0] eq "DBI::Gofer::Execute");
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
-	$dbh->{f_in_gofer} = (defined $INC{"DBD/Gofer.pm"} && (caller(5))[0] eq "DBI::Gofer::Execute");
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
 	$dbh->{f_meta}     = {};
 	$dbh->{f_meta_map} = {}; # choose new name because it contains other keys
@@ -274,6 +276,13 @@ sub validate_FETCH_attr
 {
     my ($dbh, $attrib) = @_;
 
+    # If running in a Gofer server, access to our tied compatibility hash
+    # would force Gofer to serialize the tieing object including it's
+    # private $dbh reference used to do the driver function calls.
+    # This will result in nasty exceptions. So return a copy of the
+    # f_meta structure instead, which is the source of for the compatibility
+    # tie-hash. It's not as good as liked, but the best we can do in this
+    # situation.
     if ($dbh->{f_in_gofer}) {
 	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
 	my $drv_prefix = DBI->driver_prefix ($drv_class);

@@ -448,6 +448,8 @@ sub FETCH ($$)
     # Driver private attributes are lower cased
     if ( $attrib eq ( lc $attrib ) )
     {
+	# first let the implementation deliver an alias for the attribute to fetch
+	# after it validates the legitimation of the fetch request
         $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         my $attr_prefix;
