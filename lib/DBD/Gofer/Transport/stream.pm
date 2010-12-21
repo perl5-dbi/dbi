@@ -129,13 +129,14 @@ sub transmit_request_by_transport {
     local $\;
     $wfh->print($encoded_request) # autoflush enabled
         or do {
-            # XXX should make new connection and retry
+            my $err = $!;
+            # XXX could/should make new connection and retry
             $self->_connection_kill;
-            die "Error sending request: $!";
+            die "Error sending request: $err";
         };
     $self->trace_msg("Request sent: $encoded_request\n",0) if $trace >= 4;
 
-    return;
+    return undef; # indicate no response yet (so caller calls receive_response_by_transport)
 }
 
 
