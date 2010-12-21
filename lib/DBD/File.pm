@@ -218,9 +218,16 @@ sub init_default_attributes
 
     # DBI::BD::SqlEngine::dr::connect will detect old-style drivers and
     # don't call twice
-    defined $phase or $phase = 0;
+    unless (defined $phase) {
+        # we have an "old" driver here
+        $phase = defined $dbh->{sql_init_phase};
+	$phase and $phase = $dbh->{sql_init_phase};
+	}
 
     if (0 == $phase) {
+	# check whether we're running in a Gofer server or not (see
+	# validate_FETCH_attr for details)
+	$dbh->{f_in_gofer} = (defined $INC{"DBD/Gofer.pm"} && (caller(5))[0] eq "DBI::Gofer::Execute");
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
@@ -234,7 +241,7 @@ sub init_default_attributes
 	my $ro_attrs = $drv_prefix . "readonly_attrs";
 
 	my @comp_attrs = ();
-	if (exists $dbh->{$drv_prefix . "meta"}) {
+	if (exists $dbh->{$drv_prefix . "meta"} and !$dbh->{f_in_gofer}) {
 	    my $attr = $dbh->{$drv_prefix . "meta"};
 	    defined $attr and defined $dbh->{$valid_attrs} and
 		!defined $dbh->{$valid_attrs}{$attr} and
@@ -265,6 +272,27 @@ sub disconnect ($)
     return $_[0]->SUPER::disconnect ();
     } # disconnect
 
+sub validate_FETCH_attr
+{
+    my ($dbh, $attrib) = @_;
+
+    # If running in a Gofer server, access to our tied compatibility hash
+    # would force Gofer to serialize the tieing object including it's
+    # private $dbh reference used to do the driver function calls.
+    # This will result in nasty exceptions. So return a copy of the
+    # f_meta structure instead, which is the source of for the compatibility
+    # tie-hash. It's not as good as liked, but the best we can do in this
+    # situation.
+    if ($dbh->{f_in_gofer}) {
+	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+	my $drv_prefix = DBI->driver_prefix ($drv_class);
+	exists $dbh->{$drv_prefix . "meta"} && $attrib eq $dbh->{$drv_prefix . "meta"} and
+	    $attrib = "f_meta";
+	}
+
+    return $attrib;
+    } # validate_FETCH_attr
+
 sub validate_STORE_attr
 {
     my ($dbh, $attrib, $value) = @_;
@@ -279,6 +307,18 @@ sub validate_STORE_attr
     if ($attrib eq "f_ext") {
 	$value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
 	    carp "'$value' doesn't look like a valid file extension attribute\n";
+	}
+
+    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
+    my $drv_prefix = DBI->driver_prefix ($drv_class);
+
+    if (exists $dbh->{$drv_prefix . "meta"}) {
+	my $attr = $dbh->{$drv_prefix . "meta"};
+	if ($attrib eq $attr) {
+	    while (my ($k, $v) = each %$value) {
+		$dbh->{$attrib}{$k} = $v;
+		}
+	    }
 	}
 
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
@@ -1145,9 +1185,9 @@ Valid after C<< $sth->execute >>; undef for Non-Select statements.
 
 =head4 NULLABLE
 
-Not really working, always returns an array ref of ones, as DBD::CSV
-does not verify input data. Valid after C<< $sth->execute >>; undef for
-non-select statements.
+Not really working, always returns an array ref of ones, except the
+affected table has been created in this session.  Valid after
+C<< $sth->execute >>; undef for non-select statements.
 
 =head3 The following DBI attributes and methods are not supported:
 

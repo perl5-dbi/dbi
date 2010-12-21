@@ -254,6 +254,8 @@ use Fcntl;
 
 @DBD::DBM::Table::ISA = qw(DBD::File::Table);
 
+my $dirfext = $^O eq 'VMS' ? '.sdbm_dir' : '.dir';
+
 sub file2table
 {
     my ( $self, $meta, $file, $file_is_table, $quoted ) = @_;
@@ -272,7 +274,7 @@ my %reset_on_modify = (
 __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
 
 my %compat_map = (
-    map { $_ => "dbm_$_" } qw(type mldbm store_metadata),
+    ( map { $_ => "dbm_$_" } qw(type mldbm store_metadata) ),
     dbm_ext => 'f_ext',
     dbm_file => 'f_file',
     dbm_lockfile => ' f_lockfile',
@@ -444,9 +446,9 @@ sub drop ($$)
     $meta->{hash} and untie %{ $meta->{hash} };
     $self->SUPER::drop($data);
     # XXX extra_files
-    -f $meta->{f_fqbn} . '.dir'
+    -f $meta->{f_fqbn} . $dirfext
       and $meta->{f_ext} eq '.pag/r'
-      and unlink( $meta->{f_fqbn} . '.dir' );
+      and unlink( $meta->{f_fqbn} . $dirfext );
     return 1;
 }
 

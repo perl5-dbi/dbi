@@ -110,7 +110,7 @@ sub prepare
                 $self->{where_clause} = $self->parse_where_clause($clauses) if ($clauses);
             }
         };
-        /^\s*INSERT\s+INTO\s+(\S+)\s*(\((.*?)\))?\s*VALUES\s*\((.+)\)/is
+        /^\s*INSERT\s+(?:INTO\s+)?(\S+)\s*(\((.*?)\))?\s*VALUES\s*\((.+)\)/is
           && do
         {
             $self->{command}      = 'INSERT';

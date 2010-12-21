@@ -133,7 +133,8 @@ sub connect ($$;$$$)
     {
         # must be done first, because setting flags implicitly calls $dbdname::db->STORE
         $dbh->func( 0, "init_default_attributes" );
-        my $two_phased_init = defined $dbh->{sql_init_phase};
+        my $two_phased_init;
+	defined $dbh->{sql_init_phase} and $two_phased_init = ++$dbh->{sql_init_phase};
         my %second_phase_attrs;
 
         my ( $var, $val );
@@ -191,10 +192,8 @@ sub connect ($$;$$$)
             $dbh->func( 1, "init_default_attributes" );
             %$attr = %second_phase_attrs;
         }
-        else
-        {
-            $dbh->func("init_done");
-        }
+
+	$dbh->func("init_done");
 
         $dbh->STORE( Active => 1 );
     }
@@ -317,12 +316,14 @@ sub init_valid_attributes
                                sql_nano_version           => 1,    # Nano version
                                sql_statement_version      => 1,    # S:S version
                                sql_flags                  => 1,    # flags for SQL::Parser
+                               sql_dialect                => 1,    # dialect for SQL::Parser
                                sql_quoted_identifier_case => 1,    # case for quoted identifiers
                                sql_identifier_case        => 1,    # case for non-quoted identifiers
                                sql_parser_object          => 1,    # SQL::Parser instance
                                sql_sponge_driver          => 1,    # Sponge driver for table_info ()
                                sql_valid_attrs            => 1,    # SQL valid attributes
                                sql_readonly_attrs         => 1,    # SQL readonly attributes
+			       sql_init_phase             => 1,    # Only during initialization
                               };
     $dbh->{sql_readonly_attrs} = {
                                sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
@@ -348,6 +349,7 @@ sub init_default_attributes
     {
         # we have an "old" driver here
         $phase = defined $dbh->{sql_init_phase};
+	$phase and $phase = $dbh->{sql_init_phase};
     }
 
     if ( 0 == $phase )
@@ -359,6 +361,8 @@ sub init_default_attributes
 
         $dbh->{sql_identifier_case}        = 2;    # SQL_IC_LOWER
         $dbh->{sql_quoted_identifier_case} = 3;    # SQL_IC_SENSITIVE
+
+	$dbh->{sql_dialect} = "CSV";
 
         $dbh->{sql_init_phase} = $given_phase;
 
@@ -381,34 +385,31 @@ sub init_default_attributes
               and $dbh->{$ro_attrs}{$attr} = 1;
         }
     }
-    else
-    {
-        delete $dbh->{sql_init_phase};
-    }
 
     return $dbh;
 }    # init_default_attributes
 
 sub init_done
 {
-    delete $_[0]->{sql_init_phase};
+    defined $_[0]->{sql_init_phase} and delete $_[0]->{sql_init_phase};
+    delete $_[0]->{sql_valid_attrs}->{sql_init_phase};
     return;
 }
 
 sub sql_parser_object
 {
     my $dbh = $_[0];
+    my $dialect = $dbh->{sql_dialect} || "CSV";
     my $parser = {
-                   dialect    => "CSV",
                    RaiseError => $dbh->FETCH("RaiseError"),
                    PrintError => $dbh->FETCH("PrintError"),
                  };
     my $sql_flags = $dbh->FETCH("sql_flags") || {};
     %$parser = ( %$parser, %$sql_flags );
-    $parser = SQL::Parser->new( $parser->{dialect}, $parser );
+    $parser = SQL::Parser->new( $dialect, $parser );
     $dbh->{sql_parser_object} = $parser;
     return $parser;
-}    # cache_sql_parser_object
+}    # sql_parser_object
 
 sub sql_sponge_driver
 {
@@ -444,9 +445,12 @@ sub FETCH ($$)
     $attrib eq "AutoCommit"
       and return 1;
 
+    # Driver private attributes are lower cased
     if ( $attrib eq ( lc $attrib ) )
     {
-        # Driver private attributes are lower cased
+	# first let the implementation deliver an alias for the attribute to fetch
+	# after it validates the legitimation of the fetch request
+        $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         my $attr_prefix;
         $attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
@@ -458,8 +462,6 @@ sub FETCH ($$)
         }
         my $valid_attrs = $attr_prefix . "valid_attrs";
         my $ro_attrs    = $attr_prefix . "readonly_attrs";
-
-        $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         exists $dbh->{$valid_attrs}
           and ( $dbh->{$valid_attrs}{$attrib}
@@ -1004,6 +1006,148 @@ by DBI::DBD::SqlEngine.
 Currently the API of DBI::DBD::SqlEngine is experimental and will
 likely change in the near future to provide the table meta data basics
 like DBD::File.
+
+=head2 Metadata
+
+The following attributes are handled by DBI itself and not by
+DBI::DBD::SqlEngine, thus they all work as expected:
+
+    Active
+    ActiveKids
+    CachedKids
+    CompatMode             (Not used)
+    InactiveDestroy
+    AutoInactiveDestroy
+    Kids
+    PrintError
+    RaiseError
+    Warn                   (Not used)
+
+=head3 The following DBI attributes are handled by DBI::DBD::SqlEngine:
+
+=head4 AutoCommit
+
+Always on.
+
+=head4 ChopBlanks
+
+Works.
+
+=head4 NUM_OF_FIELDS
+
+Valid after C<< $sth->execute >>.
+
+=head4 NUM_OF_PARAMS
+
+Valid after C<< $sth->prepare >>.
+
+=head4 NAME
+
+Valid after C<< $sth->execute >>; probably undef for Non-Select statements.
+
+=head4 NULLABLE
+
+Not really working, always returns an array ref of ones, as DBD::CSV
+does not verify input data. Valid after C<< $sth->execute >>; undef for
+non-select statements.
+
+=head3 The following DBI attributes and methods are not supported:
+
+=over 4
+
+=item bind_param_inout
+
+=item CursorName
+
+=item LongReadLen
+
+=item LongTruncOk
+
+=back
+
+=head3 DBI::DBD::SqlEngine specific attributes
+
+In addition to the DBI attributes, you can use the following dbh
+attributes:
+
+=head4 sql_engine_version
+
+Contains the module version of this driver (B<readonly>)
+
+=head4 sql_nano_version
+
+Contains the module version of DBI::SQL::Nano (B<readonly>)
+
+=head4 sql_statement_version
+
+Contains the module version of SQL::Statement, if available (B<readonly>)
+
+=head4 sql_handler
+
+Contains the SQL Statement engine, either DBI::SQL::Nano or SQL::Statement
+(B<readonly>).
+
+=head4 sql_parser_object
+
+Contains an instantiated instance of SQL::Parser (B<readonly>).
+This is filled when used first time (only when used with SQL::Statement).
+
+=head4 sql_sponge_driver
+
+Contains an internally used DBD::Sponge handle (B<readonly>).
+
+=head4 sql_valid_attrs
+
+Contains the list of valid attributes for each DBI::DBD::SqlEngine based
+driver (B<readonly>).
+
+=head4 sql_readonly_attrs
+
+Contains the list of those attributes which are readonly (B<readonly>).
+
+=head4 sql_identifier_case
+
+Contains how DBI::DBD::SqlEngine deals with non-quoted SQL identifiers:
+
+  * SQL_IC_UPPER (1) means all identifiers are internally converted
+    into upper-cased pendants
+  * SQL_IC_LOWER (2) means all identifiers are internally converted
+    into lower-cased pendants
+  * SQL_IC_MIXED (4) means all identifiers are taken as they are
+
+These conversions happen if (and only if) no existing identifier matches.
+Once existing identifier is used as known.
+
+The SQL statement execution classes doesn't have to care, so don't expect
+C<sql_identifier_case> affects column names in statements like
+
+  SELECT * FROM foo
+
+=head4 sql_quoted_identifier_case
+
+Contains how DBI::DBD::SqlEngine deals with quoted SQL identifiers
+(B<readonly>). It's fixated to SQL_IC_SENSITIVE (3), which is interpreted
+as SQL_IC_MIXED.
+
+=head4 sql_flags
+
+Contains additional flags to instantiate an SQL::Parser. Because an
+SQL::Parser is instantiated only once, it's recommended to set this flag
+before any statement is executed.
+
+=head4 sql_dialect
+
+Controls the dialect understood by SQL::Parser. Possible values (delivery
+state of SQL::Statement):
+
+  * ANSI
+  * CSV
+  * AnyData
+
+Defaults to "CSV".  Because an SQL::Parser is instantiated only once and
+SQL::Parser doesn't allow to modify the dialect once instantiated,
+it's strongly recommended to set this flag before any statement is
+executed (best place is connect attribute hash).
 
 =head1 SUPPORT
 

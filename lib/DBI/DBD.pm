@@ -3337,7 +3337,7 @@ sub dbd_edit_mm_attribs {
 			 q|END { delete $ENV{DBI_AUTOPROXY}; }| ],
 	},
 	n => {	name => "DBI::SQL::Nano",
-		match => qr/^(?:49dbd_file|5\ddbm_\w+|85gofer)\.t$/,
+		match => qr/^(?:48dbi_dbd_sqlengine|49dbd_file|5\ddbm_\w+|85gofer)\.t$/,
 		add => [ q{$ENV{DBI_SQL_NANO} = 1},
 			 q|END { delete $ENV{DBI_SQL_NANO}; }| ],
 	},
