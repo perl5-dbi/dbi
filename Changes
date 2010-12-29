@@ -21,6 +21,10 @@ DBI::Changes - List of significant changes to the DBI
   Optimized connect() to remove redundant FETCH of \%attrib values.
   Improved initialization phases in DBI::DBD::SqlEngine (Jens Rehsack)
 
+  Added DBD::Gofer::Transport::corostream. A experimental proof-of-concept
+    transport that enables asynchronous database calls with few code changes.
+    Including asynchronous use of DBI frameworks like DBIx::Class.
+
   Added additional notes on DBDs which avoid creating a statement in
     the do() method and the effects on error handlers (Martin J. Evans)
   Adding new attribute "sql_dialect" to DBI::DBD::SqlEngine to allow
