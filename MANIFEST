@@ -97,6 +97,7 @@ t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
 t/43prof_env.t
+t/48dbi_dbd_sqlengine.t         Tests for DBI::DBD::SqlEngine
 t/49dbd_file.t			DBD::File API and very basic tests
 t/50dbm_simple.t		simple DBD::DBM tests
 t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
