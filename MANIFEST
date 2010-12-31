@@ -21,6 +21,7 @@ dbixs_rev.h			Defines DBIXS_REVISION macro holding DBIXS.h subversion revision n
 dbixs_rev.pl			Utility to write dbixs_rev.h
 ex/perl_dbi_nulls_test.pl	A test script for forms of IS NULL qualification in SQL
 ex/profile.pl                   A test script for DBI::Profile
+ex/corogofer.pl                 A test script for DBD::Gofer::Transport::corostream
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
@@ -34,6 +35,7 @@ lib/DBD/Gofer/Policy/pedantic.pm    Safest and most transparent, but also slowes
 lib/DBD/Gofer/Policy/classic.pm     Reasonable policy for typical usage
 lib/DBD/Gofer/Policy/rush.pm        Raw speed, fewest round trips, least transparent
 lib/DBD/Gofer/Transport/Base.pm Base class for DBD::Gofer driver transport classes
+lib/DBD/Gofer/Transport/corostream.pm Async Gofer transport using Coro and AnyEvent
 lib/DBD/Gofer/Transport/null.pm DBD::Gofer transport that executes in same process (for testing)
 lib/DBD/Gofer/Transport/pipeone.pm DBD::Gofer transport to new subprocess for each request
 lib/DBD/Gofer/Transport/stream.pm DBD::Gofer transport for ssh etc
@@ -95,6 +97,7 @@ t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
 t/43prof_env.t
+t/48dbi_dbd_sqlengine.t         Tests for DBI::DBD::SqlEngine
 t/49dbd_file.t			DBD::File API and very basic tests
 t/50dbm_simple.t		simple DBD::DBM tests
 t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
