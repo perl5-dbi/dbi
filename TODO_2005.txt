@@ -1,12 +1,5 @@
-
-DBI Version 2
-=============
-
-v2.0 - infrastructure changes, mainly relevant for driver authors
-v2.x - incremental features
-
-Change plan for DBI v2.0
-========================
+Change ideas for DBI
+====================
 
 --- Changes that may impact applications:
 
@@ -105,9 +98,9 @@ Maybe $h->new_child(\%handle_attr)
 	}
 Also need to consider $sth->more_results and its need for reset()-like behaviour.
 
-Need to enable drivers to work with DBI v1 or v2:
-means having both ::db::prepare and ::st::prepare
-In DBI v2 when a driver is loaded the ::db::prepare() method
+Need to enable drivers to work with old and new approaches,
+which means having both ::db::prepare and ::st::prepare
+When a driver is loaded the ::db::prepare() method
 will be deleted if a ::st::reset method exists.
 
 Make $DBI::err etc plain (untied) variables.
