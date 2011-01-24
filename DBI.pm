@@ -308,13 +308,6 @@ tie $DBI::rows,   'DBI::var', '&rows';   # call &rows   in last used pkg
 sub DBI::var::TIESCALAR{ my $var = $_[1]; bless \$var, 'DBI::var'; }
 sub DBI::var::STORE    { Carp::croak("Can't modify \$DBI::${$_[0]} special variable") }
 
-{   # used to catch DBI->{Attrib} mistake
-    sub DBI::DBI_tie::TIEHASH { bless {} }
-    sub DBI::DBI_tie::STORE   { Carp::carp("DBI->{$_[1]} is invalid syntax (you probably want \$h->{$_[1]})");}
-    *DBI::DBI_tie::FETCH = \&DBI::DBI_tie::STORE;
-}
-tie %DBI::DBI => 'DBI::DBI_tie';
-
 # --- Driver Specific Prefix Registry ---
 
 my $dbd_prefix_registry = {
