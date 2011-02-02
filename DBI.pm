@@ -6083,8 +6083,10 @@ failed and with what errors.
 
 When called in list context the execute_array() method returns two scalars;
 $tuples is the same as calling execute_array() in scalar context and $rows is
-the sum of the number of rows affected for each tuple, if available or
--1 if the driver cannot determine this.
+the number of rows affected for each tuple, if available or
+-1 if the driver cannot determine this. NOTE, some drivers cannot determine
+the number of rows affected per tuple but can provide the number of rows
+affected for the batch.
 If you are doing an update operation the returned rows affected may not be what
 you expect if, for instance, one or more of the tuples affected the same row
 multiple times.  Some drivers may not yet support list context, in which case
@@ -6136,10 +6138,11 @@ executed parameter tuple. Note the C<ArrayTupleStatus> attribute was
 mandatory until DBI 1.38.
 
 For tuples which are successfully executed, the element at the same
-ordinal position in the status array is the resulting rowcount.
+ordinal position in the status array is the resulting rowcount (or -1
+if unknown).
 If the execution of a tuple causes an error, then the corresponding
 status array element will be set to a reference to an array containing
-the error code and error string set by the failed execution.
+L</err>, L</errstr> and L</state> set by the failed execution.
 
 If B<any> tuple execution returns an error, C<execute_array> will
 return C<undef>. In that case, the application should inspect the
