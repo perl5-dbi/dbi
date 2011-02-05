@@ -105,23 +105,23 @@ typedef struct dbi_ima_st {
 } dbi_ima_t;
 
 /* These values are embedded in the data passed to install_method       */
-#define IMA_HAS_USAGE           0x0001  /* check parameter usage        */
-#define IMA_FUNC_REDIRECT       0x0002  /* is $h->func(..., "method")   */
-#define IMA_KEEP_ERR            0x0004  /* don't reset err & errstr     */
-#define IMA_KEEP_ERR_SUB        0x0008  /*  '' if in a nested call      */
-#define IMA_NO_TAINT_IN         0x0010  /* don't check for tainted args */
-#define IMA_NO_TAINT_OUT        0x0020  /* don't taint results          */
-#define IMA_COPY_UP_STMT        0x0040  /* copy sth Statement to dbh    */
-#define IMA_END_WORK            0x0080  /* method is commit or rollback */
-#define IMA_STUB                0x0100  /* donothing eg $dbh->connected */
-#define IMA_CLEAR_STMT          0x0200  /* clear Statement before call  */
-#define IMA_UNRELATED_TO_STMT   0x0400  /* profile as empty Statement   */
-#define IMA_NOT_FOUND_OKAY      0x0800  /* no error if not found        */
-#define IMA_EXECUTE             0x1000  /* do/execute: DBIcf_Executed   */
-#define IMA_SHOW_ERR_STMT       0x2000  /* dbh meth relates to Statement*/
-#define IMA_HIDE_ERR_PARAMVALUES 0x4000 /* ParamValues are not relevant */
-#define IMA_IS_FACTORY          0x8000  /* new h ie connect and prepare */
-#define IMA_CLEAR_CACHED_KIDS  0x10000  /* clear CachedKids before call */
+#define IMA_HAS_USAGE             0x00000001  /* check parameter usage        */
+#define IMA_FUNC_REDIRECT         0x00000002  /* is $h->func(..., "method")   */
+#define IMA_KEEP_ERR              0x00000004  /* don't reset err & errstr     */
+#define IMA_KEEP_ERR_SUB          0x00000008  /*  '' if in a nested call      */
+#define IMA_NO_TAINT_IN           0x00000010  /* don't check for tainted args */
+#define IMA_NO_TAINT_OUT          0x00000020  /* don't taint results          */
+#define IMA_COPY_UP_STMT          0x00000040  /* copy sth Statement to dbh    */
+#define IMA_END_WORK              0x00000080  /* method is commit or rollback */
+#define IMA_STUB                  0x00000100  /* donothing eg $dbh->connected */
+#define IMA_CLEAR_STMT            0x00000200  /* clear Statement before call  */
+#define IMA_UNRELATED_TO_STMT     0x00000400  /* profile as empty Statement   */
+#define IMA_NOT_FOUND_OKAY        0x00000800  /* no error if not found        */
+#define IMA_EXECUTE               0x00001000  /* do/execute: DBIcf_Executed   */
+#define IMA_SHOW_ERR_STMT         0x00002000  /* dbh meth relates to Statement*/
+#define IMA_HIDE_ERR_PARAMVALUES  0x00004000  /* ParamValues are not relevant */
+#define IMA_IS_FACTORY            0x00008000  /* new h ie connect and prepare */
+#define IMA_CLEAR_CACHED_KIDS     0x00010000  /* clear CachedKids before call */
 
 #define DBIc_STATE_adjust(imp_xxh, state)                                \
     (SvOK(state)        /* SQLSTATE is implemented by driver   */        \
