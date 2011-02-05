@@ -202,6 +202,12 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIc_TRACE_SETTINGS(imp) (DBIc_DBISTATE(imp)->debug)
 #define DBIc_TRACE_LEVEL(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_LEVEL_MASK)
 #define DBIc_TRACE_FLAGS(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_FLAGS_MASK)
+/* DBI defined trace flags */
+#define DBIf_TRACE_SQL 0x00000100
+#define DBIf_TRACE_CON 0x00000200
+#define DBIf_TRACE_ENC 0x00000400
+#define DBIf_TRACE_DBD 0x00000800
+
 /* DBIc_TRACE_MATCHES(this, crnt): true if this 'matches' (is within) crnt
    DBIc_TRACE_MATCHES(foo, DBIc_TRACE_SETTINGS(imp))
 */

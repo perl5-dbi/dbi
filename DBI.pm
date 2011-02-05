@@ -1416,6 +1416,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($h, $name) = @_;
 	#      0xddDDDDrL (driver, DBI, reserved, Level)
 	return 0x00000100 if $name eq 'SQL';
+    return 0x00000200 if $name eq 'CON';
+    return 0x00000400 if $name eq 'ENC';
+    return 0x00000800 if $name eq 'DBD';
 	return;
     }
 
@@ -7601,6 +7604,12 @@ Currently the DBI only defines two trace flags:
   ALL - turn on all DBI and driver flags (not recommended)
   SQL - trace SQL statements executed
         (not yet implemented in DBI but implemented in some DBDs)
+  CON - trace connection process
+        (not yet implemented in DBI but implemented in some DBDs)
+  ENC - trace encoding (unicode translations etc)
+        (not yet implemented in DBI but implemented in some DBDs)
+  DBD - trace only DBD messages
+        (not implemented by all DBDs yet)
 
 The L</parse_trace_flags> and L</parse_trace_flag> methods are used
 to convert trace flag names into the corresponding integer bit flags.
