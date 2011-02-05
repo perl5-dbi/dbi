@@ -513,6 +513,10 @@ struct dbistate_st {
         if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \
             var = SvIV(*svp)
 
+#define DBD_ATTRIB_GET_UV(attribs, key,klen, svp, var)                  \
+        if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \
+            var = SvUV(*svp)
+
 #define DBD_ATTRIB_GET_BOOL(attribs, key,klen, svp, var)                \
         if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \
             var = SvTRUE(*svp)
