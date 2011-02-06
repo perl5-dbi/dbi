@@ -4232,6 +4232,11 @@ constant()
         DBIpp_st_XX     = DBIpp_st_XX
         DBIstcf_DISCARD_STRING  = DBIstcf_DISCARD_STRING
         DBIstcf_STRICT          = DBIstcf_STRICT
+        DBIf_TRACE_SQL  = DBIf_TRACE_SQL
+        DBIf_TRACE_CON  = DBIf_TRACE_CON
+        DBIf_TRACE_ENC  = DBIf_TRACE_ENC
+        DBIf_TRACE_DBD  = DBIf_TRACE_DBD
+        DBIf_TRACE_TXN  = DBIf_TRACE_TXN
     CODE:
     RETVAL = ix;
     OUTPUT:
