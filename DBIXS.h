@@ -210,6 +210,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIf_TRACE_CON          0x00000200
 #define DBIf_TRACE_ENC          0x00000400
 #define DBIf_TRACE_DBD          0x00000800
+#define DBIf_TRACE_TXN          0x00001000
 
 #define DBDc_TRACE_LEVEL_MASK   0x00F00000
 #define DBDc_TRACE_LEVEL_SHIFT  20
