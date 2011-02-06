@@ -99,9 +99,15 @@ typedef struct dbi_ima_st {
     U8 minargs;
     U8 maxargs;
     IV hidearg;
-    IV trace_level;
+    /* method_trace controls tracing of method calls in the dispatcher:
+    - if the current trace flags include a trace flag in method_trace
+    then set trace_level to min(2,trace_level) for duration of the call.
+    - else, if trace_level < (method_trace & DBIc_TRACE_LEVEL_MASK)
+    then don't trace the call
+    */
+    U32 method_trace;
     const char *usage_msg;
-    U32   flags;
+    U32 flags;
 } dbi_ima_t;
 
 /* These values are embedded in the data passed to install_method       */
@@ -3375,8 +3381,13 @@ XS(XS_DBI_dispatch)
         if (trace_flags) {
             SAVEI32(DBIS->debug);       /* fall back to orig value later */
             DBIS->debug = trace_flags;  /* make new value global (for now) */
-            if (ima && trace_level < ima->trace_level) {
-                trace_level = 0;        /* silence dispatch log for this method */
+            if (ima) {
+                /* enabling trace via flags takes precedence over disabling due to min level */
+                if ((trace_flags & DBIc_TRACE_FLAGS_MASK) & (ima->method_trace & DBIc_TRACE_FLAGS_MASK))
+                    trace_level = (trace_level < 2) ? 2 : trace_level; /* min */
+                else
+                if (trace_level < (DBIc_TRACE_LEVEL_MASK & ima->method_trace))
+                    trace_level = 0;        /* silence dispatch log for this method */
             }
         }
 
@@ -4380,13 +4391,13 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
         ima = (dbi_ima_t*)(void*)SvPVX(sv);
         memzero((char*)ima, sizeof(*ima));
         DBD_ATTRIB_GET_IV(attribs, "O",1, svp, ima->flags);
-        DBD_ATTRIB_GET_IV(attribs, "T",1, svp, ima->trace_level);
+        DBD_ATTRIB_GET_UV(attribs, "T",1, svp, ima->method_trace);
         DBD_ATTRIB_GET_IV(attribs, "H",1, svp, ima->hidearg);
 
         if (trace_msg) {
             if (ima->flags)       sv_catpvf(trace_msg, ", flags 0x%04x", (unsigned)ima->flags);
-            if (ima->trace_level) sv_catpvf(trace_msg, ", T %d", (unsigned)ima->trace_level);
-            if (ima->hidearg)     sv_catpvf(trace_msg, ", H %d", (unsigned)ima->hidearg);
+            if (ima->method_trace)sv_catpvf(trace_msg, ", T 0x%08lx", (unsigned long)ima->method_trace);
+            if (ima->hidearg)     sv_catpvf(trace_msg, ", H %u", (unsigned)ima->hidearg);
         }
         if ( (svp=DBD_ATTRIB_GET_SVP(attribs, "U",1)) != NULL) {
             AV *av = (AV*)SvRV(*svp);
