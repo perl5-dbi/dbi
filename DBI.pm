@@ -245,7 +245,7 @@ BEGIN {
    ) ], # notionally "in" DBI::Profile and normally imported from there
 );
 
-$DBI::dbi_debug = 0;
+$DBI::dbi_debug = 0;          # mixture of bit fields and int sub-fields
 $DBI::neat_maxlen = 1000;
 $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 
@@ -488,7 +488,7 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
     my $ima_trace = 0+($ENV{DBI_IMA_TRACE}||0);
     while ( my ($method, $info) = each %$meths ) {
 	my $fullmeth = "DBI::${class}::$method";
-	if ($DBI::dbi_debug >= 15) { # quick hack to list DBI methods
+	if (($DBI::dbi_debug & 0xF) == 15) { # quick hack to list DBI methods
 	    # and optionally filter by IMA flags
 	    my $O = $info->{O}||0;
 	    printf "0x%04x %-20s\n", $O, $fullmeth
@@ -719,7 +719,7 @@ sub connect {
         # and finished the attribute setup. pass in the original arguments
 	$dbh->connected(@orig_args); #if ref $dbh ne 'DBI::db' or $proxy;
 
-	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
+	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug & 0xF;
 
 	return $dbh;
     };
@@ -763,7 +763,7 @@ sub install_driver {		# croaks on failure
 
     $class->trace_msg("    -> $class->install_driver($driver"
 			.") for $^O perl=$] pid=$$ ruid=$< euid=$>\n")
-	if $DBI::dbi_debug;
+	if $DBI::dbi_debug & 0xF;
 
     # --- load the code
     my $driver_class = "DBD::$driver";
@@ -793,7 +793,7 @@ sub install_driver {		# croaks on failure
 	}
 	Carp::croak("install_driver($driver) failed: $err$advice\n");
     }
-    if ($DBI::dbi_debug) {
+    if ($DBI::dbi_debug & 0xF) {
 	no strict 'refs';
 	(my $driver_file = $driver_class) =~ s/::/\//g;
 	my $dbd_ver = ${"$driver_class\::VERSION"} || "undef";
@@ -816,7 +816,7 @@ sub install_driver {		# croaks on failure
     }
 
     $DBI::installed_drh{$driver} = $drh;
-    $class->trace_msg("    <- install_driver= $drh\n") if $DBI::dbi_debug;
+    $class->trace_msg("    <- install_driver= $drh\n") if $DBI::dbi_debug & 0xF;
     $drh;
 }
 
@@ -1475,7 +1475,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	};
 	my $dbh = $cache->{$key};
         $drh->trace_msg(sprintf("    connect_cached: key '$key', cached dbh $dbh\n", DBI::neat($key), DBI::neat($dbh)))
-            if $DBI::dbi_debug >= 4;
+            if (($DBI::dbi_debug & 0xF) >= 4);
 
         my $cb = $attr->{Callbacks}; # take care not to autovivify
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {

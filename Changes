@@ -12,7 +12,8 @@ DBI::Changes - List of significant changes to the DBI
     people doing DBI->{Attrib}.
   Fixed the definition of ArrayTupleStatus and remove confusion over
     rows affected in list context of execute_array (Martin J. Evans)
-  Added CON, ENC and DBD trace flags (MArtin J. Evans)
+  Added CON, ENC and DBD trace flags (Martin J. Evans)
+  Enhanced and standardized driver trace level mechanism (Tim Bunce)
 
 =head2 Changes in DBI 1.616 (svn r14616) 30th December 2010
 
