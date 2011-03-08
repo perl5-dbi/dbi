@@ -6979,8 +6979,8 @@ For example:
   my $sth2 = $dbh->prepare( $sth1->{Statement} );
   my $ParamValues = $sth1->{ParamValues} || {};
   my $ParamTypes  = $sth1->{ParamTypes}  || {};
-  $sth2->bind_param($_, $PV->{$_} $PT->{$_})
-    for keys %{ %$PV, %$PT };
+  $sth2->bind_param($_, $ParamValues->{$_} $ParamTypes->{$_})
+    for keys %{ {%$ParamValues, %$ParamTypes} };
   $sth2->execute();
 
 The C<ParamTypes> attribute was added in DBI 1.49. Implementation
