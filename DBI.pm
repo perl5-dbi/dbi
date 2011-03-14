@@ -3073,7 +3073,7 @@ it can be handy to store hash values in a database.
 
 =head3 C<sql_type_cast>
 
-  $sts = DBI->sql_type_cast($sv, $sql_type, $flags);
+  $sts = DBI::sql_type_cast($sv, $sql_type, $flags);
 
 sql_type_cast attempts to cast C<$sv> to the SQL type (see L<DBI
 Constants>) specified in C<$sql_type>. At present only the SQL types
@@ -3119,7 +3119,7 @@ The returned C<$sts> value is:
   -2 sql_type is not handled
   -1 sv is undef so unchanged
    0 sv could not be cast cleanly and DBIstcf_STRICT was used
-   1 sv could not be case and DBIstcf_STRICT was not used
+   1 sv could not be cast and DBIstcf_STRICT was not used
    2 sv was cast successfully
 
 This method is exported by the :utils tag and was introduced in DBI

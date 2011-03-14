@@ -11,6 +11,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed ParamTypes example in the pod (Martin J. Evans)
   Fixed the definition of ArrayTupleStatus and remove confusion over
     rows affected in list context of execute_array (Martin J. Evans)
+  Fixed sql_type_cast example and typo in errors (Martin J. Evans)
 
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect
