@@ -5,6 +5,7 @@ use DBI qw(:sql_types);
 use Config;
 use Cwd;
 use strict;
+use Data::Dumper;
 
 $^W = 1;
 $| = 1;
@@ -353,6 +354,14 @@ ok($se_sth1->{ShowErrorStatement});
 $se_sth1->bind_param($_, "val$_") for (1..11);
 ok( !eval { $se_sth1->execute } );
 like $@, qr/\[for Statement "select mode from \?" with ParamValues: 1='val1', 2='val2', 3='val3', 4='val4', 5='val5', 6='val6', 7='val7', 8='val8', 9='val9', 10='val10', 11='val11'\]/;
+
+eval {
+    local $se_sth1->{PrintError} = 0;
+    $se_sth1->execute(1,2);
+};
+unlike($@, qr/ParamValues:/, 'error string does not contain ParamValues');
+is($se_sth1->{ParamValues}, undef, 'ParamValues is empty')
+    or diag(Dumper($se_sth1->{ParamValues}));
 
 # check that $dbh->{Statement} tracks last _executed_ sth
 $se_sth1 = $dbh->prepare("select mode from ?");
