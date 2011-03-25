@@ -355,6 +355,7 @@ $se_sth1->bind_param($_, "val$_") for (1..11);
 ok( !eval { $se_sth1->execute } );
 like $@, qr/\[for Statement "select mode from \?" with ParamValues: 1='val1', 2='val2', 3='val3', 4='val4', 5='val5', 6='val6', 7='val7', 8='val8', 9='val9', 10='val10', 11='val11'\]/;
 
+# this test relies on the fact that ShowErrorStatement is set above
 eval {
     local $se_sth1->{PrintError} = 0;
     $se_sth1->execute(1,2);
