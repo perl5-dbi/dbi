@@ -2642,6 +2642,15 @@ code like this:
 where I<A_TABLE_NAME> is the name of a table that always exists (such as a
 database system catalogue).
 
+=item $drh->default_user
+
+The default implementation of default_user will get the database
+username and password fields from C<$ENV{DBI_USER}> and
+C<$ENV{DBI_PASS}>. You can override this method. It is called as
+follows:
+
+  ($user, $pass) = $drh->default_user($user, $pass, $attr)
+
 =back
 
 =head1 METADATA METHODS

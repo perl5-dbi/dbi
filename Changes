@@ -8,6 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.617 (svn rXXX)
 
+  Added pod for default_user to DBI::DBD (Martin J. Evans)
   Fixed ParamTypes example in the pod (Martin J. Evans)
   Fixed the definition of ArrayTupleStatus and remove confusion over
     rows affected in list context of execute_array (Martin J. Evans)
