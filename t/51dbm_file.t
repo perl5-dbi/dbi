@@ -69,7 +69,7 @@ ok( $dbh->do(q/insert into FRED (a,b) values(2,1)/), 'insert into uppercase tabl
 unless ($using_dbd_gofer)
 {
     my $fn_tbl2 = $dbh->{dbm_tables}->{fred}->{f_fqfn};
-       $fn_tbl2 =~ s/fred(\.[^.]*)?/freddy$1/;
+       $fn_tbl2 =~ s/fred(\.[^.]*)?$/freddy$1/;
     my @dbfiles = grep { -f $_ } (
 				     $dbh->{dbm_tables}->{fred}->{f_fqfn},
 				     $dbh->{dbm_tables}->{fred}->{f_fqln},
@@ -78,7 +78,7 @@ unless ($using_dbd_gofer)
     foreach my $fn (@dbfiles)
     {
 	my $tgt_fn = $fn;
-	$tgt_fn =~ s/fred(\.[^.]*)?/freddy$1/;
+	$tgt_fn =~ s/fred(\.[^.]*)?$/freddy$1/;
 	File::Copy::copy( $fn, $tgt_fn );
     }
     $dbh->{dbm_tables}->{krueger}->{file} = $fn_tbl2;
