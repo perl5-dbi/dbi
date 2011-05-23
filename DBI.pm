@@ -4213,7 +4213,7 @@ committed before it's returned, you can eliminate the C<AutoCommit> attribute
 in a C<connect_cached.reused> callback, like so:
 
   my $cb = {
-      ‘connect_cached.reused’ => sub { delete $_[4]->{AutoCommit} },
+      'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
   };
 
   sub dbh {
