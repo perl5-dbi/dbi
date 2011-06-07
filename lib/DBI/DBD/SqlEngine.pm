@@ -877,7 +877,8 @@ sub FETCH ($$)
 
     $attrib eq "NAME" and return [ $sth->sql_get_colnames() ];
 
-    $attrib eq "TYPE"      and return [ ("CHAR") x scalar $sth->sql_get_colnames() ];
+    $attrib eq "TYPE"      and return [ (DBI::SQL_VARCHAR()) x scalar $sth->sql_get_colnames() ];
+    $attrib eq "TYPE_NAME" and return [ ("VARCHAR") x scalar $sth->sql_get_colnames() ];
     $attrib eq "PRECISION" and return [ (0) x scalar $sth->sql_get_colnames() ];
     $attrib eq "NULLABLE"  and return [ (1) x scalar $sth->sql_get_colnames() ];
 
