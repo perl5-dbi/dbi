@@ -781,7 +781,9 @@ sub execute
     {
         # bug in SQL::Statement 1.20 and below causes breakage
         # on all but the first call
-        unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
+        my @req_prm = $stmt->params();
+        my $n_req = @req_prm == 1 && ref $req_prm[0] ? $req_prm[0]->num : scalar @req_prm;
+        unless ( $n_req == ( my $nparm = @$params ) )
         {
             my $msg = "You passed $nparm parameters where $req_prm required";
             $sth->set_err( $DBI::stderr, $msg );
