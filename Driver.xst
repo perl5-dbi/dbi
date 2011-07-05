@@ -90,10 +90,12 @@ _login(dbh, dbname, username, password, attribs=Nullsv)
     SV *        attribs
     CODE:
     {
-    STRLEN lna;
     D_imp_dbh(dbh);
+#if !defined(dbd_db_login6_sv)
+    STRLEN lna;
     char *u = (SvOK(username)) ? SvPV(username,lna) : "";
     char *p = (SvOK(password)) ? SvPV(password,lna) : "";
+#endif
 #ifdef dbd_db_login6_sv
     ST(0) = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs) ? &PL_sv_yes : &PL_sv_no;
 #elif defined(dbd_db_login6)

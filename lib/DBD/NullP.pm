@@ -118,6 +118,7 @@
             $sth->{dbd_nullp_data} = [ @{$params}{ sort keys %$params } ];
             $sth->STORE(Active => 1); 
         }
+        # force a sleep - handy for testing
         elsif ($sth->{Statement} =~ m/^ \s* SLEEP \s+ (\S+) /xmsi) {
             my $secs = $1;
             if (eval { require Time::HiRes; defined &Time::HiRes::sleep }) {
@@ -127,6 +128,11 @@
                 sleep $secs;
             }
         }
+        # force an error - handy for testing
+        elsif ($sth->{Statement} =~ m/^ \s* ERROR \s+ (\d+) \s* (.*) /xmsi) {
+            return $sth->set_err($1, $2);
+        }
+        # anything else is silently ignored, sucessfully
 	1;
     }
 

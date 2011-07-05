@@ -6,6 +6,23 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.617 (svn rXXX)
+
+  Added pod for default_user to DBI::DBD (Martin J. Evans)
+  Fixed ParamTypes example in the pod (Martin J. Evans)
+  Fixed the definition of ArrayTupleStatus and remove confusion over
+    rows affected in list context of execute_array (Martin J. Evans)
+  Fixed sql_type_cast example and typo in errors (Martin J. Evans)
+  Fixed parameter-count check for complicated statements using
+    DBI::DBD::SqlEngine + SQL::Statement::Param (H.Merijn Brand)
+
+  Enhanced and standardized driver trace level mechanism (Tim Bunce)
+  Removed old code that was an inneffective attempt to detect
+    people doing DBI->{Attrib}.
+
+  Added CON, ENC and DBD trace flags and extended 09trace.t (Martin J. Evans)
+  Added TXN trace flags and applied CON and TXN to relevant methods (Tim Bunce)
+
 =head2 Changes in DBI 1.616 (svn r14616) 30th December 2010
 
   Fixed spurious dbi_profile lines written to the log when

@@ -245,7 +245,7 @@ BEGIN {
    ) ], # notionally "in" DBI::Profile and normally imported from there
 );
 
-$DBI::dbi_debug = 0;
+$DBI::dbi_debug = 0;          # mixture of bit fields and int sub-fields
 $DBI::neat_maxlen = 1000;
 $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 
@@ -307,13 +307,6 @@ tie $DBI::errstr, 'DBI::var', '&errstr'; # call &errstr in last used pkg
 tie $DBI::rows,   'DBI::var', '&rows';   # call &rows   in last used pkg
 sub DBI::var::TIESCALAR{ my $var = $_[1]; bless \$var, 'DBI::var'; }
 sub DBI::var::STORE    { Carp::croak("Can't modify \$DBI::${$_[0]} special variable") }
-
-{   # used to catch DBI->{Attrib} mistake
-    sub DBI::DBI_tie::TIEHASH { bless {} }
-    sub DBI::DBI_tie::STORE   { Carp::carp("DBI->{$_[1]} is invalid syntax (you probably want \$h->{$_[1]})");}
-    *DBI::DBI_tie::FETCH = \&DBI::DBI_tie::STORE;
-}
-tie %DBI::DBI => 'DBI::DBI_tie';
 
 # --- Driver Specific Prefix Registry ---
 
@@ -414,21 +407,21 @@ my $keeperr = { O=>0x0004 };
         visit_child_handles => { U => [2,3,'$coderef [, $info ]'], O=>0x0404, T=>4 },
     },
     dr => {		# Database Driver Interface
-	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000 },
-	'connect_cached'=>{U=>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000 },
-	'disconnect_all'=>{ U =>[1,1], O=>0x0800 },
-	data_sources => { U =>[1,2,'[\%attr]' ], O=>0x0800 },
-	default_user => { U =>[3,4,'$user, $pass [, \%attr]' ] },
+	'connect'  =>	{ U =>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000, T=>0x200 },
+	'connect_cached'=>{U=>[1,5,'[$db [,$user [,$passwd [,\%attr]]]]'], H=>3, O=>0x8000, T=>0x200 },
+	'disconnect_all'=>{ U =>[1,1], O=>0x0800, T=>0x200 },
+	data_sources => { U =>[1,2,'[\%attr]' ], O=>0x0800, T=>0x200 },
+	default_user => { U =>[3,4,'$user, $pass [, \%attr]' ], T=>0x200 },
 	dbixs_revision  => $keeperr,
     },
     db => {		# Database Session Class Interface
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], O=>0x10000 },
-	clone   	=> { U =>[1,2,'[\%attr]'] },
-	connected   	=> { U =>[1,0], O => 0x0004 },
-	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400 },
-	commit     	=> { U =>[1,1], O=>0x0480|0x0800 },
-	rollback   	=> { U =>[1,1], O=>0x0480|0x0800 },
+	clone   	=> { U =>[1,2,'[\%attr]'], T=>0x200 },
+	connected   	=> { U =>[1,0], O => 0x0004, T=>0x200 },
+	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400, T=>0x1000 },
+	commit     	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
+	rollback   	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
 	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
 	last_insert_id	=> { U =>[5,6,'$catalog, $schema, $table_name, $field_name [, \%attr ]'], O=>0x2800 },
 	preparse    	=> {  }, # XXX
@@ -441,7 +434,7 @@ my $keeperr = { O=>0x0004 };
 	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
-	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000 },
+	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000, T=>0x200 },
 	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
 	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
 	rows       	=> $keeperr,
@@ -495,7 +488,7 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
     my $ima_trace = 0+($ENV{DBI_IMA_TRACE}||0);
     while ( my ($method, $info) = each %$meths ) {
 	my $fullmeth = "DBI::${class}::$method";
-	if ($DBI::dbi_debug >= 15) { # quick hack to list DBI methods
+	if (($DBI::dbi_debug & 0xF) == 15) { # quick hack to list DBI methods
 	    # and optionally filter by IMA flags
 	    my $O = $info->{O}||0;
 	    printf "0x%04x %-20s\n", $O, $fullmeth
@@ -726,7 +719,7 @@ sub connect {
         # and finished the attribute setup. pass in the original arguments
 	$dbh->connected(@orig_args); #if ref $dbh ne 'DBI::db' or $proxy;
 
-	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug;
+	DBI->trace_msg("    <- connect= $dbh\n") if $DBI::dbi_debug & 0xF;
 
 	return $dbh;
     };
@@ -770,7 +763,7 @@ sub install_driver {		# croaks on failure
 
     $class->trace_msg("    -> $class->install_driver($driver"
 			.") for $^O perl=$] pid=$$ ruid=$< euid=$>\n")
-	if $DBI::dbi_debug;
+	if $DBI::dbi_debug & 0xF;
 
     # --- load the code
     my $driver_class = "DBD::$driver";
@@ -800,7 +793,7 @@ sub install_driver {		# croaks on failure
 	}
 	Carp::croak("install_driver($driver) failed: $err$advice\n");
     }
-    if ($DBI::dbi_debug) {
+    if ($DBI::dbi_debug & 0xF) {
 	no strict 'refs';
 	(my $driver_file = $driver_class) =~ s/::/\//g;
 	my $dbd_ver = ${"$driver_class\::VERSION"} || "undef";
@@ -823,7 +816,7 @@ sub install_driver {		# croaks on failure
     }
 
     $DBI::installed_drh{$driver} = $drh;
-    $class->trace_msg("    <- install_driver= $drh\n") if $DBI::dbi_debug;
+    $class->trace_msg("    <- install_driver= $drh\n") if $DBI::dbi_debug & 0xF;
     $drh;
 }
 
@@ -1423,6 +1416,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($h, $name) = @_;
 	#      0xddDDDDrL (driver, DBI, reserved, Level)
 	return 0x00000100 if $name eq 'SQL';
+    return 0x00000200 if $name eq 'CON';
+    return 0x00000400 if $name eq 'ENC';
+    return 0x00000800 if $name eq 'DBD';
+    return 0x00001000 if $name eq 'TXN';
 	return;
     }
 
@@ -1479,7 +1476,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	};
 	my $dbh = $cache->{$key};
         $drh->trace_msg(sprintf("    connect_cached: key '$key', cached dbh $dbh\n", DBI::neat($key), DBI::neat($dbh)))
-            if $DBI::dbi_debug >= 4;
+            if (($DBI::dbi_debug & 0xF) >= 4);
 
         my $cb = $attr->{Callbacks}; # take care not to autovivify
 	if ($dbh && $dbh->FETCH('Active') && eval { $dbh->ping }) {
@@ -3076,7 +3073,7 @@ it can be handy to store hash values in a database.
 
 =head3 C<sql_type_cast>
 
-  $sts = DBI->sql_type_cast($sv, $sql_type, $flags);
+  $sts = DBI::sql_type_cast($sv, $sql_type, $flags);
 
 sql_type_cast attempts to cast C<$sv> to the SQL type (see L<DBI
 Constants>) specified in C<$sql_type>. At present only the SQL types
@@ -3122,7 +3119,7 @@ The returned C<$sts> value is:
   -2 sql_type is not handled
   -1 sv is undef so unchanged
    0 sv could not be cast cleanly and DBIstcf_STRICT was used
-   1 sv could not be case and DBIstcf_STRICT was not used
+   1 sv could not be cast and DBIstcf_STRICT was not used
    2 sv was cast successfully
 
 This method is exported by the :utils tag and was introduced in DBI
@@ -4216,7 +4213,7 @@ committed before it's returned, you can eliminate the C<AutoCommit> attribute
 in a C<connect_cached.reused> callback, like so:
 
   my $cb = {
-      ‘connect_cached.reused’ => sub { delete $_[4]->{AutoCommit} },
+      'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
   };
 
   sub dbh {
@@ -6090,8 +6087,10 @@ failed and with what errors.
 
 When called in list context the execute_array() method returns two scalars;
 $tuples is the same as calling execute_array() in scalar context and $rows is
-the sum of the number of rows affected for each tuple, if available or
--1 if the driver cannot determine this.
+the number of rows affected for each tuple, if available or
+-1 if the driver cannot determine this. NOTE, some drivers cannot determine
+the number of rows affected per tuple but can provide the number of rows
+affected for the batch.
 If you are doing an update operation the returned rows affected may not be what
 you expect if, for instance, one or more of the tuples affected the same row
 multiple times.  Some drivers may not yet support list context, in which case
@@ -6143,10 +6142,11 @@ executed parameter tuple. Note the C<ArrayTupleStatus> attribute was
 mandatory until DBI 1.38.
 
 For tuples which are successfully executed, the element at the same
-ordinal position in the status array is the resulting rowcount.
+ordinal position in the status array is the resulting rowcount (or -1
+if unknown).
 If the execution of a tuple causes an error, then the corresponding
 status array element will be set to a reference to an array containing
-the error code and error string set by the failed execution.
+L</err>, L</errstr> and L</state> set by the failed execution.
 
 If B<any> tuple execution returns an error, C<execute_array> will
 return C<undef>. In that case, the application should inspect the
@@ -6979,8 +6979,8 @@ For example:
   my $sth2 = $dbh->prepare( $sth1->{Statement} );
   my $ParamValues = $sth1->{ParamValues} || {};
   my $ParamTypes  = $sth1->{ParamTypes}  || {};
-  $sth2->bind_param($_, $PV->{$_} $PT->{$_})
-    for keys %{ %$PV, %$PT };
+  $sth2->bind_param($_, $ParamValues->{$_} $ParamTypes->{$_})
+    for keys %{ {%$ParamValues, %$ParamTypes} };
   $sth2->execute();
 
 The C<ParamTypes> attribute was added in DBI 1.49. Implementation
@@ -7605,6 +7605,13 @@ Currently the DBI only defines two trace flags:
   ALL - turn on all DBI and driver flags (not recommended)
   SQL - trace SQL statements executed
         (not yet implemented in DBI but implemented in some DBDs)
+  CON - trace connection process
+  ENC - trace encoding (unicode translations etc)
+        (not yet implemented in DBI but implemented in some DBDs)
+  DBD - trace only DBD messages
+        (not implemented by all DBDs yet)
+  TXN - trace transactions
+        (not implemented in all DBDs yet)
 
 The L</parse_trace_flags> and L</parse_trace_flag> methods are used
 to convert trace flag names into the corresponding integer bit flags.

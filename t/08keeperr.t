@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 69;
+use Test::More tests => 72;
 
 ## ----------------------------------------------------------------------------
 ## 08keeperr.t
@@ -68,6 +68,17 @@ my $err2 = test_select( DBI->connect(@con_info) );
 Test::More::like($err2, qr/^DBD::(ExampleP|Multiplex|Gofer)::db selectrow_arrayref failed: opendir/, '... checking error');
 
 package main;
+
+# test ping does not destroy the errstr
+sub ping_keeps_err {
+    my $dbh = DBI->connect('DBI:Sponge:');
+    $dbh->{PrintError} = 0;
+    eval {$dbh->do(q/invalid sql statement/)};
+    ok(defined($dbh->errstr), "Error from invalid SQL");
+    ok($dbh->ping, "ping returns true"); # for me this returns false!
+    ok(defined($dbh->errstr), "Error exists after ping");
+    $dbh->disconnect;
+}
 
 ## ----------------------------------------------------------------------------
 print "Test HandleSetErr\n";
@@ -260,8 +271,9 @@ ok(!defined $ret[0],         '... the first value is undefined');
 cmp_ok($dbh->err, '==', 99,  '... $dbh->err is 99');
 is($dbh->errstr, "errstr99", '... $dbh->errstr is as we expected');
 is($dbh->state,  "OV123",    '... $dbh->state is as we expected');
-
 $dbh->disconnect;
+
+ping_keeps_err();
 
 1;
 # end

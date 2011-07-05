@@ -197,11 +197,26 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIc_ACTIVE_KIDS(imp)   _imp2com(imp, std.active_kids)
 #define DBIc_LAST_METHOD(imp)   _imp2com(imp, std.last_method)
 
+/*  d = DBD flags,  l = DBD level (needs to be shifted down)
+ *  D - DBI flags,  r = reserved,  L = DBI trace level
+ *  Trace level bit allocation: 0xddlDDDrL   */
 #define DBIc_TRACE_LEVEL_MASK   0x0000000F
-#define DBIc_TRACE_FLAGS_MASK   0xFFFFFF00
+#define DBIc_TRACE_FLAGS_MASK   0xFF0FFF00  /* includes DBD flag bits for DBIc_TRACE */
 #define DBIc_TRACE_SETTINGS(imp) (DBIc_DBISTATE(imp)->debug)
 #define DBIc_TRACE_LEVEL(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_LEVEL_MASK)
 #define DBIc_TRACE_FLAGS(imp)   (DBIc_TRACE_SETTINGS(imp) & DBIc_TRACE_FLAGS_MASK)
+/* DBI defined trace flags */
+#define DBIf_TRACE_SQL          0x00000100
+#define DBIf_TRACE_CON          0x00000200
+#define DBIf_TRACE_ENC          0x00000400
+#define DBIf_TRACE_DBD          0x00000800
+#define DBIf_TRACE_TXN          0x00001000
+
+#define DBDc_TRACE_LEVEL_MASK   0x00F00000
+#define DBDc_TRACE_LEVEL_SHIFT  20
+#define DBDc_TRACE_LEVEL(imp)         ( (DBIc_TRACE_SETTINGS(imp) & DBDc_TRACE_LEVEL_MASK) >> DBDc_TRACE_LEVEL_SHIFT )
+#define DBDc_TRACE_LEVEL_set(imp, l)  ( DBIc_TRACE_SETTINGS(imp) |= (((l) << DBDc_TRACE_LEVEL_SHIFT) & DBDc_TRACE_LEVEL_MASK ))
+
 /* DBIc_TRACE_MATCHES(this, crnt): true if this 'matches' (is within) crnt
    DBIc_TRACE_MATCHES(foo, DBIc_TRACE_SETTINGS(imp))
 */
@@ -210,10 +225,10 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
         || ((crnt & DBIc_TRACE_FLAGS_MASK)  & (this & DBIc_TRACE_FLAGS_MASK)) )
 /* DBIc_TRACE: true if flags match & DBI level>=flaglevel, or if DBI level>level
    This is the main trace testing macro to be used by drivers.
-   (Drivers should define their own DBDtf_* macros for the top 8 bits: 0xFF000000)
-   DBIc_TRACE(imp,         0, 0, 4) = if level >= 4
-   DBIc_TRACE(imp, DBDtf_FOO, 2, 4) = if tracing DBDtf_FOO & level>=2 or level>=4
-   DBIc_TRACE(imp, DBDtf_FOO, 2, 0) = as above but never trace just due to level
+   (Drivers should define their own DBDf_TRACE_* macros for the top 8 bits: 0xFF000000)
+   DBIc_TRACE(imp,        0, 0, 4) = if level >= 4
+   DBIc_TRACE(imp, DBDf_FOO, 2, 4) = if tracing DBDf_FOO & level>=2 or level>=4
+   DBIc_TRACE(imp, DBDf_FOO, 2, 0) = as above but never trace just due to level
 */
 #define DBIc_TRACE(imp, flags, flaglevel, level)        \
         (  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
@@ -512,6 +527,10 @@ struct dbistate_st {
 #define DBD_ATTRIB_GET_IV(attribs, key,klen, svp, var)                  \
         if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \
             var = SvIV(*svp)
+
+#define DBD_ATTRIB_GET_UV(attribs, key,klen, svp, var)                  \
+        if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \
+            var = SvUV(*svp)
 
 #define DBD_ATTRIB_GET_BOOL(attribs, key,klen, svp, var)                \
         if ((svp=DBD_ATTRIB_GET_SVP(attribs, key,klen)) != NULL)        \

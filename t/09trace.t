@@ -3,7 +3,7 @@
 
 use strict;
 
-use Test::More tests => 67;
+use Test::More tests => 99;
 
 ## ----------------------------------------------------------------------------
 ## 09trace.t
@@ -60,6 +60,10 @@ ok( -f $trace_file, '... trace file successfully created');
 
 my @names = qw(
 	SQL
+    CON
+    ENC
+    DBD
+    TXN
 	foo bar baz boo bop
 );
 my %flag;
