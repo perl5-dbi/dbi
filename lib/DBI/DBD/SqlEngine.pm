@@ -685,7 +685,7 @@ sub list_tables ($)
     my @tables = $dbh->func("get_avail_tables") or return;
     foreach my $ref (@tables)
     {
-        push @tables, $ref->[2];
+        push @table_list, $ref->[2];
     }
 
     return @table_list;
@@ -785,7 +785,7 @@ sub execute
         my $n_req = @req_prm == 1 && ref $req_prm[0] ? $req_prm[0]->num : scalar @req_prm;
         unless ( $n_req == ( my $nparm = @$params ) )
         {
-            my $msg = "You passed $nparm parameters where $req_prm required";
+            my $msg = "You passed $nparm parameters where $n_req required";
             $sth->set_err( $DBI::stderr, $msg );
             return;
         }

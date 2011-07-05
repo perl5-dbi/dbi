@@ -122,6 +122,9 @@ is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
 is (scalar @layer, 1, "encoding shows in layer");
 
+my @tables = $dbh->func( "list_tables" );
+is_deeply( \@tables, ["000_just_testing", $tbl], "Listing tables gives test table" );
+
 SKIP: {
     $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
     ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");
