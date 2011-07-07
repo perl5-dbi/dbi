@@ -6781,13 +6781,13 @@ the C<DBD> backend.
 
 Type: array-ref, read-only
 
-Like L</NAME> but always returns lowercase names.
+Like C</NAME> but always returns lowercase names.
 
 =head3 C<NAME_uc>
 
 Type: array-ref, read-only
 
-Like L</NAME> but always returns uppercase names.
+Like C</NAME> but always returns uppercase names.
 
 =head3 C<NAME_hash>
 
