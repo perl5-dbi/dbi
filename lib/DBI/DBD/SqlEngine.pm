@@ -33,7 +33,7 @@ use strict;
 use Carp;
 use vars qw( @ISA $VERSION $drh %methods_installed);
 
-$VERSION = "0.03";
+$VERSION = "0.04";
 
 $drh = undef;    # holds driver handle(s) once initialized
 
@@ -777,19 +777,14 @@ sub execute
 
     $sth->finish;
     my $stmt = $sth->{sql_stmt};
-    unless ( $sth->{sql_params_checked}++ )
+
+    unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
     {
-        # bug in SQL::Statement 1.20 and below causes breakage
-        # on all but the first call
-        my @req_prm = $stmt->params();
-        my $n_req = @req_prm == 1 && ref $req_prm[0] ? $req_prm[0]->num : scalar @req_prm;
-        unless ( $n_req == ( my $nparm = @$params ) )
-        {
-            my $msg = "You passed $nparm parameters where $n_req required";
-            $sth->set_err( $DBI::stderr, $msg );
-            return;
-        }
+	my $msg = "You passed $nparm parameters where $req_prm required";
+	$sth->set_err( $DBI::stderr, $msg );
+	return;
     }
+
     my @err;
     my $result;
     eval {
