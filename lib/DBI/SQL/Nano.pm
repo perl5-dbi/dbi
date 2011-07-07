@@ -695,15 +695,8 @@ sub params
     {
         return $self->{"params"}->[$val_num];
     }
-    if (wantarray)
-    {
-        return @{ $self->{"params"} };
-    }
-    else
-    {
-        return scalar @{ $self->{"params"} };
-    }
 
+    return wantarray ? @{ $self->{"params"} } : scalar @{ $self->{"params"} };
 }
 
 sub open_tables
