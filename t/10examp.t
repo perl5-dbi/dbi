@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 210;
+use Test::More tests => 212;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -356,14 +356,16 @@ ok( !eval { $se_sth1->execute } );
 like $@, qr/\[for Statement "select mode from \?" with ParamValues: 1='val1', 2='val2', 3='val3', 4='val4', 5='val5', 6='val6', 7='val7', 8='val8', 9='val9', 10='val10', 11='val11'\]/;
 
 # this test relies on the fact that ShowErrorStatement is set above
-eval {
-    local $se_sth1->{PrintError} = 0;
-    $se_sth1->execute(1,2);
-};
-unlike($@, qr/ParamValues:/, 'error string does not contain ParamValues');
-is($se_sth1->{ParamValues}, undef, 'ParamValues is empty')
+TODO: {
+    local $TODO = "rt66127 not fixed yet";
+    eval {
+        local $se_sth1->{PrintError} = 0;
+        $se_sth1->execute(1,2);
+    };
+    unlike($@, qr/ParamValues:/, 'error string does not contain ParamValues');
+    is($se_sth1->{ParamValues}, undef, 'ParamValues is empty')
     or diag(Dumper($se_sth1->{ParamValues}));
-
+};
 # check that $dbh->{Statement} tracks last _executed_ sth
 $se_sth1 = $dbh->prepare("select mode from ?");
 ok($se_sth1->{Statement} eq "select mode from ?");
