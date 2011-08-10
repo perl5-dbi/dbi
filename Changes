@@ -20,6 +20,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Added CON, ENC and DBD trace flags and extended 09trace.t (Martin J. Evans)
   Added TXN trace flags and applied CON and TXN to relevant methods (Tim Bunce)
+  Reserved spatialite_ as a driver prefix
 
 =head2 Changes in DBI 1.616 (svn r14616) 30th December 2010
 
