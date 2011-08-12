@@ -327,7 +327,7 @@ my $dbd_prefix_registry = {
   ing_         => { class => 'DBD::Ingres',         },
   ix_          => { class => 'DBD::Informix',       },
   jdbc_        => { class => 'DBD::JDBC',           },
-  po_          => { class => 'DBD::MO',             },
+  mo_          => { class => 'DBD::MO',             },
   monetdb_     => { class => 'DBD::monetdb',        },
   msql_        => { class => 'DBD::mSQL',           },
   mvsftp_      => { class => 'DBD::MVS_FTPSQL',     },
