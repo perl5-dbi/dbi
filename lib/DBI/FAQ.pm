@@ -16,7 +16,7 @@
 ### and copyright notices are retained ( the I<AUTHOR> and I<COPYRIGHT> sections ).
 ### Requests for other distribution rights, including incorporation into 
 ### commercial products, such as books, magazine articles or CD-ROMs should be
-### made to Alligator Descartes <I<http://www.symbolstone.org/descarte/contact.html>>.
+### made to Alligator Descartes.
 ### 
 
 package DBI::FAQ;
@@ -51,6 +51,9 @@ DBI Frequently Asked Questions v.0.38
 This document is currently at version I<0.38>, as of I<February 8th, 2000>.
 
 That's B<very> old. A newer FAQ can be found at L<http://faq.dbi-support.com/>
+
+Neither this document nor that web site are actively maintained.
+Volunteers are welcome.
 
 =head1 DESCRIPTION
 
@@ -160,7 +163,6 @@ For more specific version information and exact URLs of drivers, please see
 the DBI drivers list and the DBI module pages which can be found on:
 
     http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
 
 This list is automatically generated on a nightly basis from CPAN and should
 be up-to-date.
@@ -320,7 +322,6 @@ The driver summaries that were produced for Appendix B of "Programming the
 Perl DBI" are available online at:
 
     http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
 
 in the driver information table. These summaries contain standardised
 information on each driver and database which should aid you in selecting
@@ -330,7 +331,6 @@ drivers or whether a driver is not fully compliant with the DBI Specification.
 =item I<Rambles, Tidbits and Observations>
 
     http://dbi.perl.org/tidbits
-    http://www.symbolstone.org/technology/perl/DBI/tidbits
 
 There are a series of occasional rambles from various people on the
 DBI mailing lists who, in an attempt to clear up a simple point, end up
@@ -342,7 +342,6 @@ quality, but do provide some insights into the workings of the interfaces.
 A list of articles discussing the DBI can be found on the DBI WWW page at:
 
     http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
 
 These articles are of varying quality and age, from the original Perl Journal
 article written by Alligator and Tim, to more recent debacles published online
@@ -356,7 +355,6 @@ Please read them. It makes our worthless existences more bearable. These
 can all be read from the main DBI WWW page at:
 
     http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
 
 =item I<Mailing Lists>
 
@@ -404,7 +402,6 @@ architecture and operating system or database. You can check the README
 files for each driver in advance online at:
 
     http://dbi.perl.org/
-    http://www.symbolstone.org/technology/perl/DBI
 
 If it's a known problem, you'll probably have to wait till it gets fixed. If 
 you're I<really> needing it fixed, try the following:
@@ -761,11 +758,6 @@ It is expected that some future version of the DBI will at least be
 thread-safe (but not thread-hot) by automatically blocking threads
 intering the DBI while it's already in use.
 
-For some OCI example code for Oracle that has multi-threaded C<SELECT>
-statements, see:
-
-    http://www.symbolstone.org/technology/oracle/oci/orathreads.tar.gz
-
 =head2 5.2 How do I handle BLOB data with DBI?
 
 Handling BLOB data with the DBI is very straight-forward. BLOB columns are
@@ -950,7 +942,7 @@ unknown sites or missing documents.
 
 =head1 AUTHOR
 
-Alligator Descartes <I<http://www.symbolstone.org/descarte/contact.html>>. 
+Alligator Descartes.
 Portions are Copyright their original stated authors.
 
 =head1 COPYRIGHT
@@ -966,7 +958,7 @@ reasonable attempt is made to use the most current version and all credits
 and copyright notices are retained ( the I<AUTHOR> and I<COPYRIGHT> sections ).
 Requests for other distribution rights, including incorporation into 
 commercial products, such as books, magazine articles or CD-ROMs should be
-made to Alligator Descartes <I<http://www.symbolstone.org/descarte/contact.html>>.
+made to Alligator Descartes.
 
 =for html
 <!--#include virtual="/technology/perl/DBI/templatebottom.html" -->
