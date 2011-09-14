@@ -71,13 +71,23 @@ package main;
 
 # test ping does not destroy the errstr
 sub ping_keeps_err {
-    my $dbh = DBI->connect('DBI:Sponge:');
-    $dbh->{PrintError} = 0;
-    eval {$dbh->do(q/invalid sql statement/)};
-    ok(defined($dbh->errstr), "Error from invalid SQL");
-    ok($dbh->ping, "ping returns true"); # for me this returns false!
-    ok(defined($dbh->errstr), "Error exists after ping");
+    my $dbh = DBI->connect('DBI:ExampleP:', undef, undef, { PrintError => 0 });
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42;
+    is $dbh->errstr, "ERROR 42";
+    ok $dbh->ping, "ping returns true";
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+
     $dbh->disconnect;
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+    ok !$dbh->ping, "ping returns false";
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
 }
 
 ## ----------------------------------------------------------------------------
@@ -273,10 +283,7 @@ is($dbh->errstr, "errstr99", '... $dbh->errstr is as we expected');
 is($dbh->state,  "OV123",    '... $dbh->state is as we expected');
 $dbh->disconnect;
 
-TODO: {
-    local $TODO = "rt64330 is not fixed yet";
-    ping_keeps_err();
-};
+ping_keeps_err();
 
 1;
 # end
