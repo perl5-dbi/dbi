@@ -2342,7 +2342,7 @@ L</do> methods.
 For an interesting diversion on the I<real> history of RDBMS and SQL,
 from the people who made it happen, see:
 
-  http://ftp.digital.com/pub/DEC/SRC/technical-notes/SRC-1997-018-html/sqlr95.html
+  http://www.mcjones.org/System_R/SQL_Reunion_95/sqlr95.html
 
 Follow the "Full Contents" then "Intergalactic dataspeak" links for the
 SQL history.
