@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 212;
+use Test::More tests => 215;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -253,6 +253,15 @@ $r = $csr_b->fetchall_arrayref([0], 1);
 ok($r);
 is_deeply($r, [[$row_a[0]]]);
 
+$r = $csr_b->fetchall_arrayref([], 1);
+is @$r, 1, 'should fetch one row';
+
+$r = $csr_b->fetchall_arrayref([], 99999);
+ok @$r, 'should fetch all the remaining rows';
+
+$r = $csr_b->fetchall_arrayref([], 99999);
+is $r, undef, 'should return undef as there are no more rows';
+
 # ---
 
 print "selectrow_array\n";
@@ -319,7 +328,7 @@ ok($r->[0] eq $row_b[0]);
 print "selectcol_arrayref column slice\n";
 $r = $dbh->selectcol_arrayref($std_sql, { Columns => [3,2] }, $dir);
 ok($r);
-# use Data::Dumper; warn Dumper([\@row_b, $r]);
+# warn Dumper([\@row_b, $r]);
 ok(@$r == $rows * 2);
 ok($r->[0] eq $row_b[2]);
 ok($r->[1] eq $row_b[1]);
