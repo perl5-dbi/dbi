@@ -4,6 +4,9 @@
 # Test unicode in a DBD - written for DBD::ODBC but should work for other
 # DBDs if you change the column types at the start of this script.
 #
+# Usage:
+#   unicode_test.pl DSN USERNAME PASSWORD
+#
 # NOTE: will attempt to create tables called fred and
 #       fredĀ (LATIN CAPITAL LETTER A WITH MACRON)
 #
@@ -92,7 +95,8 @@ if ($driver eq 'SQLite') {
     $blob_bind_type = SQL_BLOB;
     $unicode_column_type = 'varchar';
     $h->{sqlite_unicode} = 1;
-} elsif ($driver eq 'CSV') {
+}
+elsif ($driver eq 'CSV') {
     # does not support column_info
     #####$blob_column_type = 'blob';
     #####$blob_bind_type = SQL_BLOB;
@@ -100,14 +104,16 @@ if ($driver eq 'SQLite') {
     $h->{f_encoding} = 'UTF8';
     $h->{f_ext} = '.csv';
     $length_fn = 'char_length';
-} elsif ($driver eq 'mysql') {
+}
+elsif ($driver eq 'mysql') {
     # does not support type_info_all
     $h->{mysql_enable_utf8} = 1;
     #####$blob_column_type = 'blob';
     #####$blob_bind_type = SQL_BLOB;
     #####$unicode_column_type = 'varchar';
     $length_fn = 'char_length';
-} elsif ($driver eq 'ODBC') {
+}
+elsif ($driver eq 'ODBC') {
     # DBD::ODBC has type_info_all and column_info support
     $length_fn = 'len';
 }
@@ -145,18 +151,25 @@ unicode_param_markers($h);
 
 done_testing;
 
+exit 0;
+
+# ======
+
 sub do_connect {
-    # you'll obviously have to change the following for other DBDs
-    #my $h = DBI->connect("dbi:mysql:database=test", undef, undef,
-    # 			 {RaiseError => 1 });
-    #my $h = DBI->connect('dbi:CSV:', undef, undef,
-    #                     {RaiseError => 1});
-    #my $h = DBI->connect("dbi:SQLite:dbname=test.db", '', '',
-    #		     {RaiseError => 1});
-    #my $h = DBI->connect("dbi:ODBC:DSN=asus2", undef, undef,
-    #		     {RaiseError => 1});
-    my $h = DBI->connect("dbi:Oracle:host=betoracle.easysoft.local;sid=devel", 'bet', 'b3t',
-    		     {RaiseError => 1});
+    my ($dsn, $user, $pass, %attr);
+    if (@ARGV) {
+        # eg unicode_test.pl "dbi:Pg(AutoCommit=0):host=example.com;port=6000;db=name" user pass
+        ($dsn, $user, $pass) = @ARGV;
+    }
+    else {
+        # you'll obviously have to change the following for other DBDs
+        #my $h = DBI->connect("dbi:mysql:database=test", undef, undef,
+        #my $h = DBI->connect('dbi:CSV:', undef, undef,
+        #my $h = DBI->connect("dbi:SQLite:dbname=test.db", '', '',
+        #my $h = DBI->connect("dbi:ODBC:DSN=asus2", undef, undef,
+        ($dsn, $user, $pass) = ("dbi:Oracle:host=betoracle.easysoft.local;sid=devel", 'bet', 'b3t');
+    }
+    my $h = DBI->connect($dsn, $user, $pass, { RaiseError => 1, %attr });
     return $h;
 }
 
