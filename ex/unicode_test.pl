@@ -39,8 +39,12 @@ use Test::Exception;
 use List::Util qw(first);
 use Encode;
 
-# unicode chr to use in tests for insert/select
-my $smiley = "\x{263A}";
+# unicode to use in tests for insert/select
+# the simley ("\x{263A}") is useful because it always has a multibyte encoding
+my $unicode_sample = "\x{263A}";
+
+# short binary string that is invalid utf8 and includes nul bytes
+my $binary_sample = "\xFF\x01\x00" x 20;
 
 # This script tries to guess the types for unicode columns and binary columns
 # using type_info_all - it may fail (e.g., if you don't support type_info_all
@@ -121,7 +125,6 @@ elsif ($driver eq 'ODBC') {
     $length_fn = 'len';
 }
 
-my $binary_sample = "\xFF\x01\x00" x 20;
 
 if (!defined($blob_column_type)) {
     ($blob_column_type, $blob_bind_type) =
@@ -135,10 +138,6 @@ if (!defined($unicode_column_type)) {
 BAIL_OUT("Could not find a unicode type in type_info_all - you will need to change this script to specify the type") if !defined($unicode_column_type);
 
 
-unicode_table($h);
-
-unicode_column($h);
-
 unicode_data($h);
 
 mixed_lob_unicode_data($h);
@@ -151,6 +150,10 @@ disconnect($h);
 $h = do_connect();
 
 unicode_param_markers($h);
+
+unicode_in_column_name($h);
+
+unicode_in_table_name($h);
 
 done_testing;
 
@@ -166,11 +169,12 @@ sub do_connect {
     }
     else {
         # you'll obviously have to change the following for other DBDs
-        #my $h = DBI->connect("dbi:mysql:database=test", undef, undef,
-        #my $h = DBI->connect('dbi:CSV:', undef, undef,
-        #my $h = DBI->connect("dbi:SQLite:dbname=test.db", '', '',
-        #my $h = DBI->connect("dbi:ODBC:DSN=asus2", undef, undef,
-        ($dsn, $user, $pass) = ("dbi:Oracle:host=betoracle.easysoft.local;sid=devel", 'bet', 'b3t');
+        ($dsn, $user, $pass) =
+            ("dbi:Oracle:host=betoracle.easysoft.local;sid=devel", 'bet', 'b3t');
+            #("dbi:mysql:database=test", undef, undef,
+            #('dbi:CSV:', undef, undef,
+            #("dbi:SQLite:dbname=test.db", '', '',
+            #("dbi:ODBC:DSN=asus2", undef, undef,
     }
     my $h = DBI->connect($dsn, $user, $pass, { RaiseError => 1, %attr });
     return $h;
@@ -193,7 +197,7 @@ sub drop_table {
     # DBD::CSV seems to get upset by the mixed_lob_unicode_data test
     # and fails to drop the table with:
     # Execution ERROR: utf8 "\x89" does not map to Unicode at /usr/lib/perl/5.10/IO/Handle.pm line 167.
-    unlink 'fred.csv';
+    unlink 'fred.csv' if $driver eq 'CSV';
     #diag($@) if $@;
 }
 
@@ -211,7 +215,7 @@ sub create_table {
     } $testmsg;
 }
 
-sub unicode_table {
+sub unicode_in_table_name {
     my $h = shift;
 
     my $table = "fred\x{0100}";
@@ -267,7 +271,7 @@ sub find_column {
     ok($found, 'unicode column found by qualified column_info');
 }
 
-sub unicode_column {
+sub unicode_in_column_name {
     my $h = shift;
 
     my $table = 'fred';
@@ -300,17 +304,17 @@ sub unicode_data {
 
     lives_ok {
         my $s = $h->prepare(qq/insert into $table ($column) values (?)/);
-        $s->execute($smiley);
+        $s->execute($unicode_sample);
     } 'insert unicode data into table';
 
     my $s = $h->prepare(qq/select $column from $table/);
     $s->execute;
     my $r = $s->fetchall_arrayref;
-    is($r->[0][0], $smiley, 'unicode data out = unicode data in, no where')
-	or diag(data_diff($r->[0][0]), $smiley);
+    is($r->[0][0], $unicode_sample, 'unicode data out = unicode data in, no where')
+	or diag(data_diff($r->[0][0]), $unicode_sample);
     # probably redundant but does not hurt:
-    is(length($r->[0][0]), length($smiley), 'length of output data the same')
-	or diag(data_diff($r->[0][0], $smiley));
+    is(length($r->[0][0]), length($unicode_sample), 'length of output data the same')
+	or diag(data_diff($r->[0][0], $unicode_sample));
 
     # check db thinks the chr is 1 chr
     eval {			# we might not have the correct length fn
@@ -321,15 +325,15 @@ sub unicode_data {
 	note "!!db probably does not have length function!! - $@";
     } else {
 	$r = $s->fetchall_arrayref;
-	is($r->[0][0], length($smiley), 'db length of unicode data correct');
+	is($r->[0][0], length($unicode_sample), 'db length of unicode data correct');
     }
 
     $s = $h->prepare(qq/select $column from $table where $column = ?/);
-    $s->execute($smiley);
+    $s->execute($unicode_sample);
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via parameterised where');
 
-    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote($smiley));
+    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote($unicode_sample));
     $s->execute;
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via inline where');
@@ -351,9 +355,9 @@ sub mixed_lob_unicode_data {
 
     lives_ok {
 	my $s = $h->prepare(qq/insert into $table ($column1, $column2) values (?,?)/);
-	$s->bind_param(1, $smiley);
+	$s->bind_param(1, $unicode_sample);
 	$s->bind_param(2, $binary_sample, {TYPE => $blob_bind_type});
-	#$s->execute($smiley, $binary_sample);
+	#$s->execute($unicode_sample, $binary_sample);
 	$s->execute;
     } 'insert unicode data and blob into table';
 
@@ -363,7 +367,7 @@ sub mixed_lob_unicode_data {
     my $s = $h->prepare(qq/select $column1, $column2 from $table/, {ora_pers_lob => 1});
     $s->execute;
     my $r = $s->fetchall_arrayref;
-    is($r->[0][0], $smiley, 'unicode data out = unicode data in, no where with blob');
+    is($r->[0][0], $unicode_sample, 'unicode data out = unicode data in, no where with blob');
     ok(!Encode::is_utf8($r->[0][1]), 'utf8 flag not set on blob data');
     ok($binary_sample eq $r->[0][1], 'retrieved blob = inserted blob');
 
