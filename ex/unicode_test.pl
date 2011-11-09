@@ -3,8 +3,6 @@
 #
 # Test unicode in a DBD - written for DBD::ODBC but should work for other
 # DBDs if you change the column types at the start of this script.
-# To run properly it needs an in.png PNG image file in the local working
-# directory but it does not matter what it is - probably best to keep it small.
 #
 # NOTE: will attempt to create tables called fred and
 #       fredĀ (LATIN CAPITAL LETTER A WITH MACRON)
@@ -47,13 +45,9 @@ my $smiley = "\x{263A}";
 # identify as char/binary columns. If it does set the types below or change
 # the possible SQL types in the calls to find_types below.
 #
-# Also your png file needs to be smaller than the max size a blob can handle.
-# The script attempts to check that and BAIL_OUT if not
-#
 my $unicode_column_type;	# 'nvarchar for MS SQL Server'
 my $blob_column_type;		# = 'image' for MS SQL Server
 my $blob_bind_type;		# type to pass to bind_param for blobs
-my $in_png_file = 'in.png';	# blob test file
 
 # may be different in different SQL support
 # if your DBD/db needs a different function to return the length in
@@ -117,15 +111,13 @@ if ($driver eq 'SQLite') {
     # DBD::ODBC has type_info_all and column_info support
     $length_fn = 'len';
 }
-# read in.png file so we can see how big it is
-open(my $ifh, "<:raw", $in_png_file) or BAIL_OUT("Need an in.png file");
-my $png = do { local $/ = undef;<$ifh>  };
-close $ifh;
+
+my $binary_sample = "\xFF\x01\x00" x 20;
 
 if (!defined($blob_column_type)) {
     ($blob_column_type, $blob_bind_type) =
 	# -98 for DB2 which gets true blob column type
-	find_type($h, [30, -98, SQL_LONGVARBINARY, SQL_BINARY, SQL_VARBINARY], length($png));
+	find_type($h, [30, -98, SQL_LONGVARBINARY, SQL_BINARY, SQL_VARBINARY], length($binary_sample));
 }
 BAIL_OUT("Could not find an image/blob type in type_info_all - you will need to change this script to specify the type") if !defined($blob_column_type);
 if (!defined($unicode_column_type)) {
@@ -337,27 +329,23 @@ sub mixed_lob_unicode_data {
 		 [{name => $column1, type => $unicode_column_type . "(20)"},
 		  {name => $column2, type => $blob_column_type}]);
 
-    open(my $ifh, "<:raw", $in_png_file);
-    my $png = do { local $/ = undef;<$ifh>  };
-    close $ifh;
-
     lives_ok {
 	my $s = $h->prepare(qq/insert into $table ($column1, $column2) values (?,?)/);
 	$s->bind_param(1, $smiley);
-	$s->bind_param(2, $png, {TYPE => $blob_bind_type});
-	#$s->execute($smiley, $png);
+	$s->bind_param(2, $binary_sample, {TYPE => $blob_bind_type});
+	#$s->execute($smiley, $binary_sample);
 	$s->execute;
     } 'insert unicode data and blob into table';
 
     # argh - have to set LongReadLen before doing a prepare in DBD::Oracle
     # because it picks a LongReadLen value when it describes the result-set
-    $h->{LongReadLen} = length($png) * 2;
+    $h->{LongReadLen} = length($binary_sample) * 2;
     my $s = $h->prepare(qq/select $column1, $column2 from $table/, {ora_pers_lob => 1});
     $s->execute;
     my $r = $s->fetchall_arrayref;
     is($r->[0][0], $smiley, 'unicode data out = unicode data in, no where with blob');
     ok(!Encode::is_utf8($r->[0][1]), 'utf8 flag not set on blob data');
-    ok($png eq $r->[0][1], 'retrieved blob = inserted blob');
+    ok($binary_sample eq $r->[0][1], 'retrieved blob = inserted blob');
 
     drop_table($h, $table);
 }
