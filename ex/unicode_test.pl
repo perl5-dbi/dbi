@@ -105,6 +105,9 @@ elsif ($driver eq 'CSV') {
     $h->{f_ext} = '.csv';
     $length_fn = 'char_length';
 }
+elsif ($driver eq 'Pg') {
+    $unicode_column_type = 'varchar';
+}
 elsif ($driver eq 'mysql') {
     # does not support type_info_all
     $h->{mysql_enable_utf8} = 1;
@@ -230,10 +233,14 @@ sub unicode_table {
 sub find_table {
     my ($h, $table) = @_;
 
+    # won't find a match if the returned data is not utf8 decoded
     my $s = $h->table_info(undef, undef, undef, 'TABLE');
     my $r = $s->fetchall_arrayref;
-    my $found = first {$_->[2] =~ /$table/i} @$r;
+    my $found = first { $_->[2] =~ /$table/i} @$r;
     ok($found, 'unicode table found in unqualified table_info');
+
+    # TODO also report if any of the table names have utf8 on
+    # TODO also check if decoding as utf8 enables finding the table
 
     $s = $h->table_info(undef, undef, $table, 'TABLE');
     $r = $s->fetchall_arrayref;
