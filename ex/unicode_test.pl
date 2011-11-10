@@ -105,8 +105,8 @@ elsif ($driver eq 'CSV') {
     #####$blob_column_type = 'blob';
     #####$blob_bind_type = SQL_BLOB;
     #####$unicode_column_type = 'varchar';
-    $h->{f_encoding} = 'UTF8';
-    $h->{f_ext} = '.csv';
+    $h->{f_encoding} = 'UTF-8';
+    $h->{f_ext} = '.csv/r';
     $length_fn = 'char_length';
 }
 elsif ($driver eq 'Pg') {
@@ -123,6 +123,13 @@ elsif ($driver eq 'mysql') {
 elsif ($driver eq 'ODBC') {
     # DBD::ODBC has type_info_all and column_info support
     $length_fn = 'len';
+} elsif ($driver eq 'Unify') {
+    # Unify does not have varchar
+    $h->{ChopBlanks} = 1;
+    $blob_column_type = 'binary';
+    $unicode_column_type = 'char';	# or text
+    $h->{uni_unicode} = 1;	# Available in the upcoming 0.81
+    $length_fn = 'undefined';	# I don't think Unify has a function like this
 }
 
 
@@ -155,6 +162,9 @@ unicode_in_column_name($h);
 
 unicode_in_table_name($h);
 
+$h->disconnect;
+unlink 'unitest_8.db' if $driver eq "SQLite";
+
 done_testing;
 
 exit 0;
@@ -162,20 +172,30 @@ exit 0;
 # ======
 
 sub do_connect {
-    my ($dsn, $user, $pass, %attr);
-    if (@ARGV) {
-        # eg unicode_test.pl "dbi:Pg(AutoCommit=0):host=example.com;port=6000;db=name" user pass
-        ($dsn, $user, $pass) = @ARGV;
-    }
-    else {
-        # you'll obviously have to change the following for other DBDs
-        ($dsn, $user, $pass) =
-            ("dbi:Oracle:host=betoracle.easysoft.local;sid=devel", 'bet', 'b3t');
-            #("dbi:mysql:database=test", undef, undef,
-            #('dbi:CSV:', undef, undef,
-            #("dbi:SQLite:dbname=test.db", '', '',
-            #("dbi:ODBC:DSN=asus2", undef, undef,
-    }
+    # eg unicode_test.pl "dbi:Pg(AutoCommit=0):host=example.com;port=6000;db=name" user pass
+    my ($dsn, $user, $pass, %attr) = @ARGV;
+
+    $user //= $ENV{DBI_USER} // undef;
+    $pass //= $ENV{DBI_PASS} // undef;
+
+    # A (semi)sane set of defaults
+    my %dsn  = (
+	csv	=> [ "dbi:CSV:",                  $user, $pass ],
+	mysql	=> [ "dbi:mysql:database=test",   $user, $pass ],
+	odbc	=> [ "dbi:ODBC:DSN=asus2",        $user, $pass ],
+	oracle	=> [ "dbi:Oracle:host=betoracle.easysoft.local;sid=devel",
+						  'bet', 'b3t' ],
+	pg	=> [ "dbi:Pg:dbname=test",        $user, $pass ],
+	sqlite	=> [ "dbi:SQLite:dbname=unitest_8.db", "", ""       ],
+	unify	=> [ "dbi:Unify:",                $ENV{USCHEMA}, undef ],
+	);
+
+    # Either pass a fully qualified DSN or use the default shortcuts
+    # eg unicode_test.pl CSV
+    $dsn //= "SQLite";
+    $dsn =~ m/:/ or
+        ($dsn, $user, $pass) = @{$dsn{lc $dsn} // die "No connect info\n"};
+
     my $h = DBI->connect($dsn, $user, $pass, { RaiseError => 1, %attr });
     return $h;
 }
@@ -191,9 +211,11 @@ sub drop_table {
 
     eval {
         local $h->{PrintError} = 0;
+        $table = $h->quote_identifier ($table);
         my $s = $h->prepare(qq/drop table $table/);
         $s->execute;
     };
+    $h->commit if $driver eq 'Unify';
     # DBD::CSV seems to get upset by the mixed_lob_unicode_data test
     # and fails to drop the table with:
     # Execution ERROR: utf8 "\x89" does not map to Unicode at /usr/lib/perl/5.10/IO/Handle.pm line 167.
@@ -206,12 +228,15 @@ sub drop_table {
 sub create_table {
     my ($h, $testmsg, $table, $columns) = @_;
 
+    $table = $h->quote_identifier ($table);
     my $sql = qq/create table $table ( / .
-	join(",", map {"$_->{name} $_->{type}"} @$columns) . ')';
+	join(",", map {join " " => $h->quote_identifier ($_->{name}), $_->{type}} @$columns) . ')';
 
     return lives_ok {
+        diag ($sql);
         my $s = $h->prepare($sql);
         $s->execute;
+	$dbd eq "DBD::Unify" and $h->commit;
     } $testmsg;
 }
 
@@ -333,7 +358,7 @@ sub unicode_data {
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via parameterised where');
 
-    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote($unicode_sample));
+    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote_identifier($unicode_sample));
     $s->execute;
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via inline where');
@@ -417,7 +442,7 @@ sub find_type {
 
 	foreach my $type (@$types) {
         foreach (@$r) {
-            note("Found type $_->[$sql_type_idx] ($_->[$type_name_idx]) size=" . ($column_size_idx ? $_->[$column_size_idx] : 'undef'));
+            note("Found type $_->[$sql_type_idx] ($_->[$type_name_idx]) size=" . ($column_size_idx ? $_->[$column_size_idx] // 'undef' : 'undef'));
             if ($_->[$sql_type_idx] eq $type) {
                 if ((!defined($minsize)) || (!defined($column_size_idx)) ||
                         ($minsize && ($_->[$column_size_idx] > $minsize))) {
