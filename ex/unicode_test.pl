@@ -358,7 +358,7 @@ sub unicode_data {
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via parameterised where');
 
-    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote_identifier($unicode_sample));
+    $s = $h->prepare(qq/select $column from $table where $column = / . $h->quote($unicode_sample));
     $s->execute;
     $r = $s->fetchall_arrayref;
     is(scalar(@$r), 1, 'select unicode data via inline where');
