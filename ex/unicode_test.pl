@@ -10,8 +10,6 @@
 # NOTE: will attempt to create tables called fred and
 #       fredĀ (LATIN CAPITAL LETTER A WITH MACRON)
 #
-# TODO: use identifier_quote for table/column names - it is safer
-#
 # NOTE: there are multiple ways of doing named parameter markers in DBDs.
 # some do:
 #   insert into sometable (a_column) values(:fred);
