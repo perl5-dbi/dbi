@@ -268,13 +268,28 @@ sub find_table {
     my $found = first { $_->[2] =~ /$table/i} @$r;
     ok($found, 'unicode table found in unqualified table_info');
 
-    # TODO also report if any of the table names have utf8 on
-    # TODO also check if decoding as utf8 enables finding the table
+    SKIP: {
+          skip "table found via table_info", 1 if $found;
+
+          $found = first { Encode::decode_utf8($_->[2]) =~ /$table/i} @$r;
+          ok(!$found, "Table not found initially but when table name decoded it was found as $table");
+    };
+    my $found_some_utf8_tables;
+    foreach ($r) {
+        $found_some_utf8_tables++ if Encode::is_utf8($_->[2]);
+    }
+    note(($found_some_utf8_tables ? 'Found' : 'Did not find') ,
+         ' tables with utf8 on');
 
     $s = $h->table_info(undef, undef, $table, 'TABLE');
     $r = $s->fetchall_arrayref;
     $found = first {$_->[2] =~ /$table/i} @$r;
     ok($found, 'unicode table found by qualified table_info');
+    SKIP {
+	skip "table not found", 1 if !$found;
+
+	ok(Encode::is_utf8($found), 'utf8 flag set of unicode table name');
+    }
 }
 
 sub find_column {
