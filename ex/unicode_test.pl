@@ -1,5 +1,5 @@
 #
-# Copyright Martin J. Evans 
+# Copyright Martin J. Evans
 #
 # Test unicode in a DBD - written for DBD::ODBC but should work for other
 # DBDs if you change the column types at the start of this script.
@@ -64,7 +64,7 @@ my $length_fn = 'length';
 
 my $h = do_connect();
 
-# output a load of data 
+# output a load of data
 my $driver = $h->{Driver}->{Name};
 #note("Driver being used is $driver");
 my $dbd="DBD::$h->{Driver}{Name}";
@@ -285,7 +285,7 @@ sub find_table {
     $r = $s->fetchall_arrayref;
     $found = first {$_->[2] =~ /$table/i} @$r;
     ok($found, 'unicode table found by qualified table_info');
-    SKIP {
+    SKIP: {
 	skip "table not found", 1 if !$found;
 
 	ok(Encode::is_utf8($found), 'utf8 flag set of unicode table name');
@@ -319,8 +319,7 @@ sub unicode_in_column_name {
 
     drop_table($h, $table);
 
-    
-    my $created = 
+    my $created =
 	create_table($h, 'unicode column name supported', $table,
 		     [{name => $column, type => 'int'}]);
   SKIP: {
