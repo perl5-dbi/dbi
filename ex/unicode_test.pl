@@ -286,9 +286,10 @@ sub find_table {
     $found = first {$_->[2] =~ /$table/i} @$r;
     ok($found, 'unicode table found by qualified table_info');
     SKIP: {
-	skip "table not found", 1 if !$found;
+          skip "table not found", 1 if !$found;
 
-	ok(Encode::is_utf8($found), 'utf8 flag set of unicode table name');
+          ok(Encode::is_utf8($found->[2]),
+             'utf8 flag set on unicode table name');
     }
 }
 
