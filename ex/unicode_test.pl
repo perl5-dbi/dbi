@@ -28,7 +28,7 @@
 # the latter is because DBD::ODBC parses the SQL looking for placeholders
 # and it does this as bytes not UTF-8 encoded strings.
 #
-use DBI qw(:sql_types data_diff);
+use DBI qw(:sql_types data_diff neat);
 use strict;
 use warnings;
 use Data::Dumper;
@@ -175,8 +175,8 @@ sub do_connect {
     # eg unicode_test.pl "dbi:Pg(AutoCommit=0):host=example.com;port=6000;db=name" user pass
     my ($dsn, $user, $pass, %attr) = @ARGV;
 
-    $user //= $ENV{DBI_USER} // undef;
-    $pass //= $ENV{DBI_PASS} // undef;
+    $user ||= $ENV{DBI_USER};
+    $pass ||= $ENV{DBI_PASS};
 
     # A (semi)sane set of defaults
     my %dsn  = (
@@ -192,9 +192,9 @@ sub do_connect {
 
     # Either pass a fully qualified DSN or use the default shortcuts
     # eg unicode_test.pl CSV
-    $dsn //= "SQLite";
+    $dsn ||= "SQLite";
     $dsn =~ m/:/ or
-        ($dsn, $user, $pass) = @{$dsn{lc $dsn} // die "No connect info\n"};
+        ($dsn, $user, $pass) = @{$dsn{lc $dsn} || die "No connect info\n"};
 
     my $h = DBI->connect($dsn, $user, $pass, { RaiseError => 1, %attr });
     return $h;
@@ -453,11 +453,12 @@ sub find_type {
         note("type_info_all has no key for COLUMN_SIZE so not performing size checks");
     }
 
-    BAIL_OUT("DBD does not seem to support type_info_all - you will need to edit this script to specify column types") if !$r || (scalar(@$r) == 0);
+    BAIL_OUT("DBD does not seem to support type_info_all - you will need to edit this script to specify column types")
+        if !$r || (scalar(@$r) == 0);
 
-	foreach my $type (@$types) {
+    foreach my $type (@$types) {
         foreach (@$r) {
-            note("Found type $_->[$sql_type_idx] ($_->[$type_name_idx]) size=" . ($column_size_idx ? $_->[$column_size_idx] // 'undef' : 'undef'));
+            note("Found type $_->[$sql_type_idx] ($_->[$type_name_idx]) size=" . ($column_size_idx ? neat($_->[$column_size_idx]) : 'undef'));
             if ($_->[$sql_type_idx] eq $type) {
                 if ((!defined($minsize)) || (!defined($column_size_idx)) ||
                         ($minsize && ($_->[$column_size_idx] > $minsize))) {
@@ -470,3 +471,5 @@ sub find_type {
         }
     }
 }
+
+# vim:ts=8:sw=4:et
