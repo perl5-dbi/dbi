@@ -124,10 +124,9 @@ elsif ($driver eq 'ODBC') {
     # DBD::ODBC has type_info_all and column_info support
     $length_fn = 'len';
 } elsif ($driver eq 'Unify') {
-    # Unify does not have varchar
-    $h->{ChopBlanks} = 1;
     $blob_column_type = 'binary';
     $unicode_column_type = 'char';	# or text
+    $h->{ChopBlanks} = 1;       # Unify does not have varchar so we use char and ChopBlanks
     $h->{uni_unicode} = 1;	# Available in the upcoming 0.81
     $length_fn = 'undefined';	# I don't think Unify has a function like this
 }
@@ -436,7 +435,6 @@ sub unicode_param_markers {
 sub find_type {
     my ($h, $types, $minsize) = @_;
 
-
     my $r = $h->type_info_all;
 
     #print Dumper($r);
@@ -470,6 +468,7 @@ sub find_type {
             }
         }
     }
+    return; # no type found
 }
 
 # vim:ts=8:sw=4:et
