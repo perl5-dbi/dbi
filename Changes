@@ -15,6 +15,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed sql_type_cast example and typo in errors (Martin J. Evans)
   Fixed parameter-count check for complicated statements using
     DBI::DBD::SqlEngine + SQL::Statement::Param (H.Merijn Brand)
+  Fixed default table_info in DBI::DBD::SqlEngine which passed NAMES
+    attribute instead of NAME to DBD::Sponge RT72343 (Martin J. Evans)
 
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect
