@@ -662,14 +662,14 @@ sub get_avail_tables
         my @tables = $dbh->func("get_avail_tables");
 
         # Temporary kludge: DBD::Sponge dies if @tables is empty. :-(
-        # this no longer seems to be true @tables or return;
+        @tables or return;
 
         my $dbh2 = $dbh->func("sql_sponge_driver");
         my $sth = $dbh2->prepare(
                                   "TABLE_INFO",
                                   {
                                      rows  => \@tables,
-                                     NAME => $names,
+                                     NAMES => $names,
                                   }
                                 );
         $sth or $dbh->set_err( $DBI::stderr, $dbh2->errstr );
