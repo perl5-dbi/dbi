@@ -6216,8 +6216,11 @@ was added in 1.36.
   ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub);
   ($tuples, $rows) = $sth->execute_for_fetch($fetch_tuple_sub, \@tuple_status);
 
-The execute_for_fetch() method is used to perform bulk operations
-and is most often used via the execute_array() method, not directly.
+The execute_for_fetch() method is used to perform bulk operations and
+although it is most often used via the execute_array() method you can
+use it directly. The main difference between execute_array and
+execute_for_fetch is the former does column or row-wise binding and
+the latter uses row-wise binding.
 
 The fetch subroutine, referenced by $fetch_tuple_sub, is expected
 to return a reference to an array (known as a 'tuple') or undef.
