@@ -24,6 +24,7 @@ DBI::Changes - List of significant changes to the DBI
   Reserved spatialite_ as a driver prefix for DBD::Spatialite
   Reserved mo_ as a driver prefix for DBD::MO
   Updated link to the SQL Reunion 95 docs, RT69577 (Ash Daminato)
+  Changed links for DBI recipes. RT73286 (Martin J. Evans)
 
 =head2 Changes in DBI 1.616 (svn r14616) 30th December 2010
 

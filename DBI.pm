@@ -8059,7 +8059,8 @@ Other DBI related links:
  http://wdvl.com/Authoring/DB/Intro/toc.html
  http://www.hotwired.com/webmonkey/backend/tutorials/tutorial1.html
  http://bumppo.net/lists/macperl/1999/06/msg00197.html
- http://gmax.oltrelinux.com/dbirecipes.html
+ http://www.perlmonks.org/?node=DBI%20recipes
+ http://www.perlmonks.org/?node=Speeding%20up%20the%20DBI
 
 Other database related links:
 
