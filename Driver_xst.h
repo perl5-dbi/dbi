@@ -62,10 +62,10 @@ dbdxst_bind_params(SV *sth, imp_sth_t *imp_sth, I32 items, I32 ax)
     ) {
 	char errmsg[99];
         /* clear any previous ParamValues before error is generated */
-        SV **svp = hv_fetch((HV*)DBIc_MY_H(imp_sth),"ParamValues",11,FALSE));
+        SV **svp = hv_fetch((HV*)DBIc_MY_H(imp_sth),"ParamValues",11,FALSE);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
-            hv_clear(*svp);
+            hv_clear(hv);
         }
 	sprintf(errmsg,"called with %d bind variables when %d are needed",
 		(int)items-1, DBIc_NUM_PARAMS(imp_sth));
