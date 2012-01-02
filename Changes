@@ -14,6 +14,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed sql_type_cast example and typo in errors (Martin J. Evans)
   Fixed Gofer error handling for keeperr methods like ping (Tim Bunce)
   Fixed $dbh->clone({}) RT73250 (Tim Bunce)
+  Fixed is_nested_call logic error RT73118 (Reini Urban)
 
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect

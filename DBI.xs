@@ -3243,7 +3243,7 @@ XS(XS_DBI_dispatch)
         }
     }
 
-    is_nested_call = (call_depth > 1 || (DBIc_PARENT_COM(imp_xxh) && DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh))) >= 1);
+    is_nested_call = ( call_depth > 1 || (DBIc_PARENT_COM(imp_xxh) && (DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) >= 1)) );
 
 
     /* --- dispatch --- */
