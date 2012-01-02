@@ -97,7 +97,12 @@
         if (my $warnings = $response->warnings) {
             warn $_ for @$warnings;
         }
-        return $h->set_err($response->err_errstr_state);
+        my ($err, $errstr, $state) = $response->err_errstr_state;
+        # Only set_err() if there's an error else leave the current values
+        # (The current values will normally be set undef by the DBI dispatcher
+        # except for methods marked KEEPERR such as ping.)
+        $h->set_err($err, $errstr, $state) if defined $err;
+        return undef;
     }
 
 
