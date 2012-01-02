@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.617 (svn rXXX)
+=head2 Changes in DBI 1.617 (svn r15064) 2nd January 2012
 
   Fixed ParamTypes example in the pod (Martin J. Evans)
   Fixed the definition of ArrayTupleStatus and remove confusion over
@@ -28,6 +28,7 @@ DBI::Changes - List of significant changes to the DBI
   Added some more fetchall_arrayref(..., $maxrows) tests (Tim Bunce)
   Clarified docs for fetchall_arrayref called on an inactive handle.
   Clarified docs for clone method (Tim Bunce)
+  Added note to DBI::Profile about async queries (Marcel Grünauer).
   Reserved spatialite_ as a driver prefix for DBD::Spatialite
   Reserved mo_ as a driver prefix for DBD::MO
   Updated link to the SQL Reunion 95 docs, RT69577 (Ash Daminato)
