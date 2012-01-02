@@ -1511,8 +1511,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub clone {
 	my ($old_dbh, $attr) = @_;
-	my $closure = $old_dbh->{dbi_connect_closure} or return;
-	unless ($attr) {
+
+	my $closure = $old_dbh->{dbi_connect_closure}
+            or return $old_dbh->set_err($DBI::stderr, "Can't clone handle");
+
+	unless ($attr) { # XXX deprecated, caller should always pass a hash ref
 	    # copy attributes visible in the attribute cache
 	    keys %$old_dbh;	# reset iterator
 	    while ( my ($k, $v) = each %$old_dbh ) {
@@ -1528,6 +1531,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		ShowErrorStatement TaintIn TaintOut
 	    ));
 	}
+
 	# use Data::Dumper; warn Dumper([$old_dbh, $attr]);
 	my $new_dbh = &$closure($old_dbh, $attr);
 	unless ($new_dbh) {
@@ -1535,6 +1539,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    my $drh = $old_dbh->{Driver};
 	    return $old_dbh->set_err($drh->err, $drh->errstr, $drh->state);
 	}
+        $new_dbh->{dbi_connect_closure} = $closure;
 	return $new_dbh;
     }
 
@@ -4307,31 +4312,26 @@ The following methods are specified for DBI database handles:
 
 =head3 C<clone>
 
-  $new_dbh = $dbh->clone();
   $new_dbh = $dbh->clone(\%attr);
 
 The C<clone> method duplicates the $dbh connection by connecting
 with the same parameters ($dsn, $user, $password) as originally used.
 
 The attributes for the cloned connect are the same as those used
-for the original connect, with some other attributes merged over
-them depending on the \%attr parameter.
-
-If \%attr is given then the attributes it contains are merged into
-the original attributes and override any with the same names.
-Effectively the same as doing:
+for the I<original> connect, with any other attributes in C<\%attr>
+merged over them.  Effectively the same as doing:
 
   %attribues_used = ( %original_attributes, %attr );
 
 If \%attr is not given then it defaults to a hash containing all
 the attributes in the attribute cache of $dbh excluding any non-code
 references, plus the main boolean attributes (RaiseError, PrintError,
-AutoCommit, etc.). This behaviour is subject to change.
+AutoCommit, etc.). I<This behaviour is unreliable and so use of clone without
+an argument is deprecated.>
 
 The clone method can be used even if the database handle is disconnected.
 
-The C<clone> method was added in DBI 1.33. It is very new and likely
-to change.
+The C<clone> method was added in DBI 1.33.
 
 =head3 C<data_sources>
 

@@ -12,6 +12,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed the definition of ArrayTupleStatus and remove confusion over
     rows affected in list context of execute_array (Martin J. Evans)
   Fixed sql_type_cast example and typo in errors (Martin J. Evans)
+  Fixed Gofer error handling for keeperr methods like ping (Tim Bunce)
+  Fixed $dbh->clone({}) RT73250 (Tim Bunce)
 
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect
@@ -22,6 +24,7 @@ DBI::Changes - List of significant changes to the DBI
   Added TXN trace flags and applied CON and TXN to relevant methods (Tim Bunce)
   Added some more fetchall_arrayref(..., $maxrows) tests (Tim Bunce)
   Clarified docs for fetchall_arrayref called on an inactive handle.
+  Clarified docs for clone method (Tim Bunce)
   Reserved spatialite_ as a driver prefix for DBD::Spatialite
   Reserved mo_ as a driver prefix for DBD::MO
   Updated link to the SQL Reunion 95 docs, RT69577 (Ash Daminato)

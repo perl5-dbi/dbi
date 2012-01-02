@@ -66,7 +66,7 @@ sub fetch {
 # =================================================
 package main;
 
-use Test::More tests => 36;
+use Test::More tests => 43;
 
 BEGIN {
     use_ok( 'DBI' );
@@ -139,12 +139,23 @@ isa_ok( $dbh2, 'MyDBI::db', "Clone A" );
 is($dbh2 != $dbh, 1);
 is($dbh2->{CompatMode}, 1);
 
-my $dbh3 = $dbh->clone;
+my $dbh3 = $dbh->clone({});
 isa_ok( $dbh3, 'MyDBI::db', 'Clone B' );
 is($dbh3 != $dbh, 1);
 is($dbh3 != $dbh2, 1);
 isa_ok( $dbh3, 'MyDBI::db');
 is($dbh3->{CompatMode}, 1);
+
+my $dbh2c = $dbh2->clone;
+isa_ok( $dbh2c, 'MyDBI::db', "Clone of clone A" );
+is($dbh2c != $dbh2, 1);
+is($dbh2c->{CompatMode}, 1);
+
+my $dbh3c = $dbh3->clone({ CompatMode => 0 });
+isa_ok( $dbh3c, 'MyDBI::db', 'Clone of clone B' );
+is((grep { $dbh3c == $_ } $dbh, $dbh2, $dbh3), 0);
+isa_ok( $dbh3c, 'MyDBI::db');
+ok(!$dbh3c->{CompatMode});
 
 $tmp = $dbh->sponge_test_installed_method('foo','bar');
 isa_ok( $tmp, "ARRAY", "installed method" );
