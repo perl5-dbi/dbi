@@ -1,15 +1,17 @@
 # $Id$
 # vim: ts=8:sw=4:et
 #
-# Copyright (c) 1994-2010  Tim Bunce  Ireland
+# Copyright (c) 1994-2012  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #
 
+package DBI;
+
 require 5.008_001;
 
 BEGIN {
-$DBI::VERSION = "1.616"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.617"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -124,7 +126,7 @@ Tim he is very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.616
+This is the DBI specification that corresponds to the DBI version 1.617
 ($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -152,9 +154,6 @@ L<http://search.cpan.org/search?query=DBI&mode=all>.
 =cut
 
 # The POD text continues at the end of the file.
-
-
-package DBI;
 
 use Carp();
 use DynaLoader ();
@@ -8107,7 +8106,7 @@ Perl by Larry Wall and the C<perl5-porters>.
 
 =head1 COPYRIGHT
 
-The DBI module is Copyright (c) 1994-2009 Tim Bunce. Ireland.
+The DBI module is Copyright (c) 1994-2012 Tim Bunce. Ireland.
 All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
