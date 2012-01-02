@@ -6379,7 +6379,9 @@ The C<fetchall_arrayref> method can be used to fetch all the data to be
 returned from a prepared and executed statement handle. It returns a
 reference to an array that contains one reference per row.
 
-If there are no rows to return, C<fetchall_arrayref> returns a reference
+If called on an I<inactive> statement handle, C<fetchall_arrayref> returns undef.
+
+If there are no rows left to return from an I<active> statement handle, C<fetchall_arrayref> returns a reference
 to an empty array. If an error occurs, C<fetchall_arrayref> returns the
 data fetched thus far, which may be none.  You should check C<$sth-E<gt>err>
 afterwards (or use the C<RaiseError> attribute) to discover if the data is
