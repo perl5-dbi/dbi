@@ -26,7 +26,7 @@ require 5.004;
 use strict;
 
 use RPC::PlServer 0.2001;
-# require DBI; # deferred till AcceptVersion() to aid threading
+require DBI;
 require Config;
 
 
