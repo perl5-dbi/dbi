@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 72;
+use Test::More tests => 79;
 
 ## ----------------------------------------------------------------------------
 ## 08keeperr.t
@@ -86,8 +86,10 @@ sub ping_keeps_err {
     is $dbh->err, 42, "err unchanged after ping";
     is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
     ok !$dbh->ping, "ping returns false";
-    is $dbh->err, 42, "err unchanged after ping";
-    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+    # it's reasonable for ping() to set err/errstr if it fails
+    # so here we just test that there is an error
+    ok $dbh->err, "err true after failed ping";
+    ok $dbh->errstr, "errstr true after failed ping";
 }
 
 ## ----------------------------------------------------------------------------
