@@ -19,6 +19,7 @@ DBI::Changes - List of significant changes to the DBI
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect
     people doing DBI->{Attrib}.
+  Clear ParamValues on bind_param param count error RT66127 (Tim Bunce)
 
   Added pod for default_user to DBI::DBD (Martin J. Evans)
   Added CON, ENC and DBD trace flags and extended 09trace.t (Martin J. Evans)
