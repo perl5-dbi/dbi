@@ -163,7 +163,7 @@ sub run_tests {
     END { unlink glob "fruit.???" }
     ok $dbh->do("DROP TABLE IF EXISTS fruit");
     ok $dbh->do("CREATE TABLE fruit (dKey INT, dVal VARCHAR(10))");
-    die "$test_run_tag aborted\n" if $DBI::err;
+    die "$test_run_tag aborted ($DBI::errstr)\n" if $DBI::err;
 
     my $sth = do {
         local $dbh->{RaiseError} = 0;
