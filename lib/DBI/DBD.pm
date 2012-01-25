@@ -1975,7 +1975,7 @@ as described in L</Driver.h> above.
 The (obsolete) macros such as C<DBIh_EVENT2> should be removed from drivers.
 
 The names C<dbis> and C<DBIS>, which were used in previous versions of
-this document, should be replaced with the C<DBIc_STATE(imp_xxh)> macro.
+this document, should be replaced with the C<DBIc_DBISTATE(imp_xxh)> macro.
 
 The name C<DBILOGFP>, which was also used in previous versions of this
 document, should be replaced by C<DBIc_LOGPIO(imp_xxh)>.
