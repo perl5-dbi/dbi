@@ -552,7 +552,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
             v = SvPV(sv,len);
         else {
             /* handle Overload magic refs */
-            SvAMAGIC_off(sv);   /* should really be done via local scoping */
+            (void)SvAMAGIC_off(sv);   /* should really be done via local scoping */
             v = SvPV(sv,len);   /* XXX how does this relate to SvGMAGIC?   */
             SvAMAGIC_on(sv);
         }
@@ -769,14 +769,13 @@ static int
 dbih_logmsg(imp_xxh_t *imp_xxh, const char *fmt, ...)
 {
     dTHX;
-    dPERINTERP;
     va_list args;
 #ifdef I_STDARG
     va_start(args, fmt);
 #else
     va_start(args);
 #endif
-    (void) PerlIO_vprintf(DBIS->logfp, fmt, args);
+    (void) PerlIO_vprintf(DBIc_DBISTATE(imp_xxh)->logfp, fmt, args);
     va_end(args);
     (void)imp_xxh;
     return 1;
@@ -893,9 +892,8 @@ static int
 set_trace(SV *h, SV *level_sv, SV *file)
 {
     dTHX;
-    dPERINTERP;
     D_imp_xxh(h);
-    int RETVAL = DBIS->debug; /* Return trace level in effect now */
+    int RETVAL = DBIc_DBISTATE(imp_xxh)->debug; /* Return trace level in effect now */
     IV level = parse_trace_flags(h, level_sv, RETVAL);
     set_trace_file(file);
     if (level != RETVAL) { /* set value */
@@ -921,7 +919,6 @@ static SV *
 dbih_inner(pTHX_ SV *orv, const char *what)
 {   /* convert outer to inner handle else croak(what) if what is not NULL */
     /* if what is NULL then return NULL for invalid handles */
-    dPERINTERP;
     MAGIC *mg;
     SV *ohv;            /* outer HV after derefing the RV       */
     SV *hrv;            /* dbi inner handle RV-to-HV            */
@@ -932,8 +929,11 @@ dbih_inner(pTHX_ SV *orv, const char *what)
     if (!ohv || SvTYPE(ohv) != SVt_PVHV) {
         if (!what)
             return NULL;
-        if (DBIS_TRACE_LEVEL)
-            sv_dump(orv);
+        if (1) {
+            dPERINTERP;
+            if (DBIS_TRACE_LEVEL)
+                sv_dump(orv);
+        }
         if (!SvOK(orv))
             croak("%s given an undefined handle %s",
                 what, "(perhaps returned from a previous call which failed)");
@@ -983,7 +983,6 @@ dbih_getcom(SV *hrv) /* used by drivers via DBIS func ptr */
 static imp_xxh_t *
 dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.    */
 {
-    dPERINTERP;
     imp_xxh_t *imp_xxh;
     MAGIC *mg;
     SV *sv;
@@ -991,16 +990,19 @@ dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be f
     /* important and quick sanity check (esp non-'safe' Oraperl)        */
     if (SvROK(hrv))                     /* must at least be a ref */
         sv = SvRV(hrv);
-    else if (hrv == DBI_LAST_HANDLE)    /* special for var::FETCH */
-        sv = DBI_LAST_HANDLE;
-    else if (sv_derived_from(hrv, "DBI::common")) {
-        /* probably a class name, if ref($h)->foo() */
-        return 0;
-    }
     else {
-        sv_dump(hrv);
-        croak("Invalid DBI handle %s", neatsvpv(hrv,0));
-        sv = &PL_sv_undef; /* avoid "might be used uninitialized" warning       */
+        dPERINTERP;
+        if (hrv == DBI_LAST_HANDLE)    /* special for var::FETCH */
+            sv = DBI_LAST_HANDLE;
+        else if (sv_derived_from(hrv, "DBI::common")) {
+            /* probably a class name, if ref($h)->foo() */
+            return 0;
+        }
+        else {
+            sv_dump(hrv);
+            croak("Invalid DBI handle %s", neatsvpv(hrv,0));
+            sv = &PL_sv_undef; /* avoid "might be used uninitialized" warning       */
+        }
     }
 
     /* Short cut for common case. We assume that a magic var always     */
@@ -1075,7 +1077,6 @@ static SV *
 dbih_make_fdsv(SV *sth, const char *imp_class, STRLEN imp_size, const char *col_name)
 {
     dTHX;
-    dPERINTERP;
     D_imp_sth(sth);
     const STRLEN cn_len = strlen(col_name);
     imp_fdh_t *imp_fdh;
@@ -1084,7 +1085,7 @@ dbih_make_fdsv(SV *sth, const char *imp_class, STRLEN imp_size, const char *col_
         croak("panic: dbih_makefdsv %s '%s' imp_size %ld invalid",
                 imp_class, col_name, (long)imp_size);
     if (DBIc_TRACE_LEVEL(imp_sth) >= 5)
-        PerlIO_printf(DBILOGFP,"    dbih_make_fdsv(%s, %s, %ld, '%s')\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_sth),"    dbih_make_fdsv(%s, %s, %ld, '%s')\n",
                 neatsvpv(sth,0), imp_class, (long)imp_size, col_name);
     fdsv = dbih_make_com(sth, (imp_xxh_t*)imp_sth, imp_class, imp_size, cn_len+2, 0);
     imp_fdh = (imp_fdh_t*)(void*)SvPVX(fdsv);
@@ -1098,12 +1099,12 @@ static SV *
 dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_size, STRLEN extra, SV* imp_templ)
 {
     dTHX;
-    dPERINTERP;
     static const char *errmsg = "Can't make DBI com handle for %s: %s";
     HV *imp_stash;
     SV *dbih_imp_sv;
     imp_xxh_t *imp;
-    (void)extra; /* unused */
+    int trace_level;
+    (void)extra; /* unused arg */
 
     if ( (imp_stash = gv_stashpv(imp_class, FALSE)) == NULL)
         croak(errmsg, imp_class, "unknown package");
@@ -1122,9 +1123,18 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
         }
     }
 
-    if ((p_imp_xxh ? DBIc_TRACE_LEVEL(p_imp_xxh) : DBIS_TRACE_LEVEL) >= 5)
+    if (p_imp_xxh) {
+        trace_level = DBIc_TRACE_LEVEL(p_imp_xxh);
+    }
+    else {
+        dPERINTERP;
+        trace_level = DBIS_TRACE_LEVEL;
+    }
+    if (trace_level >= 5) {
+        dPERINTERP;
         PerlIO_printf(DBILOGFP,"    dbih_make_com(%s, %p, %s, %ld, %p) thr#%p\n",
             neatsvpv(p_h,0), (void*)p_imp_xxh, imp_class, (long)imp_size, (void*)imp_templ, (void*)PERL_GET_THX);
+    }
 
     if (imp_templ && SvOK(imp_templ)) {
         U32  imp_templ_flags;
@@ -1165,7 +1175,13 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
         *SvEND(dbih_imp_sv) = '\0';
     }
 
-    DBIc_DBISTATE(imp)  = DBIS;
+    if (p_imp_xxh) {
+        DBIc_DBISTATE(imp)  = DBIc_DBISTATE(p_imp_xxh);
+    }
+    else {
+        dPERINTERP;
+        DBIc_DBISTATE(imp)  = DBIS;
+    }
     DBIc_IMP_STASH(imp) = imp_stash;
 
     if (!p_h) {         /* only a driver (drh) has no parent    */
@@ -1208,7 +1224,6 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 static void
 dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 {
-    dPERINTERP;
     SV *h;
     char *errmsg = "Can't setup DBI handle of %s to %s: %s";
     SV *dbih_imp_sv;
@@ -1219,14 +1234,25 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     HV  *imp_mem_stash;
     imp_xxh_t *imp;
     imp_xxh_t *parent_imp;
+    int trace_level;
 
     h      = dbih_inner(aTHX_ orv, "dbih_setup_handle");
     parent = dbih_inner(aTHX_ parent, NULL);    /* check parent valid (& inner) */
-    parent_imp = (parent) ? DBIh_COM(parent) : NULL;
+    if (parent) {
+        parent_imp = DBIh_COM(parent);
+        trace_level = DBIc_TRACE_LEVEL(parent_imp);
+    }
+    else {
+        dPERINTERP;
+        parent_imp = NULL;
+        trace_level = DBIS_TRACE_LEVEL;
+    }
 
-    if ((parent_imp ? DBIc_TRACE_LEVEL(parent_imp) : DBIS_TRACE_LEVEL) >= 5)
+    if (trace_level >= 5) {
+        dPERINTERP;
         PerlIO_printf(DBILOGFP,"    dbih_setup_handle(%s=>%s, %s, %lx, %s)\n",
             neatsvpv(orv,0), neatsvpv(h,0), imp_class, (long)parent, neatsvpv(imp_datasv,0));
+    }
 
     if (mg_find(SvRV(h), DBI_MAGIC) != NULL)
         croak(errmsg, neatsvpv(orv,0), imp_class, "already a DBI (or ~magic) handle");
@@ -1340,7 +1366,10 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     SvREFCNT_dec(dbih_imp_sv);  /* since sv_magic() incremented it      */
     SvRMAGICAL_on(SvRV(h));     /* so DBI magic gets sv_clear'd ok      */
 
+    {
+    dPERINTERP; /* XXX would be nice to get rid of this */
     DBI_SET_LAST_HANDLE(h);
+    }
 
     if (1) {
         /* This is a hack to work-around the fast but poor way old versions of
@@ -1461,7 +1490,6 @@ static void
 dbih_clearcom(imp_xxh_t *imp_xxh)
 {
     dTHX;
-    dPERINTERP;
     dTHR;
     int dump = FALSE;
     int debug = DBIc_TRACE_LEVEL(imp_xxh);
@@ -1475,9 +1503,9 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
 #ifdef DBI_USE_THREADS
     if (DBIc_THR_USER(imp_xxh) != my_perl) { /* don't clear handle that belongs to another thread */
         if (debug >= 3) {
-            PerlIO_printf(DBILOGFP,"    skipped dbih_clearcom: DBI handle (type=%d, %s) is owned by thread %p not current thread %p\n",
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    skipped dbih_clearcom: DBI handle (type=%d, %s) is owned by thread %p not current thread %p\n",
                   DBIc_TYPE(imp_xxh), HvNAME(DBIc_IMP_STASH(imp_xxh)), (void*)DBIc_THR_USER(imp_xxh), (void*)my_perl) ;
-            PerlIO_flush(DBILOGFP);
+            PerlIO_flush(DBIc_LOGPIO(imp_xxh));
         }
         return;
     }
@@ -1554,7 +1582,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
     DBIc_COMSET_off(imp_xxh);
 
     if (debug >= 4)
-        PerlIO_printf(DBILOGFP,"    dbih_clearcom 0x%lx (com 0x%lx, type %d) done.\n\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    dbih_clearcom 0x%lx (com 0x%lx, type %d) done.\n\n",
                 (long)DBIc_MY_H(imp_xxh), (long)imp_xxh, DBIc_TYPE(imp_xxh));
 }
 
@@ -1569,7 +1597,6 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
      *  in which case it adjusts the row buffer to match NUM_OF_FIELDS.
      */
     dTHX;
-    dPERINTERP;
     I32 i = DBIc_NUM_FIELDS(imp_sth);
     AV *av = DBIc_FIELDS_AV(imp_sth);
 
@@ -1581,14 +1608,14 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
             return av;
         /* we need to adjust the size of the array */
         if (DBIc_TRACE_LEVEL(imp_sth) >= 2)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav realloc from %ld to %ld fields\n", (long)(av_len(av)+1), (long)i);
+            PerlIO_printf(DBIc_LOGPIO(imp_sth),"    dbih_setup_fbav realloc from %ld to %ld fields\n", (long)(av_len(av)+1), (long)i);
         SvREADONLY_off(av);
         if (i < av_len(av)+1) /* trim to size if too big */
             av_fill(av, i-1);
     }
     else {
         if (DBIc_TRACE_LEVEL(imp_sth) >= 5)
-            PerlIO_printf(DBILOGFP,"    dbih_setup_fbav alloc for %ld fields\n", (long)i);
+            PerlIO_printf(DBIc_LOGPIO(imp_sth),"    dbih_setup_fbav alloc for %ld fields\n", (long)i);
         av = newAV();
         DBIc_FIELDS_AV(imp_sth) = av;
 
@@ -1602,7 +1629,7 @@ dbih_setup_fbav(imp_sth_t *imp_sth)
     while(i--)                  /* field 1 stored at index 0    */
         av_store(av, i, newSV(0));
     if (DBIc_TRACE_LEVEL(imp_sth) >= 6)
-        PerlIO_printf(DBILOGFP,"    dbih_setup_fbav now %ld fields\n", (long)(av_len(av)+1));
+        PerlIO_printf(DBIc_LOGPIO(imp_sth),"    dbih_setup_fbav now %ld fields\n", (long)(av_len(av)+1));
     SvREADONLY_on(av);          /* protect against shift @$row etc */
     return av;
 }
@@ -1652,7 +1679,6 @@ static int
 dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
 {
     dTHX;
-    dPERINTERP;
     D_imp_sth(sth);
     AV *av;
     int idx = SvIV(col);
@@ -1669,7 +1695,7 @@ dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
         av = dbih_setup_fbav(imp_sth);
 
     if (DBIc_TRACE_LEVEL(imp_sth) >= 5)
-        PerlIO_printf(DBILOGFP,"    dbih_sth_bind_col %s => %s %s\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_sth),"    dbih_sth_bind_col %s => %s %s\n",
                 neatsvpv(col,0), neatsvpv(ref,0), neatsvpv(attribs,0));
 
     if (idx < 1 || idx > fields)
@@ -1834,7 +1860,6 @@ static int
 dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
 {
     dTHX;
-    dPERINTERP;
     dTHR;
     D_imp_xxh(h);
     STRLEN keylen;
@@ -1846,7 +1871,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     (void)dbikey;
 
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 3)
-        PerlIO_printf(DBILOGFP,"    STORE %s %s => %s\n",
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    STORE %s %s => %s\n",
                 neatsvpv(h,0), neatsvpv(keysv,0), neatsvpv(valuesv,0));
 
     if (internal && strEQ(key, "Active")) {
@@ -2057,7 +2082,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         /* the DBI classes and may be of use to simple perl DBD's.      */
         if (strnNE(key,"private_",8) && strnNE(key,"dbd_",4) && strnNE(key,"dbi_",4)) {
             if (DBIc_TRACE_LEVEL(imp_xxh)) { /* change to DBIc_WARN(imp_xxh) once we can validate prefix against registry */
-                PerlIO_printf(DBILOGFP,"$h->{%s}=%s ignored for invalid driver-specific attribute\n",
+                PerlIO_printf(DBIc_LOGPIO(imp_xxh),"$h->{%s}=%s ignored for invalid driver-specific attribute\n",
                         neatsvpv(keysv,0), neatsvpv(valuesv,0));
             }
             return FALSE;
@@ -2075,7 +2100,6 @@ static SV *
 dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
 {
     dTHX;
-    dPERINTERP;
     dTHR;
     D_imp_xxh(h);
     STRLEN keylen;
@@ -2152,7 +2176,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                     }
 
 		    if (DBIc_TRACE_LEVEL(imp_sth) >= 10 || (num_fields_mismatch && DBIc_WARN(imp_xxh))) {
-			PerlIO_printf(DBILOGFP,"       FETCH $h->{%s} from $h->{NAME} with $h->{NUM_OF_FIELDS} = %d"
+			PerlIO_printf(DBIc_LOGPIO(imp_sth),"       FETCH $h->{%s} from $h->{NAME} with $h->{NUM_OF_FIELDS} = %d"
 			                       " and %ld entries in $h->{NAME}%s\n",
 				neatsvpv(keysv,0), DBIc_NUM_FIELDS(imp_sth), AvFILL(name_av)+1,
                                 (num_fields_mismatch) ? " (possible bug in driver)" : "");
@@ -2403,7 +2427,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
         (void)hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
     }
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 3)
-        PerlIO_printf(DBILOGFP,"    .. FETCH %s %s = %s%s\n", neatsvpv(h,0),
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    .. FETCH %s %s = %s%s\n", neatsvpv(h,0),
             neatsvpv(keysv,0), neatsvpv(valuesv,0), cacheit?" (cached)":"");
     if (valuesv == &PL_sv_yes || valuesv == &PL_sv_no || valuesv == &PL_sv_undef)
         return valuesv; /* no need to mortalize yes or no */
@@ -2550,13 +2574,12 @@ clear_cached_kids(pTHX_ SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int tr
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             if (HvKEYS(hv)) {
-                dPERINTERP;
                 if (DBIc_TRACE_LEVEL(imp_xxh) > trace_level)
                     trace_level = DBIc_TRACE_LEVEL(imp_xxh);
                 if (trace_level >= 2) {
-                    PerlIO_printf(DBILOGFP,"    >> %s %s clearing %d CachedKids\n",
+                    PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    >> %s %s clearing %d CachedKids\n",
                         meth_name, neatsvpv(h,0), (int)HvKEYS(hv));
-                    PerlIO_flush(DBILOGFP);
+                    PerlIO_flush(DBIc_LOGPIO(imp_xxh));
                 }
                 /* This will probably recurse through dispatch to DESTROY the kids */
                 /* For drh we should probably explicitly do dbh disconnects */
@@ -4901,7 +4924,6 @@ fetchrow_array(sth)
     ALIAS:
     fetchrow = 1
     PPCODE:
-    dPERINTERP;
     SV *retsv;
     if (CvDEPTH(cv) == 99) {
         ix = ix;        /* avoid 'unused variable' warning'             */
@@ -4931,7 +4953,7 @@ fetchrow_array(sth)
             /* let dbih_get_fbav know what's going on   */
             bound_av = dbih_get_fbav(imp_sth);
             if (DBIc_TRACE_LEVEL(imp_sth) >= 3) {
-                PerlIO_printf(DBILOGFP,
+                PerlIO_printf(DBIc_LOGPIO(imp_sth),
                     "fetchrow: updating fbav 0x%lx from 0x%lx\n",
                     (long)bound_av, (long)av);
             }
@@ -5323,10 +5345,9 @@ void
 DESTROY(imp_xxh_rv)
     SV *        imp_xxh_rv
     CODE:
-    dPERINTERP;
     /* ignore 'cast increases required alignment' warning       */
     imp_xxh_t *imp_xxh = (imp_xxh_t*)SvPVX(SvRV(imp_xxh_rv));
-    DBIS->clearcom(imp_xxh);
+    DBIc_DBISTATE(imp_xxh)->clearcom(imp_xxh);
     (void)cv;
 
 # end
