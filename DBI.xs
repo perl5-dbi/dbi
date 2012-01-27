@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- * Copyright (c) 1994-2009  Tim Bunce  Ireland.
+ * Copyright (c) 1994-2012  Tim Bunce  Ireland.
  *
  * See COPYRIGHT section in DBI.pm for usage and distribution rights.
  */
@@ -170,8 +170,9 @@ static char *dbi_build_opt = "-nothread";
 
 /* --- make DBI safe for multiple perl interpreters --- */
 /*     Contributed by Murray Nesbitt of ActiveState     */
+/* (This pre-dates, and should be replaced by, MY_CTX)  */
 typedef struct {
-    SV   *dbi_last_h;
+    SV   *dbi_last_h;  /* maybe better moved into dbistate_t? */
     dbistate_t* dbi_state;
 } PERINTERP_t;
 
