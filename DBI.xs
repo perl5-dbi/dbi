@@ -23,7 +23,7 @@
  * Just-in-case it causes problems there's an (undocumented) way
  * to disable it by setting an env var.
  */
-static int use_xsbypass = (getenv("PERL_DBI_XSBYPASS") ? atoi(getenv("PERL_DBI_XSBYPASS")) : 1);
+static int use_xsbypass = 1; /* set in dbi_bootinit() */
 
 #ifndef CvISXSUB
 #define CvISXSUB(sv) CvXSUB(sv)
@@ -464,6 +464,9 @@ dbi_bootinit(dbistate_t * parent_dbis)
     gv_fetchpv("DBI::errstr", GV_ADDMULTI, SVt_PV);
     gv_fetchpv("DBI::lasth",  GV_ADDMULTI, SVt_PV);
     gv_fetchpv("DBI::rows",   GV_ADDMULTI, SVt_PV);
+
+    if (getenv("PERL_DBI_XSBYPASS"))
+        use_xsbypass = atoi(getenv("PERL_DBI_XSBYPASS"));
 }
 
 
