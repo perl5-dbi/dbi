@@ -19,9 +19,16 @@
 #define MY_VERSION "DBI(" XS_VERSION ")"
 
 #if (defined USE_THREADS || defined PERL_CAPI || defined PERL_OBJECT)
-static int xsbypass = 0;        /* disable XSUB->XSUB shortcut          */
+/* The XS dispatcher code can optimize calls to XS driver methods,
+ * bypassing the usual call_sv() and argument handling overheads.
+ * For many years this bypass was disabled for threaded (etc) perls.
+ * However, the reasons have been lost in the mists of time, and it
+ * seems to work fine. So it's now enabled by default. Just-in-case
+ * there's an (undocumented) way to disable it by setting an env var.
+ */
+static int use_xsbypass = (getenv("PERL_DBI_NO_XSBYPASS") ? 0 : 1);
 #else
-static int xsbypass = 1;        /* enable XSUB->XSUB shortcut           */
+static int use_xsbypass = 1;
 #endif
 #ifndef CvISXSUB
 #define CvISXSUB(sv) CvXSUB(sv)
@@ -3477,7 +3484,7 @@ XS(XS_DBI_dispatch)
          */
 
         /* SHORT-CUT ALERT! */
-        if (xsbypass && isGV(imp_msv) && CvISXSUB(GvCV(imp_msv))
+        if (use_xsbypass && isGV(imp_msv) && CvISXSUB(GvCV(imp_msv))
             && CvXSUB(GvCV(imp_msv))) {
 
             /* If we are calling an XSUB we jump directly to its C code and
