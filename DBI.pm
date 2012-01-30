@@ -826,15 +826,17 @@ sub install_driver {		# croaks on failure
 
 sub setup_driver {
     my ($class, $driver_class) = @_;
-    my $type;
-    foreach $type (qw(dr db st)){
-	my $class = $driver_class."::$type";
+    my $h_type;
+    foreach $h_type (qw(dr db st)){
+	my $h_class = $driver_class."::$h_type";
 	no strict 'refs';
-	push @{"${class}::ISA"},     "DBD::_::$type"
-	    unless UNIVERSAL::isa($class, "DBD::_::$type");
-	my $mem_class = "DBD::_mem::$type";
-	push @{"${class}_mem::ISA"}, $mem_class
-	    unless UNIVERSAL::isa("${class}_mem", $mem_class)
+	push @{"${h_class}::ISA"},     "DBD::_::$h_type"
+	    unless UNIVERSAL::isa($h_class, "DBD::_::$h_type");
+	# The _mem class stuff is (IIRC) a crufty hack for global destruction
+	# timing issues in early versions of perl5 and possibly no longer needed.
+	my $mem_class = "DBD::_mem::$h_type";
+	push @{"${h_class}_mem::ISA"}, $mem_class
+	    unless UNIVERSAL::isa("${h_class}_mem", $mem_class)
 	    or $DBI::PurePerl;
     }
 }
