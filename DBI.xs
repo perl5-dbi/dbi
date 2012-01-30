@@ -96,6 +96,7 @@ struct imp_fdh_st { dbih_fdc_t com; };
 
 
 /* Internal Method Attributes (attached to dispatch methods when installed) */
+/* NOTE: don't include SVs in dbi_ima_t as they won't be cloned by threads */
 
 typedef struct dbi_ima_st {
     U8 minargs;
