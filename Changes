@@ -9,6 +9,7 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.618 TBD
 
   Fixed compiler warnings in Driver_xst.h (Martin J. Evans)
+  Fixed compiler warning in DBI.xs (H.Merijn Brand)
 
   Corrected typo in example in docs (David Precious)
   Added note that calling clone() without an arg may warn in future.

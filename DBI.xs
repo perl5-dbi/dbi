@@ -4484,7 +4484,7 @@ trace(class, level_sv=&PL_sv_undef, file=Nullsv)
 #ifdef MULTIPLICITY
                 (void *)my_perl,
 #else
-                NULL,
+                (void*)NULL,
 #endif
                 log_where(Nullsv, 0, "", "", 1, 1, 0)
             );
