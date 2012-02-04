@@ -4322,13 +4322,13 @@ The attributes for the cloned connect are the same as those used
 for the I<original> connect, with any other attributes in C<\%attr>
 merged over them.  Effectively the same as doing:
 
-  %attribues_used = ( %original_attributes, %attr );
+  %attributes_used = ( %original_attributes, %attr );
 
 If \%attr is not given then it defaults to a hash containing all
 the attributes in the attribute cache of $dbh excluding any non-code
 references, plus the main boolean attributes (RaiseError, PrintError,
 AutoCommit, etc.). I<This behaviour is unreliable and so use of clone without
-an argument is deprecated.>
+an argument is deprecated and may cause a warning in a future release.>
 
 The clone method can be used even if the database handle is disconnected.
 
