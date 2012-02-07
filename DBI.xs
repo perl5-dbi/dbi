@@ -257,6 +257,7 @@ static GV* inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name)
 
     /* create new cache entry */
     if (!mg) {
+        c = 0; /* silence "may be used uninitialized in this function" */
         Newx(c, 1, method_cache_t);
         mg = sv_magicext((SV*)cv, NULL, DBI_MAGIC, &method_cache_vtbl,
                             (char *)c, 0);
