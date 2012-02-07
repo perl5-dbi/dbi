@@ -8,7 +8,7 @@ my $use_threads_err = $@;
 use Config qw(%Config);
 # With this test code and threads, 5.8.1 has issues with freeing freed
 # scalars, while 5.8.9 doesn't; I don't know about in-between - DAPM
-my $has_threads = $Config{useithreads} && $] >= 5.008009;
+my $has_threads = $Config{useithreads};
 die $use_threads_err if $has_threads && $use_threads_err;
 
 
