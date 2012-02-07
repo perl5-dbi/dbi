@@ -92,6 +92,7 @@ t/16destroy.t
 t/19fhtrace.t
 t/20meta.t
 t/30subclass.t
+t/31methcache.t			Test caching of inner methods
 t/35thrclone.t
 t/40profile.t
 t/41prof_dump.t

@@ -84,6 +84,9 @@ static int      sql_type_cast_svpv _((pTHX_ SV *sv, int sql_type, U32 flags, voi
 static I32      dbi_hash _((const char *string, long i));
 static void     dbih_dumphandle _((pTHX_ SV *h, const char *msg, int level));
 static int      dbih_dumpcom _((pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level));
+static int      method_cache_free(pTHX_ SV* sv, MAGIC* mg);
+static int      method_cache_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param);
+static GV*      inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name);
 char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
 
@@ -163,6 +166,115 @@ static char *dbi_build_opt = "-nothread";
 
 /* 32 bit magic FNV-0 and FNV-1 prime */
 #define FNV_32_PRIME ((UV)0x01000193)
+
+
+
+/* ext magic attached to outer CV methods to quickly locate the
+ * corresponding inner method
+ */
+
+static MGVTBL method_cache_vtbl = { 0, 0, 0, 0, method_cache_free,
+                                    0, method_cache_dup
+#if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION >= 9))
+                                    , 0
+#endif
+                                    };
+
+typedef struct {
+    HV *stash;          /* the stash we found the GV in */
+    GV *gv;             /* the GV containing the inner sub */
+    U32 generation;     /* cache invalidation */
+} method_cache_t;
+
+static int method_cache_free(pTHX_ SV* sv, MAGIC* mg)
+{
+    method_cache_t *c = (method_cache_t *)(mg->mg_ptr);
+    SvREFCNT_dec(c->stash);
+    SvREFCNT_dec(c->gv);
+    Safefree(c);
+    return 0;
+}
+
+static int method_cache_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param)
+{
+    method_cache_t *c;
+    Newxc(mg->mg_ptr, 1, method_cache_t, char);
+    c = (method_cache_t *)(mg->mg_ptr);
+    c->stash = NULL;
+    c->gv    = NULL;
+    return 0;
+}
+
+static GV* inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name)
+{
+    GV *gv;
+    method_cache_t *c;
+    MAGIC *mg = SvMAGIC(cv);
+
+    if (mg) {
+        if (mg->mg_virtual != &method_cache_vtbl) {
+            /* usually cache is the first magic in the list;
+             * if not, find it and bump it to the top */
+            MAGIC *nmg = mg->mg_moremagic;
+            while (nmg) {
+                if (nmg->mg_virtual == &method_cache_vtbl)
+                    break;
+                mg = nmg;
+                nmg = mg->mg_moremagic;
+            }
+            if (nmg) {
+                mg->mg_moremagic = nmg->mg_moremagic;
+                nmg->mg_moremagic = SvMAGIC(cv);
+                SvMAGIC(cv) = nmg;
+                mg = nmg;
+            }
+            else {
+                mg = NULL;
+                goto no_match;
+            }
+        }
+
+        if (  (c=(method_cache_t *)(mg->mg_ptr))
+            && c->stash == stash
+            && c->generation == PL_sub_generation
+#ifdef HvMROMETA /*introduced in 5.9.5 */
+                + HvMROMETA(stash)->cache_gen
+#endif
+        )
+            return c->gv;
+
+        /* clear stale cache */
+        SvREFCNT_dec(c->stash);
+        SvREFCNT_dec(c->gv);
+        c->stash = NULL;
+        c->gv    = NULL;
+    }
+
+  no_match:
+    gv = gv_fetchmethod_autoload(stash, meth_name, FALSE);
+    if (!gv)
+        return NULL;
+
+    /* create new cache entry */
+    if (!mg) {
+        Newx(c, 1, method_cache_t);
+        mg = sv_magicext((SV*)cv, NULL, DBI_MAGIC, &method_cache_vtbl,
+                            (char *)c, 0);
+        mg->mg_flags |= MGf_DUP;
+    }
+    SvREFCNT_inc(stash);
+    SvREFCNT_inc(gv);
+    c->stash = stash;
+    c->gv    = gv;
+    c->generation = PL_sub_generation
+#ifdef HvMROMETA
+            + HvMROMETA(stash)->cache_gen
+#endif
+    ;
+    return gv;
+}
+
+
 
 /* --- make DBI safe for multiple perl interpreters --- */
 /*     Contributed by Murray Nesbitt of ActiveState     */
@@ -3007,6 +3119,7 @@ XS(XS_DBI_dispatch)
     int call_depth;
     int is_nested_call;
     NV profile_t1 = 0.0;
+    int is_orig_method_name = 1;
 
     const char  *meth_name = GvNAME(CvGV(cv));
     const dbi_ima_t     *ima = (dbi_ima_t*)CvXSUBANY(cv).any_ptr;
@@ -3182,6 +3295,7 @@ XS(XS_DBI_dispatch)
                     croak("%s->%s() invalid redirect method name %s",
                             neatsvpv(h,0), meth_name, neatsvpv(meth_name_sv,0));
                 meth_name = SvPV_nolen(meth_name_sv);
+                is_orig_method_name = 0;
             }
             if (ima_flags & IMA_KEEP_ERR)
                 keep_error = TRUE;
@@ -3421,7 +3535,12 @@ XS(XS_DBI_dispatch)
             }
         }
 
-        imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), meth_name, FALSE);
+        if (is_orig_method_name)
+            imp_msv = (SV*)inner_method_lookup(aTHX_ DBIc_IMP_STASH(imp_xxh),
+                                            cv, meth_name);
+        else
+            imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh),
+                                            meth_name, FALSE);
 
         /* if method was a 'func' then try falling back to real 'func' method */
         if (!imp_msv && (ima_flags & IMA_FUNC_REDIRECT)) {
@@ -3463,7 +3582,7 @@ XS(XS_DBI_dispatch)
             PerlIO_flush(logfp);
         }
 
-        if (!imp_msv) {
+        if (!imp_msv || !GvCV(imp_msv)) {
             if (PL_dirty || is_DESTROY) {
                 outitems = 0;
                 goto post_dispatch;
