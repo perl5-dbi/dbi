@@ -11,7 +11,7 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-$VERSION = "1.617"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.618"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -126,7 +126,7 @@ Tim he is very likely to just forward it to the mailing list.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to the DBI version 1.617
+This is the DBI specification that corresponds to the DBI version 1.618
 ($Revision$).
 
 The DBI is evolving at a steady pace, so it's good to check that
