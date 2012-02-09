@@ -59,7 +59,7 @@ if ($Config{useithreads}) {
 }
 else {
 
-    if ($Config{archname} =~ /thread/ && $::opt_thread) {
+    if ($Config{archname} =~ /\bthread/ && $::opt_thread) {
 	# oh dear... tell it like it is:
 	print "\n";
 	print "DBI versions from 1.29 onwards no longer support the old style\n";
