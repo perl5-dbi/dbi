@@ -579,7 +579,10 @@ dbi_bootinit(dbistate_t * parent_dbis)
     gv_fetchpv("DBI::lasth",  GV_ADDMULTI, SVt_PV);
     gv_fetchpv("DBI::rows",   GV_ADDMULTI, SVt_PV);
 
-    if (getenv("PERL_DBI_XSBYPASS"))
+    /* we only need to check the env var on the initial boot
+     * which is handy because it can core dump during CLONE on windows
+     */
+    if (!parent_dbis && getenv("PERL_DBI_XSBYPASS"))
         use_xsbypass = atoi(getenv("PERL_DBI_XSBYPASS"));
 }
 
