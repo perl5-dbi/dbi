@@ -29,6 +29,20 @@ static int use_xsbypass = 1; /* set in dbi_bootinit() */
 
 #define DBI_MAGIC '~'
 
+/* HvMROMETA introduced in 5.9.5, but mro_meta_init not exported in 5.10.0 */
+#if (PERL_VERSION < 10)
+#  define MY_cache_gen(stash) 0
+#else
+#  if ((PERL_VERSION == 10) && (PERL_SUBVERSION == 0))
+#    define MY_cache_gen(stash) \
+        (HvAUX(stash)->xhv_mro_meta \
+        ? HvAUX(stash)->xhv_mro_meta->cache_gen \
+        : 0)
+#  else
+#    define MY_cache_gen(stash) HvMROMETA(stash)->cache_gen
+#  endif
+#endif
+
 /* If the tests fail with errors about 'setlinebuf' then try    */
 /* deleting the lines in the block below except the setvbuf one */
 #ifndef PerlIO_setlinebuf
@@ -234,10 +248,7 @@ static GV* inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name)
 
         if (  (c=(method_cache_t *)(mg->mg_ptr))
             && c->stash == stash
-            && c->generation == PL_sub_generation
-#ifdef HvMROMETA /*introduced in 5.9.5 */
-                + HvMROMETA(stash)->cache_gen
-#endif
+            && c->generation == PL_sub_generation + MY_cache_gen(stash)
         )
             return c->gv;
 
@@ -265,11 +276,7 @@ static GV* inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name)
     SvREFCNT_inc(gv);
     c->stash = stash;
     c->gv    = gv;
-    c->generation = PL_sub_generation
-#ifdef HvMROMETA
-            + HvMROMETA(stash)->cache_gen
-#endif
-    ;
+    c->generation = PL_sub_generation + MY_cache_gen(stash);
     return gv;
 }
 
