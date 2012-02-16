@@ -6,6 +6,10 @@
  *
  * See COPYRIGHT section in DBI.pm for usage and distribution rights.
  */
+#define NEED_grok_number
+#define NEED_grok_numeric_radix
+#define NEED_newRV_noinc
+#define NEED_sv_2pv_flags
 
 #define IN_DBI_XS 1     /* see DBIXS.h */
 #define PERL_NO_GET_CONTEXT
