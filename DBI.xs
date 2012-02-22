@@ -4290,10 +4290,12 @@ PROTOTYPES: DISABLE
 
 
 BOOT:
+    {
+        MY_CXT_INIT;
+        (void)MY_CXT; /* avoid 'unused variable' warning */
+    }
     (void)cv;
     (void)items; /* avoid 'unused variable' warning */
-    MY_CXT_INIT;
-    (void)MY_CXT; /* avoid 'unused variable' warning */
     dbi_bootinit(NULL);
 
 

@@ -11,6 +11,8 @@ DBI::Changes - List of significant changes to the DBI
   Fixed compiler warnings in Driver_xst.h (Martin J. Evans)
   Fixed compiler warning in DBI.xs (H.Merijn Brand)
   RT74975 - Fixed Gofer tests failing on Windows (Manoj Kumar)
+  Fixed my_ctx compile errors introduced in 1.617 on Windows (Dave
+  Mitchell)
 
   Significantly optimized method dispatch via cache (Dave Mitchell)
   Significantly optimized DBI internals for threads (Dave Mitchell)
