@@ -2032,11 +2032,18 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	}
 	elsif ($mode eq 'HASH') {
 	    $max_rows = -1 unless defined $max_rows;
+            # XXX both these could be made faster (and unified) by pre-binding
+            # a local hash using bind_columns and then copying it per row, so
+            # we'd be able to replace the expensive fetchrow_hashref with
+            # fetchrow_arrayref. So the main loop would end up being like:
+            #   push @rows, { %bound_hash }
+            #       while ($max_rows-- and $sth->fetchrow_arrayref);
+            # XXX Also, it would be very helpful for DBIx::Class and others
+            # if a slice could 'rename' columns. Some kind of 'renaming slice'
+            # could be incorporated here.
 	    if (keys %$slice) {
 		my @o_keys = keys %$slice;
 		my @i_keys = map { lc } keys %$slice;
-                # XXX this could be made faster by pre-binding a local hash
-                # using bind_columns and then copying it per row
 		while ($max_rows-- and $row = $sth->fetchrow_hashref('NAME_lc')) {
 		    my %hash;
 		    @hash{@o_keys} = @{$row}{@i_keys};
