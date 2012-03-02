@@ -3175,8 +3175,13 @@ XS(XS_DBI_dispatch)
        data (without having to go through FETCH and STORE methods) and
        for tie and non-tie methods to call each other.
     */
-    if (SvROK(h) && SvRMAGICAL(SvRV(h)) && (mg=mg_find(SvRV(h),'P'))!=NULL) {
-
+    if (SvROK(h)
+        && SvRMAGICAL(SvRV(h))
+        && (
+               ((mg=SvMAGIC(SvRV(h)))->mg_type == 'P')
+            || ((mg=mg_find(SvRV(h),'P')) != NULL)
+           )
+    ) {
         if (mg->mg_obj==NULL || !SvOK(mg->mg_obj) || SvRV(mg->mg_obj)==NULL) {  /* maybe global destruction */
             if (trace_level >= 3)
                 PerlIO_printf(DBILOGFP,
