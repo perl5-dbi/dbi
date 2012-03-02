@@ -112,7 +112,6 @@ static int      dbi_ima_free(pTHX_ SV* sv, MAGIC* mg);
 #if defined(USE_ITHREADS) && !defined(BROKEN_DUP_ANY_PTR)
 static int      dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param);
 #endif
-static GV*      inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name);
 char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
 
@@ -251,35 +250,6 @@ static int dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param)
     return 0;
 }
 #endif
-
-static GV* inner_method_lookup(pTHX_ HV *stash, CV *cv, const char *meth_name)
-{
-    GV *gv;
-    dbi_ima_t *ima = (dbi_ima_t*)(CvXSUBANY(cv).any_ptr);
-
-    if (   ima->stash == stash
-        && ima->generation == PL_sub_generation + MY_cache_gen(stash)
-    )
-        return ima->gv;
-
-    /* clear stale entry, if any */
-    SvREFCNT_dec(ima->stash);
-    SvREFCNT_dec(ima->gv);
-
-    gv = gv_fetchmethod_autoload(stash, meth_name, FALSE);
-    if (!gv) {
-        ima->stash = NULL;
-        ima->gv    = NULL;
-        return NULL;
-    }
-
-    SvREFCNT_inc(stash);
-    SvREFCNT_inc(gv);
-    ima->stash = stash;
-    ima->gv    = gv;
-    ima->generation = PL_sub_generation + MY_cache_gen(stash);
-    return gv;
-}
 
 
 
@@ -3116,7 +3086,7 @@ XS(XS_DBI_dispatch)
     int is_orig_method_name = 1;
 
     const char  *meth_name = GvNAME(CvGV(cv));
-    const dbi_ima_t     *ima = (dbi_ima_t*)CvXSUBANY(cv).any_ptr;
+    dbi_ima_t *ima = (dbi_ima_t*)CvXSUBANY(cv).any_ptr;
     U32   ima_flags;
     imp_xxh_t   *imp_xxh   = NULL;
     SV          *imp_msv   = Nullsv;
@@ -3544,12 +3514,31 @@ XS(XS_DBI_dispatch)
             }
         }
 
-        if (is_orig_method_name)
-            imp_msv = (SV*)inner_method_lookup(aTHX_ DBIc_IMP_STASH(imp_xxh),
-                                            cv, meth_name);
-        else
+        if (is_orig_method_name
+            && ima->stash == DBIc_IMP_STASH(imp_xxh)
+            && ima->generation == PL_sub_generation +
+                                        MY_cache_gen(DBIc_IMP_STASH(imp_xxh))
+        )
+            imp_msv = (SV*)ima->gv;
+        else {
             imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh),
                                             meth_name, FALSE);
+            if (is_orig_method_name) {
+                /* clear stale entry, if any */
+                SvREFCNT_dec(ima->stash);
+                SvREFCNT_dec(ima->gv);
+                if (!imp_msv) {
+                    ima->stash = NULL;
+                    ima->gv    = NULL;
+                }
+                else {
+                    ima->stash = (HV*)SvREFCNT_inc(DBIc_IMP_STASH(imp_xxh));
+                    ima->gv    = (GV*)SvREFCNT_inc(imp_msv);
+                    ima->generation = PL_sub_generation +
+                                        MY_cache_gen(DBIc_IMP_STASH(imp_xxh));
+                }
+            }
+        }
 
         /* if method was a 'func' then try falling back to real 'func' method */
         if (!imp_msv && (ima_flags & IMA_FUNC_REDIRECT)) {
