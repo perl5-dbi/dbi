@@ -3119,7 +3119,6 @@ XS(XS_DBI_dispatch)
     I32 trace_flags = DBIS->debug;      /* local copy may change during dispatch */
     I32 trace_level = (trace_flags & DBIc_TRACE_LEVEL_MASK);
     int is_DESTROY;
-    int is_FETCH;
     meth_types meth_type;
     int is_unrelated_to_Statement = 0;
     int keep_error = FALSE;
@@ -3522,7 +3521,7 @@ XS(XS_DBI_dispatch)
 
     /* The "quick_FETCH" logic...                                       */
     /* Shortcut for fetching attributes to bypass method call overheads */
-    if ( (is_FETCH = (meth_type == methtype_FETCH)) && !DBIc_COMPAT(imp_xxh)) {
+    if (meth_type == methtype_FETCH && !DBIc_COMPAT(imp_xxh)) {
         STRLEN kl;
         const char *key = SvPV(st1, kl);
         SV **attr_svp;
@@ -3550,7 +3549,7 @@ XS(XS_DBI_dispatch)
     else {
 #ifdef DBI_save_hv_fetch_ent
         HE save_mh;
-        if (is_FETCH)
+        if (meth_type == methtype_FETCH)
             save_mh = PL_hv_fetch_ent_mh; /* XXX nested tied FETCH bug17575 workaround */
 #endif
 
@@ -3692,7 +3691,7 @@ XS(XS_DBI_dispatch)
         ax = (SP - PL_stack_base) + 1;
 
 #ifdef DBI_save_hv_fetch_ent
-        if (is_FETCH)
+        if (meth_type == methtype_FETCH)
             PL_hv_fetch_ent_mh = save_mh;       /* see start of block */
 #endif
     }
