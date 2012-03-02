@@ -3546,6 +3546,7 @@ XS(XS_DBI_dispatch)
     }
 
     {
+        CV *meth_cv;
 #ifdef DBI_save_hv_fetch_ent
         HE save_mh;
         if (meth_type == methtype_FETCH)
@@ -3632,7 +3633,7 @@ XS(XS_DBI_dispatch)
             PerlIO_flush(logfp);
         }
 
-        if (!imp_msv || !GvCV(imp_msv)) {
+        if (!imp_msv || ! ((meth_cv = GvCV(imp_msv))) ) {
             if (PL_dirty || is_DESTROY) {
                 outitems = 0;
                 goto post_dispatch;
@@ -3653,16 +3654,14 @@ XS(XS_DBI_dispatch)
          */
 
         /* SHORT-CUT ALERT! */
-        if (use_xsbypass && isGV(imp_msv) && CvISXSUB(GvCV(imp_msv))
-            && CvXSUB(GvCV(imp_msv))) {
+        if (use_xsbypass && CvISXSUB(meth_cv) && CvXSUB(meth_cv)) {
 
             /* If we are calling an XSUB we jump directly to its C code and
              * bypass perl_call_sv(), pp_entersub() etc. This is fast.
              * This code is copied from a small section of pp_entersub().
              */
             I32 markix = TOPMARK;
-            CV *xscv   = GvCV(imp_msv);
-            (void)(*CvXSUB(xscv))(aTHXo_ xscv); /* Call the C code directly */
+            (void)(*CvXSUB(meth_cv))(aTHXo_ meth_cv); /* Call the C code directly */
 
             if (gimme == G_SCALAR) {    /* Enforce sanity in scalar context */
                 if (++markix != PL_stack_sp - PL_stack_base ) {
@@ -3680,7 +3679,7 @@ XS(XS_DBI_dispatch)
         }
         else {
             /* sv_dump(imp_msv); */
-            outitems = call_sv(isGV(imp_msv) ? (SV*)GvCV(imp_msv) : imp_msv,
+            outitems = call_sv((SV*)meth_cv,
                 (is_DESTROY ? gimme | G_EVAL | G_KEEPERR : gimme) );
         }
         SPAGAIN;
