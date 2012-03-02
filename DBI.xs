@@ -3658,22 +3658,22 @@ XS(XS_DBI_dispatch)
 
             /* If we are calling an XSUB we jump directly to its C code and
              * bypass perl_call_sv(), pp_entersub() etc. This is fast.
-             * This code is copied from a small section of pp_entersub().
+             * This code is based on a small section of pp_entersub().
              */
-            I32 markix = TOPMARK;
             (void)(*CvXSUB(meth_cv))(aTHXo_ meth_cv); /* Call the C code directly */
 
             if (gimme == G_SCALAR) {    /* Enforce sanity in scalar context */
-                if (++markix != PL_stack_sp - PL_stack_base ) {
-                    if (markix > PL_stack_sp - PL_stack_base)
-                         *(PL_stack_base + markix) = &PL_sv_undef;
-                    else *(PL_stack_base + markix) = *PL_stack_sp;
-                    PL_stack_sp = PL_stack_base + markix;
+                if (ax != PL_stack_sp - PL_stack_base ) { /* outitems != 1 */
+                    ST(0) =
+                        (ax > PL_stack_sp - PL_stack_base)
+                            ? &PL_sv_undef  /* outitems == 0 */
+                            : *PL_stack_sp; /* outitems > 1 */
+                    PL_stack_sp = PL_stack_base + ax;
                 }
                 outitems = 1;
             }
             else {
-                outitems = PL_stack_sp - (PL_stack_base + markix);
+                outitems = PL_stack_sp - (PL_stack_base + ax - 1);
             }
 
         }
@@ -3682,11 +3682,8 @@ XS(XS_DBI_dispatch)
             outitems = call_sv((SV*)meth_cv,
                 (is_DESTROY ? gimme | G_EVAL | G_KEEPERR : gimme) );
         }
-        SPAGAIN;
 
-        /* XXX restore local vars so ST(n) works below  */
-        SP -= outitems;
-        ax = (SP - PL_stack_base) + 1;
+        XSprePUSH; /* reset SP to base of stack frame */
 
 #ifdef DBI_save_hv_fetch_ent
         if (meth_type == methtype_FETCH)
