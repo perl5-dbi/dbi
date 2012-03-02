@@ -88,6 +88,17 @@ extern Pid_t getpid (void);
 #  define BROKEN_DUP_ANY_PTR
 #endif
 
+/* types of method name */
+
+typedef enum {
+    methtype_ordinary, /* nothing special about this method name */
+    methtype_DESTROY,
+    methtype_FETCH,
+    methtype_can,
+    methtype_fetch_star, /* fetch*, i.e. fetch() or fetch_...() */
+    methtype_set_err
+} meth_types;
+
 
 static imp_xxh_t *dbih_getcom      _((SV *h));
 static imp_xxh_t *dbih_getcom2     _((pTHX_ SV *h, MAGIC **mgp));
@@ -114,6 +125,7 @@ static int      dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param);
 #endif
 char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
+static meth_types get_meth_type(const char * const name);
 
 DBISTATE_DECLARE;
 
@@ -121,6 +133,37 @@ struct imp_drh_st { dbih_drc_t com; };
 struct imp_dbh_st { dbih_dbc_t com; };
 struct imp_sth_st { dbih_stc_t com; };
 struct imp_fdh_st { dbih_fdc_t com; };
+
+/* identify the type of a method name for dispatch behaviour */
+/* (should probably be folded into the IMA flags mechanism)  */
+
+static meth_types
+get_meth_type(const char * const name)
+{
+    switch (name[0]) {
+    case 'D':
+        if strEQ(name,"DESTROY")
+            return methtype_DESTROY;
+        break;
+    case 'F':
+        if strEQ(name,"FETCH")
+            return methtype_FETCH;
+        break;
+    case 'c':
+        if strEQ(name,"can")
+            return methtype_can;
+        break;
+    case 'f':
+        if strnEQ(name,"fetch", 5) /* fetch* */
+            return methtype_fetch_star;
+        break;
+    case 's':
+        if strEQ(name,"set_err")
+            return methtype_set_err;
+        break;
+    }
+    return methtype_ordinary;
+}
 
 
 /* Internal Method Attributes (attached to dispatch methods when installed) */
@@ -140,6 +183,7 @@ typedef struct dbi_ima_st {
     U32 method_trace;
     const char *usage_msg;
     U32 flags;
+    meth_types meth_type;
 
     /* cached outer to inner method mapping */
     HV *stash;          /* the stash we found the GV in */
@@ -3076,6 +3120,7 @@ XS(XS_DBI_dispatch)
     I32 trace_level = (trace_flags & DBIc_TRACE_LEVEL_MASK);
     int is_DESTROY;
     int is_FETCH;
+    meth_types meth_type;
     int is_unrelated_to_Statement = 0;
     int keep_error = FALSE;
     UV  ErrCount = UV_MAX;
@@ -3108,6 +3153,7 @@ XS(XS_DBI_dispatch)
 #endif
 
     ima_flags  = ima->flags;
+    meth_type = ima->meth_type;
     if (trace_level >= 9) {
         PerlIO *logfp = DBILOGFP;
         PerlIO_printf(logfp,"%c   >> %-11s DISPATCH (%s rc%ld/%ld @%ld g%x ima%lx pid#%ld)",
@@ -3118,7 +3164,7 @@ XS(XS_DBI_dispatch)
         PerlIO_flush(logfp);
     }
 
-    if ( ( (is_DESTROY=(*meth_name=='D' && strEQ(meth_name,"DESTROY")))) ) {
+    if ( ( (is_DESTROY=(meth_type == methtype_DESTROY))) ) {
         /* note that croak()'s won't propagate, only append to $@ */
         keep_error = TRUE;
     }
@@ -3180,7 +3226,7 @@ XS(XS_DBI_dispatch)
 
     imp_xxh = dbih_getcom2(aTHX_ h, 0); /* get common Internal Handle Attributes        */
     if (!imp_xxh) {
-        if (strEQ(meth_name, "can")) {  /* ref($h)->can("foo")          */
+        if (meth_type == methtype_can) {  /* ref($h)->can("foo")        */
             const char *can_meth = SvPV_nolen(st1);
             SV *rv = &PL_sv_undef;
             GV *gv = gv_fetchmethod_autoload(gv_stashsv(orig_h,FALSE), can_meth, FALSE);
@@ -3244,7 +3290,7 @@ XS(XS_DBI_dispatch)
         if (ima_flags & (IMA_STUB|IMA_FUNC_REDIRECT|IMA_KEEP_ERR|IMA_KEEP_ERR_SUB|IMA_CLEAR_STMT)) {
 
             if (ima_flags & IMA_STUB) {
-                if (*meth_name == 'c' && strEQ(meth_name,"can")) {
+                if (meth_type == methtype_can) {
                     const char *can_meth = SvPV_nolen(st1);
                     SV *dbi_msv = Nullsv;
                     /* find handle implementors method (GV or CV) */
@@ -3274,6 +3320,7 @@ XS(XS_DBI_dispatch)
                     croak("%s->%s() invalid redirect method name %s",
                             neatsvpv(h,0), meth_name, neatsvpv(meth_name_sv,0));
                 meth_name = SvPV_nolen(meth_name_sv);
+                meth_type = get_meth_type(meth_name);
                 is_orig_method_name = 0;
             }
             if (ima_flags & IMA_KEEP_ERR)
@@ -3371,7 +3418,7 @@ XS(XS_DBI_dispatch)
 
     /* --- dispatch --- */
 
-    if (!keep_error && !(*meth_name=='s' && strEQ(meth_name,"set_err"))) {
+    if (!keep_error && meth_type != methtype_set_err) {
         SV *err_sv;
         if (trace_level && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
             PerlIO *logfp = DBILOGFP;
@@ -3394,7 +3441,8 @@ XS(XS_DBI_dispatch)
                * Other restrictions may be added over time.
                * It's an undocumented hack.
                */
-          || (!is_nested_call && !PL_dirty && strNE(meth_name, "set_err") && strNE(meth_name, "DESTROY") &&
+          || (!is_nested_call && !PL_dirty && meth_type != methtype_set_err &&
+               meth_type != methtype_DESTROY &&
                (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0))
              )
         )
@@ -3469,7 +3517,7 @@ XS(XS_DBI_dispatch)
 
     /* The "quick_FETCH" logic...                                       */
     /* Shortcut for fetching attributes to bypass method call overheads */
-    if ( (is_FETCH = (*meth_name=='F' && strEQ(meth_name,"FETCH"))) && !DBIc_COMPAT(imp_xxh)) {
+    if ( (is_FETCH = (meth_type == methtype_FETCH)) && !DBIc_COMPAT(imp_xxh)) {
         STRLEN kl;
         const char *key = SvPV(st1, kl);
         SV **attr_svp;
@@ -3549,6 +3597,7 @@ XS(XS_DBI_dispatch)
                 PUTBACK;
                 ++items;
                 meth_name = "func";
+                meth_type = methtype_ordinary;
             }
         }
 
@@ -3664,7 +3713,7 @@ XS(XS_DBI_dispatch)
 
     if (trace_level >= (is_nested_call ? 3 : 1)) {
         PerlIO *logfp = DBILOGFP;
-        const int is_fetch  = (*meth_name=='f' && DBIc_TYPE(imp_xxh)==DBIt_ST && strnEQ(meth_name,"fetch",5));
+        const int is_fetch  = (meth_type == methtype_fetch_star && DBIc_TYPE(imp_xxh)==DBIt_ST);
         const int row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
         if (is_fetch && row_count>=2 && trace_level<=4 && SvOK(ST(0))) {
             /* skip the 'middle' rows to reduce output */
@@ -3828,7 +3877,7 @@ XS(XS_DBI_dispatch)
         const char *err_meth_name = meth_name;
         char intro[200];
 
-        if (*meth_name=='s' && strEQ(meth_name,"set_err")) {
+        if (meth_type == methtype_set_err) {
             SV **sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, GV_ADDWARN);
             if (SvOK(*sem_svp))
                 err_meth_name = SvPV_nolen(*sem_svp);
@@ -4575,6 +4624,8 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
         PerlIO_printf(DBILOGFP,"%s\n", SvPV_nolen(trace_msg));
     cv = newXS(meth_name, XS_DBI_dispatch, file);
     CvXSUBANY(cv).any_ptr = ima;
+    ima->meth_type = get_meth_type(GvNAME(CvGV(cv)));
+
     /* Attach magic to handle duping and freeing of the dbi_ima_t struct.
      * Due to the poor interface of the mg dup function, sneak a pointer
      * to the original CV in the mg_ptr field (we get called with a
