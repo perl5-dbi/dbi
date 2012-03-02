@@ -3538,15 +3538,14 @@ XS(XS_DBI_dispatch)
             if (*key == 'P' && strEQ(key, "Profile"))
                 profile_t1 = 0.0;
         }
+        if (qsv) { /* skip real method call if we already have a 'quick' value */
+            ST(0) = sv_mortalcopy(qsv);
+            outitems = 1;
+            goto post_dispatch;
+        }
     }
 
-    if (qsv) { /* skip real method call if we already have a 'quick' value */
-
-        ST(0) = sv_mortalcopy(qsv);
-        outitems = 1;
-
-    }
-    else {
+    {
 #ifdef DBI_save_hv_fetch_ent
         HE save_mh;
         if (meth_type == methtype_FETCH)
