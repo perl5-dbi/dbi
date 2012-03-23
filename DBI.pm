@@ -419,7 +419,7 @@ my $keeperr = { O=>0x0004 };
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], O=>0x10000 },
 	clone   	=> { U =>[1,2,'[\%attr]'], T=>0x200 },
-	connected   	=> { U =>[1,0], O => 0x0004, T=>0x200 },
+	connected   	=> { U =>[1,0], O => 0x0004, T=>0x200, H=>3 },
 	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400, T=>0x1000 },
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },

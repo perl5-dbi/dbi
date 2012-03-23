@@ -9,6 +9,8 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.619-TRIAL (svn r15202) 25rd February 2012
 
   Further method dispatch optimizations thanks to Dave Mitchell.
+  Fixed the connected method to stop showing the password in
+    trace file (Martin J. Evans).
 
 =head2 Changes in DBI 1.618 (svn r15170) 25rd February 2012
 
