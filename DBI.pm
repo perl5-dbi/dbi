@@ -93,17 +93,16 @@ I don't recommend the DBI cpanforum (at http://www.cpanforum.com/dist/DBI)
 because relatively few people read it compared with dbi-users@perl.org.
 
 To help you make the best use of the dbi-users mailing list,
-and any other lists or forums you may use, I I<strongly>
-recommend that you read "How To Ask Questions The Smart Way"
-by Eric Raymond: L<http://www.catb.org/~esr/faqs/smart-questions.html>.
+and any other lists or forums you may use, I recommend that you read
+"Getting Answers" by Mike Ash: L<http://mikeash.com/getting_answers.html>.
 
 If you think you've found a bug then please also read
 "How to Report Bugs Effectively" by Simon Tatham:
 L<http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
 
 The DBI home page at L<http://dbi.perl.org/> and the DBI FAQ
-at L<http://faq.dbi-support.com/> are always worth a visit.
-They include links to other resources.
+at L<http://faq.dbi-support.com/> may be worth a visit.
+They include links to other resources, but are rather out-dated.
 
 Before asking any questions, reread this document, consult the
 archives and read the DBI FAQ. The archives are listed
@@ -6754,7 +6753,7 @@ statement, like SELECT. Typically the attribute will be C<undef>
 in these situations.
 
 For drivers which support stored procedures and multiple result sets
-(see more_results) these attributes relate to the I<current> result set.
+(see L</more_results>) these attributes relate to the I<current> result set.
 
 See also L</finish> to learn more about the effect it
 may have on some attributes.
