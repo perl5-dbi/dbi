@@ -49,12 +49,14 @@ if (($ENV{LANG}||'') =~ m/utf-?8/i) {
 }
 
 if ($Config{useithreads}) {
-    print "\n";
-    print "*** You are using a perl configured with threading enabled.\n";
-    print "*** You should be aware that using multiple threads is\n";
-    print "*** not recommended for production environments.\n";
-    print "\n";
-    sleep 1;
+    if ($] < 5.012) { # recent perls are reasonably fre of thread bugs
+        print "\n";
+        print "*** You are using a perl configured with threading enabled.\n";
+        print "*** You should be aware that using multiple threads is\n";
+        print "*** not recommended for production environments.\n";
+        print "\n";
+        sleep 1;
+    }
     $::opt_thread = 1;
 }
 else {
