@@ -223,12 +223,19 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIc_TRACE_MATCHES(this, crnt)  \
         (  ((crnt & DBIc_TRACE_LEVEL_MASK) >= (this & DBIc_TRACE_LEVEL_MASK)) \
         || ((crnt & DBIc_TRACE_FLAGS_MASK)  & (this & DBIc_TRACE_FLAGS_MASK)) )
-/* DBIc_TRACE: true if flags match & DBI level>=flaglevel, or if DBI level>level
+
+/* DBIc_TRACE(imp, flags, flag_level, fallback_level)
+   True if flags match the handle trace flags & handle trace level >= flag_level,
+   OR if handle trace_level > fallback_level (typically > flag_level).
    This is the main trace testing macro to be used by drivers.
    (Drivers should define their own DBDf_TRACE_* macros for the top 8 bits: 0xFF000000)
-   DBIc_TRACE(imp,        0, 0, 4) = if level >= 4
-   DBIc_TRACE(imp, DBDf_FOO, 2, 4) = if tracing DBDf_FOO & level>=2 or level>=4
-   DBIc_TRACE(imp, DBDf_FOO, 2, 0) = as above but never trace just due to level
+   DBIc_TRACE(imp,              0, 0, 4) = if trace level >= 4
+   DBIc_TRACE(imp, DBDf_TRACE_FOO, 2, 4) = if tracing DBDf_FOO & level>=2 or level>=4
+   DBIc_TRACE(imp, DBDf_TRACE_FOO, 2, 0) = as above but never trace just due to level
+   e.g.
+    if (DBIc_TRACE(imp_xxh, DBIf_TRACE_SQL|DBIf_TRACE_xxx, 2, 0)) {
+        PerlIO_printf(DBIc_LOGPIO(imp_sth), "\tThe %s wibbled the %s\n", ...);
+    }
 */
 #define DBIc_TRACE(imp, flags, flaglevel, level)        \
         (  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
