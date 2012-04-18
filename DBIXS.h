@@ -474,8 +474,6 @@ struct dbistate_st {
 #define set_attr(h, k, v)       set_attr_k(h, k, 0, v)
 #define get_attr(h, k)          get_attr_k(h, k, 0)
 
-#define DBISTATE_PERLNAME "DBI::_dbistate"
-#define DBISTATE_ADDRSV   (get_sv(DBISTATE_PERLNAME, 0x05))
 #define DBILOGFP        (DBIS->logfp)
 #ifdef IN_DBI_XS
 #define DBILOGMSG       (dbih_logmsg)
@@ -483,28 +481,45 @@ struct dbistate_st {
 #define DBILOGMSG       (DBIS->logmsg)
 #endif
 
-
 /* --- perl object (ActiveState) / multiplicity hooks and hoops --- */
 /* note that USE_ITHREADS implies MULTIPLICITY                      */
-#define DBIS_PUBLISHED_LVALUE (*(INT2PTR(dbistate_t**, &SvIVX(DBISTATE_ADDRSV))))
+
+typedef dbistate_t** (*_dbi_state_lval_t)(pTHX);
+
+# define _DBISTATE_DECLARE_COMMON \
+    static _dbi_state_lval_t dbi_state_lval_p = 0;                          \
+    static dbistate_t** dbi_get_state(pTHX) {                               \
+        if (!dbi_state_lval_p) {                                            \
+            CV *cv = get_cv("DBI::_dbi_state_lval", 0);                     \
+            if (!cv)                                                        \
+                croak("Unable to get DBI state function. DBI not loaded."); \
+            dbi_state_lval_p = (_dbi_state_lval_t)CvXSUB(cv);               \
+        }                                                                   \
+        return dbi_state_lval_p(aTHX);                                      \
+    }                                                                       \
+    typedef int dummy_dbistate /* keep semicolon from feeling lonely */
+
 #if defined(MULTIPLICITY) || defined(PERL_OBJECT) || defined(PERL_CAPI)
 
-# define DBISTATE_DECLARE    typedef int dummy_dbistate /* keep semicolon from feeling lonely */
-# define DBISTATE_INIT_DBIS  typedef int dummy_dbistate2; /* keep semicolon from feeling lonely */
+# define DBISTATE_DECLARE _DBISTATE_DECLARE_COMMON
+# define _DBISTATE_INIT_DBIS
 # undef  DBIS
-# define DBIS DBIS_PUBLISHED_LVALUE
-# define dbis DBIS_PUBLISHED_LVALUE /* temp for old drivers using 'dbis' instead of 'DBIS' */
+# define DBIS (*dbi_get_state(aTHX))
+# define dbis DBIS /* temp for old drivers using 'dbis' instead of 'DBIS' */
 
 #else   /* plain and simple non perl object / multiplicity case */
 
-# define DBISTATE_DECLARE       static dbistate_t *DBIS
-# define DBISTATE_INIT_DBIS     (DBIS = DBIS_PUBLISHED_LVALUE)
+# define DBISTATE_DECLARE \
+    static dbistate_t *DBIS; \
+    _DBISTATE_DECLARE_COMMON
+
+# define _DBISTATE_INIT_DBIS      DBIS = *dbi_get_state(aTHX);
 #endif
 
 # define DBISTATE_INIT {        /* typically use in BOOT: of XS file    */    \
-    DBISTATE_INIT_DBIS; \
+    _DBISTATE_INIT_DBIS \
     if (DBIS == NULL)   \
-        croak("Unable to get DBI state from %s at %p. DBI not loaded.", DBISTATE_PERLNAME, (void*)DBISTATE_ADDRSV); \
+        croak("Unable to get DBI state. DBI not loaded."); \
     DBIS->check_version(__FILE__, DBISTATE_VERSION, sizeof(*DBIS), NEED_DBIXS_VERSION, \
                 sizeof(dbih_drc_t), sizeof(dbih_dbc_t), sizeof(dbih_stc_t), sizeof(dbih_fdc_t) \
     ); \

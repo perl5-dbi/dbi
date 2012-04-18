@@ -519,10 +519,8 @@ END {
 
 
 sub CLONE {
-    my $olddbis = $DBI::_dbistate;
     _clone_dbis() unless $DBI::PurePerl; # clone the DBIS structure
-    DBI->trace_msg(sprintf "CLONE DBI for new thread %s\n",
-	$DBI::PurePerl ? "" : sprintf("(dbis %x -> %x)",$olddbis, $DBI::_dbistate));
+    DBI->trace_msg("CLONE DBI for new thread\n");
     while ( my ($driver, $drh) = each %DBI::installed_drh) {
 	no strict 'refs';
 	next if defined &{"DBD::${driver}::CLONE"};

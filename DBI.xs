@@ -127,8 +127,6 @@ char *neatsvpv _((SV *sv, STRLEN maxlen));
 SV * preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo);
 static meth_types get_meth_type(const char * const name);
 
-DBISTATE_DECLARE;
-
 struct imp_drh_st { dbih_drc_t com; };
 struct imp_dbh_st { dbih_dbc_t com; };
 struct imp_sth_st { dbih_stc_t com; };
@@ -310,12 +308,19 @@ typedef struct {
 
 START_MY_CXT
 
-#if defined(MULTIPLICITY) || defined(PERL_OBJECT) || defined(PERL_CAPI)
-#   undef DBIS
-#   define DBIS                 (MY_CXT.dbi_state)
-#endif
+#undef DBIS
+#define DBIS                   (MY_CXT.dbi_state)
 
 #define g_dbi_last_h            (MY_CXT.dbi_last_h)
+
+/* allow the 'static' dbi_state struct to be accessed from other files */
+dbistate_t**
+_dbi_state_lval(pTHX)
+{
+    dMY_CXT;
+    return &(MY_CXT.dbi_state);
+}
+
 
 /* --- */
 
@@ -521,15 +526,12 @@ dbi_bootinit(dbistate_t * parent_dbis)
     dbistate_t* DBISx;
 
     DBISx = (struct dbistate_st*)malloc_using_sv(sizeof(struct dbistate_st));
-
-    /* publish address of dbistate so dynaloaded DBD's can find it,
-     * taking care to store the value in the same way it'll be used
-     * to avoid problems on some architectures, for example see
-     * http://rt.cpan.org/Public/Bug/Display.html?id=32309
-     */
-    sv_setiv(get_sv(DBISTATE_PERLNAME, GV_ADDMULTI), 0); /* force SvIOK */
     DBIS = DBISx;
-    DBIS_PUBLISHED_LVALUE = DBISx;
+
+    /* make DBIS available to DBD modules the "old" (<= 1.618) way,
+     * so that unrecompiled DBD's will still work against a newer DBI */
+    sv_setiv(get_sv("DBI::_dbistate", GV_ADDMULTI),
+            PTR2IV(MY_CXT.dbi_state));
 
     /* store version and size so we can spot DBI/DBD version mismatch   */
     DBIS->check_version = check_version;
@@ -546,12 +548,6 @@ dbi_bootinit(dbistate_t * parent_dbis)
 #ifdef DBI_USE_THREADS
     DBIS->thr_owner   = PERL_GET_THX;
 #endif
-
-    DBISTATE_INIT; /* check DBD code to set DBIS from DBISTATE_PERLNAME */
-
-    if (DBIS_TRACE_LEVEL > 9) {
-        sv_dump(DBISTATE_ADDRSV);
-    }
 
     /* store some function pointers so DBD's can call our functions     */
     DBIS->getcom      = dbih_getcom;
@@ -4346,6 +4342,9 @@ BOOT:
     (void)cv;
     (void)items; /* avoid 'unused variable' warning */
     dbi_bootinit(NULL);
+    /* make this sub into a fake XS so it can bee seen by DBD::* modules;
+     * never actually call it as an XS sub, or it will crash and burn! */
+    (void) newXS("DBI::_dbi_state_lval", (XSUBADDR_t)_dbi_state_lval, __FILE__);
 
 
 I32
