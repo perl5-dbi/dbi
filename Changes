@@ -10,6 +10,8 @@ CHANGES SINCE LAST RELEASE (not sure if they will go in 1.619):
 
   RT76520 - Optimize fetchall_arrayref with hash slice thanks
     to Dagfinn Ilmari Mannsåker
+  RT76572 - Allow renaming columns in fetchall_arrayref hash slices
+    thanks to Dagfinn Ilmari Mannsåker
 
 =head2 Changes in DBI 1.619-TRIAL (svn r15271) 18th April 2012
 

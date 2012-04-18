@@ -2009,6 +2009,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
         return undef if $max_rows and not $sth->FETCH('Active');
 
 	my $mode = ref($slice) || 'ARRAY';
+	$mode = 'HASH' if $mode eq 'REF' && ref($$slice) eq 'HASH';
 	my @rows;
 	my $row;
 	if ($mode eq 'ARRAY') {
@@ -2029,12 +2030,15 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	}
 	elsif ($mode eq 'HASH') {
 	    $max_rows = -1 unless defined $max_rows;
-            # XXX It would be very helpful for DBIx::Class and others
-            # if a slice could 'rename' columns. Some kind of 'renaming slice'
-            # could be incorporated here.
-	    my %row;
-	    if (keys %$slice) {
-		my %map = map { lc($_) =>  $_ } keys %$slice;
+	    my (%row, $rename);
+	    if (ref($slice) eq 'REF') {
+		$rename = 1;
+		$slice = $$slice;
+	    }
+	    if ($rename || keys %$slice) {
+		my %map = $rename
+		    ? map { lc($_) => $slice->{$_} } keys %$slice
+		    : map { lc($_) => $_ } keys %$slice;
 		$sth->bind_columns( map { exists $map{$_} ? \$row{$map{$_}} : \do { my $dummy } } @{$sth->FETCH('NAME_lc')} );
 	    }
 	    else {
@@ -6398,8 +6402,13 @@ hashes have whatever name lettercase is returned by default. (See
 L</FetchHashKeyName> attribute.) If the $slice hash is not empty, then
 it is used as a slice to select individual columns by name. The values
 of the hash should be set to 1. The key names of the returned hashes
-match the letter case of the names in the parameter hash, regardless
-of the L</FetchHashKeyName> attribute.
+match the letter case of the names in the parameter hash, regardless of
+the L</FetchHashKeyName> attribute.
+
+If $slice is a reference to a hash reference, C<fetchall_arrayref>
+fetches each row as a hash reference, returning only the columns
+matching (case insensitively) the keys, renamed to the corresponding
+values in the hash.
 
 For example, to fetch just the first column of every row:
 
@@ -6417,6 +6426,11 @@ To fetch only the fields called "foo" and "bar" of every row as a hash ref
 (with keys named "foo" and "BAR"):
 
   $tbl_ary_ref = $sth->fetchall_arrayref({ foo=>1, BAR=>1 });
+
+To fetch only the fields "foo" and "bar" of every row as a hash ref
+(with keys renamed to "f" and "b", respectively):
+
+  $tbl_ary_ref = $sth->fetchall_arrayref(\{ foo => "f", bar => "b" });
 
 The first two examples return a reference to an array of array refs.
 The third and forth return a reference to an array of hash refs.
