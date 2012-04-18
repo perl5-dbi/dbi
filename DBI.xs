@@ -1096,17 +1096,31 @@ dbih_inner(pTHX_ SV *orv, const char *what)
 static imp_xxh_t *
 dbih_getcom(SV *hrv) /* used by drivers via DBIS func ptr */
 {
-    dTHX;
-    imp_xxh_t *imp_xxh = dbih_getcom2(aTHX_ hrv, 0);
-    if (!imp_xxh)       /* eg after take_imp_data */
-        croak("Invalid DBI handle %s, has no dbi_imp_data", neatsvpv(hrv,0));
-    return imp_xxh;
+    MAGIC *mg;
+    SV *sv;
+
+    /* short-cut common case */
+    if (   SvROK(hrv)
+        && (sv = SvRV(hrv))
+        && SvRMAGICAL(sv)
+        && (mg = SvMAGIC(sv))
+        && mg->mg_type == DBI_MAGIC
+        && mg->mg_ptr
+    )
+        return (imp_xxh_t *) mg->mg_ptr;
+
+    {
+        dTHX;
+        imp_xxh_t *imp_xxh = dbih_getcom2(aTHX_ hrv, 0);
+        if (!imp_xxh)       /* eg after take_imp_data */
+            croak("Invalid DBI handle %s, has no dbi_imp_data", neatsvpv(hrv,0));
+        return imp_xxh;
+    }
 }
 
 static imp_xxh_t *
 dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be fast.    */
 {
-    imp_xxh_t *imp_xxh;
     MAGIC *mg;
     SV *sv;
 
@@ -1141,14 +1155,7 @@ dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be f
     if (mgp)    /* let caller pickup magic struct for this handle */
         *mgp = mg;
 
-    if (!mg->mg_obj)    /* eg after take_imp_data */
-        return 0;
-
-    /* ignore 'cast increases required alignment' warning       */
-    /* not a problem since we created the pointers anyway.      */
-    imp_xxh = (imp_xxh_t*)(void*)SvPVX(mg->mg_obj);
-
-    return imp_xxh;
+    return (imp_xxh_t *) mg->mg_ptr;
 }
 
 
@@ -1485,7 +1492,10 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     }
 
     /* Use DBI magic on inner handle to carry handle attributes         */
-    sv_magic(SvRV(h), dbih_imp_sv, DBI_MAGIC, Nullch, 0);
+    /* Note that we store the imp_sv in mg_obj, but as a shortcut,      */
+    /* also store a direct pointer to imp, aka PVX(dbih_imp_sv),        */
+    /* in mg_ptr (with mg_len set to null, so it wont be freed)         */
+    sv_magic(SvRV(h), dbih_imp_sv, DBI_MAGIC, (char*)imp, 0);
     SvREFCNT_dec(dbih_imp_sv);  /* since sv_magic() incremented it      */
     SvRMAGICAL_on(SvRV(h));     /* so DBI magic gets sv_clear'd ok      */
 
@@ -5026,6 +5036,7 @@ take_imp_data(h)
     dbih_getcom2(aTHX_ h, &mg); /* get the MAGIC so we can change it    */
     imp_xxh_sv = mg->mg_obj;    /* take local copy of the imp_data pointer */
     mg->mg_obj = Nullsv;        /* sever the link from handle to imp_xxh */
+    mg->mg_ptr = NULL;          /* and sever the shortcut too */
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 9)
         sv_dump(imp_xxh_sv);
     /* --- housekeeping */

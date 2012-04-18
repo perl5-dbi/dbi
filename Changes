@@ -10,6 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Further method dispatch optimizations thanks to Dave Mitchell.
   Optimized driver access to DBI internal state thanks to Dave Mitchell.
+  Optimized driver access to handle data thanks to Dave Mitchell.
   Fixed the connected method to stop showing the password in
     trace file (Martin J. Evans).
 
