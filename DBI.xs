@@ -4591,8 +4591,8 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     CV *cv;
     SV **svp;
     dbi_ima_t *ima;
-    (void)dbi_class;
     MAGIC *mg;
+    (void)dbi_class;
 
     if (strnNE(meth_name, "DBI::", 5))  /* XXX m/^DBI::\w+::\w+$/       */
         croak("install_method %s: invalid class", meth_name);
