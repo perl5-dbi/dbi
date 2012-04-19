@@ -685,7 +685,8 @@ sub list_tables ($)
     my @tables = $dbh->func("get_avail_tables") or return;
     foreach my $ref (@tables)
     {
-        push @tables, $ref->[2];
+        # rt69260 and rt67223 - the same issue in 2 different queues
+        push @table_list, $ref->[2];
     }
 
     return @table_list;

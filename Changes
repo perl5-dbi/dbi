@@ -13,6 +13,7 @@ CHANGES SINCE LAST RELEASE (not sure if they will go in 1.619):
   RT#76572 - Allow renaming columns in fetchall_arrayref hash slices
     thanks to Dagfinn Ilmari Mannsåker
   RT#76296 - _install_method fails to set CvFILE correctly
+  RT#67223 and RT#69260 in SqlEngine "list_tables" pushes to the wrong list
 
 =head2 Changes in DBI 1.619-TRIAL (svn r15271) 18th April 2012
 
