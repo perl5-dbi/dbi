@@ -8,10 +8,11 @@ DBI::Changes - List of significant changes to the DBI
 
 CHANGES SINCE LAST RELEASE (not sure if they will go in 1.619):
 
-  RT76520 - Optimize fetchall_arrayref with hash slice thanks
+  RT#76520 - Optimize fetchall_arrayref with hash slice thanks
     to Dagfinn Ilmari Mannsåker
-  RT76572 - Allow renaming columns in fetchall_arrayref hash slices
+  RT#76572 - Allow renaming columns in fetchall_arrayref hash slices
     thanks to Dagfinn Ilmari Mannsåker
+  RT#76296 - _install_method fails to set CvFILE correctly
 
 =head2 Changes in DBI 1.619-TRIAL (svn r15271) 18th April 2012
 

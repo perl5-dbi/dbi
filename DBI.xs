@@ -4630,7 +4630,10 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     }
     if (trace_msg)
         PerlIO_printf(DBILOGFP,"%s\n", SvPV_nolen(trace_msg));
+    file = savepv(file);
     cv = newXS(meth_name, XS_DBI_dispatch, file);
+    SvPVX((SV *)cv) = file;
+    SvLEN((SV *)cv) = 1;
     CvXSUBANY(cv).any_ptr = ima;
     ima->meth_type = get_meth_type(GvNAME(CvGV(cv)));
 
