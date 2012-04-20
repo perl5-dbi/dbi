@@ -22,6 +22,7 @@ DBI::Changes - List of significant changes to the DBI
     to Dagfinn Ilmari Mannsåker. RT#76520
   Allow renaming columns in fetchall_arrayref hash slices
     thanks to Dagfinn Ilmari Mannsåker. RT#76572
+  Reserved snmp_ and tree_ for DBD::SNMP and DBD::TreeData
 
 =head2 Changes in DBI 1.618 (svn r15170) 25rd February 2012
 
