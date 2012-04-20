@@ -10,7 +10,8 @@ DBI::Changes - List of significant changes to the DBI
 
   Fixed the connected method to stop showing the password in
     trace file (Martin J. Evans).
-  Fixed _install_method to set CvFILE correctly. RT#76572
+  Fixed _install_method to set CvFILE correctly
+    thanks to sprout RT#76296
   Fixed SqlEngine "list_tables" thanks to David McMath
     and Norbert Gruener. RT#67223 RT#69260
 
