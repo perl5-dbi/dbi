@@ -964,7 +964,7 @@ implemented the private_attribute_info() method (added in DBI 1.54).
 
 Driver-private sth attributes can be set in the prepare() call. TODO
 
-Some driver-private dbh attributes may not be available if the driver has not
+Some driver-private sth attributes may not be available if the driver has not
 implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head2 Multiple Resultsets
