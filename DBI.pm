@@ -353,7 +353,7 @@ my $dbd_prefix_registry = {
   tdat_        => { class => 'DBD::Teradata',       },
   tmpl_        => { class => 'DBD::Template',       },
   tmplss_      => { class => 'DBD::TemplateSS',     },
-  tree_        => } class => 'DBD::TreeData',       },
+  tree_        => { class => 'DBD::TreeData',       },
   tuber_       => { class => 'DBD::Tuber',          },
   uni_         => { class => 'DBD::Unify',          },
   vt_          => { class => 'DBD::Vt',             },
