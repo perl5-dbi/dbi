@@ -2011,10 +2011,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
         return undef if $max_rows and not $sth->FETCH('Active');
 
 	my $mode = ref($slice) || 'ARRAY';
-	$mode = 'HASH' if $mode eq 'REF' && ref($$slice) eq 'HASH';
 	my @rows;
-	my $row;
+
 	if ($mode eq 'ARRAY') {
+	    my $row;
 	    # we copy the array here because fetch (currently) always
 	    # returns the same array ref. XXX
 	    if ($slice && @$slice) {
@@ -2029,33 +2029,42 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    else {
 		push @rows, [ @$row ] while($row = $sth->fetch);
 	    }
+	    return \@rows
+	}
+
+	my %row;
+	if ($mode eq 'REF' && ref($$slice) eq 'HASH') { # \{ $idx => $name }
+            keys %$$slice; # reset the iterator
+            while ( my ($idx, $name) = each %$$slice ) {
+                $sth->bind_col($idx+1, \$row{$name});
+            }
 	}
 	elsif ($mode eq 'HASH') {
-	    $max_rows = -1 unless defined $max_rows;
-	    my (%row, $rename);
-	    if (ref($slice) eq 'REF') {
-		$rename = 1;
-		$slice = $$slice;
-	    }
-	    if ($rename || keys %$slice) {
-		my %map = $rename
-		    ? map { lc($_) => $slice->{$_} } keys %$slice
-		    : map { lc($_) => $_ } keys %$slice;
-                my $idx = 0;
-		for my $col_name ( @{$sth->FETCH('NAME_lc')} ) {
-                    ++$idx;
-                    next unless exists $map{$col_name};
-                    $sth->bind_col($idx, \$row{$map{$col_name}});
+            if (keys %$slice) {
+                keys %$slice; # reset the iterator
+                my $name2idx = $sth->FETCH('NAME_lc_hash');
+                while ( my ($name, $unused) = each %$slice ) {
+                    my $idx = $name2idx->{lc $name};
+                    return $sth->set_err($DBI::stderr, "Invalid column name '$name' for slice")
+                        if not defined $idx;
+                    $sth->bind_col($idx+1, \$row{$name});
                 }
 	    }
 	    else {
 		$sth->bind_columns( \( @row{ @{$sth->FETCH($sth->FETCH('FetchHashKeyName')) } } ) );
 	    }
-	    push @rows, { %row }
-		while ($max_rows-- and $sth->fetch);
-
 	}
-	else { Carp::croak("fetchall_arrayref($mode) invalid") }
+	else {
+            return $sth->set_err($DBI::stderr, "fetchall_arrayref($mode) invalid");
+        }
+
+        if (not defined $max_rows) {
+            push @rows, { %row } while ($sth->fetch); # full speed ahead!
+        }
+        else {
+            push @rows, { %row } while ($max_rows-- and $sth->fetch);
+        }
+
 	return \@rows;
     }
 
@@ -6403,20 +6412,6 @@ start at 1).
 With no parameters, or if $slice is undefined, C<fetchall_arrayref>
 acts as if passed an empty array ref.
 
-If $slice is a hash reference, C<fetchall_arrayref> fetches each row
-as a hash reference. If the $slice hash is empty then the keys in the
-hashes have whatever name lettercase is returned by default. (See
-L</FetchHashKeyName> attribute.) If the $slice hash is not empty, then
-it is used as a slice to select individual columns by name. The values
-of the hash should be set to 1. The key names of the returned hashes
-match the letter case of the names in the parameter hash, regardless of
-the L</FetchHashKeyName> attribute.
-
-If $slice is a reference to a hash reference, C<fetchall_arrayref>
-fetches each row as a hash reference, returning only the columns
-matching (case insensitively) the keys, renamed to the corresponding
-values in the hash.
-
 For example, to fetch just the first column of every row:
 
   $tbl_ary_ref = $sth->fetchall_arrayref([0]);
@@ -6425,22 +6420,35 @@ To fetch the second to last and last column of every row:
 
   $tbl_ary_ref = $sth->fetchall_arrayref([-2,-1]);
 
-To fetch all fields of every row as a hash ref:
+Those two examples both return a reference to an array of array refs.
+
+If $slice is a hash reference, C<fetchall_arrayref> fetches each row as a hash
+reference. If the $slice hash is empty then the keys in the hashes have
+whatever name lettercase is returned by default. (See L</FetchHashKeyName>
+attribute.) If the $slice hash is I<not> empty, then it is used as a slice to
+select individual columns by name. The values of the hash should be set to 1.
+The key names of the returned hashes match the letter case of the names in the
+parameter hash, regardless of the L</FetchHashKeyName> attribute.
+
+For example, to fetch all fields of every row as a hash ref:
 
   $tbl_ary_ref = $sth->fetchall_arrayref({});
 
 To fetch only the fields called "foo" and "bar" of every row as a hash ref
-(with keys named "foo" and "BAR"):
+(with keys named "foo" and "BAR", regardless of the original capitalization):
 
   $tbl_ary_ref = $sth->fetchall_arrayref({ foo=>1, BAR=>1 });
 
-To fetch only the fields "foo" and "bar" of every row as a hash ref
-(with keys renamed to "f" and "b", respectively):
+Those two examples both return a reference to an array of hash refs.
 
-  $tbl_ary_ref = $sth->fetchall_arrayref(\{ foo => "f", bar => "b" });
+If $slice is a I<reference to a hash reference>, that hash is used to select
+and rename columns. The keys are 0-based column index numbers and the values
+are the corresponding keys for the returned row hashes.
 
-The first two examples return a reference to an array of array refs.
-The third and forth return a reference to an array of hash refs.
+For example, to fetch only the first and second columns of every row as a hash
+ref (with keys named "k" and "v" regardless of their original names):
+
+  $tbl_ary_ref = $sth->fetchall_arrayref( \{ 0 => 'k', 1 => 'v' } );
 
 If $max_rows is defined and greater than or equal to zero then it
 is used to limit the number of rows fetched before returning.

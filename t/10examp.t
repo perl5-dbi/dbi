@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 225;
+use Test::More tests => 229;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -234,12 +234,18 @@ ok($r && @$r);
 ok($r->[0]->{SizE} == $row_a[1]);
 ok($r->[0]->{nAMe} eq $row_a[2]);
 
+ok ! $csr_b->fetchall_arrayref({ NoneSuch=>1 });
+like $DBI::errstr, qr/Invalid column name/;
+
 print "fetchall_arrayref renaming hash slice\n";
 ok($csr_b->execute());
-$r = $csr_b->fetchall_arrayref(\{ SizE=> "Koko", nAMe=>"Nimi"});
+$r = $csr_b->fetchall_arrayref(\{ 1 => "Koko", 2 => "Nimi"});
 ok($r && @$r);
 ok($r->[0]->{Koko} == $row_a[1]);
 ok($r->[0]->{Nimi} eq $row_a[2]);
+
+ok ! eval { $csr_b->fetchall_arrayref(\{ 9999 => "Koko" }) };
+like $@, qr/\Qis not a valid column/;
 
 print "fetchall_arrayref empty renaming hash slice\n";
 ok($csr_b->execute());
@@ -248,8 +254,8 @@ ok($r && @$r);
 ok(keys %{$r->[0]} == 0);
 
 ok($csr_b->execute());
-ok(!eval { $csr_b->fetchall_arrayref(\[]); 1 });
-like $@, qr/\Qfetchall_arrayref(REF) invalid/;
+ok(!$csr_b->fetchall_arrayref(\[]));
+like $DBI::errstr, qr/\Qfetchall_arrayref(REF) invalid/;
 
 print "fetchall_arrayref hash\n";
 ok($csr_b->execute());
