@@ -2041,7 +2041,12 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		my %map = $rename
 		    ? map { lc($_) => $slice->{$_} } keys %$slice
 		    : map { lc($_) => $_ } keys %$slice;
-		$sth->bind_columns( map { exists $map{$_} ? \$row{$map{$_}} : \do { my $dummy } } @{$sth->FETCH('NAME_lc')} );
+                my $idx = 0;
+		for my $col_name ( @{$sth->FETCH('NAME_lc')} ) {
+                    ++$idx;
+                    next unless exists $map{$col_name};
+                    $sth->bind_col($idx, \$row{$map{$col_name}});
+                }
 	    }
 	    else {
 		$sth->bind_columns( \( @row{ @{$sth->FETCH($sth->FETCH('FetchHashKeyName')) } } ) );
