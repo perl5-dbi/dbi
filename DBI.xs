@@ -283,6 +283,7 @@ static int dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param)
     CV *ncv = (CV*)ptr_table_fetch(PL_ptr_table, (cv));
 
     (void)param; /* avoid 'unused variable' warning */
+    mg->mg_ptr = (char *)ncv;
     ima = (dbi_ima_t*) CvXSUBANY(cv).any_ptr;
     Newx(nima, 1, dbi_ima_t);
     *nima = *ima; /* structure copy */
