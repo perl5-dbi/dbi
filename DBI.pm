@@ -6597,7 +6597,7 @@ Binds a Perl variable and/or some attributes to an output column
 You do not need to bind output columns in order to fetch data.
 For maximum portability between drivers, bind_col() should be called
 after execute() and not before.
-See also C<bind_columns> for an example.
+See also L</bind_columns> for an example.
 
 The binding is performed at a low level using Perl aliasing.
 Whenever a row is fetched from the database $var_to_bind appears
