@@ -30,6 +30,7 @@ DBI::Changes - List of significant changes to the DBI
   Optimized DBI method dispatch thanks to Dave Mitchell.
   Optimized driver access to DBI internal state thanks to Dave Mitchell.
   Optimized driver access to handle data thanks to Dave Mitchell.
+    Dave's work on these optimizations was sponsored by Booking.com.
   Optimized fetchall_arrayref with hash slice thanks
     to Dagfinn Ilmari Mannsåker. RT#76520
   Allow renaming columns in fetchall_arrayref hash slices
@@ -45,6 +46,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Significantly optimized method dispatch via cache (Dave Mitchell)
   Significantly optimized DBI internals for threads (Dave Mitchell)
+    Dave's work on these optimizations was sponsored by Booking.com.
   Xsub to xsub calling optimization now enabled for threaded perls.
   Corrected typo in example in docs (David Precious)
   Added note that calling clone() without an arg may warn in future.
@@ -67,6 +69,7 @@ DBI::Changes - List of significant changes to the DBI
   Fixed is_nested_call logic error RT73118 (Reini Urban)
 
   Enhanced performance for threaded perls (Dave Mitchell, Tim Bunce)
+    Dave's work on this optimization was sponsored by Booking.com.
   Enhanced and standardized driver trace level mechanism (Tim Bunce)
   Removed old code that was an inneffective attempt to detect
     people doing DBI->{Attrib}.
