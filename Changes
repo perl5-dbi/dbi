@@ -10,8 +10,8 @@ DBI::Changes - List of significant changes to the DBI
 
   Fixed segmentation fault when a thread is created from
     within another thread RT#77137, thanks to Dave Mitchell.
-  Updated Changes to credit Booking.com for sponsoring Dave Mitchell
-    recent DBI optimization work.
+  Updated previous Changes to credit Booking.com for sponsoring
+    Dave Mitchell's recent DBI optimization work.
 
 =head2 Changes in DBI 1.620 (svn r15300) 25th April 2012
 
