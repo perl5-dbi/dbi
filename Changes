@@ -4,9 +4,13 @@ DBI::Changes - List of significant changes to the DBI
 
 (As of $Date$ $Revision$)
 
+=encoding ISO8859-1
+
 =cut
 
 =head2 Changes in DBI 1.622
+
+  Fixed lack of =encoding in non-ASCII pod docs. RT#77588
 
   Corrected typo in DBI::ProfileDumper thanks to Finn Hakansson.
 

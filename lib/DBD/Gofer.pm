@@ -838,6 +838,8 @@ The C<...> represents attributes that influence the operation of the Gofer
 driver or transport. These are described below or in the documentation of the
 transport module being used.
 
+=encoding ISO8859-1
+
 =head1 DESCRIPTION
 
 DBD::Gofer is a DBI database driver that forwards requests to another DBI
