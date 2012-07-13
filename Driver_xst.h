@@ -28,7 +28,7 @@ dbixst_bounce_method(char *methname, int params)
     if (debug >= 3) {
 	PerlIO_printf(DBIc_LOGPIO(imp_xxh),
 	    "    -> %s (trampoline call with %d (%ld) params)\n", methname, params, (long)items);
-	xxx = xxx; /* avoid unused var warning */
+	PERL_UNUSED_VAR(xxx);
     }
     EXTEND(SP, params);
     PUSHMARK(SP);

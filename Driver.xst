@@ -15,7 +15,7 @@ REQUIRE:    1.929
 PROTOTYPES: DISABLE
 
 BOOT:
-    items = 0;  /* avoid 'unused variable' warning */
+    PERL_UNUSED_VAR(items);
     DBISTATE_INIT;
     /* XXX this interface will change: */
     DBI_IMP_SIZE("DBD::~DRIVER~::dr::imp_data_size", sizeof(imp_drh_t));
@@ -46,7 +46,7 @@ discon_all_(drh)
         disconnect_all = 1
     CODE:
     D_imp_drh(drh);
-    if (0) ix = ix;     /* avoid unused variable warning */
+    PERL_UNUSED_VAR(ix);
     ST(0) = dbd_discon_all(drh, imp_drh) ? &PL_sv_yes : &PL_sv_no;
 
 #endif /* dbd_discon_all */
@@ -623,7 +623,7 @@ fetchrow_arrayref(sth)
     CODE:
     D_imp_sth(sth);
     AV *av;
-    if (0) ix = ix;     /* avoid unused variable warning */
+    PERL_UNUSED_VAR(ix);
     av = dbd_st_fetch(sth, imp_sth);
     ST(0) = (av) ? sv_2mortal(newRV((SV *)av)) : &PL_sv_undef;
 
@@ -644,7 +644,7 @@ fetchrow_array(sth)
         for(i=0; i < num_fields; ++i) {
             PUSHs(AvARRAY(av)[i]);
         }
-        if (0) ix = ix; /* avoid unused variable warning */
+        PERL_UNUSED_VAR(ix);
     }
 
 
@@ -731,7 +731,7 @@ FETCH_attrib(sth, keysv)
     CODE:
     D_imp_sth(sth);
     SV *valuesv;
-    if (0) ix = ix;     /* avoid unused variable warning */
+    PERL_UNUSED_VAR(ix);
     valuesv = dbd_st_FETCH_attrib(sth, imp_sth, keysv);
     if (!valuesv)
         valuesv = DBIc_DBISTATE(imp_sth)->get_attr(sth, keysv);
