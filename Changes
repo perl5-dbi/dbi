@@ -13,6 +13,8 @@ DBI::Changes - List of significant changes to the DBI
   Added logic to force destruction of children before parents
     during global destruction. Currently experimental.
 
+  Fixed unused variable / self-assignment compiler warnings.
+
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
 
   Fixed lack of =encoding in non-ASCII pod docs. RT#77588

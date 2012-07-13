@@ -41,7 +41,7 @@ int     /* just to test syntax of macros etc */
 dbd_st_rows(SV *h, imp_sth_t *imp_sth)
 {
     dTHX;
-    h = h; /* silence unused var warning */
+    PERL_UNUSED_VAR(h);
     DBIh_SET_ERR_CHAR(h, imp_sth, 0, 1, "err msg", "12345", Nullch);
     return -1;
 }
