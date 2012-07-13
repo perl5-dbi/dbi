@@ -1156,6 +1156,9 @@ dbih_getcom2(pTHX_ SV *hrv, MAGIC **mgp) /* Get com struct for handle. Must be f
     if (mgp)    /* let caller pickup magic struct for this handle */
         *mgp = mg;
 
+    if (!mg)    /* may happen during global destruction */
+        return (imp_xxh_t *) 0;
+
     return (imp_xxh_t *) mg->mg_ptr;
 }
 
@@ -3389,11 +3392,44 @@ XS(XS_DBI_dispatch)
     /* record this inner handle for use by DBI::var::FETCH      */
     if (is_DESTROY) {
 
+        /* force destruction of any outstanding children */
+        if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+            AV *av = (AV*)SvRV(*tmp_svp);
+            I32 kidslots;
+            PerlIO *logfp = DBILOGFP;
+
+            for (kidslots = AvFILL(av); kidslots >= 0; --kidslots) {
+                SV **hp = av_fetch(av, kidslots, FALSE);
+                if (!hp || !SvROK(*hp) || SvTYPE(SvRV(*hp))!=SVt_PVHV)
+                    break;
+
+                if (trace_level >= 1) {
+                    PerlIO_printf(logfp, "on DESTROY handle %s still has child %s (refcnt %ld, obj %d, dirty=%d)\n",
+                        neatsvpv(h,0), neatsvpv(*hp, 0), (long)SvREFCNT(*hp), !!sv_isobject(*hp), PL_dirty);
+                    if (trace_level >= 9)
+                        sv_dump(SvRV(*hp));
+                }
+                if (sv_isobject(*hp)) { /* call DESTROY on the handle */
+                    PUSHMARK(SP);
+                    XPUSHs(*hp);
+                    PUTBACK;
+                    call_method("DESTROY", G_DISCARD|G_EVAL|G_KEEPERR);
+                }
+                else {
+                    imp_xxh_t *imp_xxh = dbih_getcom2(aTHX_ *hp, 0);
+                    if (imp_xxh && DBIc_COMSET(imp_xxh)) {
+                        dbih_clearcom(imp_xxh);
+                        sv_setsv(*hp, &PL_sv_undef);
+                    }
+                }
+            }
+        }
+
         if (DBIc_TYPE(imp_xxh) <= DBIt_DB ) {   /* is dbh or drh */
             imp_xxh_t *parent_imp;
 
             if (SvOK(DBIc_ERR(imp_xxh)) && (parent_imp = DBIc_PARENT_COM(imp_xxh))
-                && !PL_dirty
+                && !PL_dirty /* XXX - remove? */
             ) {
                 /* copy err/errstr/state values to $DBI::err etc still work */
                 sv_setsv(DBIc_ERR(parent_imp),    DBIc_ERR(imp_xxh));

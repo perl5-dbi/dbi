@@ -8,6 +8,11 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.623
+
+  Added logic to force destruction of children before parents
+    during global destruction. Currently experimental.
+
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
 
   Fixed lack of =encoding in non-ASCII pod docs. RT#77588
