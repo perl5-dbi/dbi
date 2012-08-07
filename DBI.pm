@@ -1017,9 +1017,7 @@ sub available_drivers {
 sub installed_versions {
     my ($class, $quiet) = @_;
     my %error;
-    my %version = ( DBI => $DBI::VERSION );
-    $version{"DBI::PurePerl"} = $DBI::PurePerl::VERSION
-	if $DBI::PurePerl;
+    my %version;
     for my $driver ($class->available_drivers($quiet)) {
 	next if $DBI::PurePerl && grep { -d "$_/auto/DBD/$driver" } @INC;
 	my $drh = eval {
@@ -1034,6 +1032,8 @@ sub installed_versions {
     if (wantarray) {
        return map { m/^DBD::(\w+)/ ? ($1) : () } sort keys %version;
     }
+    $version{"DBI"}           = $DBI::VERSION;
+    $version{"DBI::PurePerl"} = $DBI::PurePerl::VERSION if $DBI::PurePerl;
     if (!defined wantarray) {	# void context
 	require Config;		# add more detail
 	$version{OS}   = "$^O\t($Config::Config{osvers})";
@@ -2855,7 +2855,7 @@ Added in DBI 1.49.
 
   DBI->installed_versions;
   @ary  = DBI->installed_versions;
-  %hash = DBI->installed_versions;
+  $hash = DBI->installed_versions;
 
 Calls available_drivers() and attempts to load each of them in turn
 using install_driver().  For each load that succeeds the driver
@@ -2865,12 +2865,12 @@ L<DBI::PurePerl> drivers which appear not be pure-perl are ignored.
 When called in array context the list of successfully loaded drivers
 is returned (without the 'DBD::' prefix).
 
-When called in scalar context a reference to the hash is returned
-and the hash will also contain other entries for the C<DBI> version,
-C<OS> name, etc.
+When called in scalar context an extra entry for the C<DBI> is added (and
+C<DBI::PurePerl> if appropriate) and a reference to the hash is returned.
 
 When called in a void context the installed_versions() method will
-print out a formatted list of the hash contents, one per line.
+print out a formatted list of the hash contents, one per line, along with some
+other information about the DBI version and OS.
 
 Due to the potentially high memory cost and unknown risks of loading
 in an unknown number of drivers that just happen to be installed
