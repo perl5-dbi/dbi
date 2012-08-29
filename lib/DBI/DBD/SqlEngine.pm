@@ -685,6 +685,7 @@ sub list_tables ($)
     my @tables = $dbh->func("get_avail_tables") or return;
     foreach my $ref (@tables)
     {
+        # rt69260 and rt67223 - the same issue in 2 different queues
         push @table_list, $ref->[2];
     }
 
@@ -778,6 +779,9 @@ sub execute
     $sth->finish;
     my $stmt = $sth->{sql_stmt};
 
+    # SQL::Statement and DBI::SQL::Nano will return the list of required params
+    # when called in list context. Do not look into the several items, they're
+    # implementation specific and may change without warning
     unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
     {
 	my $msg = "You passed $nparm parameters where $req_prm required";

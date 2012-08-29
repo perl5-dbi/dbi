@@ -316,7 +316,7 @@ SKIP: {
 	my @installed_drivers = DBI->installed_versions;
 
 	cmp_ok(scalar(@installed_drivers), '>=', 1, '... make sure we got at least one');
-	like("@installed_drivers", qr/Sponge/, '... make sure at least one of them is DBI::Spounge');
+	like("@installed_drivers", qr/Sponge/, '... make sure at least one of them is DBD::Sponge');
 }
 
 ## testing dbi_debug

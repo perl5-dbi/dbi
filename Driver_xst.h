@@ -28,7 +28,7 @@ dbixst_bounce_method(char *methname, int params)
     if (debug >= 3) {
 	PerlIO_printf(DBIc_LOGPIO(imp_xxh),
 	    "    -> %s (trampoline call with %d (%ld) params)\n", methname, params, (long)items);
-	xxx = xxx; /* avoid unused var warning */
+	PERL_UNUSED_VAR(xxx);
     }
     EXTEND(SP, params);
     PUSHMARK(SP);
@@ -61,10 +61,15 @@ dbdxst_bind_params(SV *sth, imp_sth_t *imp_sth, I32 items, I32 ax)
 	&& DBIc_NUM_PARAMS(imp_sth) != DBIc_NUM_PARAMS_AT_EXECUTE
     ) {
 	char errmsg[99];
+        /* clear any previous ParamValues before error is generated */
+        SV **svp = hv_fetch((HV*)DBIc_MY_H(imp_sth),"ParamValues",11,FALSE);
+        if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
+            HV *hv = (HV*)SvRV(*svp);
+            hv_clear(hv);
+        }
 	sprintf(errmsg,"called with %d bind variables when %d are needed",
 		(int)items-1, DBIc_NUM_PARAMS(imp_sth));
-	sv_setpv(DBIc_ERRSTR(imp_sth), errmsg);
-	sv_setiv(DBIc_ERR(imp_sth), (IV)-1);
+        DBIh_SET_ERR_CHAR(sth, (imp_xxh_t*)imp_sth, "-1", -1, errmsg, Nullch, Nullch);
 	return 0;
     }
     idx = sv_2mortal(newSViv(0));
@@ -90,8 +95,7 @@ dbdxst_fetchall_arrayref(SV *sth, SV *slice, SV *batch_row_count)
     if (SvOK(slice)) {  /* should never get here */
 	char errmsg[99];
 	sprintf(errmsg,"slice param not supported by XS version of fetchall_arrayref");
-	sv_setpv(DBIc_ERRSTR(imp_sth), errmsg);
-	sv_setiv(DBIc_ERR(imp_sth), (IV)-1);
+        DBIh_SET_ERR_CHAR(sth, (imp_xxh_t*)imp_sth, "-1", -1, errmsg, Nullch, Nullch);
 	return &PL_sv_undef;
     }
     else {

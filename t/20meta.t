@@ -1,5 +1,6 @@
 #!perl -w
 
+use strict;
 use Test::More tests => 8;
 
 $|=1;
@@ -8,7 +9,7 @@ $^W=1;
 BEGIN { use_ok( 'DBI', ':sql_types' ) }
 BEGIN { use_ok( 'DBI::DBD::Metadata' ) } # just to check for syntax errors etc
 
-$dbh = DBI->connect("dbi:ExampleP:.","","", { FetchHashKeyName => 'NAME_lc' })
+my $dbh = DBI->connect("dbi:ExampleP:.","","", { FetchHashKeyName => 'NAME_lc' })
 	or die "Unable to connect to ExampleP driver: $DBI::errstr";
 
 isa_ok($dbh, 'DBI::db');

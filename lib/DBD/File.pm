@@ -117,7 +117,7 @@ sub dsn_quote
     my $str = shift;
     ref     $str and return "";
     defined $str or  return "";
-    $str =~ s/([;:])/\\$1/g;
+    $str =~ s/([;:\\])/\\$1/g;
     return $str;
     } # dsn_quote
 

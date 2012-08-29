@@ -7,6 +7,10 @@ Turning AutoCommit on, such as when { local $dbh->{AutoCommit} = 0; ... }
 goes out of scope, should trigger rollback not commit. (ODBC does a commit)
 RISK: This will break code that assumes a commit.
 REMEDY: Explicitly $dbh->commit where required.
+MJE: I may misunderstand this but ODBC commits in this case because
+ AutoCommit is turned back on again when the block completes and that
+ causes any outstanding txn to be committed. Neither DBD::ODBC or ODBC
+ turned AutoCommit back on themselves.
 
 Always taint check the $sql for do() and prepare()
 if perl is in taint mode (can't be disabled).
@@ -57,6 +61,8 @@ Remove DBIS global and related macros.
 Add dDBIS to be used in functions (eg like dTHR) that can't access it via a imp_xxh
 
 Remove PERL_POLLUTE (so some names will require PL_ or Perl_ prefixes)
+  - MJE I believe this is effectively done now as PERL_POLLUTE was removed
+    in 5.13.3
 
 Update dbipport.h from latest Devel::PPPort.
 

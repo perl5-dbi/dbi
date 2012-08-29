@@ -30,7 +30,7 @@ You can also activate DBI::ProfileDumper from within your code:
   # another way to say it
   use DBI::ProfileDumper;
   $dbh->{Profile} = DBI::ProfileDumper->new(
-                        Path => [ '!Statement' ]
+                        Path => [ '!Statement' ],
                         File => 'dbi.prof' );
 
   # using a custom path

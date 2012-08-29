@@ -789,11 +789,11 @@ registered driver-private prefix. For example, for DBD::Oracle
 $method_name must being with 'C<ora_>', and for DBD::AnyData it
 must begin with 'C<ad_>'.
 
-The attributes can be used to provide fine control over how the DBI
-dispatcher handles the dispatching of the method. However, at this
-point, it's undocumented and very liable to change. (Volunteers to
-polish up and document the interface are very welcome to get in
-touch via dbi-dev@perl.org)
+The C<\%attr> attributes can be used to provide fine control over how the DBI
+dispatcher handles the dispatching of the method. However it's undocumented
+at the moment. See the IMA_* #define's in DBI.xs and the O=>0x000x values in
+the initialization of %DBI::DBI_methods in DBI.pm.  (Volunteers to polish up
+and document the interface are very welcome to get in touch via dbi-dev@perl.org).
 
 Methods installed using install_method default to the standard error
 handling behaviour for DBI methods: clearing err and errstr before
@@ -1975,7 +1975,7 @@ as described in L</Driver.h> above.
 The (obsolete) macros such as C<DBIh_EVENT2> should be removed from drivers.
 
 The names C<dbis> and C<DBIS>, which were used in previous versions of
-this document, should be replaced with the C<DBIc_STATE(imp_xxh)> macro.
+this document, should be replaced with the C<DBIc_DBISTATE(imp_xxh)> macro.
 
 The name C<DBILOGFP>, which was also used in previous versions of this
 document, should be replaced by C<DBIc_LOGPIO(imp_xxh)>.

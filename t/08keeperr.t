@@ -2,18 +2,18 @@
 
 use strict;
 
-use Test::More tests => 72;
+use Test::More tests => 79;
 
 ## ----------------------------------------------------------------------------
 ## 08keeperr.t
 ## ----------------------------------------------------------------------------
-# 
+#
 ## ----------------------------------------------------------------------------
 
 BEGIN {
     use_ok('DBI');
-}   
- 
+}
+
 $|=1;
 $^W=1;
 
@@ -71,13 +71,25 @@ package main;
 
 # test ping does not destroy the errstr
 sub ping_keeps_err {
-    my $dbh = DBI->connect('DBI:Sponge:');
-    $dbh->{PrintError} = 0;
-    eval {$dbh->do(q/invalid sql statement/)};
-    ok(defined($dbh->errstr), "Error from invalid SQL");
-    ok($dbh->ping, "ping returns true"); # for me this returns false!
-    ok(defined($dbh->errstr), "Error exists after ping");
+    my $dbh = DBI->connect('DBI:ExampleP:', undef, undef, { PrintError => 0 });
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42;
+    is $dbh->errstr, "ERROR 42";
+    ok $dbh->ping, "ping returns true";
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+
     $dbh->disconnect;
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+    ok !$dbh->ping, "ping returns false";
+    # it's reasonable for ping() to set err/errstr if it fails
+    # so here we just test that there is an error
+    ok $dbh->err, "err true after failed ping";
+    ok $dbh->errstr, "errstr true after failed ping";
 }
 
 ## ----------------------------------------------------------------------------
@@ -107,21 +119,21 @@ $SIG{__WARN__} = sub {
 # HandleSetErr handler
 $dbh->{HandleSetErr} = sub {
     my ($h, $err, $errstr, $state) = @_;
-    return 0 
+    return 0
         unless defined $err;
     ++$handlewarn[ $err ? 2 : length($err) ]; # count [info, warn, err] calls
-    return 1 
+    return 1
         if $state && $state eq "return";   # for tests
     ($_[1], $_[2], $_[3]) = (99, "errstr99", "OV123")
         if $state && $state eq "override"; # for tests
-    return 0 
+    return 0
         if $err; # be transparent for errors
     local $^W;
     print "HandleSetErr called: h=$h, err=$err, errstr=$errstr, state=$state\n";
     return 0;
 };
 
-# start our tests 
+# start our tests
 
 ok(!defined $DBI::err, '... $DBI::err is not defined');
 
@@ -143,9 +155,9 @@ $dbh->set_err(0, "(got warn)", "AA001");	# triggers PrintWarn
 
 ok(defined $DBI::err,                '... $DBI::err is defined');
 is($DBI::err,    "0",                '... $DBI::err is "0"');
-is($DBI::errstr, "(got info)\n(got warn)", 
+is($DBI::errstr, "(got info)\n(got warn)",
                                      '... $DBI::errstr is as we expected');
-is($dbh->errstr, "(got info)\n(got warn)", 
+is($dbh->errstr, "(got info)\n(got warn)",
                                      '... $dbh->errstr matches $DBI::errstr');
 is($DBI::state,  "AA001",            '... $DBI::state is AA001');
 cmp_ok($warn{warning}, '==', 1,      '... $warn{warning} is 1');
@@ -160,9 +172,9 @@ ok(defined $DBI::err,                '... $DBI::err is defined');
 is($DBI::err, "0",                   '... $DBI::err is "0"');	# not "", ie it's still a warn
 is($dbh->err, "0",                   '... $dbh->err is "0"');
 is($DBI::state, "AA001",             '... $DBI::state is AA001');
-is($DBI::errstr, "(got info)\n(got warn)\n(got more info)", 
+is($DBI::errstr, "(got info)\n(got warn)\n(got more info)",
                                      '... $DBI::errstr is as we expected');
-is($dbh->errstr, "(got info)\n(got warn)\n(got more info)", 
+is($dbh->errstr, "(got info)\n(got warn)\n(got more info)",
                                      '... $dbh->errstr matches $DBI::errstr');
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
 is_deeply(\@handlewarn, [ 2, 1, 0 ], '... the @handlewarn array is (2, 1, 0)');
@@ -180,7 +192,7 @@ $dbh->set_err("42", "(got error)", "AA002");
 ok(defined $DBI::err,                '... $DBI::err is defined');
 cmp_ok($DBI::err,      '==', 42,     '... $DBI::err is 42');
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
-is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)", 
+is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)",
                                      '... $dbh->errstr is as we expected');
 is($DBI::state, "AA002",             '... $DBI::state is AA002');
 is_deeply(\@handlewarn, [ 2, 1, 1 ], '... the @handlewarn array is (2, 1, 1)');
@@ -192,7 +204,7 @@ $dbh->set_err("", "(got info)");
 ok(defined $DBI::err,                '... $DBI::err is defined');
 cmp_ok($DBI::err,      '==', 42,     '... $DBI::err is 42');
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
-is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)", 
+is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)",
                                      '... $dbh->errstr is as we expected');
 is_deeply(\@handlewarn, [ 3, 1, 1 ], '... the @handlewarn array is (3, 1, 1)');
 
@@ -203,7 +215,7 @@ $dbh->set_err("0", "(got warn)"); # no PrintWarn because it's already an err
 ok(defined $DBI::err,                '... $DBI::err is defined');
 cmp_ok($DBI::err,      '==', 42,     '... $DBI::err is 42');
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
-is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn)", 
+is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn)",
                                      '... $dbh->errstr is as we expected');
 is_deeply(\@handlewarn, [ 3, 2, 1 ], '... the @handlewarn array is (3, 2, 1)');
 
@@ -214,7 +226,7 @@ $dbh->set_err("4200", "(got new error)", "AA003");
 ok(defined $DBI::err,                '... $DBI::err is defined');
 cmp_ok($DBI::err,      '==', 4200,   '... $DBI::err is 4200');
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
-is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn) [err was 42 now 4200] [state was AA002 now AA003]\n(got new error)", 
+is($dbh->errstr, "(got info)\n(got warn)\n(got more info) [state was AA001 now AA002]\n(got error)\n(got info)\n(got warn) [err was 42 now 4200] [state was AA002 now AA003]\n(got new error)",
                                      '... $dbh->errstr is as we expected');
 is_deeply(\@handlewarn, [ 3, 2, 2 ], '... the @handlewarn array is (3, 2, 2)');
 
@@ -241,7 +253,7 @@ ok(!defined $ret[0],                  '... the first value is undefined');
 ok(!defined $dbh->set_err(2, "bar"),  '... $dbh->set_err returned undefiend');	# PrintError
 ok(!defined $dbh->set_err(3, "baz"),  '... $dbh->set_err returned undefiend');	# PrintError
 ok(!defined $dbh->set_err(0, "warn"), '... $dbh->set_err returned undefiend');	# PrintError
-is($dbh->errstr, "foo [err was 1 now 2]\nbar [err was 2 now 3]\nbaz\nwarn", 
+is($dbh->errstr, "foo [err was 1 now 2]\nbar [err was 2 now 3]\nbaz\nwarn",
                                       '... $dbh->errstr is as we expected');
 is($warn{failed}, 4,                  '... $warn{failed} is 4');
 is_deeply(\@handlewarn, [ 0, 1, 3 ],  '... the @handlewarn array is (0, 1, 3)');

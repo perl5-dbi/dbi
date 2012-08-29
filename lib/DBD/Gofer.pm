@@ -97,7 +97,12 @@
         if (my $warnings = $response->warnings) {
             warn $_ for @$warnings;
         }
-        return $h->set_err($response->err_errstr_state);
+        my ($err, $errstr, $state) = $response->err_errstr_state;
+        # Only set_err() if there's an error else leave the current values
+        # (The current values will normally be set undef by the DBI dispatcher
+        # except for methods marked KEEPERR such as ping.)
+        $h->set_err($err, $errstr, $state) if defined $err;
+        return undef;
     }
 
 
@@ -833,6 +838,8 @@ The C<...> represents attributes that influence the operation of the Gofer
 driver or transport. These are described below or in the documentation of the
 transport module being used.
 
+=encoding ISO8859-1
+
 =head1 DESCRIPTION
 
 DBD::Gofer is a DBI database driver that forwards requests to another DBI
@@ -959,7 +966,7 @@ implemented the private_attribute_info() method (added in DBI 1.54).
 
 Driver-private sth attributes can be set in the prepare() call. TODO
 
-Some driver-private dbh attributes may not be available if the driver has not
+Some driver-private sth attributes may not be available if the driver has not
 implemented the private_attribute_info() method (added in DBI 1.54).
 
 =head2 Multiple Resultsets

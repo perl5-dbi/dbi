@@ -52,6 +52,11 @@ sub testing {
         cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid')
 		unless $DBI::PurePerl && ok(1);
     }
+
+    # RT #77137: a thread created from a thread was crashing the
+    # interpreter
+
+    threads->new(sub {})->join();
 }
 
 # load up the threads

@@ -19,7 +19,7 @@ QUICK START GUIDE:
 	    make test
 	    make install
     Then delete the source directory tree since it's no longer needed.
-    Or else use an installer like the cpan, cpanplus, or cpanm commands.
+    Or else use an installer like cpanm, cpanplus, or cpan commands.
 
     Use the 'perldoc DBI' command to read the DBI documentation.
     See GETTING HELP section in DBI.pm for how to get help.
