@@ -229,10 +229,9 @@ sub dbm_schema
 {
     my ( $sth, $tname ) = @_;
     return $sth->set_err( $DBI::stderr, 'No table name supplied!' ) unless $tname;
-    return $sth->set_err( $DBI::stderr, "Unknown table '$tname'!" )
-      unless (     $sth->{Database}->{f_meta}
-               and $sth->{Database}->{f_meta}->{$tname} );
-    return $sth->{Database}->{f_meta}->{$tname}->{schema};
+    my $tbl_meta = $sth->{Database}->func( $tname, "f_schema", "get_sql_engine_meta" )
+      or return $sth->set_err( $sth->{Database}->err(), $sth->{Database}->errstr() );
+    return $tbl_meta->{$tname}->{f_schema};
 }
 # you could put some :st private methods here
 
@@ -274,12 +273,12 @@ my %reset_on_modify = (
 __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
 
 my %compat_map = (
-    ( map { $_ => "dbm_$_" } qw(type mldbm store_metadata) ),
-    dbm_ext => 'f_ext',
-    dbm_file => 'f_file',
-    dbm_lockfile => ' f_lockfile',
-    );
-__PACKAGE__->register_compat_map (\%compat_map);
+                   ( map { $_ => "dbm_$_" } qw(type mldbm store_metadata) ),
+                   dbm_ext      => 'f_ext',
+                   dbm_file     => 'f_file',
+                   dbm_lockfile => ' f_lockfile',
+                 );
+__PACKAGE__->register_compat_map( \%compat_map );
 
 sub bootstrap_table_meta
 {
@@ -401,7 +400,7 @@ sub open_file
         my $tie_class = $meta->{dbm_tietype};
         eval { tie %{ $meta->{hash} }, $tie_class, @tie_args };
         $@ and croak "Cannot tie(\%h $tie_class @tie_args): $@";
-	-f $meta->{f_fqfn} or croak( "No such file: '" . $meta->{f_fqfn} . "'" );
+        -f $meta->{f_fqfn} or croak( "No such file: '" . $meta->{f_fqfn} . "'" );
     }
 
     unless ( $flags->{createMode} )
