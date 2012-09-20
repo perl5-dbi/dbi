@@ -138,7 +138,7 @@ $rowidx = 0;
 SKIP: {
     $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
     ok ($sth->execute, "execute on $tbl");
-    $dbh->errstr and diag;
+    $dbh->errstr and diag $dbh->errstr;
     }
 
 my $uctbl = uc($tbl);
@@ -147,7 +147,7 @@ $rowidx = 0;
 SKIP: {
     $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
     ok ($sth->execute, "execute on $uctbl");
-    $dbh->errstr and diag;
+    $dbh->errstr and diag $dbh->errstr;
     }
 
 ok ($dbh->do ("drop table $tbl"), "table drop");

@@ -39,7 +39,12 @@ $drh = undef;    # holds driver handle(s) once initialized
 
 DBI->setup_driver("DBI::DBD::SqlEngine");    # only needed once but harmless to repeat
 
-my %accessors = ( versions => "get_driver_versions", );
+my %accessors = (
+                  versions   => "get_driver_versions",
+                  get_meta   => "get_sql_engine_meta",
+                  set_meta   => "set_sql_engine_meta",
+                  clear_meta => "clear_sql_engine_meta",
+                );
 
 sub driver ($;$)
 {
@@ -134,7 +139,7 @@ sub connect ($$;$$$)
         # must be done first, because setting flags implicitly calls $dbdname::db->STORE
         $dbh->func( 0, "init_default_attributes" );
         my $two_phased_init;
-	defined $dbh->{sql_init_phase} and $two_phased_init = ++$dbh->{sql_init_phase};
+        defined $dbh->{sql_init_phase} and $two_phased_init = ++$dbh->{sql_init_phase};
         my %second_phase_attrs;
 
         my ( $var, $val );
@@ -193,7 +198,7 @@ sub connect ($$;$$$)
             %$attr = %second_phase_attrs;
         }
 
-	$dbh->func("init_done");
+        $dbh->func("init_done");
 
         $dbh->STORE( Active => 1 );
     }
@@ -272,7 +277,7 @@ sub prepare ($$;@)
         {
             $stmt = eval { $class->new($statement) };
         }
-        if ($@ || $stmt->{errstr})
+        if ( $@ || $stmt->{errstr} )
         {
             $dbh->set_err( $DBI::stderr, $@ || $stmt->{errstr} );
             undef $sth;
@@ -311,19 +316,21 @@ sub init_valid_attributes
     my $dbh = $_[0];
 
     $dbh->{sql_valid_attrs} = {
-                               sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
-                               sql_handler                => 1,    # Nano or S:S
-                               sql_nano_version           => 1,    # Nano version
-                               sql_statement_version      => 1,    # S:S version
-                               sql_flags                  => 1,    # flags for SQL::Parser
-                               sql_dialect                => 1,    # dialect for SQL::Parser
-                               sql_quoted_identifier_case => 1,    # case for quoted identifiers
-                               sql_identifier_case        => 1,    # case for non-quoted identifiers
-                               sql_parser_object          => 1,    # SQL::Parser instance
-                               sql_sponge_driver          => 1,    # Sponge driver for table_info ()
-                               sql_valid_attrs            => 1,    # SQL valid attributes
-                               sql_readonly_attrs         => 1,    # SQL readonly attributes
-			       sql_init_phase             => 1,    # Only during initialization
+                             sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
+                             sql_handler                => 1,    # Nano or S:S
+                             sql_nano_version           => 1,    # Nano version
+                             sql_statement_version      => 1,    # S:S version
+                             sql_flags                  => 1,    # flags for SQL::Parser
+                             sql_dialect                => 1,    # dialect for SQL::Parser
+                             sql_quoted_identifier_case => 1,    # case for quoted identifiers
+                             sql_identifier_case        => 1,    # case for non-quoted identifiers
+                             sql_parser_object          => 1,    # SQL::Parser instance
+                             sql_sponge_driver          => 1,    # Sponge driver for table_info ()
+                             sql_valid_attrs            => 1,    # SQL valid attributes
+                             sql_readonly_attrs         => 1,    # SQL readonly attributes
+                             sql_init_phase             => 1,    # Only during initialization
+                             sql_meta                   => 1,    # meta data for tables
+                             sql_meta_map               => 1,    # mapping table for identifier case
                               };
     $dbh->{sql_readonly_attrs} = {
                                sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
@@ -349,7 +356,7 @@ sub init_default_attributes
     {
         # we have an "old" driver here
         $phase = defined $dbh->{sql_init_phase};
-	$phase and $phase = $dbh->{sql_init_phase};
+        $phase and $phase = $dbh->{sql_init_phase};
     }
 
     if ( 0 == $phase )
@@ -362,7 +369,7 @@ sub init_default_attributes
         $dbh->{sql_identifier_case}        = 2;    # SQL_IC_LOWER
         $dbh->{sql_quoted_identifier_case} = 3;    # SQL_IC_SENSITIVE
 
-	$dbh->{sql_dialect} = "CSV";
+        $dbh->{sql_dialect} = "CSV";
 
         $dbh->{sql_init_phase} = $given_phase;
 
@@ -372,7 +379,28 @@ sub init_default_attributes
         my $valid_attrs = $drv_prefix . "valid_attrs";
         my $ro_attrs    = $drv_prefix . "readonly_attrs";
 
+        # check whether we're running in a Gofer server or not (see
+        # validate_FETCH_attr for details)
+        $dbh->{sql_engine_in_gofer} =
+          ( defined $INC{"DBD/Gofer.pm"} && ( caller(5) )[0] eq "DBI::Gofer::Execute" );
+        $dbh->{sql_meta}     = {};
+        $dbh->{sql_meta_map} = {};    # choose new name because it contains other keys
+
         my @comp_attrs = qw(valid_attrs version readonly_attrs);
+        if ( exists $dbh->{ $drv_prefix . "meta" } and !$dbh->{sql_engine_in_gofer} )
+        {
+            my $attr = $dbh->{ $drv_prefix . "meta" };
+                  defined $attr
+              and defined $dbh->{$valid_attrs}
+              and !defined $dbh->{$valid_attrs}{$attr}
+              and $dbh->{$valid_attrs}{$attr} = 1;
+
+            my %h;
+            tie %h, "DBI::DBD::SqlEngine::TieTables", $dbh;
+            $dbh->{$attr} = \%h;
+
+            push @comp_attrs, "meta";
+        }
 
         foreach my $comp_attr (@comp_attrs)
         {
@@ -428,6 +456,8 @@ sub sql_sponge_driver
 
 sub disconnect ($)
 {
+    %{ $_[0]->{sql_meta} }     = ();
+    %{ $_[0]->{sql_meta_map} } = ();
     $_[0]->STORE( Active => 0 );
     return 1;
 }    # disconnect
@@ -435,6 +465,21 @@ sub disconnect ($)
 sub validate_FETCH_attr
 {
     my ( $dbh, $attrib ) = @_;
+
+    # If running in a Gofer server, access to our tied compatibility hash
+    # would force Gofer to serialize the tieing object including it's
+    # private $dbh reference used to do the driver function calls.
+    # This will result in nasty exceptions. So return a copy of the
+    # f_meta structure instead, which is the source of for the compatibility
+    # tie-hash. It's not as good as liked, but the best we can do in this
+    # situation.
+    if ( $dbh->{sql_engine_in_gofer} )
+    {
+        ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
+        my $drv_prefix = DBI->driver_prefix($drv_class);
+        exists $dbh->{ $drv_prefix . "meta" } && $attrib eq $dbh->{ $drv_prefix . "meta" }
+          and $attrib = "sql_meta";
+    }
 
     return $attrib;
 }
@@ -448,8 +493,8 @@ sub FETCH ($$)
     # Driver private attributes are lower cased
     if ( $attrib eq ( lc $attrib ) )
     {
-	# first let the implementation deliver an alias for the attribute to fetch
-	# after it validates the legitimation of the fetch request
+        # first let the implementation deliver an alias for the attribute to fetch
+        # after it validates the legitimation of the fetch request
         $attrib = $dbh->func( $attrib, "validate_FETCH_attr" ) or return;
 
         my $attr_prefix;
@@ -486,7 +531,22 @@ sub validate_STORE_attr
          and $value < 1 || $value > 4 )
     {
         croak "attribute '$attrib' must have a value from 1 .. 4 (SQL_IC_UPPER .. SQL_IC_MIXED)";
-        # XXX correctly a remap of all entries in f_meta/f_meta_map is required here
+        # XXX correctly a remap of all entries in sql_meta/sql_meta_map is required here
+    }
+
+    ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
+    my $drv_prefix = DBI->driver_prefix($drv_class);
+
+    if ( exists $dbh->{ $drv_prefix . "meta" } )
+    {
+        my $attr = $dbh->{ $drv_prefix . "meta" };
+        if ( $attrib eq $attr )
+        {
+            while ( my ( $k, $v ) = each %$value )
+            {
+                $dbh->{$attrib}{$k} = $v;
+            }
+        }
     }
 
     return ( $attrib, $value );
@@ -575,7 +635,8 @@ sub get_driver_versions
         my $drv_prefix  = DBI->driver_prefix($drv_class);
         my $ddgv        = $dbh->{ImplementorClass}->can("get_${drv_prefix}versions");
         my $drv_version = $ddgv ? &$ddgv( $dbh, $table ) : $dbh->{ $drv_prefix . "version" };
-        $drv_version ||= eval { $derived->VERSION() };    # XXX access $drv_class::VERSION via symbol table
+        $drv_version ||=
+          eval { $derived->VERSION() };    # XXX access $drv_class::VERSION via symbol table
         $vsn{$drv_class} = $drv_version;
         $indent and $vmp{$drv_class} = " " x $indent . $drv_class;
         $indent += 2;
@@ -598,6 +659,125 @@ sub get_driver_versions
 
     return wantarray ? @versions : join "\n", @versions;
 }    # get_versions
+
+sub get_single_table_meta
+{
+    my ( $dbh, $table, $attr ) = @_;
+    my $meta;
+
+    $table eq "."
+      and return $dbh->FETCH($attr);
+
+    ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta or croak "No such table '$table'";
+
+    # prevent creation of undef attributes
+    return $class->get_table_meta_attr( $meta, $attr );
+}    # get_single_table_meta
+
+sub get_sql_engine_meta
+{
+    my ( $dbh, $table, $attr ) = @_;
+
+    my $gstm = $dbh->{ImplementorClass}->can("get_single_table_meta");
+
+    $table eq "*"
+      and $table = [ ".", keys %{ $dbh->{sql_meta} } ];
+    $table eq "+"
+      and $table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{ $dbh->{sql_meta} } ];
+    ref $table eq "Regexp"
+      and $table = [ grep { $_ =~ $table } keys %{ $dbh->{sql_meta} } ];
+
+    ref $table || ref $attr
+      or return &$gstm( $dbh, $table, $attr );
+
+    ref $table or $table = [$table];
+    ref $attr  or $attr  = [$attr];
+    "ARRAY" eq ref $table
+      or return
+      $dbh->set_err( $DBI::stderr,
+          "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table );
+    "ARRAY" eq ref $attr
+      or return $dbh->set_err(
+                    "Invalid argument for \$attr - SCALAR or ARRAY expected but got " . ref $attr );
+
+    my %results;
+    foreach my $tname ( @{$table} )
+    {
+        my %tattrs;
+        foreach my $aname ( @{$attr} )
+        {
+            $tattrs{$aname} = &$gstm( $dbh, $tname, $aname );
+        }
+        $results{$tname} = \%tattrs;
+    }
+
+    return \%results;
+}    # get_file_meta
+
+sub set_single_table_meta
+{
+    my ( $dbh, $table, $attr, $value ) = @_;
+    my $meta;
+
+    $table eq "."
+      and return $dbh->STORE( $attr, $value );
+
+    ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta or croak "No such table '$table'";
+    $class->set_table_meta_attr( $meta, $attr, $value );
+
+    return $dbh;
+}    # set_single_table_meta
+
+sub set_sql_engine_meta
+{
+    my ( $dbh, $table, $attr, $value ) = @_;
+
+    my $sstm = $dbh->{ImplementorClass}->can("set_single_table_meta");
+
+    $table eq "*"
+      and $table = [ ".", keys %{ $dbh->{sql_meta} } ];
+    $table eq "+"
+      and $table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{ $dbh->{sql_meta} } ];
+    ref($table) eq "Regexp"
+      and $table = [ grep { $_ =~ $table } keys %{ $dbh->{sql_meta} } ];
+
+    ref $table || ref $attr
+      or return &$sstm( $dbh, $table, $attr, $value );
+
+    ref $table or $table = [$table];
+    ref $attr or $attr = { $attr => $value };
+    "ARRAY" eq ref $table
+      or croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got "
+      . ref $table;
+    "HASH" eq ref $attr
+      or croak "Invalid argument for \$attr - SCALAR or HASH expected but got " . ref $attr;
+
+    foreach my $tname ( @{$table} )
+    {
+        my %tattrs;
+        while ( my ( $aname, $aval ) = each %$attr )
+        {
+            &$sstm( $dbh, $tname, $aname, $aval );
+        }
+    }
+
+    return $dbh;
+}    # set_file_meta
+
+sub clear_sql_engine_meta
+{
+    my ( $dbh, $table ) = @_;
+
+    ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
+    $meta and %{$meta} = ();
+
+    return;
+}    # clear_file_meta
 
 sub DESTROY ($)
 {
@@ -626,13 +806,24 @@ sub type_info_all ($)
           MINIMUM_SCALE      => 13,
           MAXIMUM_SCALE      => 14,
        },
-       [ "VARCHAR", DBI::SQL_VARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [
+          "VARCHAR", DBI::SQL_VARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999,
+       ],
        [ "CHAR", DBI::SQL_CHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
        [ "INTEGER", DBI::SQL_INTEGER(), undef, "", "", undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
        [ "REAL",    DBI::SQL_REAL(),    undef, "", "", undef, 0, 0, 1, 0, 0, 0, undef, 0, 0, ],
-       [ "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
-       [ "TEXT", DBI::SQL_LONGVARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1, 999999, ],
+       [
+          "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1,
+          999999,
+       ],
+       [
+          "BLOB", DBI::SQL_LONGVARBINARY(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1,
+          999999,
+       ],
+       [
+          "TEXT", DBI::SQL_LONGVARCHAR(), undef, "'", "'", undef, 0, 1, 1, 0, 0, 0, undef, 1,
+          999999,
+       ],
     ];
 }    # type_info_all
 
@@ -668,7 +859,7 @@ sub get_avail_tables
         my $sth = $dbh2->prepare(
                                   "TABLE_INFO",
                                   {
-                                     rows  => \@tables,
+                                     rows => \@tables,
                                      NAME => $names,
                                   }
                                 );
@@ -730,6 +921,167 @@ sub rollback ($)
     return 0;
 }    # rollback
 
+# ====== Tie-Meta ==============================================================
+
+package DBI::DBD::SqlEngine::TieMeta;
+
+use Carp qw(croak);
+require Tie::Hash;
+@DBI::DBD::SqlEngine::TieMeta::ISA = qw(Tie::Hash);
+
+sub TIEHASH
+{
+    my ( $class, $tblClass, $tblMeta ) = @_;
+
+    my $self = bless(
+                      {
+                         tblClass => $tblClass,
+                         tblMeta  => $tblMeta,
+                      },
+                      $class
+                    );
+    return $self;
+}    # new
+
+sub STORE
+{
+    my ( $self, $meta_attr, $meta_val ) = @_;
+
+    $self->{tblClass}->set_table_meta_attr( $self->{tblMeta}, $meta_attr, $meta_val );
+
+    return;
+}    # STORE
+
+sub FETCH
+{
+    my ( $self, $meta_attr ) = @_;
+
+    return $self->{tblClass}->get_table_meta_attr( $self->{tblMeta}, $meta_attr );
+}    # FETCH
+
+sub FIRSTKEY
+{
+    my $a = scalar keys %{ $_[0]->{tblMeta} };
+    each %{ $_[0]->{tblMeta} };
+}    # FIRSTKEY
+
+sub NEXTKEY
+{
+    each %{ $_[0]->{tblMeta} };
+}    # NEXTKEY
+
+sub EXISTS
+{
+    exists $_[0]->{tblMeta}{ $_[1] };
+}    # EXISTS
+
+sub DELETE
+{
+    croak "Can't delete single attributes from table meta structure";
+}    # DELETE
+
+sub CLEAR
+{
+    %{ $_[0]->{tblMeta} } = ();
+}    # CLEAR
+
+sub SCALAR
+{
+    scalar %{ $_[0]->{tblMeta} };
+}    # SCALAR
+
+# ====== Tie-Tables ============================================================
+
+package DBI::DBD::SqlEngine::TieTables;
+
+use Carp qw(croak);
+require Tie::Hash;
+@DBI::DBD::SqlEngine::TieTables::ISA = qw(Tie::Hash);
+
+sub TIEHASH
+{
+    my ( $class, $dbh ) = @_;
+
+    ( my $tbl_class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    my $self = bless(
+                      {
+                         dbh      => $dbh,
+                         tblClass => $tbl_class,
+                      },
+                      $class
+                    );
+    return $self;
+}    # new
+
+sub STORE
+{
+    my ( $self, $table, $tbl_meta ) = @_;
+
+    "HASH" eq ref $tbl_meta
+      or croak "Invalid data for storing as table meta data (must be hash)";
+
+    ( undef, my $meta ) = $self->{tblClass}->get_table_meta( $self->{dbh}, $table, 1 );
+    $meta or croak "Invalid table name '$table'";
+
+    while ( my ( $meta_attr, $meta_val ) = each %$tbl_meta )
+    {
+        $self->{tblClass}->set_table_meta_attr( $meta, $meta_attr, $meta_val );
+    }
+
+    return;
+}    # STORE
+
+sub FETCH
+{
+    my ( $self, $table ) = @_;
+
+    ( undef, my $meta ) = $self->{tblClass}->get_table_meta( $self->{dbh}, $table, 1 );
+    $meta or croak "Invalid table name '$table'";
+
+    my %h;
+    tie %h, "DBI::DBD::SqlEngine::TieMeta", $self->{tblClass}, $meta;
+
+    return \%h;
+}    # FETCH
+
+sub FIRSTKEY
+{
+    my $a = scalar keys %{ $_[0]->{dbh}->{sql_meta} };
+    each %{ $_[0]->{dbh}->{sql_meta} };
+}    # FIRSTKEY
+
+sub NEXTKEY
+{
+    each %{ $_[0]->{dbh}->{sql_meta} };
+}    # NEXTKEY
+
+sub EXISTS
+{
+    exists $_[0]->{dbh}->{sql_meta}->{ $_[1] }
+      or exists $_[0]->{dbh}->{sql_meta_map}->{ $_[1] };
+}    # EXISTS
+
+sub DELETE
+{
+    my ( $self, $table ) = @_;
+
+    ( undef, my $meta ) = $self->{tblClass}->get_table_meta( $self->{dbh}, $table, 1 );
+    $meta or croak "Invalid table name '$table'";
+
+    delete $_[0]->{dbh}->{sql_meta}->{ $meta->{table_name} };
+}    # DELETE
+
+sub CLEAR
+{
+    %{ $_[0]->{dbh}->{sql_meta} }     = ();
+    %{ $_[0]->{dbh}->{sql_meta_map} } = ();
+}    # CLEAR
+
+sub SCALAR
+{
+    scalar %{ $_[0]->{dbh}->{sql_meta} };
+}    # SCALAR
+
 # ====== STATEMENT =============================================================
 
 package DBI::DBD::SqlEngine::st;
@@ -784,9 +1136,9 @@ sub execute
     # implementation specific and may change without warning
     unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
     {
-	my $msg = "You passed $nparm parameters where $req_prm required";
-	$sth->set_err( $DBI::stderr, $msg );
-	return;
+        my $msg = "You passed $nparm parameters where $req_prm required";
+        $sth->set_err( $DBI::stderr, $msg );
+        return;
     }
 
     my @err;
@@ -878,7 +1230,7 @@ sub FETCH ($$)
 
     $attrib eq "NAME" and return [ $sth->sql_get_colnames() ];
 
-    $attrib eq "TYPE"      and return [ (DBI::SQL_VARCHAR()) x scalar $sth->sql_get_colnames() ];
+    $attrib eq "TYPE"      and return [ ( DBI::SQL_VARCHAR() ) x scalar $sth->sql_get_colnames() ];
     $attrib eq "TYPE_NAME" and return [ ("VARCHAR") x scalar $sth->sql_get_colnames() ];
     $attrib eq "PRECISION" and return [ (0) x scalar $sth->sql_get_colnames() ];
     $attrib eq "NULLABLE"  and return [ (1) x scalar $sth->sql_get_colnames() ];
@@ -928,6 +1280,22 @@ use Carp;
 
 @DBI::DBD::SqlEngine::Statement::ISA = qw(DBI::SQL::Nano::Statement);
 
+sub open_table ($$$$$)
+{
+    my ( $self, $data, $table, $createMode, $lockMode ) = @_;
+
+    my $class = ref $self;
+    $class =~ s/::Statement/::Table/;
+
+    my $flags = {
+                  createMode => $createMode,
+                  lockMode   => $lockMode,
+                };
+    $self->{command} eq "DROP" and $flags->{dropMode} = 1;
+
+    return $class->new( $data, { table => $table }, $flags );
+}    # open_table
+
 # ====== SQL::TABLE ============================================================
 
 package DBI::DBD::SqlEngine::Table;
@@ -935,7 +1303,162 @@ package DBI::DBD::SqlEngine::Table;
 use strict;
 use warnings;
 
+use Carp;
+
 @DBI::DBD::SqlEngine::Table::ISA = qw(DBI::SQL::Nano::Table);
+
+sub bootstrap_table_meta
+{
+    my ( $self, $dbh, $meta, $table ) = @_;
+
+    defined $dbh->{ReadOnly}
+      and !defined( $meta->{readonly} )
+      and $meta->{readonly} = $dbh->{ReadOnly};
+    defined $meta->{sql_identifier_case}
+      or $meta->{sql_identifier_case} = $dbh->{sql_identifier_case};
+}
+
+sub init_table_meta
+{
+    my ( $self, $dbh, $meta, $table ) = @_;
+
+    return;
+}    # init_table_meta
+
+our $respect_table_case;
+sub respect_case { $respect_table_case }
+
+our $bootstrap_table_meta_phase = 0;
+sub bootstrap_table_meta_phase { $bootstrap_table_meta_phase }
+
+sub get_table_meta ($$$;$)
+{
+    my ( $self, $dbh, $table, $respect_case ) = @_;
+    unless ( defined $respect_case )
+    {
+        $respect_case = 0;
+        $table =~ s/^\"// and $respect_case = 1;    # handle quoted identifiers
+        $table =~ s/\"$//;
+    }
+
+    unless ($respect_case)
+    {
+        defined $dbh->{sql_meta_map}{$table} and $table = $dbh->{sql_meta_map}{$table};
+    }
+
+    my $meta = {};
+    defined $dbh->{sql_meta}{$table} and $meta = $dbh->{sql_meta}{$table};
+
+    unless ( $meta->{initialized} )
+    {
+        local $bootstrap_table_meta_phase = 1;
+        local $respect_table_case         = $respect_case;
+
+        $self->bootstrap_table_meta( $dbh, $meta, $table );
+        return unless $meta->{table_name};
+
+        if ( defined $meta->{table_name} and $table ne $meta->{table_name} )
+        {
+            $dbh->{sql_meta_map}{$table} = $meta->{table_name};
+            $table = $meta->{table_name};
+        }
+
+        # now we know a bit more - let's check if user can't use consequent spelling
+        # XXX add know issue about reset sql_identifier_case here ...
+        if ( defined $dbh->{sql_meta}{$table} && defined $dbh->{sql_meta}{$table}{initialized} )
+        {
+            $meta = $dbh->{sql_meta}{$table};
+
+            unless ( $dbh->{sql_meta}{$table}{initialized} )
+            {
+                $bootstrap_table_meta_phase = 2;
+                $self->bootstrap_table_meta( $dbh, $meta, $table );
+                $meta->{table_name} or return;
+            }
+        }
+
+        unless ( $dbh->{sql_meta}{$table}{initialized} )
+        {
+            $self->init_table_meta( $dbh, $meta, $table );
+            $meta->{initialized} = 1;
+            $dbh->{sql_meta}{$table} = $meta;
+        }
+    }
+
+    return ( $table, $meta );
+}    # get_table_meta
+
+my %reset_on_modify = ();
+my %compat_map      = ();
+
+sub register_reset_on_modify
+{
+    my ( $proto, $extra_resets ) = @_;
+    %reset_on_modify = ( %reset_on_modify, %$extra_resets );
+    return;
+}    # register_reset_on_modify
+
+sub register_compat_map
+{
+    my ( $proto, $extra_compat_map ) = @_;
+    %compat_map = ( %compat_map, %$extra_compat_map );
+    return;
+}    # register_compat_map
+
+sub get_table_meta_attr
+{
+    my ( $class, $meta, $attrib ) = @_;
+    exists $compat_map{$attrib}
+      and $attrib = $compat_map{$attrib};
+    exists $meta->{$attrib}
+      and return $meta->{$attrib};
+    return;
+}    # get_table_meta_attr
+
+sub set_table_meta_attr
+{
+    my ( $class, $meta, $attrib, $value ) = @_;
+    exists $compat_map{$attrib}
+      and $attrib = $compat_map{$attrib};
+    $class->table_meta_attr_changed( $meta, $attrib, $value );
+    $meta->{$attrib} = $value;
+}    # set_table_meta_attr
+
+sub table_meta_attr_changed
+{
+    my ( $class, $meta, $attrib, $value ) = @_;
+    defined $reset_on_modify{$attrib}
+      and delete $meta->{ $reset_on_modify{$attrib} }
+      and $meta->{initialized} = 0;
+}    # table_meta_attr_changed
+
+1;
+
+# ====== SQL::Eval API =========================================================
+
+sub new
+{
+    my ( $className, $data, $attrs, $flags ) = @_;
+    my $dbh = $data->{Database};
+
+    my ( $tblnm, $meta ) = $className->get_table_meta( $dbh, $attrs->{table}, 1 )
+      or croak "Cannot find appropriate file for table '$attrs->{table}'";
+    $attrs->{table} = $tblnm;
+
+    # Being a bit dirty here, as SQL::Statement::Structure does not offer
+    # me an interface to the data I want
+    $flags->{createMode} && $data->{sql_stmt}{table_defs}
+      and $meta->{table_defs} = $data->{sql_stmt}{table_defs};
+
+    my $columns = {};
+    my $array   = [];
+    my $tbl = {
+                %{$attrs},
+                meta      => $meta,
+                col_names => $meta->{col_names} || [],
+              };
+    return $className->SUPER::new($tbl);
+}    # new
 
 =pod
 

@@ -39,12 +39,6 @@ $VERSION = "0.40";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
-my %accessors = (
-    get_meta   => "get_file_meta",
-    set_meta   => "set_file_meta",
-    clear_meta => "clear_file_meta",
-    );
-
 sub driver ($;$)
 {
     my ($class, $attr) = @_;
@@ -71,24 +65,6 @@ sub driver ($;$)
 	}
 
     $drh->{$class} = $class->SUPER::driver ($attr);
-
-    my $prefix = DBI->driver_prefix ($class);
-    if ($prefix) {
-	my $dbclass = $class . "::db";
-	while (my ($accessor, $funcname) = each %accessors) {
-	    my $method = $prefix . $accessor;
-	    $dbclass->can ($method) and next;
-	    my $inject = sprintf <<'EOI', $dbclass, $method, $dbclass, $funcname;
-sub %s::%s
-{
-    my $func = %s->can (q{%s});
-    goto &$func;
-    }
-EOI
-	    eval $inject;
-	    $dbclass->install_method ($method);
-	    }
-	}
 
     # XXX inject DBD::XXX::Statement unless exists
 
@@ -192,8 +168,6 @@ sub init_valid_attributes
 	f_dir            => 1, # base directory
 	f_ext            => 1, # file extension
 	f_schema         => 1, # schema name
-	f_meta           => 1, # meta data for tables
-	f_meta_map       => 1, # mapping table for identifier case
 	f_lock           => 1, # Table locking mode
 	f_lockfile       => 1, # Table lockfile extension
 	f_encoding       => 1, # Encoding of the file
@@ -225,15 +199,11 @@ sub init_default_attributes
 	}
 
     if (0 == $phase) {
-	# check whether we're running in a Gofer server or not (see
-	# validate_FETCH_attr for details)
-	$dbh->{f_in_gofer} = (defined $INC{"DBD/Gofer.pm"} && (caller(5))[0] eq "DBI::Gofer::Execute");
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
-	$dbh->{f_meta}     = {};
-	$dbh->{f_meta_map} = {}; # choose new name because it contains other keys
 
+	if(0) {
 	# complete derived attributes, if required
 	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
 	my $drv_prefix = DBI->driver_prefix ($drv_class);
@@ -241,18 +211,6 @@ sub init_default_attributes
 	my $ro_attrs = $drv_prefix . "readonly_attrs";
 
 	my @comp_attrs = ();
-	if (exists $dbh->{$drv_prefix . "meta"} and !$dbh->{f_in_gofer}) {
-	    my $attr = $dbh->{$drv_prefix . "meta"};
-	    defined $attr and defined $dbh->{$valid_attrs} and
-		!defined $dbh->{$valid_attrs}{$attr} and
-		$dbh->{$valid_attrs}{$attr} = 1;
-
-	    my %h;
-	    tie %h, "DBD::File::TieTables", $dbh;
-	    $dbh->{$attr} = \%h;
-
-	    push @comp_attrs, "meta";
-	    }
 
 	foreach my $comp_attr (@comp_attrs) {
 	    my $attr = $drv_prefix . $comp_attr;
@@ -261,37 +219,11 @@ sub init_default_attributes
 	    defined $dbh->{$ro_attrs} and !defined $dbh->{$ro_attrs}{$attr} and
 		$dbh->{$ro_attrs}{$attr} = 1;
 	    }
+	    } # if 0
 	}
 
     return $dbh;
     } # init_default_attributes
-
-sub disconnect ($)
-{
-    %{$_[0]->{f_meta}} = ();
-    return $_[0]->SUPER::disconnect ();
-    } # disconnect
-
-sub validate_FETCH_attr
-{
-    my ($dbh, $attrib) = @_;
-
-    # If running in a Gofer server, access to our tied compatibility hash
-    # would force Gofer to serialize the tieing object including it's
-    # private $dbh reference used to do the driver function calls.
-    # This will result in nasty exceptions. So return a copy of the
-    # f_meta structure instead, which is the source of for the compatibility
-    # tie-hash. It's not as good as liked, but the best we can do in this
-    # situation.
-    if ($dbh->{f_in_gofer}) {
-	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-	my $drv_prefix = DBI->driver_prefix ($drv_class);
-	exists $dbh->{$drv_prefix . "meta"} && $attrib eq $dbh->{$drv_prefix . "meta"} and
-	    $attrib = "f_meta";
-	}
-
-    return $attrib;
-    } # validate_FETCH_attr
 
 sub validate_STORE_attr
 {
@@ -309,18 +241,6 @@ sub validate_STORE_attr
 	    carp "'$value' doesn't look like a valid file extension attribute\n";
 	}
 
-    (my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
-    my $drv_prefix = DBI->driver_prefix ($drv_class);
-
-    if (exists $dbh->{$drv_prefix . "meta"}) {
-	my $attr = $dbh->{$drv_prefix . "meta"};
-	if ($attrib eq $attr) {
-	    while (my ($k, $v) = each %$value) {
-		$dbh->{$attrib}{$k} = $v;
-		}
-	    }
-	}
-
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
     } # validate_STORE_attr
 
@@ -330,13 +250,6 @@ sub get_f_versions
 
     my $class = $dbh->{ImplementorClass};
     $class =~ s/::db$/::Table/;
-    my (undef, $meta);
-    $table and (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
-    unless ($meta) {
-	$meta = {};
-	$class->bootstrap_table_meta ($dbh, $meta, $table);
-	}
-
     my $dver;
     my $dtype = "IO::File";
     eval {
@@ -346,121 +259,18 @@ sub get_f_versions
 	$dtype .= " ($dver)";
 	};
 
-    $meta->{f_encoding} and $dtype .= " + " . $meta->{f_encoding} . " encoding";
+    my $f_encoding;
+    if ($table) {
+	my $meta;
+	$table and (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
+	$meta and $meta->{f_encoding} and $f_encoding = $meta->{f_encoding};
+	} # if ($table)
+    $f_encoding ||= $dbh->{f_encoding};
+
+    $f_encoding and $dtype .= " + " . $f_encoding . " encoding";
 
     return sprintf "%s using %s", $dbh->{f_version}, $dtype;
     } # get_f_versions
-
-sub get_single_table_meta
-{
-    my ($dbh, $table, $attr) = @_;
-    my $meta;
-
-    $table eq "." and
-	return $dbh->FETCH ($attr);
-
-    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
-    (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
-    $meta or croak "No such table '$table'";
-
-    # prevent creation of undef attributes
-    return $class->get_table_meta_attr ($meta, $attr);
-    } # get_single_table_meta
-
-sub get_file_meta
-{
-    my ($dbh, $table, $attr) = @_;
-
-    my $gstm = $dbh->{ImplementorClass}->can ("get_single_table_meta");
-
-    $table eq "*" and
-	$table = [ ".", keys %{$dbh->{f_meta}} ];
-    $table eq "+" and
-	$table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{$dbh->{f_meta}} ];
-    ref $table eq "Regexp" and
-	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
-
-    ref $table || ref $attr or
-	return &$gstm ($dbh, $table, $attr);
-
-    ref $table or $table = [ $table ];
-    ref $attr  or $attr  = [ $attr  ];
-    "ARRAY" eq ref $table or
-	croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
-    "ARRAY" eq ref $attr or
-	croak "Invalid argument for \$attr - SCALAR or ARRAY expected but got " . ref $attr;
-
-    my %results;
-    foreach my $tname (@{$table}) {
-	my %tattrs;
-	foreach my $aname (@{$attr}) {
-	    $tattrs{$aname} = &$gstm ($dbh, $tname, $aname);
-	    }
-	$results{$tname} = \%tattrs;
-	}
-
-    return \%results;
-    } # get_file_meta
-
-sub set_single_table_meta
-{
-    my ($dbh, $table, $attr, $value) = @_;
-    my $meta;
-
-    $table eq "." and
-	return $dbh->STORE ($attr, $value);
-
-    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
-    (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
-    $meta or croak "No such table '$table'";
-    $class->set_table_meta_attr ($meta, $attr, $value);
-
-    return $dbh;
-    } # set_single_table_meta
-
-sub set_file_meta
-{
-    my ($dbh, $table, $attr, $value) = @_;
-
-    my $sstm = $dbh->{ImplementorClass}->can ("set_single_table_meta");
-
-    $table eq "*" and
-	$table = [ ".", keys %{$dbh->{f_meta}} ];
-    $table eq "+" and
-	$table = [ grep { m/^[_A-Za-z0-9]+$/ } keys %{$dbh->{f_meta}} ];
-    ref ($table) eq "Regexp" and
-	$table = [ grep { $_ =~ $table } keys %{$dbh->{f_meta}} ];
-
-    ref $table || ref $attr or
-	return &$sstm ($dbh, $table, $attr, $value);
-
-    ref $table or $table = [ $table ];
-    ref $attr  or $attr  = { $attr => $value };
-    "ARRAY" eq ref $table or
-	croak "Invalid argument for \$table - SCALAR, Regexp or ARRAY expected but got " . ref $table;
-    "HASH" eq ref $attr or
-	croak "Invalid argument for \$attr - SCALAR or HASH expected but got " . ref $attr;
-
-    foreach my $tname (@{$table}) {
-	my %tattrs;
-	while (my ($aname, $aval) = each %$attr) {
-	    &$sstm ($dbh, $tname, $aname, $aval);
-	    }
-	}
-
-    return $dbh;
-    } # set_file_meta
-
-sub clear_file_meta
-{
-    my ($dbh, $table) = @_;
-
-    (my $class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
-    my (undef, $meta) = $class->get_table_meta ($dbh, $table, 1);
-    $meta and %{$meta} = ();
-
-    return;
-    } # clear_file_meta
 
 sub get_avail_tables
 {
@@ -495,154 +305,6 @@ sub get_avail_tables
     return @tables;
     } # get_avail_tables
 
-# ====== Tie-Meta ==============================================================
-
-package DBD::File::TieMeta;
-
-use Carp qw(croak);
-require Tie::Hash;
-@DBD::File::TieMeta::ISA = qw(Tie::Hash);
-
-sub TIEHASH
-{
-    my ($class, $tblClass, $tblMeta) = @_;
-
-    my $self = bless ({ tblClass => $tblClass, tblMeta => $tblMeta, }, $class);
-    return $self;
-    } # new
-
-sub STORE
-{
-    my ($self, $meta_attr, $meta_val) = @_;
-
-    $self->{tblClass}->set_table_meta_attr ($self->{tblMeta}, $meta_attr, $meta_val);
-
-    return;
-    } # STORE
-
-sub FETCH
-{
-    my ($self, $meta_attr) = @_;
-
-    return $self->{tblClass}->get_table_meta_attr ($self->{tblMeta}, $meta_attr);
-    } # FETCH
-
-sub FIRSTKEY
-{
-    my $a = scalar keys %{$_[0]->{tblMeta}};
-    each %{$_[0]->{tblMeta}};
-    } # FIRSTKEY
-
-sub NEXTKEY
-{
-    each %{$_[0]->{tblMeta}};
-    } # NEXTKEY
-
-sub EXISTS
-{
-    exists $_[0]->{tblMeta}{$_[1]};
-    } # EXISTS
-
-sub DELETE
-{
-    croak "Can't delete single attributes from table meta structure";
-    } # DELETE
-
-sub CLEAR
-{
-    %{$_[0]->{tblMeta}} = ()
-    } # CLEAR
-
-sub SCALAR
-{
-    scalar %{$_[0]->{tblMeta}}
-    } # SCALAR
-
-# ====== Tie-Tables ============================================================
-
-package DBD::File::TieTables;
-
-use Carp qw(croak);
-require Tie::Hash;
-@DBD::File::TieTables::ISA = qw(Tie::Hash);
-
-sub TIEHASH
-{
-    my ($class, $dbh) = @_;
-
-    (my $tbl_class = $dbh->{ImplementorClass}) =~ s/::db$/::Table/;
-    my $self = bless ({ dbh => $dbh, tblClass => $tbl_class, }, $class);
-    return $self;
-    } # new
-
-sub STORE
-{
-    my ($self, $table, $tbl_meta) = @_;
-
-    "HASH" eq ref $tbl_meta or
-        croak "Invalid data for storing as table meta data (must be hash)";
-
-    (undef, my $meta) = $self->{tblClass}->get_table_meta ($self->{dbh}, $table, 1);
-    $meta or croak "Invalid table name '$table'";
-
-    while (my ($meta_attr, $meta_val) = each %$tbl_meta) {
-	$self->{tblClass}->set_table_meta_attr ($meta, $meta_attr, $meta_val);
-	}
-
-    return;
-    } # STORE
-
-sub FETCH
-{
-    my ($self, $table) = @_;
-
-    (undef, my $meta) = $self->{tblClass}->get_table_meta ($self->{dbh}, $table, 1);
-    $meta or croak "Invalid table name '$table'";
-
-    my %h;
-    tie %h, "DBD::File::TieMeta", $self->{tblClass}, $meta;
-
-    return \%h;
-    } # FETCH
-
-sub FIRSTKEY
-{
-    my $a = scalar keys %{$_[0]->{dbh}->{f_meta}};
-    each %{$_[0]->{dbh}->{f_meta}};
-    } # FIRSTKEY
-
-sub NEXTKEY
-{
-    each %{$_[0]->{dbh}->{f_meta}};
-    } # NEXTKEY
-
-sub EXISTS
-{
-    exists $_[0]->{dbh}->{f_meta}->{$_[1]} or
-	exists $_[0]->{dbh}->{f_meta_map}->{$_[1]};
-    } # EXISTS
-
-sub DELETE
-{
-    my ($self, $table) = @_;
-
-    (undef, my $meta) = $self->{tblClass}->get_table_meta ($self->{dbh}, $table, 1);
-    $meta or croak "Invalid table name '$table'";
-
-    delete $_[0]->{dbh}->{f_meta}->{$meta->{table_name}};
-    } # DELETE
-
-sub CLEAR
-{
-    %{$_[0]->{dbh}->{f_meta}} = ();
-    %{$_[0]->{dbh}->{f_meta_map}} = ();
-    } # CLEAR
-
-sub SCALAR
-{
-    scalar %{$_[0]->{dbh}->{f_meta}}
-    } # SCALAR
-
 # ====== STATEMENT =============================================================
 
 package DBD::File::st;
@@ -675,7 +337,7 @@ sub FETCH
 	    # fill overall_defs unless we know
 	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
 		my $all_meta =
-		    $sth->{Database}->func ("*", "table_defs", "get_file_meta");
+		    $sth->{Database}->func ("*", "table_defs", "get_sql_engine_meta");
 		while (my ($tbl, $meta) = each %$all_meta) {
 		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
 		    foreach (keys %{$meta->{table_defs}{columns}}) {
@@ -713,22 +375,6 @@ use strict;
 use warnings;
 
 @DBD::File::Statement::ISA = qw( DBI::DBD::SqlEngine::Statement );
-
-sub open_table ($$$$$)
-{
-    my ($self, $data, $table, $createMode, $lockMode) = @_;
-
-    my $class = ref $self;
-    $class =~ s/::Statement/::Table/;
-
-    my $flags = {
-	createMode	=> $createMode,
-	lockMode	=> $lockMode,
-	};
-    $self->{command} eq "DROP" and $flags->{dropMode} = 1;
-
-    return $class->new ($data, { table => $table }, $flags);
-    } # open_table
 
 # ====== SQL::TABLE ============================================================
 
@@ -859,64 +505,32 @@ sub bootstrap_table_meta
 {
     my ($self, $dbh, $meta, $table) = @_;
 
+    $self->SUPER::bootstrap_table_meta($dbh, $meta, $table);
+
     exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
     defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
     defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
     exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
     exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
     defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
-    defined $meta->{sql_identifier_case} or
-        $meta->{sql_identifier_case} = $dbh->{sql_identifier_case};
+
+    if ($self->bootstrap_table_meta_phase == 2 or !defined $meta->{f_fqfn}) {
+	$self->file2table ($meta, $table, $self->file_is_table, $self->respect_case) or delete $meta->{table_name};
+	}
+
     } # bootstrap_table_meta
 
-sub init_table_meta
-{
-    my ($self, $dbh, $meta, $table) = @_;
-
-    return;
-    } # init_table_meta
+our $file_is_a_table;
+sub file_is_table { $file_is_a_table }
 
 sub get_table_meta ($$$$;$)
 {
     my ($self, $dbh, $table, $file_is_table, $respect_case) = @_;
-    unless (defined $respect_case) {
-	$respect_case = 0;
-	$table =~ s/^\"// and $respect_case = 1;    # handle quoted identifiers
-	$table =~ s/\"$//;
-	}
 
-    unless ($respect_case) {
-	defined $dbh->{f_meta_map}{$table} and $table = $dbh->{f_meta_map}{$table};
-	}
-
-    my $meta = {};
-    defined $dbh->{f_meta}{$table} and $meta = $dbh->{f_meta}{$table};
-
-    unless ($meta->{initialized}) {
-	$self->bootstrap_table_meta ($dbh, $meta, $table);
-
-	unless (defined $meta->{f_fqfn}) {
-	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or return;
-	    }
-
-	if (defined $meta->{table_name} and $table ne $meta->{table_name}) {
-	    $dbh->{f_meta_map}{$table} = $meta->{table_name};
-	    $table = $meta->{table_name};
-	    }
-
-	# now we know a bit more - let's check if user can't use consequent spelling
-	# XXX add know issue about reset sql_identifier_case here ...
-	if (defined $dbh->{f_meta}{$table} && defined $dbh->{f_meta}{$table}{initialized}) {
-	    $meta = $dbh->{f_meta}{$table};
-	    $self->file2table ($meta, $table, $file_is_table, $respect_case) or
-		return unless $dbh->{f_meta}{$table}{initialized};
-	    }
-	unless ($dbh->{f_meta}{$table}{initialized}) {
-	    $self->init_table_meta ($dbh, $meta, $table);
-	    $meta->{initialized} = 1;
-	    $dbh->{f_meta}{$table} = $meta;
-	    }
-	}
+    local $file_is_a_table = $file_is_table;
+    my $meta = $self->SUPER::get_table_meta($dbh, $table, $respect_case);
+    $table = $meta->{table_name};
+    return unless $table;
 
     return ($table, $meta);
     } # get_table_meta
@@ -928,48 +542,12 @@ my %reset_on_modify = (
     f_lockfile => "f_fqfn", # forces new file2table call
     );
 
+__PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+
 my %compat_map = map { $_ => "f_$_" } qw( file ext lock lockfile );
 
-sub register_reset_on_modify
-{
-    my ($proto, $extra_resets) = @_;
-    %reset_on_modify = (%reset_on_modify, %$extra_resets);
-    return;
-    } # register_reset_on_modify
+__PACKAGE__->register_compat_map( \%compat_map );
 
-sub register_compat_map
-{
-    my ($proto, $extra_compat_map) = @_;
-    %compat_map = (%compat_map, %$extra_compat_map);
-    return;
-    } # register_compat_map
-
-sub get_table_meta_attr
-{
-    my ($class, $meta, $attrib) = @_;
-    exists $compat_map{$attrib} and
-	$attrib = $compat_map{$attrib};
-    exists $meta->{$attrib} and
-	return $meta->{$attrib};
-    return;
-    } # get_table_meta_attr
-
-sub set_table_meta_attr
-{
-    my ($class, $meta, $attrib, $value) = @_;
-    exists $compat_map{$attrib} and
-	$attrib = $compat_map{$attrib};
-    $class->table_meta_attr_changed ($meta, $attrib, $value);
-    $meta->{$attrib} = $value;
-    } # set_table_meta_attr
-
-sub table_meta_attr_changed
-{
-    my ($class, $meta, $attrib, $value) = @_;
-    defined $reset_on_modify{$attrib} and
-	delete $meta->{$reset_on_modify{$attrib}} and
-	$meta->{initialized} = 0;
-    } # table_meta_attr_changed
 
 # ====== FILE OPEN =============================================================
 
@@ -1045,27 +623,12 @@ sub open_file ($$$)
 sub new
 {
     my ($className, $data, $attrs, $flags) = @_;
-    my $dbh = $data->{Database};
 
-    my ($tblnm, $meta) = $className->get_table_meta ($dbh, $attrs->{table}, 1) or
+    my ($tblnm, $meta) = $className->get_table_meta ($data->{Database}, $attrs->{table}, 1) or
         croak "Cannot find appropriate file for table '$attrs->{table}'";
-    $attrs->{table} = $tblnm;
-
-    # Being a bit dirty here, as SQL::Statement::Structure does not offer
-    # me an interface to the data I want
-    $flags->{createMode} && $data->{sql_stmt}{table_defs} and
-	$meta->{table_defs} = $data->{sql_stmt}{table_defs};
-
     $className->open_file ($meta, $attrs, $flags);
 
-    my $columns = {};
-    my $array   = [];
-    my $tbl     = {
-	%{$attrs},
-	meta          => $meta,
-	col_names     => $meta->{col_names} || [],
-	};
-    return $className->SUPER::new ($tbl);
+    return $className->SUPER::new ($data, $attrs, $flags);
     } # new
 
 sub drop ($)
@@ -1080,7 +643,7 @@ sub drop ($)
     undef $meta->{lockfh};
     $meta->{f_fqfn} and unlink $meta->{f_fqfn};
     $meta->{f_fqln} and unlink $meta->{f_fqln};
-    delete $data->{Database}{f_meta}{$self->{table}};
+    delete $data->{Database}{sql_meta}{$self->{table}};
     return 1;
     } # drop
 

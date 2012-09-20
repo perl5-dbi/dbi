@@ -18,6 +18,9 @@ DBI::Changes - List of significant changes to the DBI
   Corrected typo in DBI->installed_versions docs RT#78825
     thanks to Jan Dubois.
 
+  Refactor table meta information management from DBD::File into
+    DBI::DBD::SqlEngine
+
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
 
   Fixed lack of =encoding in non-ASCII pod docs. RT#77588
