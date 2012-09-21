@@ -1298,10 +1298,15 @@ sub open_table ($$$$$)
     # reaching DBI::DBD::SqlEngine::Table->new(), we need to intercept
     # ReadOnly here
     my $write_op = $createMode || $lockMode || $flags->{dropMode};
-    if( $write_op ) {
-	my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
-	  or croak "Cannot find appropriate file for table '$table'";
-	$table_meta->{readonly} and croak "Table '$table' is marked readonly - " . $self->{command} . " command forbidden";
+    if ($write_op)
+    {
+        my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
+          or croak "Cannot find appropriate file for table '$table'";
+        $table_meta->{readonly}
+          and croak "Table '$table' is marked readonly - "
+          . $self->{command}
+          . ( $lockMode ? " with locking" : "" )
+          . " command forbidden";
     }
 
     return $class->new( $data, { table => $table }, $flags );
