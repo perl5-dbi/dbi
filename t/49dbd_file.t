@@ -150,8 +150,61 @@ SKIP: {
     $dbh->errstr and diag $dbh->errstr;
     }
 
+# ==================== ReadOnly tests =============================
+ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
+    f_ext	=> ".txt",
+    f_dir	=> $dir,
+    f_schema	=> undef,
+    f_encoding	=> $encoding,
+    f_lock	=> 0,
+
+    sql_meta    => {
+	$tbl => {
+	    col_names => [qw(txt)],
+	    }
+	},
+
+    RaiseError	=> 0,
+    PrintError	=> 0,
+    ReadOnly    => 1,
+    }), "ReadOnly connect with driver attributes in hash");
+
+ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
+$rowidx = 0;
+SKIP: {
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
+    ok ($sth->execute, "execute on $tbl");
+    $dbh->errstr and diag $dbh->errstr;
+    }
+
+ok ($sth = $dbh->prepare ("insert into $tbl (txt) values (?)"), "prepare 'insert into $tbl'");
+is ($sth->execute ("Perl rules"), undef, "insert failed intensionally");
+diag $dbh->errstr;
+
+ok ($sth = $dbh->prepare ("delete from $tbl"), "prepare 'delete from $tbl'");
+is ($sth->execute (), undef, "delete failed intensionally");
+diag $dbh->errstr;
+
+is ($dbh->do ("drop table $tbl"), undef, "table drop failed intensionally");
+diag $dbh->errstr;
+is (-f $tbl_file, 1, "Test table not removed");
+
+# ==================== ReadWrite again tests =============================
+ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
+    f_ext	=> ".txt",
+    f_dir	=> $dir,
+    f_schema	=> undef,
+    f_encoding	=> $encoding,
+    f_lock	=> 0,
+
+    RaiseError	=> 0,
+    PrintError	=> 0,
+    }), "ReadWrite for drop connect with driver attributes in hash");
+
+# XXX add a truncate test
+
 ok ($dbh->do ("drop table $tbl"), "table drop");
-is (-s "$tbl.txt", undef, "Test table removed");
+is (-s $tbl_file, undef, "Test table removed"); # -s => size test
 
 done_testing ();
 

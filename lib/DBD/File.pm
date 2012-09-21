@@ -624,6 +624,8 @@ sub new
 {
     my ($className, $data, $attrs, $flags) = @_;
 
+    # open_file must be called before inherited new is invoked
+    # because column name mapping is initialized in constructor ...
     my ($tblnm, $meta) = $className->get_table_meta ($data->{Database}, $attrs->{table}, 1) or
         croak "Cannot find appropriate file for table '$attrs->{table}'";
     $className->open_file ($meta, $attrs, $flags);
