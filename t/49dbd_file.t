@@ -179,17 +179,14 @@ SKIP: {
 
 ok ($sth = $dbh->prepare ("insert into $tbl (txt) values (?)"), "prepare 'insert into $tbl'");
 is ($sth->execute ("Perl rules"), undef, "insert failed intensionally");
-diag $dbh->errstr;
 
 ok ($sth = $dbh->prepare ("delete from $tbl"), "prepare 'delete from $tbl'");
 is ($sth->execute (), undef, "delete failed intensionally");
-diag $dbh->errstr;
 
 is ($dbh->do ("drop table $tbl"), undef, "table drop failed intensionally");
-diag $dbh->errstr;
 is (-f $tbl_file, 1, "Test table not removed");
 
-# ==================== ReadWrite again tests =============================
+# ==================== ReadWrite again tests ======================
 ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
     f_ext	=> ".txt",
     f_dir	=> $dir,
