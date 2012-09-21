@@ -103,6 +103,7 @@ sub data_sources ($;$)
     my $dir = $attr && exists $attr->{f_dir}
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
+    defined $dir or return; # Stream-based databases do not have f_dir
     my %attrs;
     $attr and %attrs = %$attr;
     delete $attrs{f_dir};
@@ -229,7 +230,7 @@ sub validate_STORE_attr
 {
     my ($dbh, $attrib, $value) = @_;
 
-    if ($attrib eq "f_dir") {
+    if ($attrib eq "f_dir" && defined $value) {
 	-d $value or
 	    return $dbh->set_err ($DBI::stderr, "No such directory '$value'");
 	File::Spec->file_name_is_absolute ($value) or
@@ -278,6 +279,7 @@ sub get_avail_tables
 
     my @tables = $dbh->SUPER::get_avail_tables ();
     my $dir    = $dbh->{f_dir};
+    defined $dir or return;	# Stream based db's cannot be queried for tables
     my $dirh   = Symbol::gensym ();
 
     unless (opendir $dirh, $dir) {
