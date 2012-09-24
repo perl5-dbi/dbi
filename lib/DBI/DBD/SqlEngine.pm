@@ -206,6 +206,24 @@ sub connect ($$;$$$)
     return $dbh;
 }    # connect
 
+sub data_sources ($;$)
+{
+    my ( $drh, $attr ) = @_;
+
+    my $tbl_src;
+    $attr
+      and defined $attr->{sql_table_source}
+      and $attr->{sql_table_source}->isa('DBI::DBD::SqlEngine::TableSource')
+      and $tbl_src = $attr->{sql_table_source};
+
+    !defined($tbl_src)
+      and $drh->can('default_table_source')
+      and $tbl_src = $drh->default_table_source();
+    defined($tbl_src) or return;
+
+    $tbl_src->data_sources( $drh, $attr );
+}    # data_sources
+
 sub disconnect_all
 {
 }    # disconnect_all
@@ -242,6 +260,15 @@ sub ping
 {
     ( $_[0]->FETCH("Active") ) ? 1 : 0;
 }    # ping
+
+sub data_sources
+{
+    my ( $dbh, $attr, @other ) = @_;
+    my $drh = $dbh->{Driver};    # XXX proxy issues?
+    ref($attr) eq 'HASH' or $attr = {};
+    defined( $attr->{sql_table_source} ) or $attr->{sql_table_source} = $dbh->{sql_table_source};
+    return $drh->data_sources( $attr, @other );
+}
 
 sub prepare ($$;@)
 {
@@ -834,11 +861,22 @@ sub get_avail_tables
 
     if ( $dbh->{sql_handler} eq "SQL::Statement" and $dbh->{sql_ram_tables} )
     {
+        # XXX map +[ undef, undef, $_, "TABLE", "TEMP" ], keys %{...}
         foreach my $table ( keys %{ $dbh->{sql_ram_tables} } )
         {
             push @tables, [ undef, undef, $table, "TABLE", "TEMP" ];
         }
     }
+
+    my $tbl_src;
+    defined $dbh->{sql_table_source}
+      and $dbh->{sql_table_source}->isa('DBI::DBD::SqlEngine::TableSource')
+      and $tbl_src = $dbh->{sql_table_source};
+
+    !defined($tbl_src)
+      and $dbh->{Driver}->{ImplementorClass}->can('default_table_source')
+      and $tbl_src = $dbh->{Driver}->{ImplementorClass}->default_table_source();
+    defined($tbl_src) and push( @tables, $tbl_src->avail_tables($dbh) );
 
     return @tables;
 }    # get_avail_tables
@@ -1269,6 +1307,48 @@ sub rows ($)
     return $_[0]->{sql_stmt}{NUM_OF_ROWS};
 }    # rows
 
+# ====== TableSource ===========================================================
+
+package DBI::DBD::SqlEngine::TableSource;
+
+use strict;
+use warnings;
+
+use Carp;
+
+sub data_sources ($;$)
+{
+    my ( $class, $drh, $attrs ) = @_;
+    croak( ( ref( $_[0] ) ? ref( $_[0] ) : $_[0] ) . " must implement data_sources" );
+}
+
+sub avail_tables
+{
+    my ( $self, $dbh ) = @_;
+    croak( ( ref( $_[0] ) ? ref( $_[0] ) : $_[0] ) . " must implement avail_tables" );
+}
+
+# ====== DataSource ============================================================
+
+package DBI::DBD::SqlEngine::DataSource;
+
+use strict;
+use warnings;
+
+use Carp;
+
+sub complete_table_name ($$;$)
+{
+    my ( $self, $meta, $table, $respect_case ) = @_;
+    croak( ( ref( $_[0] ) ? ref( $_[0] ) : $_[0] ) . " must implement complete_table_name" );
+}
+
+sub open_data ($)
+{
+    my ( $self, $meta, $attrs, $flags ) = @_;
+    croak( ( ref( $_[0] ) ? ref( $_[0] ) : $_[0] ) . " must implement open_data" );
+}
+
 # ====== SQL::STATEMENT ========================================================
 
 package DBI::DBD::SqlEngine::Statement;
@@ -1332,24 +1412,22 @@ sub bootstrap_table_meta
       and $meta->{readonly} = $dbh->{ReadOnly};
     defined $meta->{sql_identifier_case}
       or $meta->{sql_identifier_case} = $dbh->{sql_identifier_case};
+
+    exists $meta->{sql_data_source} or $meta->{sql_data_source} = $dbh->{sql_data_source};
+
+    $meta;
 }
 
 sub init_table_meta
 {
-    my ( $self, $dbh, $meta, $table ) = @_;
+    my ( $self, $dbh, $meta, $table ) = @_ if(0);
 
     return;
 }    # init_table_meta
 
-our $respect_table_case;
-sub respect_case { $respect_table_case }
-
-our $bootstrap_table_meta_phase = 0;
-sub bootstrap_table_meta_phase { $bootstrap_table_meta_phase }
-
 sub get_table_meta ($$$;$)
 {
-    my ( $self, $dbh, $table, $respect_case ) = @_;
+    my ( $self, $dbh, $table, $respect_case, @other ) = @_;
     unless ( defined $respect_case )
     {
         $respect_case = 0;
@@ -1367,11 +1445,9 @@ sub get_table_meta ($$$;$)
 
     unless ( $meta->{initialized} )
     {
-        local $bootstrap_table_meta_phase = 1;
-        local $respect_table_case         = $respect_case;
-
-        $self->bootstrap_table_meta( $dbh, $meta, $table );
-        return unless $meta->{table_name};
+        $self->bootstrap_table_meta( $dbh, $meta, $table, @other );
+        $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
+          or return;
 
         if ( defined $meta->{table_name} and $table ne $meta->{table_name} )
         {
@@ -1384,13 +1460,9 @@ sub get_table_meta ($$$;$)
         if ( defined $dbh->{sql_meta}{$table} && defined $dbh->{sql_meta}{$table}{initialized} )
         {
             $meta = $dbh->{sql_meta}{$table};
-
-            unless ( $dbh->{sql_meta}{$table}{initialized} )
-            {
-                $bootstrap_table_meta_phase = 2;
-                $self->bootstrap_table_meta( $dbh, $meta, $table );
-                $meta->{table_name} or return;
-            }
+            $dbh->{sql_meta}{$table}{initialized}
+              or $meta->{sql_data_source}->complete_table_name( $dbh, $meta, $table, $respect_case, @other )
+              or return;
         }
 
         unless ( $dbh->{sql_meta}{$table}{initialized} )

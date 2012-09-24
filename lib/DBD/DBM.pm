@@ -255,17 +255,6 @@ use Fcntl;
 
 my $dirfext = $^O eq 'VMS' ? '.sdbm_dir' : '.dir';
 
-sub file2table
-{
-    my ( $self, $meta, $file, $file_is_table, $quoted ) = @_;
-
-    my $tbl = $self->SUPER::file2table( $meta, $file, $file_is_table, $quoted ) or return;
-
-    $meta->{f_dontopen} = 1;
-
-    return $tbl;
-}
-
 my %reset_on_modify = (
                         dbm_type  => "dbm_tietype",
                         dbm_mldbm => "dbm_tietype",
@@ -320,6 +309,8 @@ sub bootstrap_table_meta
 sub init_table_meta
 {
     my ( $self, $dbh, $meta, $table ) = @_;
+
+    $meta->{f_dontopen} = 1;
 
     unless ( defined( $meta->{dbm_tietype} ) )
     {
