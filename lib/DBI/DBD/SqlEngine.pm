@@ -1482,7 +1482,11 @@ my %compat_map      = ();
 sub register_reset_on_modify
 {
     my ( $proto, $extra_resets ) = @_;
-    %reset_on_modify = ( %reset_on_modify, %$extra_resets );
+    foreach my $cv (keys %$extra_resets)
+    {
+	#%reset_on_modify = ( %reset_on_modify, %$extra_resets );
+	push @{$reset_on_modify{$cv}}, ref $extra_resets->{$cv} ? @{$extra_resets->{$cv}} : ($extra_resets->{$cv});
+    }
     return;
 }    # register_reset_on_modify
 
@@ -1516,7 +1520,7 @@ sub table_meta_attr_changed
 {
     my ( $class, $meta, $attrib, $value ) = @_;
     defined $reset_on_modify{$attrib}
-      and delete $meta->{ $reset_on_modify{$attrib} }
+      and delete @$meta{ @{$reset_on_modify{$attrib}} }
       and $meta->{initialized} = 0;
 }    # table_meta_attr_changed
 
@@ -1530,7 +1534,7 @@ sub new
     my $dbh = $data->{Database};
 
     my ( $tblnm, $meta ) = $className->get_table_meta( $dbh, $attrs->{table}, 1 )
-      or croak "Cannot find appropriate file for table '$attrs->{table}'";
+      or croak "Cannot find appropriate table '$attrs->{table}'";
     $attrs->{table} = $tblnm;
 
     # Being a bit dirty here, as SQL::Statement::Structure does not offer
