@@ -1461,7 +1461,7 @@ sub get_table_meta ($$$;$)
         {
             $meta = $dbh->{sql_meta}{$table};
             $dbh->{sql_meta}{$table}{initialized}
-              or $meta->{sql_data_source}->complete_table_name( $dbh, $meta, $table, $respect_case, @other )
+              or $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
               or return;
         }
 
