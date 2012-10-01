@@ -738,6 +738,9 @@ sub bootstrap_table_meta
     exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
     defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
 
+    defined $meta->{f_open_file_needed} or
+	$meta->{f_open_file_needed} = $self->can ("open_file") != DBD::File::Table->can ("open_file");
+
     defined ($meta->{sql_data_source}) or
 	$meta->{sql_data_source} = _HANDLE ($meta->{f_file})
 	                         ? 'DBD::File::DataSource::Stream'
@@ -768,6 +771,21 @@ my %compat_map = map { $_ => "f_$_" } qw( file ext lock lockfile );
 
 __PACKAGE__->register_compat_map( \%compat_map );
 
+# ====== DBD::File <= 0.40 compat stuff ========================================
+
+sub open_file
+{
+    my ($self, $meta, $attrs, $flags) = @_;
+
+    $meta->{fh} and return;
+
+    $meta->{sql_data_source} or
+	croak "Table " . $meta->{table_name} . " not completely initialized";
+    $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);
+
+    return;
+    } # open_file
+
 # ====== SQL::Eval API =========================================================
 
 sub new
@@ -779,8 +797,12 @@ sub new
     my ($tblnm, $meta) = $className->get_table_meta ($data->{Database}, $attrs->{table}, 1) or
         croak "Cannot find appropriate file for table '$attrs->{table}'";
     $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);
+    # compat to 0.38 .. 0.40 API
+    $meta->{f_open_file_needed} and $className->open_file ($meta, $attrs, $flags);
 
-    return $className->SUPER::new ($data, $attrs, $flags);
+    my $self = $className->SUPER::new ($data, $attrs, $flags);
+
+    return $self;
     } # new
 
 sub drop ($)
