@@ -407,7 +407,7 @@ sub complete_table_name
 {
     my ($self, $meta, $file, $respect_case) = @_;
 
-    my $tbl;
+    my $tbl = $file;
     if (!$respect_case and $meta->{sql_identifier_case} == 1) { # XXX SQL_IC_UPPER
         $tbl = uc $tbl;
 	}
@@ -759,7 +759,7 @@ sub get_table_meta ($$$$;$)
     } # get_table_meta
 
 my %reset_on_modify = (
-    f_file     => "f_fqfn",
+    f_file     => ["f_fqfn", "sql_data_source"],
     f_dir      => "f_fqfn",
     f_ext      => "f_fqfn",
     f_lockfile => "f_fqfn", # forces new file2table call
