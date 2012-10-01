@@ -24,7 +24,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.06';
+$VERSION     = '0.07';
 $ATTRIBUTION = 'DBD::DBM by Jens Rehsack';
 
 # no need to have driver() unless you need private methods

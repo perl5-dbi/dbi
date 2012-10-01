@@ -35,7 +35,7 @@ use base qw(DBI::DBD::SqlEngine);
 use Carp;
 use vars qw(@ISA $VERSION $drh);
 
-$VERSION = "0.40";
+$VERSION = "0.41";
 
 $drh = undef;		# holds driver handle(s) once initialized
 

@@ -33,7 +33,7 @@ use strict;
 use Carp;
 use vars qw( @ISA $VERSION $drh %methods_installed);
 
-$VERSION = "0.04";
+$VERSION = "0.05";
 
 $drh = undef;    # holds driver handle(s) once initialized
 
