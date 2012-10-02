@@ -591,7 +591,6 @@ sub open_data
 
     my ($fh, $fn);
     unless ($meta->{f_dontopen}) {
-	$meta->{fh} and return; # called twice
 	$fn = $meta->{f_fqfn};
 	if ($flags->{createMode}) {
 	    -f $meta->{f_fqfn} and
@@ -615,7 +614,6 @@ sub open_data
 	    }
 	}
     if ($meta->{f_fqln}) {
-	$meta->{lockfh} and return; # called twice
 	$fn = $meta->{f_fqln};
 	if ($flags->{createMode}) {
 	    -f $fn and
@@ -796,9 +794,11 @@ sub new
     # because column name mapping is initialized in constructor ...
     my ($tblnm, $meta) = $className->get_table_meta ($data->{Database}, $attrs->{table}, 1) or
         croak "Cannot find appropriate file for table '$attrs->{table}'";
-    $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);
+
     # compat to 0.38 .. 0.40 API
-    $meta->{f_open_file_needed} and $className->open_file ($meta, $attrs, $flags);
+    $meta->{f_open_file_needed}
+	? $className->open_file ($meta, $attrs, $flags)
+	: $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);;
 
     my $self = $className->SUPER::new ($data, $attrs, $flags);
 
