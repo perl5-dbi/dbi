@@ -217,8 +217,8 @@ sub data_sources ($;$)
       and $tbl_src = $attr->{sql_table_source};
 
     !defined($tbl_src)
-      and $drh->can('default_table_source')
-      and $tbl_src = $drh->default_table_source();
+      and $drh->{ImplementorClass}->can('default_table_source')
+      and $tbl_src = $drh->{ImplementorClass}->default_table_source();
     defined($tbl_src) or return;
 
     $tbl_src->data_sources( $drh, $attr );
@@ -1443,6 +1443,7 @@ sub get_table_meta ($$$;$)
     my $meta = {};
     defined $dbh->{sql_meta}{$table} and $meta = $dbh->{sql_meta}{$table};
 
+do_initialize:
     unless ( $meta->{initialized} )
     {
         $self->bootstrap_table_meta( $dbh, $meta, $table, @other );
@@ -1457,12 +1458,13 @@ sub get_table_meta ($$$;$)
 
         # now we know a bit more - let's check if user can't use consequent spelling
         # XXX add know issue about reset sql_identifier_case here ...
-        if ( defined $dbh->{sql_meta}{$table} && defined $dbh->{sql_meta}{$table}{initialized} )
+        if ( defined $dbh->{sql_meta}{$table} )
         {
-            $meta = $dbh->{sql_meta}{$table};
-            $dbh->{sql_meta}{$table}{initialized}
-              or $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
-              or return;
+            $meta = delete $dbh->{sql_meta}{$table}; # avoid endless loop
+            $meta->{initialized}
+              or goto do_initialize;
+	      #or $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
+              #or return;
         }
 
         unless ( $dbh->{sql_meta}{$table}{initialized} )

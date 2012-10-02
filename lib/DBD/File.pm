@@ -338,7 +338,7 @@ sub data_sources
     my %attrs;
     $attr and %attrs = %$attr;
     delete $attrs{f_dir};
-    my $dsn_quote = $drh->can("dsn_quote");
+    my $dsn_quote = $drh->{ImplementorClass}->can("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
     my $dirh = IO::Dir->new($dir);
     unless (defined $dirh) {
@@ -353,7 +353,7 @@ sub data_sources
 	my $d = File::Spec->catdir ($dir, $file);
 	# allow current dir ... it can be a data_source too
 	$file ne File::Spec->updir () && -d $d and
-	    push @dsns, "DBI:$driver:f_dir=" . dsn_quote ($d) . ($dsnextra ? ";$dsnextra" : "");
+	    push @dsns, "DBI:$driver:f_dir=" . &{$dsn_quote} ($d) . ($dsnextra ? ";$dsnextra" : "");
 	}
     return @dsns;
     } # data_sources
@@ -591,6 +591,7 @@ sub open_data
 
     my ($fh, $fn);
     unless ($meta->{f_dontopen}) {
+	$meta->{fh} and return; # called twice
 	$fn = $meta->{f_fqfn};
 	if ($flags->{createMode}) {
 	    -f $meta->{f_fqfn} and
@@ -614,10 +615,11 @@ sub open_data
 	    }
 	}
     if ($meta->{f_fqln}) {
+	$meta->{lockfh} and return; # called twice
 	$fn = $meta->{f_fqln};
 	if ($flags->{createMode}) {
 	    -f $fn and
-		croak "Cannot create table lock for $attrs->{table}: Already exists";
+		croak "Cannot create table lock at '$fn' for $attrs->{table}: Already exists";
 	    $fh = IO::File->new ($fn, "a+") or
 		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
 	    }
@@ -777,8 +779,6 @@ sub open_file
 {
     my ($self, $meta, $attrs, $flags) = @_;
 
-    $meta->{fh} and return;
-
     $meta->{sql_data_source} or
 	croak "Table " . $meta->{table_name} . " not completely initialized";
     $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);
@@ -815,8 +815,8 @@ sub drop ($)
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
-    $meta->{f_fqfn} and unlink $meta->{f_fqfn};
-    $meta->{f_fqln} and unlink $meta->{f_fqln};
+    $meta->{f_fqfn} and unlink $meta->{f_fqfn}; # XXX ==> sql_data_source
+    $meta->{f_fqln} and unlink $meta->{f_fqln}; # XXX ==> sql_data_source
     delete $data->{Database}{sql_meta}{$self->{table}};
     return 1;
     } # drop
