@@ -901,7 +901,8 @@ sub get_avail_tables
                                      NAME => $names,
                                   }
                                 );
-        $sth or $dbh->set_err( $DBI::stderr, $dbh2->errstr );
+        $sth or return $dbh->set_err( $DBI::stderr, $dbh2->errstr );
+	$sth->execute or return;
         return $sth;
     }    # table_info
 }

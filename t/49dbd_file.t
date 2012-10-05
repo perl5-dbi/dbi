@@ -125,6 +125,10 @@ is (scalar @layer, 1, "encoding shows in layer");
 my @tables = $dbh->func( "list_tables" );
 is_deeply( \@tables, ["000_just_testing", $tbl], "Listing tables gives test table" );
 
+ok ($sth = $dbh->table_info(), "table_info");
+@tables = $sth->fetchall_arrayref;
+is_deeply( \@tables, [ [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } ("000_just_testing", $tbl) ] ], "table_info gives test table" );
+
 SKIP: {
     $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
     ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");

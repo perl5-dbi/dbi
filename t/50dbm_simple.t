@@ -258,6 +258,12 @@ sub do_test {
 	is( $sth->rows, scalar( @{$expected_rows} ), $sql );
 	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
+
+    my $sth = $dbh->table_info();
+    ok ($sth, "prepare table_info (without tables)");
+    my @tables = $sth->fetchall_arrayref;
+    is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
+
     $dbh->disconnect;
     return 1;
 }
