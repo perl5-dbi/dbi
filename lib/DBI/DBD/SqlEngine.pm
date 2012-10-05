@@ -1170,14 +1170,18 @@ sub execute
     $sth->finish;
     my $stmt = $sth->{sql_stmt};
 
-    # SQL::Statement and DBI::SQL::Nano will return the list of required params
-    # when called in list context. Do not look into the several items, they're
-    # implementation specific and may change without warning
-    unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
+    # must not proved when already executed - SQL::Statement modifies
+    # received params
+    unless ( $sth->{sql_params_checked}++ )
     {
-        my $msg = "You passed $nparm parameters where $req_prm required";
-        $sth->set_err( $DBI::stderr, $msg );
-        return;
+	# SQL::Statement and DBI::SQL::Nano will return the list of required params
+	# when called in list context. Do not look into the several items, they're
+	# implementation specific and may change without warning
+	unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
+	{
+	    my $msg = "You passed $nparm parameters where $req_prm required";
+	    return $sth->set_err( $DBI::stderr, $msg );
+	}
     }
 
     my @err;
