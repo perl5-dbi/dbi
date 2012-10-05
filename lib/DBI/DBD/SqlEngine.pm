@@ -1527,7 +1527,16 @@ sub table_meta_attr_changed
       and $meta->{initialized} = 0;
 }    # table_meta_attr_changed
 
-1;
+sub open_data
+{
+    my ($self, $meta, $attrs, $flags) = @_;
+
+    $meta->{sql_data_source} or
+	croak "Table " . $meta->{table_name} . " not completely initialized";
+    $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);;
+
+    return;
+    } # open_data
 
 # ====== SQL::Eval API =========================================================
 
@@ -1545,6 +1554,10 @@ sub new
     $flags->{createMode} && $data->{sql_stmt}{table_defs}
       and $meta->{table_defs} = $data->{sql_stmt}{table_defs};
 
+    # open_file must be called before inherited new is invoked
+    # because column name mapping is initialized in constructor ...
+    $className->open_data( $meta, $attrs, $flags );
+
     my $tbl = {
                 %{$attrs},
                 meta      => $meta,
@@ -1552,6 +1565,8 @@ sub new
               };
     return $className->SUPER::new($tbl);
 }    # new
+
+1;
 
 =pod
 

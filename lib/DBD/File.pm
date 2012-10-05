@@ -773,37 +773,27 @@ __PACKAGE__->register_compat_map( \%compat_map );
 
 # ====== DBD::File <= 0.40 compat stuff ========================================
 
+# compat to 0.38 .. 0.40 API
 sub open_file
 {
-    my ($self, $meta, $attrs, $flags) = @_;
+    my ($className, $meta, $attrs, $flags) = @_;
 
-    $meta->{sql_data_source} or
-	croak "Table " . $meta->{table_name} . " not completely initialized";
-    $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);
-
-    return;
+    return $className->SUPER::open_data ($meta, $attrs, $flags);
     } # open_file
 
-# ====== SQL::Eval API =========================================================
-
-sub new
+sub open_data
 {
-    my ($className, $data, $attrs, $flags) = @_;
-
-    # open_file must be called before inherited new is invoked
-    # because column name mapping is initialized in constructor ...
-    my ($tblnm, $meta) = $className->get_table_meta ($data->{Database}, $attrs->{table}, 1) or
-        croak "Cannot find appropriate file for table '$attrs->{table}'";
+    my ($className, $meta, $attrs, $flags) = @_;
 
     # compat to 0.38 .. 0.40 API
     $meta->{f_open_file_needed}
 	? $className->open_file ($meta, $attrs, $flags)
-	: $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);;
+	: $className->SUPER::open_data ($meta, $attrs, $flags);
 
-    my $self = $className->SUPER::new ($data, $attrs, $flags);
+    return;
+    } # open_data
 
-    return $self;
-    } # new
+# ====== SQL::Eval API =========================================================
 
 sub drop ($)
 {

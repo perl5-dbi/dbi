@@ -343,10 +343,11 @@ sub init_table_meta
     $self->SUPER::init_table_meta( $dbh, $meta, $table );
 }
 
-sub open_file
+sub open_data
 {
-    my ( $self, $meta, $attrs, $flags ) = @_;
-    $self->SUPER::open_file( $meta, $attrs, $flags );
+    my ( $className, $meta, $attrs, $flags ) = @_;
+    $className->SUPER::open_data( $meta, $attrs, $flags );
+
     unless ( $flags->{dropMode} )
     {
         # TIEING
