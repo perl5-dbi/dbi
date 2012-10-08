@@ -18,6 +18,12 @@ DBI::Changes - List of significant changes to the DBI
   Corrected typo in DBI->installed_versions docs RT#78825
     thanks to Jan Dubois.
 
+  Added new tests to 08keeperr for RT#64330
+   thanks to Kenichi Ishigaki.
+
+  Fix RT#64330 - ping wipes out errstr.
+    Removed _not_impl (Martin J. Evans).
+
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
 
   Fixed lack of =encoding in non-ASCII pod docs. RT#77588
@@ -297,7 +303,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Fixed DBD_ATTRIB_DELETE macro for driver authors
     and updated DBI::DBD docs thanks to Martin J. Evans.
   Fixed 64bit issues in trace messages thanks to Charles Jardine.
-  Fixed FETCH_many() method to work with drivers that incorrectly return 
+  Fixed FETCH_many() method to work with drivers that incorrectly return
     an empty list from $h->FETCH. Affected gofer.
 
   Added 'sqlite_' as registered prefix for DBD::SQLite.
@@ -473,7 +479,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 =head2 Changes in DBI 1.56 (svn rev 9660),  18th June 2007
 
   Fixed printf arg warnings thanks to JDHEDDEN.
-  Fixed returning driver-private sth attributes via gofer.   
+  Fixed returning driver-private sth attributes via gofer.
 
   Changed pod docs docs to use =head3 instead of =item
     so now in html you get links to individual methods etc.
@@ -724,7 +730,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
     (driver authors who have used it should rerun it).
 
   Updated docs for NULL Value placeholders thanks to Brian Campbell.
-  
+
   Added multi-keyfield nested hash fetching to fetchall_hashref()
     thanks to Zhuang (John) Li for polishing up my draft.
   Added registered driver prefixes: amzn_ for DBD::Amazon and yaswi_ for DBD::Yaswi.
@@ -1265,7 +1271,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   : This does not affect statements that only select one column, which is
   : usually the case when fetchrow_array is called in a scalar context.
   : FYI, this change was triggered by discovering that the fetchrow_array
-  : implementation in Driver.xst (used by most compiled drivers) 
+  : implementation in Driver.xst (used by most compiled drivers)
   : didn't match the DBI specification. Rather than change the code
   : to match, and risk breaking existing applications, I've changed the
   : specification (that part was always of dubious value anyway).
@@ -2008,12 +2014,12 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
     DBI scripts no longer need to be modified to make use of Apache::DBI.
   Added a ping method and an experimental connect_test_perf method.
   Added a fetchhash and fetch_all methods.
-  The func method no longer pre-clears err and errstr. 
+  The func method no longer pre-clears err and errstr.
   Added ChopBlanks attribute (currently defaults to off, that may change).
     Support for the attribute needs to be implemented by individual drivers.
   Reworked tests into standard t/*.t form.
   Added more pod text.  Fixed assorted bugs.
-  
+
 
 =head2 Changes in DBI 0.79,	7th Apr 1997
 

@@ -142,7 +142,7 @@ get reported against caller's file and line number and not a line in DBI.pm
 
 pre and post call hooks via ima structure?
 
-Remove _not_impl. Alias debug to trace in DBI::(dr/db/st) and remove
+Alias debug to trace in DBI::(dr/db/st) and remove
 debug() method from internals.
 
 DBD::Multiplex enhancements (Thomas Kishel <tom@kishel.net>):
