@@ -17,7 +17,8 @@
 # some do:
 #   insert into sometable (a_column) values(:fred);
 #   bind_param('fred', x);
-# This script does the latter - see unicode_param_markers
+# This script does the latter by default except for DBD::SQLite
+#   - see unicode_param_markers and $param_marker_style where you can set the :
 #
 # DBD::ODBC currently fails:
 # not ok 3 - unicode table found by qualified table_info
@@ -55,6 +56,7 @@ my $binary_sample = "\xFF\x01\x00" x 20;
 my $unicode_column_type;	# 'nvarchar for MS SQL Server'
 my $blob_column_type;		# = 'image' for MS SQL Server
 my $blob_bind_type;		# type to pass to bind_param for blobs
+my $param_marker_style; # some DBDs need a column in front of param names in bind_param_call
 
 # may be different in different SQL support
 # if your DBD/db needs a different function to return the length in
@@ -99,6 +101,7 @@ if ($driver eq 'SQLite') {
     $blob_bind_type = SQL_BLOB;
     $unicode_column_type = 'varchar';
     $h->{sqlite_unicode} = 1;
+    $param_marker_style = ':';
 }
 elsif ($driver eq 'CSV') {
     # does not support column_info
@@ -182,8 +185,7 @@ sub do_connect {
 	csv	=> [ "dbi:CSV:",                  $user, $pass ],
 	mysql	=> [ "dbi:mysql:database=test",   $user, $pass ],
 	odbc	=> [ "dbi:ODBC:DSN=asus2",        $user, $pass ],
-	oracle	=> [ "dbi:Oracle:host=betoracle.easysoft.local;sid=devel",
-						  'bet', 'b3t' ],
+	oracle	=> [ "dbi:Oracle:host=xxx.easysoft.local;sid=devel", 'xxx', 'yyy' ],
 	pg	=> [ "dbi:Pg:dbname=test",        $user, $pass ],
 	sqlite	=> [ "dbi:SQLite:dbname=unitest_8.db", "", ""       ],
 	unify	=> [ "dbi:Unify:",                $ENV{USCHEMA}, undef ],
@@ -195,6 +197,14 @@ sub do_connect {
     $dsn =~ m/:/ or
         ($dsn, $user, $pass) = @{$dsn{lc $dsn} || die "No connect info\n"};
 
+    if ($dsn =~ /^dbi:SQLite/) {
+        # The pod for SQLite is confusing and has changed. Initially it said sqlite_unicode
+        # must be set at connect time and cannot be set later on the connection handle
+        # and now it says
+        # "but this only works if the sqlite_unicode attribute is set before the first call to a perl collation sequence"
+        # so we set it here
+        $attr{sqlite_unicode} = 1;
+    }
     my $h = DBI->connect($dsn, $user, $pass, { RaiseError => 1, %attr });
     return $h;
 }
@@ -425,7 +435,7 @@ sub unicode_param_markers {
     my $param_marker = "fred\x{20ac}";
     lives_ok {
         my $s = $h->prepare(qq/insert into $table (a) values (:$param_marker)/);
-        $s->bind_param($param_marker, 1);
+        $s->bind_param($param_marker_style . $param_marker, 1);
         $s->execute;
     } 'bind parameter with unicode parameter marker';
 
