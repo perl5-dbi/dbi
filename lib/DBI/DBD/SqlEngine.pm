@@ -99,7 +99,7 @@ EOI
     # XXX inject DBD::XXX::Statement unless exists
 
     my $stclass = $class . "::st";
-    $stclass->install_method("sql_get_colnames") unless ( $methods_installed{$class}++ );
+    $stclass->install_method("sql_get_colnames") unless ( $methods_installed{__PACKAGE__}++ );
 
     return $drh->{$class};
 }    # driver
