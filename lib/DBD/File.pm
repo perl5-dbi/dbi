@@ -401,6 +401,10 @@ use warnings;
 
 @DBD::File::DataSource::Stream::ISA = 'DBI::DBD::SqlEngine::DataSource';
 
+# We may have a working flock () built-in but that doesn't mean that locking
+# will work on NFS (flock () may hang hard)
+my $locking = eval { flock STDOUT, 0; 1 };
+
 use Carp;
 
 sub complete_table_name
@@ -442,7 +446,7 @@ sub open_data
     my ($self, $meta, $attrs, $flags) = @_;
 
     $flags->{dropMode} and croak "Can't drop a table in stream";
-    my $fn = "file handle " . fileno($meta->{fh});
+    my $fn = "file handle " . fileno($meta->{f_file});
 
     if ($flags->{createMode} || $flags->{lockMode}) {
 	$meta->{fh} = IO::Handle->new_from_fd( fileno($meta->{f_file} ), "w+" ) or
@@ -463,7 +467,23 @@ sub open_data
 	    binmode $meta->{fh} or croak "Failed to set binary mode on $fn: $!";
 	    }
 	} # have $meta->{$fh}
+
+    if ($self->can_flock && $meta->{fh}) {
+	my $lm = defined $flags->{f_lock}
+		      && $flags->{f_lock} =~ m/^[012]$/
+		       ? $flags->{f_lock}
+		       : $flags->{lockMode} ? 2 : 1;
+	if ($lm == 2) {
+	    flock $meta->{fh}, 2 or croak "Cannot obtain exclusive lock on $fn: $!";
+	    }
+	elsif ($lm == 1) {
+	    flock $meta->{fh}, 1 or croak "Cannot obtain shared lock on $fn: $!";
+	    }
+	# $lm = 0 is forced no locking at all
+	}
     } # open_data
+
+sub can_flock { $locking }
 
 package DBD::File::DataSource::File;
 
@@ -475,10 +495,6 @@ use warnings;
 use Carp;
 
 my $fn_any_ext_regex = qr/\.[^.]*/;
-
-# We may have a working flock () built-in but that doesn't mean that locking
-# will work on NFS (flock () may hang hard)
-my $locking = eval { flock STDOUT, 0; 1 };
 
 sub complete_table_name
 {
@@ -630,7 +646,7 @@ sub open_data
 	$meta->{lockfh} = $fh;
 	}
 
-    if ($locking && $fh) {
+    if ($self->can_flock && $fh) {
 	my $lm = defined $flags->{f_lock}
 		      && $flags->{f_lock} =~ m/^[012]$/
 		       ? $flags->{f_lock}
