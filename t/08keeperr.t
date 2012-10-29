@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 79;
+use Test::More tests => 89;
 
 ## ----------------------------------------------------------------------------
 ## 08keeperr.t
@@ -90,6 +90,31 @@ sub ping_keeps_err {
     # so here we just test that there is an error
     ok $dbh->err, "err true after failed ping";
     ok $dbh->errstr, "errstr true after failed ping";
+
+
+    # for a driver which doesn't have its own ping
+    $dbh = DBI->connect('DBI:Sponge:', undef, undef, { PrintError => 0 });
+    $dbh->STORE(Active => 1);
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42;
+    is $dbh->errstr, "ERROR 42";
+    ok $dbh->ping, "ping returns true: ".$dbh->ping;
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+
+    $dbh->disconnect;
+    $dbh->STORE(Active => 0);
+
+    $dbh->set_err(42, "ERROR 42");
+    is $dbh->err, 42, "err unchanged after ping";
+    is $dbh->errstr, "ERROR 42", "errstr unchanged after ping";
+    ok !$dbh->ping, "ping returns false";
+    # it's reasonable for ping() to set err/errstr if it fails
+    # so here we just test that there is an error
+    ok $dbh->err, "err true after failed ping";
+    ok $dbh->errstr, "errstr true after failed ping";
+
 }
 
 ## ----------------------------------------------------------------------------

@@ -390,7 +390,6 @@ my $keeperr = { O=>0x0004 };
 	'FIRSTKEY'	=> $keeperr,
 	'NEXTKEY'	=> $keeperr,
 	'STORE'		=> { O=>0x0418 | 0x4 },
-	_not_impl	=> undef,
 	can		=> { O=>0x0100 }, # special case, see dispatch
 	debug 	 	=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
 	dump_handle 	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
@@ -1344,12 +1343,6 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     # methods common to all handle types:
 
-    sub _not_impl {
-	my ($h, $method) = @_;
-	$h->trace_msg("Driver does not implement the $method method.\n");
-	return;	# empty list / undef
-    }
-
     # generic TIEHASH default methods:
     sub FIRSTKEY { }
     sub NEXTKEY  { }
@@ -1711,7 +1704,6 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub ping {
 	my $dbh = shift;
-	$dbh->_not_impl('ping');
 	# "0 but true" is a special kind of true 0 that is used here so
 	# applications can check if the ping was a real ping or not
 	($dbh->FETCH('Active')) ?  "0 but true" : 0;
