@@ -7263,7 +7263,7 @@ See L<perlop/"Quote and Quote-like Operators"> for more details.
 Perl 5.7 and later support a new threading model called iThreads.
 (The old "5.005 style" threads are not supported by the DBI.)
 
-In the iThreads model each thread has it's own copy of the perl
+In the iThreads model each thread has its own copy of the perl
 interpreter.  When a new thread is created the original perl
 interpreter is 'cloned' to create a new copy for the new thread.
 
@@ -7585,7 +7585,7 @@ as the I<trace settings> and are stored together in a single integer.
 For normal use you only need to set the trace level, and generally
 only to a value between 1 and 4.
 
-Each handle has it's own trace settings, and so does the DBI.
+Each handle has its own trace settings, and so does the DBI.
 When you call a method the DBI merges the handles settings into its
 own for the duration of the call: the trace flags of the handle are
 OR'd into the trace flags of the DBI, and if the handle has a higher
