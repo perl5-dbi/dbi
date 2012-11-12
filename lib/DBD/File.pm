@@ -403,7 +403,14 @@ use warnings;
 
 # We may have a working flock () built-in but that doesn't mean that locking
 # will work on NFS (flock () may hang hard)
-my $locking = eval { flock STDOUT, 0; 1 };
+my $locking = eval {
+    my $fh;
+    my $nulldevice = File::Spec->devnull();
+    open( $fh, ">", $nulldevice ) or die "Can't open $nulldevice: $!";
+    flock $fh, 0;
+    close $fh;
+    1
+    };
 
 use Carp;
 
