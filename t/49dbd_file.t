@@ -99,7 +99,7 @@ SKIP: {
 my @tfhl;
 
 # Now test some basic SQL statements
-my $tbl_file = File::Spec->catfile (Cwd::abs_path( $dir ), "$tbl.txt");
+my $tbl_file = File::Spec->catfile (Cwd::abs_path ($dir), "$tbl.txt");
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl") or diag $dbh->errstr;
 ok (-f $tbl_file, "Test table exists");
 
@@ -122,12 +122,12 @@ is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
 is (scalar @layer, 1, "encoding shows in layer");
 
-my @tables = $dbh->func( "list_tables" );
-is_deeply( \@tables, ["000_just_testing", $tbl], "Listing tables gives test table" );
+my @tables = sort $dbh->func ("list_tables");
+is_deeply (\@tables, [sort "000_just_testing", $tbl], "Listing tables gives test table");
 
-ok ($sth = $dbh->table_info(), "table_info");
-@tables = $sth->fetchall_arrayref;
-is_deeply( \@tables, [ [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } ("000_just_testing", $tbl) ] ], "table_info gives test table" );
+ok ($sth = $dbh->table_info (), "table_info");
+@tables = sort { $a->[2] cmp $b->[2] } @{$sth->fetchall_arrayref};
+is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } "000_just_testing", $tbl ], "table_info gives test table");
 
 SKIP: {
     $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
@@ -145,7 +145,7 @@ SKIP: {
     $dbh->errstr and diag $dbh->errstr;
     }
 
-my $uctbl = uc($tbl);
+my $uctbl = uc ($tbl);
 ok ($sth = $dbh->prepare ("select * from $uctbl"), "Prepare select * from $uctbl");
 $rowidx = 0;
 SKIP: {
