@@ -18,9 +18,9 @@ find (sub {
     open my $gl, "-|", "git log -1 $f";
     my ($svn_id, $svn_date, $svn_author) = ("", "");
     while (<$gl>) {
-	m/git-svn-id:.*?trunk\@([0-9]+)/	and $svn_id	= $1;
-	m/^Date:\s*(.*)/			and $svn_date	= $1;
-	m/^Author:\s*(\S+)/			and $svn_author	= $1;
+	m/git-svn-id:.*?(?:trunk|sqlengine)\@([0-9]+)/	and $svn_id	= $1;
+	m/^Date:\s*(.*)/				and $svn_date	= $1;
+	m/^Author:\s*(\S+)/				and $svn_author	= $1;
 	}
     #print STDERR "  + $svn_id, $svn_author, $svn_date\n";
     $svn_id or return;
