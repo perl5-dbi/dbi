@@ -3265,15 +3265,6 @@ XS(XS_DBI_dispatch)
         profile_t1 = dbi_time(); /* just get start time here */
     }
 
-    if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
-        I32 h_trace_level = (i & DBIc_TRACE_LEVEL_MASK);
-        if ( h_trace_level > trace_level )
-            trace_level = h_trace_level;
-        trace_flags = (trace_flags & ~DBIc_TRACE_LEVEL_MASK)
-                    | (          i & ~DBIc_TRACE_LEVEL_MASK)
-                    | trace_level;
-    }
-
 #ifdef DBI_USE_THREADS
 {
     PerlInterpreter * h_perl;
@@ -3297,6 +3288,15 @@ XS(XS_DBI_dispatch)
     }
 }
 #endif
+
+    if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
+        I32 h_trace_level = (i & DBIc_TRACE_LEVEL_MASK);
+        if ( h_trace_level > trace_level )
+            trace_level = h_trace_level;
+        trace_flags = (trace_flags & ~DBIc_TRACE_LEVEL_MASK)
+                    | (          i & ~DBIc_TRACE_LEVEL_MASK)
+                    | trace_level;
+    }
 
     /* Check method call against Internal Method Attributes */
     if (ima_flags) {
