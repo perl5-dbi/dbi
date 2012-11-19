@@ -229,10 +229,8 @@ $DBD::Proxy::db::imp_data_size = 0;
 # in a way that might not be visible on the client, ie begin_work -> AutoCommit.
 
 sub commit;
-sub connected;
 sub rollback;
 sub ping;
-
 
 use vars qw(%ATTR $AUTOLOAD);
 
@@ -294,6 +292,9 @@ sub DESTROY {
     local $@ if $@;	# protect $@
     $dbh->disconnect if $dbh->SUPER::FETCH('Active');
 }
+
+
+sub connected { } # client-side not server-side, RT#75868
 
 sub disconnect ($) {
     my ($dbh) = @_;
