@@ -20,10 +20,11 @@ DBI::Changes - List of significant changes to the DBI
   Corrected a spelling error thanks to Chris Sanders.
 
   Added logic to force destruction of children before parents
-    during global destruction. Currently experimental.
-
+    during global destruction. Re RT#75614.
   Added new tests to 08keeperr for RT#64330
-   thanks to Kenichi Ishigaki.
+    thanks to Kenichi Ishigaki.
+  Added extra internal handle type check, RT#79952
+    thanks to Reini Urban.
 
   Removed internal _not_impl method (Martin J. Evans).
 

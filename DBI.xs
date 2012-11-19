@@ -1494,6 +1494,8 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
             break;
         }
     }
+    else 
+        die("panic: invalid DBIc_TYPE");
 
     /* Use DBI magic on inner handle to carry handle attributes         */
     /* Note that we store the imp_sv in mg_obj, but as a shortcut,      */
