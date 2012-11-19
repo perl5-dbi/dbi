@@ -25,6 +25,7 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Kenichi Ishigaki.
   Added extra internal handle type check, RT#79952
     thanks to Reini Urban.
+  Added cubrid_ registered prefix for DBD::cubrid, RT#78453
 
   Removed internal _not_impl method (Martin J. Evans).
 
