@@ -127,7 +127,7 @@ is_deeply (\@tables, [sort "000_just_testing", $tbl], "Listing tables gives test
 
 ok ($sth = $dbh->table_info (), "table_info");
 @tables = sort { $a->[2] cmp $b->[2] } @{$sth->fetchall_arrayref};
-is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } "000_just_testing", $tbl ], "table_info gives test table");
+is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } sort "000_just_testing", $tbl ], "table_info gives test table");
 
 SKIP: {
     $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
