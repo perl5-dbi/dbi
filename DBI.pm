@@ -314,6 +314,7 @@ my $dbd_prefix_registry = {
   amzn_        => { class => 'DBD::Amazon',         },
   best_        => { class => 'DBD::BestWins',       },
   csv_         => { class => 'DBD::CSV',            },
+  cubrid_      => { class => 'DBD::cubrid',         },
   db2_         => { class => 'DBD::DB2',            },
   dbi_         => { class => 'DBI',                 },
   dbm_         => { class => 'DBD::DBM',            },
