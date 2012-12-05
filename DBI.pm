@@ -7624,7 +7624,7 @@ drivers can define others. DBI trace flag names begin with a capital
 letter and driver specific names begin with a lowercase letter, as
 usual.
 
-Currently the DBI only defines two trace flags:
+Currently the DBI defines these trace flags:
 
   ALL - turn on all DBI and driver flags (not recommended)
   SQL - trace SQL statements executed
