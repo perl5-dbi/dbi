@@ -24,7 +24,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 use vars qw($VERSION $ATTRIBUTION $drh $methods_already_installed);
-$VERSION     = '0.07';
+$VERSION     = '0.08';
 $ATTRIBUTION = 'DBD::DBM by Jens Rehsack';
 
 # no need to have driver() unless you need private methods
@@ -76,6 +76,8 @@ package DBD::DBM::db;
 $DBD::DBM::db::imp_data_size = 0;
 @DBD::DBM::db::ISA           = qw(DBD::File::db);
 
+use Carp qw/carp/;
+
 sub validate_STORE_attr
 {
     my ( $dbh, $attrib, $value ) = @_;
@@ -83,7 +85,7 @@ sub validate_STORE_attr
     if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
         ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-        # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+        carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
         $attrib = $newattrib;
     }
 
@@ -97,7 +99,7 @@ sub validate_FETCH_attr
     if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
     {
         ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-        # carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
+        carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if( $^W );
         $attrib = $newattrib;
     }
 

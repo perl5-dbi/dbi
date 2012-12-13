@@ -36,6 +36,10 @@ DBI::Changes - List of significant changes to the DBI
 
   Removed internal _not_impl method (Martin J. Evans).
 
+  NOTE: The "old-style" DBD::DBM attributes 'dbm_ext' and 'dbm_lockfile'
+    had been deprecated for several years and their use will now generate
+    a warning.
+
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
 
   Fixed lack of =encoding in non-ASCII pod docs. RT#77588
