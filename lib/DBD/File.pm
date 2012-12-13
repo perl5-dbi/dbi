@@ -186,6 +186,8 @@ sub init_default_attributes
 	# f_map is deprecated (but might return)
 	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
 
+	push @{$dbh->{sql_init_order}{90}}, "f_meta";
+
 	if(0) { # XXX remove block
 	# complete derived attributes, if required
 	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;

@@ -179,19 +179,38 @@ sub connect ($$;$$$)
 
         if ($two_phased_init)
         {
-            foreach $a (qw(Profile RaiseError PrintError AutoCommit))
-            {    # do these first
+            # The attributes need to be sorted in a specific way as the
+            # assignment is through tied hashes and calls STORE on each
+            # attribute.  Some attributes require to be called prior to
+            # others
+            # e.g. f_dir *must* be done before xx_tables in DBD::File
+            # The dbh attribute sql_init_order is a hash with the order
+            # as key (low is first, 0 .. 100) and the attributes that
+            # are set to that oreder as anon-list as value:
+            # {  0 => [qw( AutoCommit PrintError RaiseError Profile ... )],
+            #   10 => [ list of attr to be dealt with immediately after first ],
+            #   50 => [ all fields that are unspecified or default sort order ],
+            #   90 => [ all fields that are needed after other initialisation ],
+            #   }
+
+            my %order = map {
+		my $order = $_;
+		map { ( $_ => $order ) } @{$dbh->{sql_init_order}{$order}};
+		} sort { $a <=> $b } keys %{$dbh->{sql_init_order} || {}};
+            my @ordered_attr =
+		map  { $ _->[0] }
+		sort { $a->[1] <=> $b->[1] }
+		map  { [ $_, defined $order{$_} ? $order{$_} : 50 ] }
+		keys %$attr;
+
+            # initialize given attributes ... lower weighted before higher weighted
+	    foreach my $a (@ordered_attr) { 
                 exists $attr->{$a} or next;
                 eval {
                     $dbh->{$a} = $attr->{$a};
                     delete $attr->{$a};
                 };
                 $@ and $second_phase_attrs{$a} = delete $attr->{$a};
-            }
-            while ( my ( $a, $v ) = each %$attr )
-            {
-                eval { $dbh->{$a} = $v };
-                $@ and $second_phase_attrs{$a} = $v;
             }
 
             $dbh->func( 1, "init_default_attributes" );
@@ -413,7 +432,24 @@ sub init_default_attributes
         $dbh->{sql_meta}     = {};
         $dbh->{sql_meta_map} = {};    # choose new name because it contains other keys
 
-        my @comp_attrs = qw(valid_attrs version readonly_attrs);
+        # init_default_attributes calls inherited routine before derived DBD's
+	# init their default attributes, so we don't override something here
+	#
+	# defining an order of attribute initialization from connect time
+	# specified ones with a magic baarier (see next statement)
+	my $drv_pfx_meta = $drv_prefix . "meta";
+	$dbh->{sql_init_order} = {
+	     0 => [qw( Profile RaiseError PrintError AutoCommit )],
+	    90 => [ "sql_meta", $dbh->{$drv_pfx_meta} ? $dbh->{$drv_pfx_meta} : ()],
+	    };
+	# ensuring Profile, RaiseError, PrintError, AutoCommit are initialized
+	# first when initializing attributes from connect time specified
+	# attributes
+	# further, initializations to predefined tables are happens after any
+	# unspecified attribute initialization (that default to order 50)
+
+	my @comp_attrs = qw(valid_attrs version readonly_attrs);
+
         if ( exists $dbh->{ $drv_prefix . "meta" } and !$dbh->{sql_engine_in_gofer} )
         {
             my $attr = $dbh->{ $drv_prefix . "meta" };
