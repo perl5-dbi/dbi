@@ -1975,6 +1975,7 @@ sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, void *v)
         && SvPVX(sv)   /* we have a buffer to discard */
         ) {
             SvOOK_off(sv);
+            sv_force_normal(sv);
             if (SvLEN(sv))
                 Safefree(SvPVX(sv));
             SvPOK_off(sv);
