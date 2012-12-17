@@ -194,17 +194,18 @@ sub connect ($$;$$$)
             #   }
 
             my %order = map {
-		my $order = $_;
-		map { ( $_ => $order ) } @{$dbh->{sql_init_order}{$order}};
-		} sort { $a <=> $b } keys %{$dbh->{sql_init_order} || {}};
+                my $order = $_;
+                map { ( $_ => $order ) } @{ $dbh->{sql_init_order}{$order} };
+            } sort { $a <=> $b } keys %{ $dbh->{sql_init_order} || {} };
             my @ordered_attr =
-		map  { $ _->[0] }
-		sort { $a->[1] <=> $b->[1] }
-		map  { [ $_, defined $order{$_} ? $order{$_} : 50 ] }
-		keys %$attr;
+              map  { $_->[0] }
+              sort { $a->[1] <=> $b->[1] }
+              map  { [ $_, defined $order{$_} ? $order{$_} : 50 ] }
+              keys %$attr;
 
             # initialize given attributes ... lower weighted before higher weighted
-	    foreach my $a (@ordered_attr) { 
+            foreach my $a (@ordered_attr)
+            {
                 exists $attr->{$a} or next;
                 eval {
                     $dbh->{$a} = $attr->{$a};
@@ -433,22 +434,22 @@ sub init_default_attributes
         $dbh->{sql_meta_map} = {};    # choose new name because it contains other keys
 
         # init_default_attributes calls inherited routine before derived DBD's
-	# init their default attributes, so we don't override something here
-	#
-	# defining an order of attribute initialization from connect time
-	# specified ones with a magic baarier (see next statement)
-	my $drv_pfx_meta = $drv_prefix . "meta";
-	$dbh->{sql_init_order} = {
-	     0 => [qw( Profile RaiseError PrintError AutoCommit )],
-	    90 => [ "sql_meta", $dbh->{$drv_pfx_meta} ? $dbh->{$drv_pfx_meta} : ()],
-	    };
-	# ensuring Profile, RaiseError, PrintError, AutoCommit are initialized
-	# first when initializing attributes from connect time specified
-	# attributes
-	# further, initializations to predefined tables are happens after any
-	# unspecified attribute initialization (that default to order 50)
+        # init their default attributes, so we don't override something here
+        #
+        # defining an order of attribute initialization from connect time
+        # specified ones with a magic baarier (see next statement)
+        my $drv_pfx_meta = $drv_prefix . "meta";
+        $dbh->{sql_init_order} = {
+                           0  => [qw( Profile RaiseError PrintError AutoCommit )],
+                           90 => [ "sql_meta", $dbh->{$drv_pfx_meta} ? $dbh->{$drv_pfx_meta} : () ],
+        };
+        # ensuring Profile, RaiseError, PrintError, AutoCommit are initialized
+        # first when initializing attributes from connect time specified
+        # attributes
+        # further, initializations to predefined tables are happens after any
+        # unspecified attribute initialization (that default to order 50)
 
-	my @comp_attrs = qw(valid_attrs version readonly_attrs);
+        my @comp_attrs = qw(valid_attrs version readonly_attrs);
 
         if ( exists $dbh->{$drv_pfx_meta} and !$dbh->{sql_engine_in_gofer} )
         {
@@ -600,7 +601,9 @@ sub validate_STORE_attr
     ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
     my $drv_prefix = DBI->driver_prefix($drv_class);
 
-    exists $dbh->{ $drv_prefix . "meta" } and $attrib eq $dbh->{ $drv_prefix . "meta" } and $attrib = "sql_meta";
+    exists $dbh->{ $drv_prefix . "meta" }
+      and $attrib eq $dbh->{ $drv_prefix . "meta" }
+      and $attrib = "sql_meta";
 
     return ( $attrib, $value );
 }
@@ -657,10 +660,10 @@ sub STORE ($$$)
                 $dbh->{$attrib}{$k} = $v;
             }
         }
-	else
-	{
-	    $dbh->{$attrib} = $value;
-	}
+        else
+        {
+            $dbh->{$attrib} = $value;
+        }
 
         return 1;
     }
@@ -939,7 +942,7 @@ sub get_avail_tables
                                   }
                                 );
         $sth or return $dbh->set_err( $DBI::stderr, $dbh2->errstr );
-	$sth->execute or return;
+        $sth->execute or return;
         return $sth;
     }    # table_info
 }
@@ -1211,14 +1214,14 @@ sub execute
     # received params
     unless ( $sth->{sql_params_checked}++ )
     {
-	# SQL::Statement and DBI::SQL::Nano will return the list of required params
-	# when called in list context. Do not look into the several items, they're
-	# implementation specific and may change without warning
-	unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
-	{
-	    my $msg = "You passed $nparm parameters where $req_prm required";
-	    return $sth->set_err( $DBI::stderr, $msg );
-	}
+        # SQL::Statement and DBI::SQL::Nano will return the list of required params
+        # when called in list context. Do not look into the several items, they're
+        # implementation specific and may change without warning
+        unless ( ( my $req_prm = $stmt->params() ) == ( my $nparm = @$params ) )
+        {
+            my $msg = "You passed $nparm parameters where $req_prm required";
+            return $sth->set_err( $DBI::stderr, $msg );
+        }
     }
 
     my @err;
@@ -1462,7 +1465,7 @@ sub bootstrap_table_meta
 
 sub init_table_meta
 {
-    my ( $self, $dbh, $meta, $table ) = @_ if(0);
+    my ( $self, $dbh, $meta, $table ) = @_ if (0);
 
     return;
 }    # init_table_meta
@@ -1485,7 +1488,7 @@ sub get_table_meta ($$$;$)
     my $meta = {};
     defined $dbh->{sql_meta}{$table} and $meta = $dbh->{sql_meta}{$table};
 
-do_initialize:
+  do_initialize:
     unless ( $meta->{initialized} )
     {
         $self->bootstrap_table_meta( $dbh, $meta, $table, @other );
@@ -1502,11 +1505,11 @@ do_initialize:
         # XXX add know issue about reset sql_identifier_case here ...
         if ( defined $dbh->{sql_meta}{$table} )
         {
-            $meta = delete $dbh->{sql_meta}{$table}; # avoid endless loop
+            $meta = delete $dbh->{sql_meta}{$table};    # avoid endless loop
             $meta->{initialized}
               or goto do_initialize;
-	      #or $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
-              #or return;
+            #or $meta->{sql_data_source}->complete_table_name( $meta, $table, $respect_case, @other )
+            #or return;
         }
 
         unless ( $dbh->{sql_meta}{$table}{initialized} )
@@ -1526,10 +1529,11 @@ my %compat_map      = ();
 sub register_reset_on_modify
 {
     my ( $proto, $extra_resets ) = @_;
-    foreach my $cv (keys %$extra_resets)
+    foreach my $cv ( keys %$extra_resets )
     {
-	#%reset_on_modify = ( %reset_on_modify, %$extra_resets );
-	push @{$reset_on_modify{$cv}}, ref $extra_resets->{$cv} ? @{$extra_resets->{$cv}} : ($extra_resets->{$cv});
+        #%reset_on_modify = ( %reset_on_modify, %$extra_resets );
+        push @{ $reset_on_modify{$cv} },
+          ref $extra_resets->{$cv} ? @{ $extra_resets->{$cv} } : ( $extra_resets->{$cv} );
     }
     return;
 }    # register_reset_on_modify
@@ -1564,20 +1568,20 @@ sub table_meta_attr_changed
 {
     my ( $class, $meta, $attrib, $value ) = @_;
     defined $reset_on_modify{$attrib}
-      and delete @$meta{ @{$reset_on_modify{$attrib}} }
+      and delete @$meta{ @{ $reset_on_modify{$attrib} } }
       and $meta->{initialized} = 0;
 }    # table_meta_attr_changed
 
 sub open_data
 {
-    my ($self, $meta, $attrs, $flags) = @_;
+    my ( $self, $meta, $attrs, $flags ) = @_;
 
-    $meta->{sql_data_source} or
-	croak "Table " . $meta->{table_name} . " not completely initialized";
-    $meta->{sql_data_source}->open_data ($meta, $attrs, $flags);;
+    $meta->{sql_data_source}
+      or croak "Table " . $meta->{table_name} . " not completely initialized";
+    $meta->{sql_data_source}->open_data( $meta, $attrs, $flags );
 
     return;
-    } # open_data
+}    # open_data
 
 # ====== SQL::Eval API =========================================================
 
