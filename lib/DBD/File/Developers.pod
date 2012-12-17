@@ -65,7 +65,7 @@ DBD::File::Developers - Developers documentation for DBD::File
     sub bootstrap_table_meta { ... }
     sub init_table_meta { ... }
     sub table_meta_attr_changed { ... }
-    sub open_file { ... }
+    sub open_data { ... }
 
     sub fetch_row { ... }
     sub push_row { ... }

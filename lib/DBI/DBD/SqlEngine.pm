@@ -450,9 +450,9 @@ sub init_default_attributes
 
 	my @comp_attrs = qw(valid_attrs version readonly_attrs);
 
-        if ( exists $dbh->{ $drv_prefix . "meta" } and !$dbh->{sql_engine_in_gofer} )
+        if ( exists $dbh->{$drv_pfx_meta} and !$dbh->{sql_engine_in_gofer} )
         {
-            my $attr = $dbh->{ $drv_prefix . "meta" };
+            my $attr = $dbh->{$drv_pfx_meta};
                   defined $attr
               and defined $dbh->{$valid_attrs}
               and !defined $dbh->{$valid_attrs}{$attr}
@@ -533,7 +533,7 @@ sub validate_FETCH_attr
     # would force Gofer to serialize the tieing object including it's
     # private $dbh reference used to do the driver function calls.
     # This will result in nasty exceptions. So return a copy of the
-    # f_meta structure instead, which is the source of for the compatibility
+    # sql_meta structure instead, which is the source of for the compatibility
     # tie-hash. It's not as good as liked, but the best we can do in this
     # situation.
     if ( $dbh->{sql_engine_in_gofer} )
@@ -600,17 +600,7 @@ sub validate_STORE_attr
     ( my $drv_class = $dbh->{ImplementorClass} ) =~ s/::db$//;
     my $drv_prefix = DBI->driver_prefix($drv_class);
 
-    if ( exists $dbh->{ $drv_prefix . "meta" } )
-    {
-        my $attr = $dbh->{ $drv_prefix . "meta" };
-        if ( $attrib eq $attr )
-        {
-            while ( my ( $k, $v ) = each %$value )
-            {
-                $dbh->{$attrib}{$k} = $v;
-            }
-        }
-    }
+    exists $dbh->{ $drv_prefix . "meta" } and $attrib eq $dbh->{ $drv_prefix . "meta" } and $attrib = "sql_meta";
 
     return ( $attrib, $value );
 }
@@ -660,7 +650,18 @@ sub STORE ($$$)
           and return $dbh->set_err( $DBI::stderr,
                                     "attribute '$attrib' is readonly and must not be modified" );
 
-        $dbh->{$attrib} = $value;
+        if ( $attrib eq "sql_meta" )
+        {
+            while ( my ( $k, $v ) = each %$value )
+            {
+                $dbh->{$attrib}{$k} = $v;
+            }
+        }
+	else
+	{
+	    $dbh->{$attrib} = $value;
+	}
+
         return 1;
     }
 
@@ -1821,6 +1822,37 @@ Defaults to "CSV".  Because an SQL::Parser is instantiated only once and
 SQL::Parser doesn't allow to modify the dialect once instantiated,
 it's strongly recommended to set this flag before any statement is
 executed (best place is connect attribute hash).
+
+=head4 sql_meta
+
+Private data area which contains information about the tables this
+module handles. Table meta data might not be available until the
+table has been accessed for the first time e.g., by issuing a select
+on it however it is possible to pre-initialize attributes for each table
+you use.
+
+DBI::DBD::SqlEngine recognizes the (public) attributes C<col_names>,
+C<table_name>, C<readonly>, C<sql_data_source> and C<sql_identifier_case>.
+Be very careful when modifying attributes you do not know, the consequence
+might be a destroyed or corrupted table.
+
+While C<sql_meta> is a private and readonly attribute (which means, you
+cannot modify it's values), derived drivers might provide restricted
+write access through another attribute. Well known accessors are
+C<csv_tables> for L<DBD::CSV>, C<ad_tables> for L<DBD::AnyData> and
+C<dbm_tables> for L<DBD::DBM>.
+
+=head4 sql_table_source
+
+Controls the class which will be used for fetching available tables.
+
+XXX See L</TableSource>
+
+=head4 sql_data_source
+
+Contains the class name to be used for opening tables.
+
+XXX See L</DataSource>
 
 =head1 SUPPORT
 

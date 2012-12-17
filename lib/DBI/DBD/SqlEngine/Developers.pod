@@ -54,6 +54,22 @@ DBI::DBD::SqlEngine::Developers - Developers documentation for DBI::DBD::SqlEngi
 
     @ISA = qw(DBI::DBD::SqlEngine::Table);
 
+    my %reset_on_modify = (
+			    myd_abc => "myd_foo",
+			    myd_mno => "myd_bar",
+			  );
+    __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
+    my %compat_map = (
+		       abc => 'foo_abc',
+		       xyz => 'foo_xyz',
+		     );
+    __PACKAGE__->register_compat_map( \%compat_map );
+
+    sub bootstrap_table_meta { ... }
+    sub init_table_meta { ... }
+    sub table_meta_attr_changed { ... }
+    sub open_data { ... }
+
     sub new { ... }
 
     sub fetch_row { ... }
@@ -193,6 +209,17 @@ Prepares a new SQL statement to execute. Returns a statement handle,
 C<< $sth >> - instance of the DBD:XXX::st. It is neither required nor
 recommended to override this method.
 
+=item validate_FETCH_attr
+
+Called by C<FETCH> to allow inherited drivers do their own attribute
+name validation. Calling convention is similar to C<FETCH> and the
+return value is the approved attribute name.
+
+    return $validated_attribute_name;
+
+In case of validation fails (eg. accessing private attribute or similar),
+C<validate_FETCH_attr> is permitted to throw an exception.
+
 =item FETCH
 
 Fetches an attribute of a DBI database object. Private handle attributes
@@ -207,6 +234,22 @@ croaks. If the attribute is valid and readonly (listed in C<< $dbh->{
 $drv_prefix . "readonly_attrs" } >> when it exists), a real copy of the
 attribute value is returned. So it's not possible to modify
 C<f_valid_attrs> from outside of DBI::DBD::SqlEngine::db or a derived class.
+
+=item validate_STORE_attr
+
+Called by C<STORE> to allow inherited drivers do their own attribute
+name validation. Calling convention is similar to C<STORE> and the
+return value is the approved attribute name followed by the approved
+new value.
+
+    return ($validated_attribute_name, $validated_attribute_value);
+
+In case of validation fails (eg. accessing private attribute or similar),
+C<validate_STORE_attr> is permitted to throw an exception
+(C<DBI::DBD::SqlEngine::db::validate_STORE_attr> throws an exception when
+someone tries to assign value other than C<SQL_IC_UPPER .. SQL_IC_MIXED>
+to C<< $dbh->{sql_identifier_case} >> or
+C<< $dbh->{sql_quoted_identifier_case} >>).
 
 =item STORE
 

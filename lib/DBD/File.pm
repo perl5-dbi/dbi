@@ -188,27 +188,30 @@ sub init_default_attributes
 
 	push @{$dbh->{sql_init_order}{90}}, "f_meta";
 
-	if(0) { # XXX remove block
 	# complete derived attributes, if required
 	(my $drv_class = $dbh->{ImplementorClass}) =~ s/::db$//;
 	my $drv_prefix = DBI->driver_prefix ($drv_class);
-	my $valid_attrs = $drv_prefix . "valid_attrs";
-	my $ro_attrs = $drv_prefix . "readonly_attrs";
+        if ( exists $dbh->{ $drv_prefix . "meta" } and !$dbh->{sql_engine_in_gofer} ) {
+            my $attr = $dbh->{ $drv_prefix . "meta" };
+            defined $dbh->{f_valid_attrs}{f_meta}
+              and $dbh->{f_valid_attrs}{f_meta} = 1;
 
-	my @comp_attrs = ();
-
-	foreach my $comp_attr (@comp_attrs) {
-	    my $attr = $drv_prefix . $comp_attr;
-	    defined $dbh->{$valid_attrs} and !defined $dbh->{$valid_attrs}{$attr} and
-		$dbh->{$valid_attrs}{$attr} = 1;
-	    defined $dbh->{$ro_attrs} and !defined $dbh->{$ro_attrs}{$attr} and
-		$dbh->{$ro_attrs}{$attr} = 1;
+            $dbh->{f_meta} = $dbh->{$attr};
 	    }
-	    } # if 0
 	}
 
     return $dbh;
     } # init_default_attributes
+
+sub validate_FETCH_attr
+{
+    my ( $dbh, $attrib ) = @_;
+
+    $attrib eq "f_meta" and $dbh->{sql_engine_in_gofer} and $attrib = "sql_meta";
+
+    return $dbh->SUPER::validate_FETCH_attr ($attrib);
+    } # validate_FETCH_attr
+
 
 sub validate_STORE_attr
 {
@@ -225,6 +228,8 @@ sub validate_STORE_attr
 	$value eq "" || $value =~ m{^\.\w+(?:/[rR]*)?$} or
 	    carp "'$value' doesn't look like a valid file extension attribute\n";
 	}
+
+    $attrib eq "f_meta" and $dbh->{sql_engine_in_gofer} and $attrib = "sql_meta";
 
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
     } # validate_STORE_attr
@@ -1068,13 +1073,13 @@ the C<f_lockfile> attribute:
 
   $dbh = DBI->connect ("dbi:DBM:f_lockfile=.foo");
   $dbh->{f_lockfile} = ".foo";
-  $dbh->{f_meta}{qux}{f_lockfile} = ".foo";
+  $dbh->{dbm_tables}{qux}{f_lockfile} = ".foo";
 
 If you wish to disable locking, set the C<f_lockfile> to C<0>.
 
   $dbh = DBI->connect ("dbi:DBM:f_lockfile=0");
   $dbh->{f_lockfile} = 0;
-  $dbh->{f_meta}{qux}{f_lockfile} = 0;
+  $dbh->{dbm_tables}{qux}{f_lockfile} = 0;
 
 =head4 f_encoding
 
@@ -1083,17 +1088,17 @@ This is implemented using C<< binmode $fh, ":encoding(<f_encoding>)" >>.
 
 =head4 f_meta
 
-Private data area which contains information about the tables this
-module handles. Table meta data might not be available until the
-table has been accessed for the first time e.g., by issuing a select
-on it however it is possible to pre-initialize attributes for each table
-you use.
+Private data area aliasing L<DBI::DBD::SqlEngine/sql_meta> which
+contains information about the tables this module handles. Table meta
+data might not be available until the table has been accessed for the
+first time e.g., by issuing a select on it however it is possible to
+pre-initialize attributes for each table you use.
 
 DBD::File recognizes the (public) attributes C<f_ext>, C<f_dir>,
 C<f_file>, C<f_encoding>, C<f_lock>, C<f_lockfile>, C<f_schema>,
-C<col_names>, C<table_name> and C<sql_identifier_case>. Be very careful
-when modifying attributes you do not know, the consequence might be a
-destroyed or corrupted table.
+in addition to the attributes L<DBI::DBD::SqlEngine/sql_meta> already
+supports. Be very careful when modifying attributes you do not know,
+the consequence might be a destroyed or corrupted table.
 
 C<f_file> is an attribute applicable to table meta data only and you
 will not find a corresponding attribute in the dbh. Whilst it may be
