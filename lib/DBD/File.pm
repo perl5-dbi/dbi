@@ -471,15 +471,8 @@ sub open_data
 	    croak "Cannot open $fn for reading: $! (" . ($!+0) . ")";
 	}
 
-    $meta->{fh} = $meta->{f_file};
     if ($meta->{fh}) {
-	if (my $enc = $meta->{f_encoding}) {
-	    binmode $meta->{fh}, ":encoding($enc)" or
-		croak "Failed to set encoding layer '$enc' on $fn: $!";
-	    }
-	else {
-	    binmode $meta->{fh} or croak "Failed to set binary mode on $fn: $!";
-	    }
+	$self->apply_encoding($meta, $fn);
 	} # have $meta->{$fh}
 
     if ($self->can_flock && $meta->{fh}) {
