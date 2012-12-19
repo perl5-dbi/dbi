@@ -1827,6 +1827,15 @@ SQL::Parser doesn't allow to modify the dialect once instantiated,
 it's strongly recommended to set this flag before any statement is
 executed (best place is connect attribute hash).
 
+=head4 sql_engine_in_gofer
+
+This value has a true value in case of this driver is operated via
+L<DBD::Gofer>. The impact of being operated via Gofer is a read-only
+driver (not read-only databases!), so you cannot modify any attributes
+later - neither any table settings. B<But> you won't get an error in
+cases you modify table attributes, so please carefully watch
+C<sql_engine_in_gofer>.
+
 =head4 sql_meta
 
 Private data area which contains information about the tables this
@@ -1850,13 +1859,122 @@ C<dbm_tables> for L<DBD::DBM>.
 
 Controls the class which will be used for fetching available tables.
 
-XXX See L</TableSource>
+See L</DBI::DBD::SqlEngine::TableSource> for details.
 
 =head4 sql_data_source
 
 Contains the class name to be used for opening tables.
 
-XXX See L</DataSource>
+See L</DBI::DBD::SqlEngine::DataSource> for details.
+
+=head2 Extensibility
+
+=head3 DBI::DBD::SqlEngine::TableSource
+
+Provides data sources and table information on database driver and database
+handle level.
+
+  package DBI::DBD::SqlEngine::TableSource;
+
+  sub data_sources ($;$)
+  {
+    my ( $class, $drh, $attrs ) = @_;
+    ...
+  }
+
+  sub avail_tables
+  {
+    my ( $class, $drh ) = @_;
+    ...
+  }
+
+The C<data_sources> method is called when the user invokes any of the
+following:
+
+  @ary = DBI->data_sources($driver);
+  @ary = DBI->data_sources($driver, \%attr);
+  
+  @ary = $dbh->data_sources();
+  @ary = $dbh->data_sources(\%attr);
+
+The C<avail_tables> method is called when the user invokes any of the
+following:
+
+  @names = $dbh->tables( $catalog, $schema, $table, $type );
+  
+  $sth = $dbh->table_info( $catalog, $schema, $table, $type );
+  $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
+
+  $dbh->func( "list_tables" );
+
+Everytime where an C<\%attr> argument can be specified, this C<\%attr>
+object's C<sql_table_source> attribute is preferred over the C<$dbh>
+attribute or the driver default, eg.
+
+  @ary = DBI->data_sources("dbi:CSV:", {
+    f_dir => "/your/csv/tables",
+    # note: this class doesn't comes with DBI
+    sql_table_source => "DBD::File::Archive::Tar::TableSource",
+    # scan tarballs instead of directories
+  });
+
+When you're going to implement such a DBD::File::Archive::Tar::TableSource
+class, remember to add correct attributes (including C<sql_table_source>
+and C<sql_data_source>) to the returned DSN's.
+
+=head3 DBI::DBD::SqlEngine::DataSource
+
+Provides base functionality for dealing with tables. It is primarily
+designed for allowing transparent access to files on disk or already
+opened (file-)streams (eg. for DBD::CSV).
+
+Derived classes shall be restricted to similar functionality, too (eg.
+opening streams from an archive, transparently compress/uncompress
+log files before parsing them, 
+
+  package DBI::DBD::SqlEngine::DataSource;
+
+  sub complete_table_name ($$;$)
+  {
+    my ( $self, $meta, $table, $respect_case ) = @_;
+    ...
+  }
+
+The method C<complete_table_name> is called when first setting up the
+I<meta information> for a table:
+
+  "SELECT user.id, user.name, user.shell FROM user WHERE ..."
+
+results in opening the table C<user>. First step of the table open
+process is completing the name. Let's imagine you're having a L<DBD::CSV>
+handle with following settings:
+
+  $dbh->{sql_identifier_case} = SQL_IC_LOWER;
+  $dbh->{f_ext} = '.lst';
+  $dbh->{f_dir} = '/data/web/adrmgr';
+
+Those settings will result in looking for files matching
+C<[Uu][Ss][Ee][Rr](\.lst)?$> in C</data/web/adrmgr/>. The scanning of the
+directory C</data/web/adrmgr/> and the pattern match check will be done
+in C<DBD::File::DataSource::File> by the C<complete_table_name> method.
+
+If you intend to provide other sources of data streams than files, in
+addition to provide an appropriate C<complete_table_name> method, a method
+to open the resource is required:
+
+  package DBI::DBD::SqlEngine::DataSource;
+
+  sub open_data ($)
+  {
+    my ( $self, $meta, $attrs, $flags ) = @_;
+    ...
+  }
+
+After the method C<open_data> has been run successfully, the table's meta
+information are in a state which allowes the table's data accessor methods
+will be able to fetch/store row information. Implementation details heavily
+depends on the table implementation, whereby the most famous is surely
+L<DBD::File/DBD::File::Table|DBD::File::Table>.
 
 =head1 SUPPORT
 
