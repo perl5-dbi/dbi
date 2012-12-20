@@ -414,6 +414,8 @@ Unsets all meta attributes identifying a file: C<f_fqfn>, C<f_fqbn> and
 C<f_fqln>. The table name is set according to C<$respect_case> and
 C<< $meta->{sql_identifier_case} >> (SQL_IC_LOWER, SQL_IC_UPPER).
 
+  package DBD::File::DataSource::Stream;
+
   sub apply_encoding {
     my ($self, $meta, $fn) = @_;
     ...
@@ -422,12 +424,16 @@ C<< $meta->{sql_identifier_case} >> (SQL_IC_LOWER, SQL_IC_UPPER).
 Applies the encoding from I<meta information> (C<< $meta->{f_encoding} >>)
 to the file handled opened in C<open_data>.
 
+  package DBD::File::DataSource::Stream;
+
   sub open_data {
     my ($self, $meta, $attrs, $flags) = @_;
     ...
     }
 
 Opens (C<dup(2)>) the file handle provided in C<< $meta->{f_file} >>.
+
+  package DBD::File::DataSource::Stream;
 
   sub can_flock { ... }
 
