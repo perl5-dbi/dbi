@@ -444,11 +444,10 @@ subclasses).
 
   package DBD::File::DataSource::File;
 
-  sub complete_table_name ($$;$)
-  {
+  sub complete_table_name ($$;$) {
     my ( $self, $meta, $table, $respect_case ) = @_;
     ...
-  }
+    }
 
 The method C<complete_table_name> tries to map a filename to the associated
 table name.  It is called with a partially filled meta structure for the
@@ -462,11 +461,10 @@ undef.
 
   package DBD::File::DataSource::File;
 
-  sub open_data ($)
-  {
+  sub open_data ($) {
     my ( $self, $meta, $attrs, $flags ) = @_;
     ...
-  }
+    }
 
 Depending on the attributes set in the table's meta data, the
 following steps are performed. Unless C<< f_dontopen >> is set to a
