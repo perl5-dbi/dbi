@@ -2087,13 +2087,14 @@ L<DBD::File/DBD::File::Table|DBD::File::Table>.
 
 =head1 SQL ENGINES
 
-DBD::File currently supports two SQL engines: L<SQL::Statement|SQL::Statement>
-and L<DBI::SQL::Nano::Statement_|DBI::SQL::Nano>. DBI::SQL::Nano supports a
+DBI::DBD::SqlEngine currently supports two SQL engines:
+L<SQL::Statement|SQL::Statement> and
+L<DBI::SQL::Nano::Statement_|DBI::SQL::Nano>. DBI::SQL::Nano supports a
 I<very> limited subset of SQL statements, but it might be faster for some
 very simple tasks. SQL::Statement in contrast supports a much larger subset
 of ANSI SQL.
 
-To use SQL::Statement, you need at least version 1.28 of
+To use SQL::Statement, you need at least version 1.401 of
 SQL::Statement and the environment variable C<DBI_SQL_NANO> must not
 be set to a true value.
 
