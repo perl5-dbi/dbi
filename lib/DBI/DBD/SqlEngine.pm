@@ -1867,6 +1867,115 @@ Contains the class name to be used for opening tables.
 
 See L</DBI::DBD::SqlEngine::DataSource> for details.
 
+=head2 Driver private methods
+
+=head3 Default DBI methods
+
+=head4 data_sources
+
+The C<data_sources> method returns a list of subdirectories of the current
+directory in the form "dbi:CSV:f_dir=$dirname".
+
+If you want to read the subdirectories of another directory, use
+
+    my ($drh)  = DBI->install_driver ("CSV");
+    my (@list) = $drh->data_sources (f_dir => "/usr/local/csv_data");
+
+=head4 list_tables
+
+This method returns a list of file names inside $dbh->{f_dir}.
+Example:
+
+    my ($dbh)  = DBI->connect ("dbi:CSV:f_dir=/usr/local/csv_data");
+    my (@list) = $dbh->func ("list_tables");
+
+Note that the list includes all files contained in the directory, even
+those that have non-valid table names, from the view of SQL.
+
+=head3 Additional methods
+
+The following methods are only available via their documented name when
+DBI::DBD::SQlEngine is used directly. Because this is only reasonable for
+testing purposes, the real names must be used instead. Those names can be
+computed by replacing the C<sql_> in the method name with the driver prefix.
+
+=head4 sql_versions
+
+Signature:
+
+  sub sql_versions (;$) {
+    my ($table_name) = @_;
+    $table_name ||= ".";
+    ...
+    }
+
+Returns the versions of the driver, including the DBI version, the Perl
+version, DBI::PurePerl version (if DBI::PurePerl is active) and the version
+of the SQL engine in use.
+
+    my $dbh = DBI->connect ("dbi:File:");
+    my $sql_versions = $dbh->func( "sql_versions" );
+    print "$sql_versions\n";
+    __END__
+    # DBI::DBD::SqlEngine  0.05 using SQL::Statement 1.402
+    # DBI                  1.623
+    # OS                   netbsd (6.99.12)
+    # Perl                 5.016002 (x86_64-netbsd-thread-multi)
+
+Called in list context, sql_versions will return an array containing each
+line as single entry.
+
+Some drivers might use the optional (table name) argument and modify
+version information related to the table (e.g. DBD::DBM provides storage
+backend information for the requested table, when it has a table name).
+
+=head4 sql_get_meta
+
+Signature:
+
+    sub sql_get_meta ($$)
+    {
+	my ($table_name, $attrib) = @_;
+	...
+    }
+
+Returns the value of a meta attribute set for a specific table, if any.
+See L<sql_meta> for the possible attributes.
+
+A table name of C<"."> (single dot) is interpreted as the default table.
+This will retrieve the appropriate attribute globally from the dbh.
+This has the same restrictions as C<< $dbh->{$attrib} >>.
+
+=head4 sql_set_meta
+
+Signature:
+
+    sub sql_set_meta ($$$)
+    {
+	my ($table_name, $attrib, $value) = @_;
+	...
+    }
+
+Sets the value of a meta attribute set for a specific table.
+See L<sql_meta> for the possible attributes.
+
+A table name of C<"."> (single dot) is interpreted as the default table
+which will set the specified attribute globally for the dbh.
+This has the same restrictions as C<< $dbh->{$attrib} = $value >>.
+
+=head4 sql_clear_meta
+
+Signature:
+
+    sub sql_clear_meta ($)
+    {
+	my ($table_name) = @_;
+	...
+    }
+
+Clears the table specific meta information in the private storage of the
+dbh.
+
 =head2 Extensibility
 
 =head3 DBI::DBD::SqlEngine::TableSource
@@ -1975,6 +2084,18 @@ information are in a state which allowes the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
 L<DBD::File/DBD::File::Table|DBD::File::Table>.
+
+=head1 SQL ENGINES
+
+DBD::File currently supports two SQL engines: L<SQL::Statement|SQL::Statement>
+and L<DBI::SQL::Nano::Statement_|DBI::SQL::Nano>. DBI::SQL::Nano supports a
+I<very> limited subset of SQL statements, but it might be faster for some
+very simple tasks. SQL::Statement in contrast supports a much larger subset
+of ANSI SQL.
+
+To use SQL::Statement, you need at least version 1.28 of
+SQL::Statement and the environment variable C<DBI_SQL_NANO> must not
+be set to a true value.
 
 =head1 SUPPORT
 
