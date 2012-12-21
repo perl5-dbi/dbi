@@ -121,12 +121,13 @@ interface:
       ...
   }
 
-Similar for C<< data_sources () >> and C<< disconnect_all() >>.
+Similar for C<data_sources ()> and C<disconnect_all()>.
 
-Pure Perl DBI drivers derived from DBI::DBD::SqlEngine do not usually need to
-override any of the methods provided through the DBD::XXX::dr package
-however if you need additional initialization in the connect method
-you may need to.
+Pure Perl DBI drivers derived from DBI::DBD::SqlEngine usually don't need to
+override any of the methods provided through the DBD::XXX::dr package.
+However if you need additional initialization not fitting in
+C<init_valid_attributes()> and C<init_default_attributes()> of you're ::db
+class, the connect method might be the final place to be modified.
 
 =item DBI::DBD::SqlEngine::db
 
@@ -141,11 +142,50 @@ DBI::DBD::SqlEngine provides the typical methods required here. Developers who
 write DBI drivers based on DBI::DBD::SqlEngine need to override the methods
 C<< set_versions >> and C<< init_valid_attributes >>.
 
+=item DBI::DBD::SqlEngine::TieMeta;
+
+Provides the tie-magic for C<< $dbh->{$drv_pfx . "_meta"} >>. Routes
+C<STORE> through C<< $drv->set_sql_engine_meta() >> and C<FETCH> through
+C<< $drv->get_sql_engine_meta() >>. C<DELETE> is not supported, you have
+to execute a C<DROP TABLE> statement, where applicable.
+
+=item DBI::DBD::SqlEngine::TieTables;
+
+Provides the tie-magic for tables in C<< $dbh->{$drv_pfx . "_meta"} >>.
+Routes C<STORE> though C<< $tblClass->set_table_meta_attr() >> and C<FETCH>
+though C<< $tblClass->get_table_meta_attr() >>. C<DELETE> removes an
+attribute from the I<meta object> retrieved by
+C<< $tblClass->get_table_meta() >>.
+
 =item DBI::DBD::SqlEngine::st
 
 Contains the methods to deal with prepared statement handles. e.g.,
 
   $sth->execute () or die $sth->errstr;
+
+=item DBI::DBD::SqlEngine::TableSource;
+
+Base class for 3rd party table sources:
+
+  $dbh->{sql_table_source} = "DBD::Foo::TableSource";
+
+=item DBI::DBD::SqlEngine::DataSource;
+
+Base class for 3rd party data sources:
+
+  $dbh->{sql_data_source} = "DBD::Foo::DataSource";
+
+=item DBI::DBD::SqlEngine::Statement;
+
+Base class for derived drivers statement engine. Implements C<open_table>.
+
+=item DBI::DBD::SqlEngine::Table;
+
+Contains tailoring between SQL eningine's requirements and
+C<DBI::DBD::SqlEngine> magic for finding the right tables and storage.
+Builds bridges between C<sql_meta> handling of C<DBI::DBD::SqlEngine::db>,
+table initialization for SQL engines and I<meta object>'s attribute
+management for derived drivers.
 
 =back
 
@@ -188,6 +228,60 @@ it is enough to do the basic initialization:
   $DBD::XXX::dr::imp_data_size     = 0;
   $DBD::XXX::dr::data_sources_attr = undef;
   $DBD::XXX::ATTRIBUTION = "DBD::XXX $DBD::XXX::VERSION by Hans Mustermann";
+
+=head3 Methods provided by C<< DBI::DBD::SqlEngine::dr >>:
+
+=over 4
+
+=item connect
+
+Supervises the driver bootstrap when calling
+
+  DBI->connect( "dbi:Foo", , , { ... } );
+
+First it instantiates a new driver using C<DBI::_new_dbh>. After that,
+initial bootstrap of the newly instantiated driver is done by
+
+  $dbh->func( 0, "init_default_attributes" );
+
+The first argument (C<0>) signals that this is the very first call to
+C<init_default_attributes>. Modern drivers understands that and doing
+early stage setup here after calling
+
+  package DBD::Foo::db;
+  our @DBD::Foo::db::ISA = qw(DBI::DBD::SqlEngine::db);
+  
+  sub init_default_attributes
+  {
+    my ($dbh, $phase) = @_;
+    $dbh->SUPER::init_default_attributes($phase);
+    ...; # own setup code, maybe separated by phases
+  }
+
+When the C<$phase> argument is passed down until
+C<DBI::DBD::SqlEngine::db::init_default_attributes>, C<connect()> recognizes
+a I<modern> driver and initializes the attributes from I<DSN> and I<$attr>
+arguments passed via C<< DBI->connect( $dsn, $user, $pass, \%attr ) >>.
+
+At the end of the attribute initialization after I<phase 0>, C<connect()>
+invoked C<init_default_attributes> again for I<phase 1>:
+
+  $dbh->func( 1, "init_default_attributes" );
+
+=item data_sources
+
+Returns a list of I<DSN>'s using the C<data_sources> method of the
+class specified in C<< $dbh->{sql_table_source} >> or via C<\%attr>:
+
+  @ary = DBI->data_sources($driver);
+  @ary = DBI->data_sources($driver, \%attr);
+
+=item disconnect_all
+
+C<DBI::DBD::SqlEngine> doesn't have an overall driver cache, so nothing
+happens here at all.
+
+=back
 
 =head2 DBI::DBD::SqlEngine::db
 
