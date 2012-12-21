@@ -781,7 +781,7 @@ sub get_sql_engine_meta
     }
 
     return \%results;
-}    # get_file_meta
+}    # get_sql_engine_meta
 
 sub set_single_table_meta
 {
