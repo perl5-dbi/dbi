@@ -8,7 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.623 (svn r15467) 13th Dec 2012
+=head2 Changes in DBI 1.623 (svn r15545) 21st Dec 2012
 
   Fixed RT#64330 - ping wipes out errstr (Martin J. Evans).
   Fixed RT#75868 - DBD::Proxy shouldn't call connected() on the server.
@@ -17,11 +17,12 @@ DBI::Changes - List of significant changes to the DBI
     thanks to Jens Rehsack and H.Merijn Brand and feedback on IRC
   Fixed RT#81724 - Handle copy-on-write scalars (sprout)
   Fixed unused variable / self-assignment compiler warnings.
-  Corrected typo in DBI->installed_versions docs RT#78825
-    thanks to Jan Dubois.
-  Corrected a spelling error thanks to Chris Sanders.
   Fixed default table_info in DBI::DBD::SqlEngine which passed NAMES
     attribute instead of NAME to DBD::Sponge RT72343 (Martin J. Evans)
+
+  Corrected a spelling error thanks to Chris Sanders.
+  Corrected typo in DBI->installed_versions docs RT#78825
+    thanks to Jan Dubois.
 
   Refactored table meta information management from DBD::File into
     DBI::DBD::SqlEngine (H.Merijn Brand, Jens Rehsack)
@@ -40,7 +41,7 @@ DBI::Changes - List of significant changes to the DBI
   Removed internal _not_impl method (Martin J. Evans).
 
   NOTE: The "old-style" DBD::DBM attributes 'dbm_ext' and 'dbm_lockfile'
-    had been deprecated for several years and their use will now generate
+    have been deprecated for several years and their use will now generate
     a warning.
 
 =head2 Changes in DBI 1.622 (svn r15327) 6th June 2012
