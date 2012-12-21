@@ -31,7 +31,7 @@ BEGIN
     $VERSION = sprintf( "1.%06d", q$Revision$ =~ /(\d+)/o );
 
     $versions->{nano_version} = $VERSION;
-    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.28' } )
+    if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.400' } )
     {
         @DBI::SQL::Nano::Statement::ISA = qw(DBI::SQL::Nano::Statement_);
         @DBI::SQL::Nano::Table::ISA     = qw(DBI::SQL::Nano::Table_);
@@ -695,15 +695,8 @@ sub params
     {
         return $self->{"params"}->[$val_num];
     }
-    if (wantarray)
-    {
-        return @{ $self->{"params"} };
-    }
-    else
-    {
-        return scalar @{ $self->{"params"} };
-    }
 
+    return wantarray ? @{ $self->{"params"} } : scalar @{ $self->{"params"} };
 }
 
 sub open_tables

@@ -175,7 +175,7 @@ sub do_test {
     # (This test script doesn't test that locking actually works anyway.)
 
     # use f_lockfile in next release - use it here as test case only
-    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;dbm_lockfile=.lck";
+    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;f_lockfile=.lck";
 
     if ($using_dbd_gofer) {
         $dsn .= ";f_dir=$dir";
@@ -258,6 +258,12 @@ sub do_test {
 	is( $sth->rows, scalar( @{$expected_rows} ), $sql );
 	is_deeply( $allrows, $expected_rows, 'SELECT results' );
     }
+
+    my $sth = $dbh->table_info();
+    ok ($sth, "prepare table_info (without tables)");
+    my @tables = $sth->fetchall_arrayref;
+    is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
+
     $dbh->disconnect;
     return 1;
 }

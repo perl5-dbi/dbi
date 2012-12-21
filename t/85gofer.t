@@ -50,7 +50,7 @@ if (!$opt_dbm) {
 
 my @remote_dsns = DBI->data_sources( "dbi:DBM:", {
     dbm_type => $opt_dbm,
-    f_lockfile => 0,
+    f_lock => 0,
     f_dir => test_dir() } );
 my $remote_dsn = $remote_dsns[0];
 ( my $remote_driver_dsn = $remote_dsn ) =~ s/dbi:dbm://i;
@@ -215,8 +215,9 @@ sub run_tests {
 
     # tests go_request_count, caching, and skip_default_methods policy
     my $use_remote = ($policy->skip_default_methods) ? 0 : 1;
+    $use_remote = 1; # XXX since DBI::DBD::SqlEngine::db implements own data_sources this is always done remotely
     note sprintf "use_remote=%s (policy=%s, transport=%s) %s",
-        $use_remote, $policy_name, $transport, $dbh->{dbi_default_methods}||'';
+        $use_remote, $policy_name, $transport, DBI::neat($dbh->{dbi_default_methods})||'';
 
 SKIP: {
     skip "skip_default_methods checking doesn't work with Gofer over Gofer", 3

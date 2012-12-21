@@ -99,7 +99,7 @@ SKIP: {
 my @tfhl;
 
 # Now test some basic SQL statements
-my $tbl_file = File::Spec->catfile (Cwd::abs_path( $dir ), "$tbl.txt");
+my $tbl_file = File::Spec->catfile (Cwd::abs_path ($dir), "$tbl.txt");
 ok ($dbh->do ("create table $tbl (txt varchar (20))"), "Create table $tbl") or diag $dbh->errstr;
 ok (-f $tbl_file, "Test table exists");
 
@@ -122,6 +122,13 @@ is_deeply ($dbh->f_get_meta ([$tbl, "t_sbdgf_53442Gz"], [qw(f_dir f_ext)]),
 my @layer = grep { $_ eq "encoding($encoding)" } @tfhl;
 is (scalar @layer, 1, "encoding shows in layer");
 
+my @tables = sort $dbh->func ("list_tables");
+is_deeply (\@tables, [sort "000_just_testing", $tbl], "Listing tables gives test table");
+
+ok ($sth = $dbh->table_info (), "table_info");
+@tables = sort { $a->[2] cmp $b->[2] } @{$sth->fetchall_arrayref};
+is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } sort "000_just_testing", $tbl ], "table_info gives test table");
+
 SKIP: {
     $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
     ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");
@@ -135,20 +142,70 @@ $rowidx = 0;
 SKIP: {
     $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
     ok ($sth->execute, "execute on $tbl");
-    $dbh->errstr and diag;
+    $dbh->errstr and diag $dbh->errstr;
     }
 
-my $uctbl = uc($tbl);
+my $uctbl = uc ($tbl);
 ok ($sth = $dbh->prepare ("select * from $uctbl"), "Prepare select * from $uctbl");
 $rowidx = 0;
 SKIP: {
     $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
     ok ($sth->execute, "execute on $uctbl");
-    $dbh->errstr and diag;
+    $dbh->errstr and diag $dbh->errstr;
     }
 
+# ==================== ReadOnly tests =============================
+ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
+    f_ext	=> ".txt",
+    f_dir	=> $dir,
+    f_schema	=> undef,
+    f_encoding	=> $encoding,
+    f_lock	=> 0,
+
+    sql_meta    => {
+	$tbl => {
+	    col_names => [qw(txt)],
+	    }
+	},
+
+    RaiseError	=> 0,
+    PrintError	=> 0,
+    ReadOnly    => 1,
+    }), "ReadOnly connect with driver attributes in hash");
+
+ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
+$rowidx = 0;
+SKIP: {
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
+    ok ($sth->execute, "execute on $tbl");
+    $dbh->errstr and diag $dbh->errstr;
+    }
+
+ok ($sth = $dbh->prepare ("insert into $tbl (txt) values (?)"), "prepare 'insert into $tbl'");
+is ($sth->execute ("Perl rules"), undef, "insert failed intensionally");
+
+ok ($sth = $dbh->prepare ("delete from $tbl"), "prepare 'delete from $tbl'");
+is ($sth->execute (), undef, "delete failed intensionally");
+
+is ($dbh->do ("drop table $tbl"), undef, "table drop failed intensionally");
+is (-f $tbl_file, 1, "Test table not removed");
+
+# ==================== ReadWrite again tests ======================
+ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
+    f_ext	=> ".txt",
+    f_dir	=> $dir,
+    f_schema	=> undef,
+    f_encoding	=> $encoding,
+    f_lock	=> 0,
+
+    RaiseError	=> 0,
+    PrintError	=> 0,
+    }), "ReadWrite for drop connect with driver attributes in hash");
+
+# XXX add a truncate test
+
 ok ($dbh->do ("drop table $tbl"), "table drop");
-is (-s "$tbl.txt", undef, "Test table removed");
+is (-s $tbl_file, undef, "Test table removed"); # -s => size test
 
 done_testing ();
 
