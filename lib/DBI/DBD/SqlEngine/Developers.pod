@@ -181,7 +181,7 @@ Base class for derived drivers statement engine. Implements C<open_table>.
 
 =item DBI::DBD::SqlEngine::Table;
 
-Contains tailoring between SQL eningine's requirements and
+Contains tailoring between SQL engine's requirements and
 C<DBI::DBD::SqlEngine> magic for finding the right tables and storage.
 Builds bridges between C<sql_meta> handling of C<DBI::DBD::SqlEngine::db>,
 table initialization for SQL engines and I<meta object>'s attribute
@@ -245,8 +245,8 @@ initial bootstrap of the newly instantiated driver is done by
   $dbh->func( 0, "init_default_attributes" );
 
 The first argument (C<0>) signals that this is the very first call to
-C<init_default_attributes>. Modern drivers understands that and doing
-early stage setup here after calling
+C<init_default_attributes>. Modern drivers understand that and do early
+stage setup here after calling
 
   package DBD::Foo::db;
   our @DBD::Foo::db::ISA = qw(DBI::DBD::SqlEngine::db);
@@ -311,7 +311,7 @@ return value is the approved attribute name.
 
     return $validated_attribute_name;
 
-In case of validation fails (eg. accessing private attribute or similar),
+In case of validation fails (e.g. accessing private attribute or similar),
 C<validate_FETCH_attr> is permitted to throw an exception.
 
 =item FETCH
@@ -338,7 +338,7 @@ new value.
 
     return ($validated_attribute_name, $validated_attribute_value);
 
-In case of validation fails (eg. accessing private attribute or similar),
+In case of validation fails (e.g. accessing private attribute or similar),
 C<validate_STORE_attr> is permitted to throw an exception
 (C<DBI::DBD::SqlEngine::db::validate_STORE_attr> throws an exception when
 someone tries to assign value other than C<SQL_IC_UPPER .. SQL_IC_MIXED>
@@ -478,7 +478,7 @@ instantly when executed.
 =head3 Attributes used by C<< DBI::DBD::SqlEngine::db >>:
 
 This section describes attributes which are important to developers of DBI
-DataBase Drivers derived from C<DBI::DBD::SqlEngine>.
+Database Drivers derived from C<DBI::DBD::SqlEngine>.
 
 =over 4
 
@@ -522,7 +522,7 @@ C<< $dbh->{sql_meta}->{quick}->{f_dir} >> being initialized properly.
 =item sql_init_phase
 
 This attribute is only set during the initialization steps of the DBI
-DataBase Driver. It contains the value of the currently run initialization
+Database Driver. It contains the value of the currently run initialization
 phase. Currently supported phases are I<phase 0> and I<phase 1>. This
 attribute is set in C<init_default_attributes> and removed in C<init_done>.
 
@@ -538,7 +538,7 @@ C<sql_engine_in_gofer>.
 =item sql_table_source
 
 Names a class which is responsible for delivering I<data sources> and
-I<available tables> (DataBase Driver related). I<data sources> here
+I<available tables> (Database Driver related). I<data sources> here
 refers to L<DBI/data_sources>, not C<sql_data_source>.
 
 See L</DBI::DBD::SqlEngine::TableSource> for details.
@@ -659,7 +659,7 @@ following:
 
   $dbh->func( "list_tables" );
 
-Everytime where an C<\%attr> argument can be specified, this C<\%attr>
+Every time where an C<\%attr> argument can be specified, this C<\%attr>
 object's C<sql_table_source> attribute is preferred over the C<$dbh>
 attribute or the driver default.
 
@@ -667,9 +667,9 @@ attribute or the driver default.
 
 Provides base functionality for dealing with tables. It is primarily
 designed for allowing transparent access to files on disk or already
-opened (file-)streams (eg. for DBD::CSV).
+opened (file-)streams (e.g. for DBD::CSV).
 
-Derived classes shall be restricted to similar functionality, too (eg.
+Derived classes shall be restricted to similar functionality, too (e.g.
 opening streams from an archive, transparently compress/uncompress
 log files before parsing them, 
 
@@ -712,7 +712,7 @@ to open the resource is required:
   }
 
 After the method C<open_data> has been run successfully, the table's meta
-information are in a state which allowes the table's data accessor methods
+information are in a state which allows the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
 L<DBD::File/DBD::File::Table|DBD::File::Table>.

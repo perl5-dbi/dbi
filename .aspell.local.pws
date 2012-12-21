@@ -6,6 +6,7 @@ personal_ws-1.1 en_EN 133
 # - lib/DBD/File/Roadmap.pod
 # - lib/DBI/DBD/Metadata.pm
 # - lib/DBI/DBD/SqlEngine.pm
+# - lib/DBI/DBD/SqlEngine/Developers.pod
 # - lib/DBI/SQL/Nano.pm
 AIX
 ALRM
