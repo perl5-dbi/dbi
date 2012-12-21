@@ -20,13 +20,15 @@ DBI::Changes - List of significant changes to the DBI
   Corrected typo in DBI->installed_versions docs RT#78825
     thanks to Jan Dubois.
   Corrected a spelling error thanks to Chris Sanders.
+  Fixed default table_info in DBI::DBD::SqlEngine which passed NAMES
+    attribute instead of NAME to DBD::Sponge RT72343 (Martin J. Evans)
 
   Refactored table meta information management from DBD::File into
     DBI::DBD::SqlEngine (H.Merijn Brand, Jens Rehsack)
   Pevent undefined f_dir being used in opendir (H.Merijn Brand)
 
   Added logic to force destruction of children before parents
-    during global destruction. Currently experimental. See RT#75614.
+    during global destruction. See RT#75614.
   Added DBD::File Plugin-Support for table names and data sources
     (Jens Rehsack, #dbi Team)
   Added new tests to 08keeperr for RT#64330
@@ -110,8 +112,6 @@ DBI::Changes - List of significant changes to the DBI
   Fixed Gofer error handling for keeperr methods like ping (Tim Bunce)
   Fixed $dbh->clone({}) RT73250 (Tim Bunce)
   Fixed is_nested_call logic error RT73118 (Reini Urban)
-  Fixed default table_info in DBI::DBD::SqlEngine which passed NAMES
-    attribute instead of NAME to DBD::Sponge RT72343 (Martin J. Evans)
 
   Enhanced performance for threaded perls (Dave Mitchell, Tim Bunce)
     Dave's work on this optimization was sponsored by Booking.com.
