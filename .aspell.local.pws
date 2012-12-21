@@ -1,4 +1,4 @@
-personal_ws-1.1 en_EN 123
+personal_ws-1.1 en_EN 133
 # checked files:
 # - lib/DBD/DBM.pm
 # - lib/DBD/File.pm
@@ -54,6 +54,7 @@ DSN
 Dunlop
 EINTR
 eval
+extensibility
 filename
 getinfo
 GetInfo
@@ -66,8 +67,11 @@ hashrefs
 hasn
 Haworth
 implementor
+indices
 Informix
 INI
+instantiation
+instantiations
 IRC
 isn
 iso
@@ -76,6 +80,7 @@ Jens
 Jochen
 JOINs
 jrehsack
+JSON
 jzucker
 lang
 latin
@@ -98,11 +103,14 @@ MSDN
 multi
 MyFancyLogger
 namespace
+namespaces
 Nano
 nl
 NULLABLE
 ODBC
+optimizations
 pag
+parametrized
 pre
 precompiled
 readonly
@@ -114,12 +122,14 @@ serializers
 Solaris
 speeded
 st
+Steffen
 sth
 Storable
 subclasses
 subdirectories
 txt
 TypeInfo
+unlinked
 unrecognised
 usenet
 UTF
