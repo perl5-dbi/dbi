@@ -26,7 +26,7 @@ DBI::Changes - List of significant changes to the DBI
 
   Refactored table meta information management from DBD::File into
     DBI::DBD::SqlEngine (H.Merijn Brand, Jens Rehsack)
-  Pevent undefined f_dir being used in opendir (H.Merijn Brand)
+  Prevent undefined f_dir being used in opendir (H.Merijn Brand)
 
   Added logic to force destruction of children before parents
     during global destruction. See RT#75614.
