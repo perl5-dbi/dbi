@@ -3359,9 +3359,9 @@ use func() and gain direct access to driver-private methods.
   $is_implemented = $h->can($method_name);
 
 Returns true if $method_name is implemented by the driver or a
-default method is provided by the DBI.
+default method is provided by the DBI's driver base class.
 It returns false where a driver hasn't implemented a method and the
-default method is provided by the DBI is just an empty stub.
+default method is provided by the DBI's driver base class is just an empty stub.
 
 =head3 C<parse_trace_flags>
 
