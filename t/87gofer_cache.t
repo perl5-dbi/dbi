@@ -31,7 +31,7 @@ sub run_tests {
     my $cache_obj = shift;
 
     my $tmp;
-    print " using $cache_obj for $dsn\n";
+    print "\n --- using $cache_obj for $dsn\n";
 
     my $dbh = DBI->connect($dsn, undef, undef, {
         go_cache => $cache_obj,
@@ -60,18 +60,18 @@ sub run_tests {
     is $go_transport->cache_miss, $expected;
     is $go_transport->cache_store, $expected;
 
-    is $go_transport->transmit_count, $expected, 'should make 1 round trip';
+    is $go_transport->transmit_count, $expected, "should make $expected round trip";
     $go_transport->transmit_count(0);
     is $go_transport->transmit_count, 0, 'transmit_count should be 0';
 
     # request 2
     ok my $rows2 = $dbh->selectall_arrayref("select name from ?", {}, ".");
     is_deeply $rows2, $rows1;
-    is $go_transport->transmit_count, 0, 'should make 1 round trip';
+    is $go_transport->transmit_count, 0, 'should make 0 round trip';
 
-    is $go_transport->cache_hit, $expected;
-    is $go_transport->cache_miss, $expected;
-    is $go_transport->cache_store, $expected;
+    is $go_transport->cache_hit, $expected, 'cache_hit';
+    is $go_transport->cache_miss, $expected, 'cache_miss';
+    is $go_transport->cache_store, $expected, 'cache_store';
 }
 
 
