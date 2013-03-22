@@ -374,7 +374,7 @@ $(changes_pm): Changes
 	$(CP) Changes $(changes_pm)
 
 ptest:  all
-	prove --blib --jobs 4 --shuffle
+	prove --blib --jobs 8 --shuffle
 
 faq:
 	: checkin any local changes not already checked in before overwriting
