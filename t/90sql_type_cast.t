@@ -118,6 +118,11 @@ foreach my $test(@tests) {
 
             my $json = JSON::XS->new->encode([$val]);
             #diag(neat($val), ",", $json);
+            # This test is about quotation of the value, not about the
+            # style/formatting of JSON. Strip all leading/trailing
+            # whitespace that is not part of the test, treating '[99]'
+            # identical to ' [ 99 ] ' or '[99   ]'
+            $json =~ s{^\s*\[\s*(.*?)\s*\]\s*$}{[$1]};
             is($json, $test->[5], "json $test->[0]");
         };
     }
