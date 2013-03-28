@@ -3463,9 +3463,13 @@ XS(XS_DBI_dispatch)
             /* XXX sv_copy() if Profiling? */
             (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
         }
-        is_nested_call = (!PL_dirty && (DBIc_PARENT_COM(imp_xxh) && (DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) >= 1)) );
-    }
+        is_nested_call =
+            (call_depth > 1
+                || (!PL_dirty /* not in global destruction [CPAN #75614] */
+                    && DBIc_PARENT_COM(imp_xxh)
+                    && DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh))) >= 1);
 
+    }
 
 
     /* --- dispatch --- */
