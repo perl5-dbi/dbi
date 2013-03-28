@@ -3342,7 +3342,8 @@ XS(XS_DBI_dispatch)
             }
             if (ima_flags & IMA_KEEP_ERR)
                 keep_error = TRUE;
-            if (ima_flags & IMA_KEEP_ERR_SUB
+            if ((ima_flags & IMA_KEEP_ERR_SUB)
+                && !PL_dirty
                 && DBIc_PARENT_COM(imp_xxh) && DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) > 0)
                 keep_error = TRUE;
             if (ima_flags & IMA_CLEAR_STMT) {
@@ -3449,6 +3450,7 @@ XS(XS_DBI_dispatch)
             DBIc_ACTIVE_off(imp_xxh);
         }
         call_depth = 0;
+        is_nested_call = 0;
     }
     else {
         DBI_SET_LAST_HANDLE(h);
@@ -3461,9 +3463,9 @@ XS(XS_DBI_dispatch)
             /* XXX sv_copy() if Profiling? */
             (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
         }
+        is_nested_call = (!PL_dirty && (DBIc_PARENT_COM(imp_xxh) && (DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) >= 1)) );
     }
 
-    is_nested_call = ( call_depth > 1 || (DBIc_PARENT_COM(imp_xxh) && (DBIc_CALL_DEPTH(DBIc_PARENT_COM(imp_xxh)) >= 1)) );
 
 
     /* --- dispatch --- */

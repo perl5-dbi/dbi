@@ -8,6 +8,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.625
+
+  Fixed heap-use-after-free during global destruction RT#75614
+
 =head2 Changes in DBI 1.624 (svn r15576) 22nd March 2013
 
   Fixed Gofer for hash randomization in perl 5.17.10+ RT#84146
