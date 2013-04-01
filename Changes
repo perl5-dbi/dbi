@@ -12,6 +12,8 @@ DBI::Changes - List of significant changes to the DBI
 
   Fixed heap-use-after-free during global destruction RT#75614
     thanks to Reini Urban.
+  Fixed ignoring RootClass attribute during connect() by
+    DBI::DBD::SqlEngine reported in RT#84260 by Michael Schout
 
 =head2 Changes in DBI 1.624 (svn r15576) 22nd March 2013
 
