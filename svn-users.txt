@@ -1,0 +1,14 @@
+REHSACK = Jens Rehsack <rehsack@cpan.org>
+ask = Ask Bjørn Hansen <ask@develooper.com>
+darnold = Dean Arnold <darnold@presicient.com>
+hmbrand = H.Merijn Brand <h.m.brand@xs4all.nl>
+jurl = Jeff Urlwin <jeff.urlwin@gmail.com>
+jzucker = Jeff Zucker <jeff@vpservices.com>
+mjevans = Martin J. Evans <bohica@ntlworld.com>
+petdance = Andy Lester <andy@petdance.com>
+pgollucci = Philip M. Gollucci <pgollucci@p6m7g8.com>
+sjohnston = Stuart Johnston <saj@thecommune.net>
+stvn = Stevan Little <stevan.little@iinteractive.com>
+theory = David E. Wheeler <david@justatheory.com>
+timbo = Tim Bunce <tim.bunce@pobox.com>
+turnstep = Greg Sabino Mullane <greg@turnstep.com>
