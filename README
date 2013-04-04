@@ -1,6 +1,6 @@
-DBI - The Perl Database Interface by Tim Bunce.
+DBI - The Perl Database Interface.
 
-Copyright (c) 1994-2010  Tim Bunce  Ireland.
+[![Build Status](https://secure.travis-ci.org/perl5-dbi/dbi.png)](http://travis-ci.org/perl5-dbi/dbi.png)
 
 See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
@@ -48,7 +48,7 @@ by Eric Raymond:
 Much useful information and online archives of the mailing lists can be
 found at http://dbi.perl.org/
 
-See also http://search.cpan.org/
+See also http://metacpan.org/
 
 
 BEFORE BUILDING, TESTING AND INSTALLING this you will need to:
@@ -105,7 +105,7 @@ It is important to check that you are using the latest version before
 posting. If you're not then I'm very likely to simply say "upgrade to
 the latest". You would do yourself a favour by upgrading beforehand.
 
-Please remember that I'm _very_ busy. Try to help yourself first,
+Please remember that I'm very busy. Try to help yourself first,
 then try to help me help you by following these guidelines carefully.
 (Note specifically that I'm unlikely to answer a question that's
 answered clearly in the on-line documentation.)
