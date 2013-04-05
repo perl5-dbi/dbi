@@ -1,6 +1,6 @@
 package DBI::Gofer::Transport::Base;
 
-#   $Id$
+#   $Id: Base.pm 12536 2009-02-24 22:37:09Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -18,7 +18,7 @@ use DBI::Gofer::Serializer::Storable;
 use DBI::Gofer::Serializer::DataDumper;
 
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 12536 $ =~ /(\d+)/o);
 
 
 __PACKAGE__->mk_accessors(qw(

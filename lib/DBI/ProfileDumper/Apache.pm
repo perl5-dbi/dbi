@@ -159,7 +159,7 @@ it under the same terms as Perl 5 itself.
 
 =cut
 
-our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("2.%06d", q$Revision: 14120 $ =~ /(\d+)/o);
 
 our @ISA = qw(DBI::ProfileDumper);
 

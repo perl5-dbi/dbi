@@ -70,7 +70,7 @@ The following methods are supported by DBI::ProfileData objects.
 =cut
 
 
-our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("2.%06d", q$Revision: 10007 $ =~ /(\d+)/o);
 
 use Carp qw(croak);
 use Symbol;

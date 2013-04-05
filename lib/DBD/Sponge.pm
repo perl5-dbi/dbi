@@ -5,10 +5,10 @@
     require Carp;
 
     our @EXPORT = qw(); # Do NOT @EXPORT anything.
-    our $VERSION = sprintf("12.%06d", q$Revision$ =~ /(\d+)/o);
+    our $VERSION = sprintf("12.%06d", q$Revision: 10002 $ =~ /(\d+)/o);
 
 
-#   $Id$
+#   $Id: Sponge.pm 10002 2007-09-26 21:03:25Z Tim $
 #
 #   Copyright (c) 1994-2003 Tim Bunce Ireland
 #

@@ -5,7 +5,7 @@ use warnings;
 
 use base qw(DBI::Gofer::Serializer::Base);
 
-#   $Id$
+#   $Id: Storable.pm 15585 2013-03-22 20:31:22Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -38,7 +38,7 @@ See also L<DBI::Gofer::Serializer::Base>.
 
 use Storable qw(nfreeze thaw);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 15585 $ =~ /(\d+)/o);
 
 use base qw(DBI::Gofer::Serializer::Base);
 

@@ -1,6 +1,6 @@
 package DBI::Gofer::Request;
 
-#   $Id$
+#   $Id: Request.pm 12536 2009-02-24 22:37:09Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -13,7 +13,7 @@ use DBI qw(neat neat_list);
 
 use base qw(DBI::Util::_accessor);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 12536 $ =~ /(\d+)/o);
 
 use constant GOf_REQUEST_IDEMPOTENT => 0x0001;
 use constant GOf_REQUEST_READONLY   => 0x0002;

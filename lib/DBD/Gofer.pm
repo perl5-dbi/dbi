@@ -8,9 +8,9 @@
     require DBI::Gofer::Response;
     require Carp;
 
-    our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+    our $VERSION = sprintf("0.%06d", q$Revision: 15326 $ =~ /(\d+)/o);
 
-#   $Id$
+#   $Id: Gofer.pm 15326 2012-06-06 16:32:38Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #

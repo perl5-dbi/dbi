@@ -1,4 +1,4 @@
-# $Id$
+# $Id: ODBC.pm 11373 2008-06-02 19:01:33Z Tim $
 #
 # Copyright (c) 2002  Tim Bunce  Ireland
 #
@@ -35,7 +35,7 @@ The API for this module is private and subject to change.
 =cut
 
 my
-$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+$VERSION = sprintf("2.%06d", q$Revision: 11373 $ =~ /(\d+)/o);
 
 
 %InfoTypes =

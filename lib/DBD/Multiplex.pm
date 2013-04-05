@@ -1,7 +1,7 @@
 #########1#########2#########3#########4#########5#########6#########7#########8
 # vim: ts=8:sw=4
 
-# $Id$
+# $Id: Multiplex.pm 14122 2010-06-08 12:19:23Z H.Merijn $
 #
 # Copyright (c) 1999,2002,2003 Tim Bunce & Thomas Kishel
 #
@@ -60,7 +60,7 @@ use DBI ();
 use strict;
 use vars qw($VERSION $drh);
 
-$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+$VERSION = sprintf("2.%06d", q$Revision: 14122 $ =~ /(\d+)/o);
 
 $drh = undef;	# Holds driver handle once it has been initialized.
 

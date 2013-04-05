@@ -1,6 +1,6 @@
 package DBI::ProfileSubs;
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 9395 $ =~ /(\d+)/o);
 
 =head1 NAME
 

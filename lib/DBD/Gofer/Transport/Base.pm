@@ -1,6 +1,6 @@
 package DBD::Gofer::Transport::Base;
 
-#   $Id$
+#   $Id: Base.pm 14120 2010-06-07 19:52:19Z H.Merijn $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -12,7 +12,7 @@ use warnings;
 
 use base qw(DBI::Gofer::Transport::Base);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 14120 $ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     trace

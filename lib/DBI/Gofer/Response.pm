@@ -1,6 +1,6 @@
 package DBI::Gofer::Response;
 
-#   $Id$
+#   $Id: Response.pm 11565 2008-07-22 20:17:33Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -14,7 +14,7 @@ use DBI qw(neat neat_list);
 
 use base qw(DBI::Util::_accessor Exporter);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 11565 $ =~ /(\d+)/o);
 
 use constant GOf_RESPONSE_EXECUTED => 0x0001;
 

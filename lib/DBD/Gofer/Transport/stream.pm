@@ -1,6 +1,6 @@
 package DBD::Gofer::Transport::stream;
 
-#   $Id$
+#   $Id: stream.pm 14598 2010-12-21 22:53:25Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -14,7 +14,7 @@ use Carp;
 
 use base qw(DBD::Gofer::Transport::pipeone);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 14598 $ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     go_persist

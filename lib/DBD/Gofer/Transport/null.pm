@@ -1,6 +1,6 @@
 package DBD::Gofer::Transport::null;
 
-#   $Id$
+#   $Id: null.pm 10087 2007-10-16 12:42:37Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -14,7 +14,7 @@ use base qw(DBD::Gofer::Transport::Base);
 
 use DBI::Gofer::Execute;
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 10087 $ =~ /(\d+)/o);
 
 __PACKAGE__->mk_accessors(qw(
     pending_response

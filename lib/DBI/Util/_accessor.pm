@@ -1,7 +1,7 @@
 package DBI::Util::_accessor;
 use strict;
 use Carp;
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/);
+our $VERSION = sprintf("0.%06d", q$Revision: 9478 $ =~ /(\d+)/);
 
 # inspired by Class::Accessor::Fast
 

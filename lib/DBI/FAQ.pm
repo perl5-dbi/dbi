@@ -1,5 +1,5 @@
 ###
-### $Id$
+### $Id: FAQ.pm 14934 2011-09-14 10:02:25Z Tim $
 ###
 ### DBI Frequently Asked Questions POD
 ###
@@ -21,7 +21,7 @@
 
 package DBI::FAQ;
 
-our $VERSION = sprintf("1.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("1.%06d", q$Revision: 14934 $ =~ /(\d+)/o);
 
 
 =head1 NAME

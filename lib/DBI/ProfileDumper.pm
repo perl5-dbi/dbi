@@ -177,7 +177,7 @@ use DBI::Profile;
 
 our @ISA = ("DBI::Profile");
 
-our $VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("2.%06d", q$Revision: 15324 $ =~ /(\d+)/o);
 
 use Carp qw(croak);
 use Fcntl qw(:flock);

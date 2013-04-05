@@ -1,6 +1,6 @@
 package DBI::Gofer::Transport::stream;
 
-#   $Id$
+#   $Id: stream.pm 12536 2009-02-24 22:37:09Z Tim $
 #
 #   Copyright (c) 2007, Tim Bunce, Ireland
 #
@@ -15,7 +15,7 @@ use DBI::Gofer::Execute;
 
 use base qw(DBI::Gofer::Transport::pipeone Exporter);
 
-our $VERSION = sprintf("0.%06d", q$Revision$ =~ /(\d+)/o);
+our $VERSION = sprintf("0.%06d", q$Revision: 12536 $ =~ /(\d+)/o);
 
 our @EXPORT = qw(run_stdio_hex);
 

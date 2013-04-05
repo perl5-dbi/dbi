@@ -1,4 +1,4 @@
-# $Id$
+# $Id: ANSI.pm 8696 2007-01-24 23:12:38Z Tim $
 #
 # Copyright (c) 2002  Tim Bunce  Ireland
 #
@@ -38,7 +38,7 @@ The API for this module is private and subject to change.
 =cut
 
 my
-$VERSION = sprintf("2.%06d", q$Revision$ =~ /(\d+)/o);
+$VERSION = sprintf("2.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
 
 
 %InfoTypes =
