@@ -78,13 +78,8 @@ SKIP: {
     cmp_ok( $sql_parser->dialect(), "eq", "ANSI", "SQL::Parser has 'ANSI' as dialect" );
 }
 
-SKIP: {
-    skip( 'not running with DBIx::ContextualFetch' )
-	unless eval { require DBIx::ContextualFetch; 1; };
-
-    my $dbh;
-
-    ok ($dbh = DBI->connect('dbi:File:','','', {RootClass => 'DBIx::ContextualFetch'}));
+if (eval { require DBIx::ContextualFetch; 1; }) {
+    ok (my $dbh = DBI->connect('dbi:File:','','', {RootClass => 'DBIx::ContextualFetch'}));
     is ref $dbh, 'DBIx::ContextualFetch::db', 'root class is DBIx::ContextualFetch';
 }
 
