@@ -60,7 +60,7 @@ my %opts = (
     },
     META_MERGE => {
 	resources => {
-	    repository  => 'https://svn.perl.org/modules/dbi/trunk/',
+	    repository  => 'https://github.com/perl5-dbi/dbi',
 	    MailingList => 'mailto:dbi-dev@perl.org',
 	    license     => 'http://dev.perl.org/licenses/',
 	    homepage    => 'http://dbi.perl.org/',
