@@ -55,6 +55,7 @@ my %opts = (
     ABSTRACT_FROM => 'DBI.pm',
     MIN_PERL_VERSION => '5.008',
     BUILD_REQUIRES => {
+	'DBI::Test' => '0.001',
         'ExtUtils::MakeMaker' => '6.48',
         'Test::Simple' => '0.90',
     },
