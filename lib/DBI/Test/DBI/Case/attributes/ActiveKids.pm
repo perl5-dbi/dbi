@@ -8,6 +8,11 @@ my %SQLS = (
   'INSERT' => undef
 );
 
+#We must force DBI to load the driver in order for it to be visible in the installed_drivers hash
+#installed_drivers only list loaded drivers from a DBI perspective, not from a perl perspective.
+#Hence 'use DBD::somedriver' is not loaded from a internal DBI perspective
+DBI->connect( @DB_CREDS[0..2], {} );
+
 { #Check that Kids called on a Drive handle returns the number of databasehandlers created from this drive handle
     
   #Extracting the drivername from the dsn. We need to drivername to check that the driver keeps track of created database handles
@@ -51,6 +56,7 @@ my %SQLS = (
       my $sth = $dbh->prepare($SQLS{SELECT});
       isa_ok($sth, 'DBI::st');
       ok($sth->execute(), 'execute sth #' . $_);
+      push(@active_sths, $sth);
     }
     
     #TODO : make sure sth has more rows to fetch
