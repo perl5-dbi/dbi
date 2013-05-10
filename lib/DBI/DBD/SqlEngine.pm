@@ -638,6 +638,9 @@ sub STORE ($$$)
     {
         # Driver private attributes are lower cased
 
+        ( $attrib, $value ) = $dbh->func( $attrib, $value, "validate_STORE_attr" );
+        $attrib or return;
+
         my $attr_prefix;
         $attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
         unless ($attr_prefix)
@@ -648,9 +651,6 @@ sub STORE ($$$)
         }
         my $valid_attrs = $attr_prefix . "valid_attrs";
         my $ro_attrs    = $attr_prefix . "readonly_attrs";
-
-        ( $attrib, $value ) = $dbh->func( $attrib, $value, "validate_STORE_attr" );
-        $attrib or return;
 
         exists $dbh->{$valid_attrs}
           and ( $dbh->{$valid_attrs}{$attrib}
