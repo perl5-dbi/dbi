@@ -2091,7 +2091,7 @@ After the method C<open_data> has been run successfully, the table's meta
 information are in a state which allowes the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
-L<DBD::File/DBD::File::Table|DBD::File::Table>.
+L<DBD::File::Table|DBD::File/DBD::File::Table>.
 
 =head1 SQL ENGINES
 
