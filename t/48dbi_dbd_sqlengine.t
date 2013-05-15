@@ -79,7 +79,7 @@ SKIP: {
 }
 
 SKIP: {
-    skip( 'not running with DBIx::ContextualFetch' )
+    skip( 'not running with DBIx::ContextualFetch', 2 )
 	unless eval { require DBIx::ContextualFetch; 1; };
 
     my $dbh;
