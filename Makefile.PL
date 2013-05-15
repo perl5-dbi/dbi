@@ -143,10 +143,6 @@ for ( $cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp,
      $_ = '' unless defined $_;
 }
 
-# If working from git-svn, the $Id$'s in the mod's should be completed
-# before any other action is taken
-$is_developer && -d ".git" && -f "git-svn-vsn.pl" and system $^X, "git-svn-vsn.pl";
-
 my $conflictMsg = <<EOCM;
 ***
     This version of DBI conflicts with the version of
