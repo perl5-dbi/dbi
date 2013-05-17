@@ -499,7 +499,7 @@ sub gather_sth_resultsets {
         my $sth_attr = {};
         $sth_attr->{$_} = 1 for @$attr_names;
 
-        # let the client add/remove sth atributes
+        # let the client add/remove sth attributes
         if (my $sth_result_attr = $request->sth_result_attr) {
             $sth_attr->{$_} = $sth_result_attr->{$_}
                 for keys %$sth_result_attr;

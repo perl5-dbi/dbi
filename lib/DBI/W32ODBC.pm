@@ -87,7 +87,7 @@ sub do {
     my($h, $statement, $attribs, @params) = @_;
     Carp::carp "\$h->do() attribs unused" if $attribs;
     my $new_h = $h->prepare($statement) or return undef;    ##
-    pop @{ $h->{'___sths'} };                               ## certian death assured
+    pop @{ $h->{'___sths'} };                               ## certain death assured
     $new_h->execute(@params) or return undef;               ##
     my $rows = $new_h->rows;                                ##
     $new_h->finish;                                         ## bang bang
