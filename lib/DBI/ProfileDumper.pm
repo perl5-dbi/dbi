@@ -92,7 +92,7 @@ in any DBI handle:
   $profile->flush_to_disk()
 
 Flushes all collected profile data to disk and empties the Data hash.  Returns
-the filename writen to.  If no profile data has been collected then the file is
+the filename written to.  If no profile data has been collected then the file is
 not written and flush_to_disk() returns undef.
 
 The file is locked while it's being written. A process 'consuming' the files

@@ -694,7 +694,7 @@ sub connect {
         my $rebless_class = $apply->{RootClass} || ($class ne 'DBI' ? $class : '');
         if ($rebless_class) {
             no strict 'refs';
-            if ($apply->{RootClass}) { # explicit attribute (ie not static methd call class)
+            if ($apply->{RootClass}) { # explicit attribute (ie not static method call class)
                 delete $apply->{RootClass};
                 DBI::_load_class($rebless_class, 0);
             }
@@ -727,7 +727,7 @@ sub connect {
 	    }
 	}
 
-        # confirm to driver (ie if subclassed) that we've connected sucessfully
+        # confirm to driver (ie if subclassed) that we've connected successfully
         # and finished the attribute setup. pass in the original arguments
 	$dbh->connected(@orig_args); #if ref $dbh ne 'DBI::db' or $proxy;
 
@@ -2528,7 +2528,7 @@ in this example) that acts as a function: it checks whether a value
 is null, and returns 1 if it is, or 0 if not.
 
 Example 6, the least simple, is probably the most portable, i.e., it
-should work with with most, if not all, database engines.
+should work with most, if not all, database engines.
 
 Here is a table that indicates which examples above are known to
 work on various database engines:
@@ -2683,7 +2683,7 @@ You must consult the documentation for the drivers you are using for a
 description of the syntax they require.
 
 It is recommended that drivers support the ODBC style, shown in the
-last example above. It is also recommended that that they support the
+last example above. It is also recommended that they support the
 three common names 'C<host>', 'C<port>', and 'C<database>' (plus 'C<db>'
 as an alias for C<database>). This simplifies automatic construction
 of basic DSNs: C<"dbi:$driver:database=$db;host=$host;port=$port">.
