@@ -11,7 +11,7 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-$VERSION = "1.627"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.628"; # ==> ALSO update the version in the pod text below!
 }
 
 =head1 NAME
@@ -137,7 +137,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.627
+This is the DBI specification that corresponds to DBI version 1.628
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -158,9 +158,8 @@ text with the version number of the DBI release they first appeared in.
 
 Extensions to the DBI API often use the C<DBIx::*> namespace.
 See L</Naming Conventions and Name Space>. DBI extension modules
-can be found at L<http://search.cpan.org/search?mode=module&query=DBIx>.
-And all modules related to the DBI can be found at
-L<http://search.cpan.org/search?query=DBI&mode=all>.
+can be found at L<https://metacpan.org/search?q=DBIx>.  And all modules
+related to the DBI can be found at L<https://metacpan.org/search?q=DBI>.
 
 =cut
 
@@ -2549,7 +2548,7 @@ work on various database engines:
 DBI provides a sample perl script that will test the examples above
 on your database engine and tell you which ones work.  It is located
 in the F<ex/> subdirectory of the DBI source distribution, or here:
-L<http://svn.perl.org/modules/dbi/trunk/ex/perl_dbi_nulls_test.pl>
+L<https://github.com/perl5-dbi/dbi/blob/master/ex/perl_dbi_nulls_test.pl>
 Please use the script to help us fill-in and maintain this table.
 
 B<Performance>
@@ -8051,8 +8050,9 @@ Details of many other books related to perl can be found at L<http://books.perl.
 
 Index of DBI related modules available from CPAN:
 
- http://search.cpan.org/search?mode=module&query=DBIx%3A%3A
- http://search.cpan.org/search?mode=doc&query=DBI
+ https://metacpan.org/search?q=DBD%3A%3A
+ https://metacpan.org/search?q=DBIx%3A%3A
+ https://metacpan.org/search?q=DBI
 
 For a good comparison of RDBMS-OO mappers and some OO-RDBMS mappers
 (including Class::DBI, Alzabo, and DBIx::RecordSet in the former
@@ -8160,8 +8160,6 @@ Contact me for details.
 
 =head2 Sponsor Enhancements
 
-The DBI Roadmap is available at L<http://search.cpan.org/~timb/DBI/Roadmap.pod>
-
 If your company would benefit from a specific new DBI feature,
 please consider sponsoring its development.  Work is performed
 rapidly, and usually on a fixed-price payment-on-delivery basis.
@@ -8192,9 +8190,9 @@ to Alligator Descartes for starting work on the first edition of the
 "Programming the Perl DBI" book and letting me jump on board.
 
 The DBI and DBD::Oracle were originally developed while I was Technical
-Director (CTO) of Ingeneering in the UK (L<http://www.ig.co.uk>) (formerly known as the
-Paul Ingram Group).  So I'd especially like to thank Paul for his generosity
-and vision in supporting this work for many years.
+Director (CTO) of Ingeneering in the UK (L<http://www.ig.co.uk>) (formerly
+known as the Paul Ingram Group).  So I'd especially like to thank Paul for
+his generosity and vision in supporting this work for many years.
 
 A couple of specific DBI features have been sponsored by enlightened companies:
 
@@ -8203,14 +8201,12 @@ The development of the swap_inner_handle() method was sponsored by BizRate.com (
 The development of DBD::Gofer and related modules was sponsored by
 Shopzilla.com (L<http://Shopzilla.com>), where I currently work.
 
-
 =head1 CONTRIBUTING
 
 As you can see above, many people have contributed to the DBI and
 drivers in many ways over many years.
 
-If you'd like to help then see L<http://dbi.perl.org/contributing>
-and L<http://search.cpan.org/~timb/DBI/Roadmap.pod>
+If you'd like to help then see L<http://dbi.perl.org/contributing>.
 
 If you'd like the DBI to do something new or different then a good way
 to make that happen is to do it yourself and send me a patch to the
@@ -8219,49 +8215,56 @@ below.)
 
 =head2 Browsing the source code repository
 
-Use http://svn.perl.org/modules/dbi/trunk (basic)
-or  http://svn.perl.org/viewcvs/modules/ (more useful)
+Use https://github.com/perl5-dbi/dbi
 
-=head2 How to create a patch using Subversion
+=head2 How to create a patch using Git
 
-The DBI source code is maintained using Subversion (a replacement
-for CVS, see L<http://subversion.tigris.org/>). To access the source
-you'll need to install a Subversion client. Then, to get the source
-code, do:
+The DBI source code is maintained using Git.  To access the source
+you'll need to install a Git client. Then, to get the source code, do:
 
-  svn checkout http://svn.perl.org/modules/dbi/trunk
+  git clone https://github.com/perl5-dbi/dbi.git DBI-git
 
-If it prompts for a username and password use your perl.org account
-if you have one, else just 'guest' and 'guest'. The source code will
-be in a new subdirectory called C<trunk>.
+The source code will now be available in the new subdirectory C<DBI-git>.
 
-To keep informed about changes to the source you can send an empty email
-to svn-commit-modules-dbi-subscribe@perl.org after which you'll get an email
-with the change log message and diff of each change checked-in to the source.
+When you want to synchronize later, issue the command
 
-After making your changes you can generate a patch file, but before
-you do, make sure your source is still up to date using:
+  git pull --all
 
-  svn update
+Make your changes, test them, test them again until everything passes.
+If there are no tests for the new feature you added or a behaviour change,
+the change should include a new test. Then commit the changes. Either use
+
+  git gui
+
+or
+
+  git commit -a -m 'Message to my changes'
 
 If you get any conflicts reported you'll need to fix them first.
-Then generate the patch file from within the C<trunk> directory using:
 
-  svn diff > foo.patch
+Then generate the patch file to be mailed:
 
+  git format-patch -1 --attach
+
+which will create a file 0001-*.patch (where * relates to the commit message).
 Read the patch file, as a sanity check, and then email it to dbi-dev@perl.org.
 
-=head2 How to create a patch without Subversion
+If you have a L<github|https://github.com> account, you can also fork the
+repository, commit your changes to the forked repository and then do a
+pull request.
+
+=head2 How to create a patch without Git
 
 Unpack a fresh copy of the distribution:
 
-  tar xfz DBI-1.40.tar.gz
+  wget http://cpan.metacpan.org/authors/id/T/TI/TIMB/DBI-1.627.tar.gz
+  tar xfz DBI-1.627.tar.gz
 
 Rename the newly created top level directory:
 
-  mv DBI-1.40 DBI-1.40.your_foo
+  mv DBI-1.627 DBI-1.627.your_foo
 
-Edit the contents of DBI-1.40.your_foo/* till it does what you want.
+Edit the contents of DBI-1.627.your_foo/* till it does what you want.
 
 Test your changes and then remove all temporary files:
 
@@ -8273,12 +8276,12 @@ Go back to the directory you originally unpacked the distribution:
 
 Unpack I<another> copy of the original distribution you started with:
 
-  tar xfz DBI-1.40.tar.gz
+  tar xfz DBI-1.627.tar.gz
 
 Then create a patch file by performing a recursive C<diff> on the two
 top level directories:
 
-  diff -r -u DBI-1.40 DBI-1.40.your_foo > DBI-1.40.your_foo.patch
+  diff -purd DBI-1.627 DBI-1.627.your_foo > DBI-1.627.your_foo.patch
 
 =head2 Speak before you patch
 
@@ -8287,6 +8290,9 @@ to discuss (on dbi-dev@perl.org) the changes you propose before
 actually spending time working on them. Otherwise you run the risk
 of them being rejected because they don't fit into some larger plans
 you may not be aware of.
+
+You can also reach the developers on IRC (chat). If they are on-line,
+the most likely place to talk to them is the #dbi channel on irc.perl.org
 
 =head1 TRANSLATIONS
 
@@ -8299,7 +8305,6 @@ Some other translations:
 
  http://cronopio.net/perl/                              - Spanish
  http://member.nifty.ne.jp/hippo2000/dbimemo.htm        - Japanese
-
 
 =head1 TRAINING
 
