@@ -756,7 +756,7 @@ the same time.
 
 It is expected that some future version of the DBI will at least be
 thread-safe (but not thread-hot) by automatically blocking threads
-intering the DBI while it's already in use.
+entering the DBI while it's already in use.
 
 =head2 5.2 How do I handle BLOB data with DBI?
 
@@ -788,8 +788,8 @@ functionality that will automatically truncate the fetched BLOB to the
 size of C<LongReadLen> if it is longer. This does not cause an error to
 occur, but may make your fetched BLOB data useless.
 
-This behaviour is regulated by the C<LongTruncOk> attribute which is 
-defaultly set to a false value ( thus making overlong BLOB fetches fail ).
+This behaviour is regulated by the C<LongTruncOk> attribute which is
+set to a false value by default ( thus making overlong BLOB fetches fail ).
 
     ### Set BLOB handling such that it's 16Kb and can be truncated
     $dbh->{LongReadLen} = 16384;

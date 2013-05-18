@@ -100,7 +100,7 @@ my $HAS_FLOCK = (defined $ENV{DBI_PROFILE_FLOCK})
 
 =head2 $prof = DBI::ProfileData->new(Files => [ "dbi.prof.1", "dbi.prof.2" ])
 
-Creates a a new DBI::ProfileData object.  Takes either a single file
+Creates a new DBI::ProfileData object.  Takes either a single file
 through the File option or a list of Files in an array ref.  If
 multiple files are specified then the header data from the first file
 is used.
@@ -212,7 +212,7 @@ sub _read_files {
           or croak("Unable to read profile file '$filename': $!");
 
         # lock the file in case it's still being written to
-        # (we'll be foced to wait till the write is complete)
+        # (we'll be forced to wait till the write is complete)
         flock($fh, LOCK_SH) if $self->{LockFile};
 
         if (-s $fh) {   # not empty
@@ -255,7 +255,7 @@ sub _read_header {
         /^(\S+)\s*=\s*(.*)/
           or croak("Syntax error in header in $filename line $.: $_");
         # XXX should compare new with existing (from previous file)
-        # and warn if they differ (diferent program or path)
+        # and warn if they differ (different program or path)
         $self->{_header}{$1} = unescape_key($2) if $keep;
     }
 }

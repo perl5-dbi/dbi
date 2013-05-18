@@ -476,7 +476,7 @@ The $node argument can be used to focus on a sub-tree.
 If not specified it defaults to $dbh->{Profile}{Data}.
 
 The $path argument can be used to specify a list of path elements that will be
-added to each element of the returned list. If not specified it defaults to a a
+added to each element of the returned list. If not specified it defaults to a
 ref to an empty array.
 
 =head2 as_text
@@ -556,7 +556,7 @@ $totals will then contain
 and $time_in_dbi will be 0.93;
 
 The second argument need not be just leaf nodes. If given a reference to a hash
-then the hash is recursively searched for for leaf nodes and all those found
+then the hash is recursively searched for leaf nodes and all those found
 are merged.
 
 For example, to get the time spent 'inside' the DBI during an http request,
@@ -663,7 +663,7 @@ resolution. Which isn't sufficiently fine for our needs, but still
 much better than integer resolution. This limited resolution means
 that fast method calls will often register as taking 0 time. And
 timings in general will have much more 'jitter' depending on where
-within the 'current millisecond' the start and and timing was taken.
+within the 'current millisecond' the start and end timing was taken.
 
 This documentation could be more clear. Probably needs to be reordered
 to start with several examples and build from there.  Trying to
@@ -758,7 +758,7 @@ sub _auto_new {
         }
     }
 
-    eval "require $package" if $package; # sliently ignores errors
+    eval "require $package" if $package; # silently ignores errors
     $package ||= $class;
 
     return $package->new(Path => \@Path, @args);
