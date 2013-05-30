@@ -329,6 +329,7 @@ sub INSERT ($$$)
     my ( $self, $data, $params ) = @_;
     my $table = $self->open_tables( $data, 0, 1 );
     $self->verify_columns($table);
+    my $all_columns = $table->{col_names};
     $table->seek( $data, 0, 2 ) unless ( $table->can('insert_one_row') );
     my ($array) = [];
     my ( $val, $col, $i );
@@ -336,18 +337,19 @@ sub INSERT ($$$)
     my $cNum = scalar( @{ $self->{column_names} } ) if ( $self->{column_names} );
     my $param_num = 0;
 
-    if ($cNum)
-    {
-        for ( $i = 0; $i < $cNum; $i++ )
-        {
-            $col = $self->{column_names}->[$i];
-            $array->[ $self->column_nums( $table, $col ) ] = $self->row_values($i);
-        }
-    }
-    else
-    {
+    $cNum or
         croak "Bad col names in INSERT";
+
+    my $maxCol = $#$all_columns;
+
+    for ( $i = 0; $i < $cNum; $i++ )
+    {
+       $col = $self->{column_names}->[$i];
+       $array->[ $self->column_nums( $table, $col ) ] = $self->row_values($i);
     }
+
+    # Extend row to put values in ALL fields
+    $#$array < $maxCol and $array->[$maxCol] = undef;
 
     $table->can('insert_new_row') ? $table->insert_new_row( $data, $array ) : $table->push_row( $data, $array );
 
