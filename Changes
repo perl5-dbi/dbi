@@ -12,6 +12,9 @@ DBI::Changes - List of significant changes to the DBI
 
     Typo fixes in pod and comment (David Steinbrunner)
     Change DBI's docs from svn to git [H.Merijn Brand]
+    Always insert *ALL* fields on INSERT on DBI::DBD::SqlEngine
+      derived engines (like DBD::CSV, DBD::DBM) [H.Merijn Brand,
+      Jens Rehsack]
 
 =head2 Changes in DBI 1.627 - 16th May 2013
 
