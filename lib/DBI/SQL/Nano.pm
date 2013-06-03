@@ -28,7 +28,7 @@ require DBI;    # for looks_like_number()
 
 BEGIN
 {
-    $VERSION = sprintf( "1.%06d", q$Revision: 15543 $ =~ /(\d+)/o );
+    $VERSION = "1.015544";
 
     $versions->{nano_version} = $VERSION;
     if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.400' } )

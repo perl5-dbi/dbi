@@ -5,8 +5,7 @@ use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
 # don't use Revision here because that's not in svn:keywords so that the
 # examples that use it below won't be messed up
-$VERSION = sprintf("12.%06d", q$Id: DBD.pm 15128 2012-02-04 20:51:39Z Tim $ =~ /(\d+)/o);
-
+$VERSION = "12.015129";
 
 # $Id: DBD.pm 15128 2012-02-04 20:51:39Z Tim $
 #
@@ -694,13 +693,13 @@ very common).
 
 For Subversion you could use:
 
-  $VERSION = sprintf("12.%06d", q$Revision: 12345 $ =~ /(\d+)/o);
+  $VERSION = "12.012346";
 
 (use lots of leading zeros on the second portion so if you move the code to a
 shared repository like svn.perl.org the much larger revision numbers won't
 cause a problem, at least not for a few years).  For RCS or CVS you can use:
 
-  $VERSION = sprintf "%d.%02d", '$Revision: 11.21 $ ' =~ /(\d+)\.(\d+)/;
+  $VERSION = "11.22";
 
 which pads out the fractional part with leading zeros so all is well
 (so long as you don't go past x.99)
@@ -797,8 +796,8 @@ and document the interface are very welcome to get in touch via dbi-dev@perl.org
 
 Methods installed using install_method default to the standard error
 handling behaviour for DBI methods: clearing err and errstr before
-calling the method, and checking for errors to trigger RaiseError 
-etc. on return. This differs from the default behaviour of func(). 
+calling the method, and checking for errors to trigger RaiseError
+etc. on return. This differs from the default behaviour of func().
 
 Note for driver authors: The DBD::Foo::xx->install_method call won't
 work until the class-hierarchy has been setup. Normally the DBI

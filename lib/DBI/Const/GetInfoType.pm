@@ -19,8 +19,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %GetInfoType);
 @EXPORT = qw(%GetInfoType);
 
 my
-$VERSION = sprintf("2.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
-
+$VERSION = "2.008697";
 
 =head1 NAME
 

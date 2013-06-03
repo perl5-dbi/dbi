@@ -17,9 +17,7 @@ use base qw(DBI::Util::_accessor);
 use DBI::Gofer::Serializer::Storable;
 use DBI::Gofer::Serializer::DataDumper;
 
-
-our $VERSION = sprintf("0.%06d", q$Revision: 12536 $ =~ /(\d+)/o);
-
+our $VERSION = "0.012537";
 
 __PACKAGE__->mk_accessors(qw(
     trace

@@ -28,7 +28,7 @@ require utf8;
 } unless defined &utf8::is_utf8;
 
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
-$DBI::PurePerl::VERSION = sprintf("2.%06d", q$Revision: 14285 $ =~ /(\d+)/o);
+$DBI::PurePerl::VERSION = "2.014286";
 
 $DBI::neat_maxlen ||= 400;
 
@@ -757,7 +757,7 @@ sub _get_sorted_hash_keys {
             for keys %$hash_ref;
         $num_sort = $sort_guess;
     }
-    
+
     my @keys = keys %$hash_ref;
     no warnings 'numeric';
     my @sorted = ($num_sort)

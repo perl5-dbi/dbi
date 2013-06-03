@@ -15,6 +15,7 @@ DBI::Changes - List of significant changes to the DBI
     Always insert *ALL* fields on INSERT on DBI::DBD::SqlEngine
       derived engines (like DBD::CSV, DBD::DBM) [H.Merijn Brand,
       Jens Rehsack]
+    $VERSIONS converted from sprintf's to hardcoded strings
 
 =head2 Changes in DBI 1.627 - 16th May 2013
 

@@ -14,7 +14,7 @@ use DBI::Gofer::Execute;
 
 use base qw(DBI::Gofer::Transport::Base Exporter);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 12536 $ =~ /(\d+)/o);
+our $VERSION = "0.012537";
 
 our @EXPORT = qw(run_one_stdio);
 

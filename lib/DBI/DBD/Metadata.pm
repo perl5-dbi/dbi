@@ -18,8 +18,7 @@ use DBI::Const::GetInfoType qw(%GetInfoType);
 @ISA = qw(Exporter);
 @EXPORT = qw(write_getinfo_pm write_typeinfo_pm);
 
-$VERSION = sprintf("2.%06d", q$Revision: 14213 $ =~ /(\d+)/o);
-
+$VERSION = "2.014214";
 
 use strict;
 

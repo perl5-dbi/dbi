@@ -8,7 +8,7 @@
     require DBI::Gofer::Response;
     require Carp;
 
-    our $VERSION = sprintf("0.%06d", q$Revision: 15326 $ =~ /(\d+)/o);
+    our $VERSION = "0.015327";
 
 #   $Id: Gofer.pm 15326 2012-06-06 16:32:38Z Tim $
 #
@@ -1166,7 +1166,7 @@ had not been specified.
 
 The default behaviour is to retry requests where $request->is_idempotent is true,
 or the error message matches C</induced by DBI_GOFER_RANDOM/>.
-    
+
 =head3 cache
 
 Specifies that client-side caching should be performed.  The value is the name

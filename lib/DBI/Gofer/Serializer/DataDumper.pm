@@ -3,7 +3,7 @@ package DBI::Gofer::Serializer::DataDumper;
 use strict;
 use warnings;
 
-our $VERSION = sprintf("0.%06d", q$Revision: 9949 $ =~ /(\d+)/o);
+our $VERSION = "0.009950";
 
 #   $Id: DataDumper.pm 9949 2007-09-18 09:38:15Z Tim $
 #

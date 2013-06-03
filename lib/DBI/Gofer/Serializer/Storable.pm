@@ -38,7 +38,7 @@ See also L<DBI::Gofer::Serializer::Base>.
 
 use Storable qw(nfreeze thaw);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 15585 $ =~ /(\d+)/o);
+our $VERSION = "0.015586";
 
 use base qw(DBI::Gofer::Serializer::Base);
 

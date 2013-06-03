@@ -76,7 +76,7 @@ if (%match) { # handle matches
     while (my ($key, $val) = each %match) {
         if ($val =~ m!^/(.+)/$!) {
             $val = $case_sensitive ? qr/$1/ : qr/$1/i;
-        } 
+        }
         $prof->match($key, $val, case_sensitive => $case_sensitive);
     }
 }
@@ -85,7 +85,7 @@ if (%exclude) { # handle excludes
     while (my ($key, $val) = each %exclude) {
         if ($val =~ m!^/(.+)/$!) {
             $val = $case_sensitive ? qr/$1/ : qr/$1/i;
-        } 
+        }
         $prof->exclude($key, $val, case_sensitive => $case_sensitive);
     }
 }

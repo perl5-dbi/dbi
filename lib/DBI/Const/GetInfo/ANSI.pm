@@ -38,8 +38,7 @@ The API for this module is private and subject to change.
 =cut
 
 my
-$VERSION = sprintf("2.%06d", q$Revision: 8696 $ =~ /(\d+)/o);
-
+$VERSION = "2.008697";
 
 %InfoTypes =
 (

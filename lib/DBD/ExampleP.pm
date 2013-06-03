@@ -8,8 +8,7 @@
     require File::Spec;
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("12.%06d", q$Revision: 14310 $ =~ /(\d+)/o);
-
+    $VERSION = "12.014311";
 
 #   $Id: ExampleP.pm 14310 2010-08-02 06:35:25Z Jens $
 #

@@ -18,12 +18,12 @@ use Symbol qw(gensym);
 
 use base qw(DBD::Gofer::Transport::Base);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 10087 $ =~ /(\d+)/o);
+our $VERSION = "0.010088";
 
 __PACKAGE__->mk_accessors(qw(
     connection_info
     go_perl
-)); 
+));
 
 
 sub new {
@@ -44,7 +44,7 @@ sub new {
 
 
 # nonblock($fh) puts filehandle into nonblocking mode
-sub nonblock { 
+sub nonblock {
   my $fh = shift;
   my $flags = fcntl($fh, F_GETFL, 0)
         or croak "Can't get flags for filehandle $fh: $!";

@@ -60,10 +60,9 @@ use DBI ();
 use strict;
 use vars qw($VERSION $drh);
 
-$VERSION = sprintf("2.%06d", q$Revision: 14122 $ =~ /(\d+)/o);
+$VERSION = "2.014123";
 
 $drh = undef;	# Holds driver handle once it has been initialized.
-
 
 #########################################
 # The driver handle constructor.

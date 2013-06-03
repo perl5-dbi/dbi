@@ -12,7 +12,7 @@ use warnings;
 
 use base qw(DBI::Gofer::Transport::Base);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 14120 $ =~ /(\d+)/o);
+our $VERSION = "0.014121";
 
 __PACKAGE__->mk_accessors(qw(
     trace
@@ -38,7 +38,7 @@ sub new {
     $args->{keep_meta_frozen} ||= 1 if $args->{go_cache};
     #warn "args @{[ %$args ]}\n";
     return $class->SUPER::new($args);
-}   
+}
 
 
 sub _init_trace { $ENV{DBD_GOFER_TRACE} || 0 }
