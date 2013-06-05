@@ -6652,7 +6652,10 @@ See L</"DBI Constants"> for more information.
 
 Few drivers support specifying a data type via a C<bind_col> call
 (most will simply ignore the data type). Fewer still allow the data
-type to be altered once set.
+type to be altered once set. If you do set a column type the type
+should remain sticky through further calls to bind_col for the same
+column if the type is not overriden (this is important for instance
+when you are using a slice in fetchall_arrayref).
 
 The TYPE attribute for bind_col() was first specified in DBI 1.41.
 
