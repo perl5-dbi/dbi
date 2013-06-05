@@ -16,6 +16,7 @@ DBI::Changes - List of significant changes to the DBI
       derived engines (like DBD::CSV, DBD::DBM) [H.Merijn Brand,
       Jens Rehsack]
     $VERSIONS converted from sprintf's to hardcoded strings
+    Clarify bind_col TYPE attribute is sticky.
 
 =head2 Changes in DBI 1.627 - 16th May 2013
 
