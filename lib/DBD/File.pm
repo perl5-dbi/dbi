@@ -47,7 +47,7 @@ sub driver ($;$)
     # We use a hash here to have one singleton per subclass.
     # (Otherwise DBD::CSV and DBD::DBM, for example, would
     # share the same driver object which would cause problems.)
-    # An alternative would be not not cache the $drh here at all
+    # An alternative would be to not cache the $drh here at all
     # and require that subclasses do that. Subclasses should do
     # their own caching, so caching here just provides extra safety.
     $drh->{$class} and return $drh->{$class};
@@ -244,7 +244,7 @@ sub get_f_versions
     eval {
 	$dver = IO::File->VERSION ();
 
-	# when we're still alive here, everthing went ok - no need to check for $@
+	# when we're still alive here, everything went ok - no need to check for $@
 	$dtype .= " ($dver)";
 	};
 

@@ -6,7 +6,7 @@ add comparisons with other proxies to gofer docs (see notes)
     http://code.nytimes.com/projects/dbslayer
 update gofer pdf in distribution
 talk about multiple statements in single sql for gofer
-inbalance between two calls to _store_response_in_cache
+imbalance between two calls to _store_response_in_cache
     - the call in transmit_request doesn't have the response_needs_retransmit logic
 
 Add server-side caching.

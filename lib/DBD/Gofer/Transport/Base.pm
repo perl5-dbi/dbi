@@ -184,7 +184,7 @@ sub response_retry_preference {
     # This is the main decision point.  We don't retry requests that got
     # as far as executing because the error is probably from the database
     # (not transport) so retrying is unlikely to help. But note that any
-    # severe transport error occuring after execute is likely to return
+    # severe transport error occurring after execute is likely to return
     # a new response object that doesn't have the execute flag set. Beware!
     return 0 if $response->executed_flag_set;
 

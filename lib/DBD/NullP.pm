@@ -132,7 +132,7 @@
         elsif ($sth->{Statement} =~ m/^ \s* ERROR \s+ (\d+) \s* (.*) /xmsi) {
             return $sth->set_err($1, $2);
         }
-        # anything else is silently ignored, sucessfully
+        # anything else is silently ignored, successfully
 	1;
     }
 

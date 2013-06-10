@@ -176,7 +176,7 @@ sub get_dbm_versions
     eval {
         $dver = $meta->{dbm_type}->VERSION();
 
-        # *) when we're still alive here, everthing went ok - no need to check for $@
+        # *) when we're still alive here, everything went ok - no need to check for $@
         $dtype .= " ($dver)";
     };
     if ( $meta->{dbm_mldbm} )

@@ -41,7 +41,7 @@
 #include "dbi_sql.h"
 
 
-#define DBIXS_VERSION 93 /* superceeded by DBIXS_REVISION */
+#define DBIXS_VERSION 93 /* superseded by DBIXS_REVISION */
 
 #ifdef NEED_DBIXS_VERSION
 #if NEED_DBIXS_VERSION > DBIXS_VERSION

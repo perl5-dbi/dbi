@@ -160,7 +160,7 @@ UID's can be passed as group names or numeric values.
 
 =item B<--version>
 
-Supresses startup of the server; instead the version string will
+Suppresses startup of the server; instead the version string will
 be printed and the program exits immediately.
 
 =back

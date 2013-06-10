@@ -693,7 +693,7 @@
             or return undef; # no more result sets
         #warn "more_results: ".Data::Dumper::Dumper($meta);
 
-        # pull out the special non-atributes first
+        # pull out the special non-attributes first
         my ($rowset, $err, $errstr, $state)
             = delete @{$meta}{qw(rowset err errstr state)};
 
@@ -1159,7 +1159,7 @@ The code reference is called like this:
   $transport = $h->{go_transport};
   $retry = $transport->go_retry_hook->($request, $response, $transport);
 
-If it returns true then the request will be retried, upto the C<retry_limit>.
+If it returns true then the request will be retried, up to the C<retry_limit>.
 If it returns a false but defined value then the request will not be retried.
 If it returns undef then the default behaviour will be used, as if C<retry_hook>
 had not been specified.

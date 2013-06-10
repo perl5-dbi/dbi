@@ -605,7 +605,7 @@ Extracted from ``I<DBI - The Database Interface for Perl 5>'':
 
 To sum up, DBM is a perfectly satisfactory solution for essentially read-only
 databases, or small and simple datasets. However, for more
-scaleable dataset handling, not to mention robust transactional locking,
+scalable dataset handling, not to mention robust transactional locking,
 users are recommended to use a more powerful database engine I<via> I<DBI>.
 
 Chapter 2 of "Programming the Perl DBI" discusses DBM files in detail.

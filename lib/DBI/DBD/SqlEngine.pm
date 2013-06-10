@@ -54,7 +54,7 @@ sub driver ($;$)
     # We use a hash here to have one singleton per subclass.
     # (Otherwise DBD::CSV and DBD::DBM, for example, would
     # share the same driver object which would cause problems.)
-    # An alternative would be not not cache the $drh here at all
+    # An alternative would be to not cache the $drh here at all
     # and require that subclasses do that. Subclasses should do
     # their own caching, so caching here just provides extra safety.
     $drh->{$class} and return $drh->{$class};
@@ -1269,7 +1269,7 @@ sub fetch ($)
     {
         $sth->set_err(
             $DBI::stderr,
-            "Attempt to fetch row without a preceeding execute () call or from a non-SELECT statement"
+            "Attempt to fetch row without a preceding execute () call or from a non-SELECT statement"
         );
         return;
     }
@@ -2024,7 +2024,7 @@ following:
 
   $dbh->func( "list_tables" );
 
-Everytime where an C<\%attr> argument can be specified, this C<\%attr>
+Every time where an C<\%attr> argument can be specified, this C<\%attr>
 object's C<sql_table_source> attribute is preferred over the C<$dbh>
 attribute or the driver default, eg.
 

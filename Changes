@@ -391,7 +391,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Fixed DBI::PurePerl neat() to behave more like XS neat().
 
   Increased default $DBI::neat_maxlen from 400 to 1000.
-  Increased timeout on tests to accomodate very slow systems.
+  Increased timeout on tests to accommodate very slow systems.
   Changed behaviour of trace levels 1..4 to show less information
     at lower levels.
   Changed the format of the key used for $h->{CachedKids}
@@ -1200,7 +1200,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
   Documentation changes:
     Documented $high_resolution_time = dbi_time() function.
-    Documented that bind_col() can take an atribute hash.
+    Documented that bind_col() can take an attribute hash.
     Clarified documentation for ParamValues attribute hash keys.
     Many good DBI documentation tweaks from Jonathan Leffler,
       including a major update to the DBI::DBD driver author guide.
@@ -1339,7 +1339,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   : If you are still using perl 5.005_03 you should be making plans to
   : upgrade to at least perl 5.6.1, or 5.8.0. Perl 5.8.0 is due to be
   : released in the next week or so.  (Although it's a "point 0" release,
-  : it is the most throughly tested release ever.)
+  : it is the most thoroughly tested release ever.)
 
   Added XS/C implementations of selectrow_array, selectrow_arrayref, and
     selectall_arrayref to Driver.xst. See DBI 1.26 Changes for more info.
@@ -1383,7 +1383,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
   Added C implementations of selectrow_arrayref() and fetchall_arrayref()
     in Driver.xst.  All compiled drivers using Driver.xst will now be
-    faster making those calls. Most noticable with fetchall_arrayref for
+    faster making those calls. Most noticeable with fetchall_arrayref for
     many rows or selectrow_arrayref with a fast query. For example, using
     DBD::mysql a selectrow_arrayref for a single row using a primary key
     is ~20% faster, and fetchall_arrayref for 20000 rows is twice as fast!
@@ -2335,7 +2335,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Added DBI->internal->{DebugLog} = $filename;
   Reworked internal logging.
   Added $VERSION.
-  Made disconnect_all a compulsary method for drivers.
+  Made disconnect_all a compulsory method for drivers.
 
 
 =head1 ANCIENT HISTORY
