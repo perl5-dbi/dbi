@@ -885,7 +885,7 @@ persistent connections.
 
 However, if you set the I<proxy_no_finish> attribute to a TRUE value,
 either in the database handle or in the statement handle, then finish()
-calls will be supressed. This is what you want, for example, in small
+calls will be suppressed. This is what you want, for example, in small
 and fast CGI applications.
 
 =item proxy_quote

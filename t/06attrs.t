@@ -38,8 +38,8 @@ ok( $dbh->{Warn},               '... checking Warn attribute for dbh');
 ok( $dbh->{Active},             '... checking Active attribute for dbh');
 ok( $dbh->{AutoCommit},         '... checking AutoCommit attribute for dbh');
 ok(!$dbh->{CompatMode},         '... checking CompatMode attribute for dbh');
-ok(!$dbh->{InactiveDestroy},    '... checking InactiveDestory attribute for dbh');
-ok(!$dbh->{AutoInactiveDestroy}, '... checking AutoInactiveDestory attribute for dbh');
+ok(!$dbh->{InactiveDestroy},    '... checking InactiveDestroy attribute for dbh');
+ok(!$dbh->{AutoInactiveDestroy}, '... checking AutoInactiveDestroy attribute for dbh');
 ok(!$dbh->{PrintError},         '... checking PrintError attribute for dbh');
 ok( $dbh->{PrintWarn},          '... checking PrintWarn attribute for dbh');	# true because of perl -w above
 ok( $dbh->{RaiseError},         '... checking RaiseError attribute for dbh');
@@ -111,8 +111,8 @@ ok( $drh->{Warn},               '... checking Warn attribute for drh');
 ok( $drh->{Active},             '... checking Active attribute for drh');
 ok( $drh->{AutoCommit},         '... checking AutoCommit attribute for drh');
 ok(!$drh->{CompatMode},         '... checking CompatMode attribute for drh');
-ok(!$drh->{InactiveDestroy},    '... checking InactiveDestory attribute for drh');
-ok(!$drh->{AutoInactiveDestroy}, '... checking AutoInactiveDestory attribute for drh');
+ok(!$drh->{InactiveDestroy},    '... checking InactiveDestroy attribute for drh');
+ok(!$drh->{AutoInactiveDestroy}, '... checking AutoInactiveDestroy attribute for drh');
 ok(!$drh->{PrintError},         '... checking PrintError attribute for drh');
 ok( $drh->{PrintWarn},          '... checking PrintWarn attribute for drh');	# true because of perl -w above
 ok(!$drh->{RaiseError},         '... checking RaiseError attribute for drh');

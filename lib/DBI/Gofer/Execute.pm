@@ -613,7 +613,7 @@ sub _install_rand_callbacks {
             next;
         }
         unless (defined $fail_percent or defined $delay_percent) {
-            warn "Ignored DBI_GOFER_RANDOM item '$spec' because not preceeded by 'fail=N' and/or 'delayN=N'";
+            warn "Ignored DBI_GOFER_RANDOM item '$spec' because not preceded by 'fail=N' and/or 'delayN=N'";
             next;
         }
 
