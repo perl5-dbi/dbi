@@ -184,7 +184,7 @@ sub init_default_attributes
     if (0 == $phase) {
 	# f_ext should not be initialized
 	# f_map is deprecated (but might return)
-	$dbh->{f_dir}      = Cwd::abs_path (File::Spec->curdir ());
+	$dbh->{f_dir} = Cwd::abs_path (File::Spec->curdir ());
 
 	push @{$dbh->{sql_init_order}{90}}, "f_meta";
 
@@ -194,7 +194,7 @@ sub init_default_attributes
         if (exists $dbh->{$drv_prefix . "meta"} and !$dbh->{sql_engine_in_gofer}) {
             my $attr = $dbh->{$drv_prefix . "meta"};
             defined $dbh->{f_valid_attrs}{f_meta}
-              and $dbh->{f_valid_attrs}{f_meta} = 1;
+		and $dbh->{f_valid_attrs}{f_meta} = 1;
 
             $dbh->{f_meta} = $dbh->{$attr};
 	    }
@@ -346,20 +346,28 @@ sub data_sources
     delete $attrs{f_dir};
     my $dsn_quote = $drh->{ImplementorClass}->can ("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
-    my $dirh = IO::Dir->new ($dir);
-    unless (defined $dirh) {
-	$drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+    my @dir = grep { -d $_ } (ref $dir eq "ARRAY" ? @$dir : $dir);
+    unless (@dir) {
+	$drh->set_err ($DBI::stderr, "Cannot open any directory");
 	return;
 	}
+    my @dsns;
+    foreach $dir (@dir) {
+	my $dirh = IO::Dir->new ($dir);
+	unless (defined $dirh) {
+	    $drh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+	    return;
+	    }
 
-    my ($file, @dsns, %names, $driver);
-    $driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
+	my ($file, %names, $driver);
+	$driver = $drh->{ImplementorClass} =~ m/^dbd\:\:([^\:]+)\:\:/i ? $1 : "File";
 
-    while (defined ($file = $dirh->read ())) {
-	my $d = File::Spec->catdir ($dir, $file);
-	# allow current dir ... it can be a data_source too
-	$file ne File::Spec->updir () && -d $d and
-	    push @dsns, "DBI:$driver:f_dir=" . &{$dsn_quote} ($d) . ($dsnextra ? ";$dsnextra" : "");
+	while (defined ($file = $dirh->read ())) {
+	    my $d = File::Spec->catdir ($dir, $file);
+	    # allow current dir ... it can be a data_source too
+	    $file ne File::Spec->updir () && -d $d and
+		push @dsns, "DBI:$driver:f_dir=" . &{$dsn_quote} ($d) . ($dsnextra ? ";$dsnextra" : "");
+	    }
 	}
     return @dsns;
     } # data_sources
@@ -368,32 +376,35 @@ sub avail_tables
 {
     my ($self, $dbh) = @_;
 
-    my $dir    = $dbh->{f_dir};
+    my $dir  = $dbh->{f_dir};
     defined $dir or return;	# Stream based db's cannot be queried for tables
-    my $dirh = IO::Dir->new ($dir);
 
-    unless (defined $dirh) {
-	$dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
-	return;
-	}
-
-    my $class = $dbh->FETCH ("ImplementorClass");
-    $class =~ s/::db$/::Table/;
-    my ($file, %names);
-    my $schema = exists $dbh->{f_schema}
-	? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
-	    ? $dbh->{f_schema} : undef
-	: eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
     my %seen;
     my @tables;
-    while (defined ($file = $dirh->read ())) {
-	my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
-	# $tbl && $meta && -f $meta->{f_fqfn} or next;
-	$seen{defined $schema ? $schema : "\0"}{$tbl}++ or
-	    push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
+    foreach $dir (grep { -d $_ } (ref $dir eq "ARRAY" ? @$dir : $dir)) {
+	my $dirh = IO::Dir->new ($dir);
+
+	unless (defined $dirh) {
+	    $dbh->set_err ($DBI::stderr, "Cannot open directory $dir: $!");
+	    return;
+	    }
+
+	my $class = $dbh->FETCH ("ImplementorClass");
+	$class =~ s/::db$/::Table/;
+	my ($file, %names);
+	my $schema = exists $dbh->{f_schema}
+	    ? defined $dbh->{f_schema} && $dbh->{f_schema} ne ""
+		? $dbh->{f_schema} : undef
+	    : eval { getpwuid ((stat $dir)[4]) }; # XXX Win32::pwent
+	while (defined ($file = $dirh->read ())) {
+	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
+	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
+	    $seen{defined $schema ? $schema : "\0"}{$dir}{$tbl}++ or
+		push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
+	    }
+	$dirh->close () or
+	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
 	}
-    $dirh->close () or
-	$dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
 
     return @tables;
     } # avail_tables
@@ -1253,6 +1264,9 @@ evaluated instead of driver globals:
 =item f_ext
 
 =item f_dir
+
+When passed in the attribute hash, the C<f_dir> attribute may also be
+a listref of folders where tables can be found.
 
 =item f_lock
 

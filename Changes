@@ -16,6 +16,8 @@ DBI::Changes - List of significant changes to the DBI
       derived engines (like DBD::CSV, DBD::DBM) [H.Merijn Brand,
       Jens Rehsack]
     $VERSIONS converted from sprintf's to hardcoded strings
+    Support multiple folders in DBD::File's f_dir attribute
+      to enable spreading files [H.Merijn Brand]
 
 =head2 Changes in DBI 1.627 - 16th May 2013
 
