@@ -35,7 +35,7 @@ use base qw( DBI::DBD::SqlEngine );
 use Carp;
 use vars qw( @ISA $VERSION $drh );
 
-$VERSION = "0.41";
+$VERSION = "0.42";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
@@ -130,7 +130,8 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir} or $attr->{f_dir} = $dbh->{f_dir};
+    exists $attr->{f_dir}     or $attr->{f_dir}     = $dbh->{f_dir};
+    exists $attr->{f_dir_ext} or $attr->{f_dir_ext} = $dbh->{f_dir_ext};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
 
@@ -149,6 +150,7 @@ sub init_valid_attributes
     $dbh->{f_valid_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_dir            => 1, # base directory
+	f_dir_ext        => 1, # extended directories
 	f_ext            => 1, # file extension
 	f_schema         => 1, # schema name
 	f_lock           => 1, # Table locking mode
@@ -346,11 +348,9 @@ sub data_sources
     delete $attrs{f_dir};
     my $dsn_quote = $drh->{ImplementorClass}->can ("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
-    my @dir = grep { -d $_ } (ref $dir eq "ARRAY" ? @$dir : $dir);
-    unless (@dir) {
-	$drh->set_err ($DBI::stderr, "Cannot open any directory");
-	return;
-	}
+    my @dir = ($dir);
+    $attr->{f_dir_ext} && ref $attr->{f_dir_ext} eq "ARRAY" and
+	push @dir, grep { -d $_ } @{$attr->{f_dir_ext}};
     my @dsns;
     foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
@@ -376,12 +376,15 @@ sub avail_tables
 {
     my ($self, $dbh) = @_;
 
-    my $dir  = $dbh->{f_dir};
+    my $dir = $dbh->{f_dir};
     defined $dir or return;	# Stream based db's cannot be queried for tables
 
     my %seen;
     my @tables;
-    foreach $dir (grep { -d $_ } (ref $dir eq "ARRAY" ? @$dir : $dir)) {
+    my @dir = ($dir);
+    $dbh->{f_dir_ext} && ref $dbh->{f_dir_ext} eq "ARRAY" and
+	push @dir, grep { -d $_ } @{$dbh->{f_dir_ext}};
+    foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
 
 	unless (defined $dirh) {
@@ -765,6 +768,7 @@ sub bootstrap_table_meta
     $self->SUPER::bootstrap_table_meta ($dbh, $meta, $table, @other);
 
     exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
+    exists  $meta->{f_dir_ext}	or $meta->{f_dir_ext}	= $dbh->{f_dir_ext};
     defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
     defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
     exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
@@ -794,6 +798,7 @@ sub get_table_meta ($$$$;$)
 my %reset_on_modify = (
     f_file     => [ "f_fqfn", "sql_data_source" ],
     f_dir      =>   "f_fqfn",
+    f_dir_ext  => [],
     f_ext      =>   "f_fqfn",
     f_lockfile =>   "f_fqfn", # forces new file2table call
     );
@@ -974,7 +979,16 @@ When the value for C<f_dir> is a relative path, it is converted into
 the appropriate absolute path name (based on the current working
 directory) when the dbh attribute is set.
 
+  f_dir => "/data/foo/csv",
+
 See L<KNOWN BUGS AND LIMITATIONS>.
+
+=head4 f_dir_ext
+
+This optional attribute can be set to pass a list of folders to also
+find existing tables. It will B<not> be used to create new files.
+
+  f_dir_ext => [ "/data/bar/csv", "/dump/blargh/data" ],
 
 =head4 f_ext
 
@@ -984,6 +998,8 @@ This attribute is used for setting the file extension. The format is:
 
 where the /flag is optional and the extension is case-insensitive.
 C<f_ext> allows you to specify an extension which:
+
+  f_ext => ".csv/r",
 
 =over
 
@@ -1265,8 +1281,7 @@ evaluated instead of driver globals:
 
 =item f_dir
 
-When passed in the attribute hash, the C<f_dir> attribute may also be
-a listref of folders where tables can be found.
+=item f_dir_ext
 
 =item f_lock
 
