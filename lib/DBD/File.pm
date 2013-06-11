@@ -532,7 +532,7 @@ sub complete_table_name
 	}
 
     # (my $tbl = $file) =~ s/$ext$//i;
-    my ($tbl, $basename, $dir, $fn_ext, $user_spec_file);
+    my ($tbl, $basename, $dir, $fn_ext, $user_spec_file, $searchdir);
     if ($file_is_table and defined $meta->{f_file}) {
 	$tbl = $file;
 	($basename, $dir, $fn_ext) = File::Basename::fileparse ($meta->{f_file}, $fn_any_ext_regex);
@@ -541,6 +541,15 @@ sub complete_table_name
 	}
     else {
 	($basename, $dir, undef) = File::Basename::fileparse ($file, $ext);
+	if ($dir eq "./" && ref $meta->{f_dir_search} eq "ARRAY") {
+	    foreach my $d ($meta->{f_dir}, @{$meta->{f_dir_search}}) {
+		my $f = File::Spec->catdir ($d, $file);
+		-f $f or next;
+		$searchdir = Cwd::abs_path ($d);
+		$dir = "";
+		last;
+		}
+	    }
 	$file = $tbl = $basename;
 	$user_spec_file = 0;
 	}
@@ -554,9 +563,11 @@ sub complete_table_name
         $tbl = lc $tbl;
 	}
 
-    my $searchdir = File::Spec->file_name_is_absolute ($dir)
-	? ($dir =~ s{/$}{}, $dir)
-	: Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
+    unless (defined $searchdir) {
+	$searchdir = File::Spec->file_name_is_absolute ($dir)
+	    ? ($dir =~ s{/$}{}, $dir)
+	    : Cwd::abs_path (File::Spec->catdir ($meta->{f_dir}, $dir));
+	}
     -d $searchdir or
 	croak "-d $searchdir: $!";
 
