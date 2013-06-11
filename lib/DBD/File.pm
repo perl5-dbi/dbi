@@ -130,8 +130,8 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir}     or $attr->{f_dir}     = $dbh->{f_dir};
-    exists $attr->{f_dir_ext} or $attr->{f_dir_ext} = $dbh->{f_dir_ext};
+    exists $attr->{f_dir}        or $attr->{f_dir}     = $dbh->{f_dir};
+    exists $attr->{f_dir_search} or $attr->{f_dir_search} = $dbh->{f_dir_search};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
 
@@ -150,7 +150,7 @@ sub init_valid_attributes
     $dbh->{f_valid_attrs} = {
 	f_version        => 1, # DBD::File version
 	f_dir            => 1, # base directory
-	f_dir_ext        => 1, # extended directories
+	f_dir_search     => 1, # extended search directories
 	f_ext            => 1, # file extension
 	f_schema         => 1, # schema name
 	f_lock           => 1, # Table locking mode
@@ -349,8 +349,8 @@ sub data_sources
     my $dsn_quote = $drh->{ImplementorClass}->can ("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
     my @dir = ($dir);
-    $attr->{f_dir_ext} && ref $attr->{f_dir_ext} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$attr->{f_dir_ext}};
+    $attr->{f_dir_search} && ref $attr->{f_dir_search} eq "ARRAY" and
+	push @dir, grep { -d $_ } @{$attr->{f_dir_search}};
     my @dsns;
     foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
@@ -382,8 +382,8 @@ sub avail_tables
     my %seen;
     my @tables;
     my @dir = ($dir);
-    $dbh->{f_dir_ext} && ref $dbh->{f_dir_ext} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$dbh->{f_dir_ext}};
+    $dbh->{f_dir_search} && ref $dbh->{f_dir_search} eq "ARRAY" and
+	push @dir, grep { -d $_ } @{$dbh->{f_dir_search}};
     foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
 
@@ -767,13 +767,13 @@ sub bootstrap_table_meta
 
     $self->SUPER::bootstrap_table_meta ($dbh, $meta, $table, @other);
 
-    exists  $meta->{f_dir}	or $meta->{f_dir}	= $dbh->{f_dir};
-    exists  $meta->{f_dir_ext}	or $meta->{f_dir_ext}	= $dbh->{f_dir_ext};
-    defined $meta->{f_ext}	or $meta->{f_ext}	= $dbh->{f_ext};
-    defined $meta->{f_encoding}	or $meta->{f_encoding}	= $dbh->{f_encoding};
-    exists  $meta->{f_lock}	or $meta->{f_lock}	= $dbh->{f_lock};
-    exists  $meta->{f_lockfile}	or $meta->{f_lockfile}	= $dbh->{f_lockfile};
-    defined $meta->{f_schema}	or $meta->{f_schema}	= $dbh->{f_schema};
+    exists  $meta->{f_dir}        or $meta->{f_dir}        = $dbh->{f_dir};
+    exists  $meta->{f_dir_search} or $meta->{f_dir_search} = $dbh->{f_dir_search};
+    defined $meta->{f_ext}        or $meta->{f_ext}        = $dbh->{f_ext};
+    defined $meta->{f_encoding}   or $meta->{f_encoding}   = $dbh->{f_encoding};
+    exists  $meta->{f_lock}       or $meta->{f_lock}       = $dbh->{f_lock};
+    exists  $meta->{f_lockfile}   or $meta->{f_lockfile}   = $dbh->{f_lockfile};
+    defined $meta->{f_schema}     or $meta->{f_schema}     = $dbh->{f_schema};
 
     defined $meta->{f_open_file_needed} or
 	$meta->{f_open_file_needed} = $self->can ("open_file") != DBD::File::Table->can ("open_file");
@@ -796,11 +796,11 @@ sub get_table_meta ($$$$;$)
     } # get_table_meta
 
 my %reset_on_modify = (
-    f_file     => [ "f_fqfn", "sql_data_source" ],
-    f_dir      =>   "f_fqfn",
-    f_dir_ext  => [],
-    f_ext      =>   "f_fqfn",
-    f_lockfile =>   "f_fqfn", # forces new file2table call
+    f_file       => [ "f_fqfn", "sql_data_source" ],
+    f_dir        =>   "f_fqfn",
+    f_dir_search => [],
+    f_ext        =>   "f_fqfn",
+    f_lockfile   =>   "f_fqfn", # forces new file2table call
     );
 
 __PACKAGE__->register_reset_on_modify (\%reset_on_modify);
@@ -983,12 +983,12 @@ directory) when the dbh attribute is set.
 
 See L<KNOWN BUGS AND LIMITATIONS>.
 
-=head4 f_dir_ext
+=head4 f_dir_search
 
 This optional attribute can be set to pass a list of folders to also
 find existing tables. It will B<not> be used to create new files.
 
-  f_dir_ext => [ "/data/bar/csv", "/dump/blargh/data" ],
+  f_dir_search => [ "/data/bar/csv", "/dump/blargh/data" ],
 
 =head4 f_ext
 
@@ -1281,7 +1281,7 @@ evaluated instead of driver globals:
 
 =item f_dir
 
-=item f_dir_ext
+=item f_dir_search
 
 =item f_lock
 
