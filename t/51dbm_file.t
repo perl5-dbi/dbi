@@ -119,12 +119,68 @@ else
 	}
     );
 
+    my @tbl;
+    @tbl = $dbh->tables (undef, undef, undef, undef);
+    is( scalar @tbl, 1, "Found 1 tables");
+
        $r = $dbh->selectall_arrayref(q/select * from Fred/);
     ok( @$r == 2, 'rows found after reconnect using "dbm_tables"' );
 
-    ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
+    my $deep_dir = File::Spec->catdir( $dir, 'deep' );
+    mkpath $deep_dir;
+
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+	  f_dir               => $deep_dir,
+	  sql_identifier_case => 2,      # SQL_IC_LOWER
+	}
+    );
+    ok( $dbh->do( q{create table wilma (a integer, b char (10))} ), "Create wilma" );
+    ok( $dbh->do( q{insert into wilma values (1, 'Barney')} ), "insert Barney" );
+    ok( $dbh->disconnect(), "disconnect" );
+
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+	  f_dir               => $dir,
+	  sql_identifier_case => 2,      # SQL_IC_LOWER
+	}
+    );
+
+    # Make sure wilma is not found without f_dir_search
+    @tbl = $dbh->tables (undef, undef, undef, undef);
+    is( scalar @tbl, 1, "Found 1 table");
+    ok( $dbh->disconnect(), "disconnect" );
+
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+	  f_dir               => $dir,
+	  f_dir_search        => [ $deep_dir ],
+	  sql_identifier_case => 2,      # SQL_IC_LOWER
+	}
+    );
+
+    @tbl = $dbh->tables (undef, undef, undef, undef);
+    is( scalar @tbl, 2, "Found 2 tables");
+    # f_dir should always appear before f_dir_search
+    like( $tbl[0], qr{\.fred$}i,  "Fred first" );
+    like( $tbl[1], qr{\.wilma$}i, "Fred second" );
+
+    my( $n, $sth );
+    ok( $sth = $dbh->prepare( 'select * from fred' ), "select from fred" );
+    ok( $sth->execute, "execute fred" );
+    $n = 0;
+    $n++ while $sth->fetch;
+    is( $n, 2, "2 entry in fred" );
+    ok( $sth = $dbh->prepare( 'select * from wilma' ), "select from wilma" );
+    ok( $sth->execute, "execute wilma" );
+    $n = 0;
+    $n++ while $sth->fetch;
+    is( $n, 1, "1 entry in wilma" );
+
+    ok( $dbh->do(q/drop table if exists FRED/), 'drop table fred' );
     ok( !-f File::Spec->catfile( $dir, "fred$dirfext" ), "fred$dirfext removed" );
     ok( !-f File::Spec->catfile( $dir, "fred$tblfext" ), "fred$tblfext removed" );
+
+    ok( $dbh->do(q/drop table if exists wilma/), 'drop table wilma' );
+    ok( !-f File::Spec->catfile( $deep_dir, "wilma$dirfext" ), "wilma$dirfext removed" );
+    ok( !-f File::Spec->catfile( $deep_dir, "wilma$tblfext" ), "wilma$tblfext removed" );
 }
 
 done_testing();
