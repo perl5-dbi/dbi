@@ -157,7 +157,9 @@ selectall_arrayref(...)
     }
     /* --- fetchall --- */
     maxrows_svp = DBD_ATTRIB_GET_SVP(attr, "MaxRows", 7);
-    ST(0) = dbdxst_fetchall_arrayref(sth, &PL_sv_undef, (maxrows_svp) ? *maxrows_svp : &PL_sv_undef);
+    SV *tmp = dbdxst_fetchall_arrayref(sth, &PL_sv_undef, (maxrows_svp) ? *maxrows_svp : &PL_sv_undef);
+    SPAGAIN;
+    ST(0) = tmp;
 
 
 void
@@ -660,7 +662,9 @@ fetchall_arrayref(sth, slice=&PL_sv_undef, batch_row_count=&PL_sv_undef)
         ST(0) = tmp;
     }
     else {
-        ST(0) = dbdxst_fetchall_arrayref(sth, slice, batch_row_count);
+        SV *tmp = dbdxst_fetchall_arrayref(sth, slice, batch_row_count);
+        SPAGAIN;
+        ST(0) = tmp;
     }
 
 
