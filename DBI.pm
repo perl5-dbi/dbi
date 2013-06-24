@@ -4549,7 +4549,7 @@ statement is going to be executed many times.
 If L</RaiseError> is not set and any method except C<fetchall_arrayref>
 fails then C<selectall_arrayref> will return C<undef>; if
 C<fetchall_arrayref> fails then it will return with whatever data
-has been fetched thus far. You should check C<$sth-E<gt>err>
+has been fetched thus far. You should check C<$dbh-E<gt>err>
 afterwards (or use the C<RaiseError> attribute) to discover if the data is
 complete or was truncated due to an error.
 

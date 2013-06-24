@@ -19,8 +19,9 @@ DBI::Changes - List of significant changes to the DBI
     Enable compiling by C++ RT#84285 [Kurt Jaeger]
 
     Typo fixes in pod and comment [David Steinbrunner]
-    Change DBI's docs from svn to git [H.Merijn Brand]
+    Change DBI's docs to refer to git not svn [H.Merijn Brand]
     Clarify bind_col TYPE attribute is sticky [Martin J. Evans]
+    Fixed reference to $sth in selectall_arrayref docs RT#84873
     Spelling fixes [Ville Skyttä]
     Changed $VERSIONs to hardcoded strings [H.Merijn Brand]
 
