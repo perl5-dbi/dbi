@@ -20,6 +20,9 @@ DBI::Changes - List of significant changes to the DBI
       to enable spreading files [H.Merijn Brand]
     Clarify bind_col TYPE attribute is sticky.
     Spelling fixes (Ville Skyttä)
+    Handle strings evaluating to a false value correct when
+      simply expecting data in DBI::SQL::Nano_::Statement
+      part approval
 
 =head2 Changes in DBI 1.627 - 16th May 2013
 
