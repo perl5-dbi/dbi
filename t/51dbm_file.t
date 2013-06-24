@@ -119,7 +119,8 @@ else
 	}
     );
 
-    my @tbl = $dbh->tables (undef, undef, undef, undef);
+    my @tbl;
+    @tbl = $dbh->tables (undef, undef, undef, undef);
     is( scalar @tbl, 1, "Found 1 tables");
 
        $r = $dbh->selectall_arrayref(q/select * from Fred/);
@@ -144,7 +145,7 @@ else
     );
 
     # Make sure wilma is not found without f_dir_search
-    my @tbl = $dbh->tables (undef, undef, undef, undef);
+    @tbl = $dbh->tables (undef, undef, undef, undef);
     is( scalar @tbl, 1, "Found 1 table");
     ok( $dbh->disconnect(), "disconnect" );
 
@@ -155,7 +156,7 @@ else
 	}
     );
 
-    my @tbl = $dbh->tables (undef, undef, undef, undef);
+    @tbl = $dbh->tables (undef, undef, undef, undef);
     is( scalar @tbl, 2, "Found 2 tables");
     # f_dir should always appear before f_dir_search
     like( $tbl[0], qr{\.fred$}i,  "Fred first" );
