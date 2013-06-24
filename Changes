@@ -12,8 +12,6 @@ DBI::Changes - List of significant changes to the DBI
 
     Fixed missing fields on partial insert via DBI::DBD::SqlEngine
         engines (DBD::CSV, DBD::DBM etc.) [H.Merijn Brand, Jens Rehsack]
-    Fixed DBI::SQL::Nano_::Statement to not ignore empty strings
-        where appropriate [Jens Rehsack]
 
     Added support for finding tables in multiple directories
         via new DBD::File f_dir_search attribute [H.Merijn Brand]

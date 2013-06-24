@@ -83,7 +83,6 @@ sub prepare
         {
             $self->{command}      = 'CREATE';
             $self->{table_name}   = $1;
-	    defined $2 and $2 ne "" and
             $self->{column_names} = parse_coldef_list($2) if $2;
             $self->{column_names} or croak "Can't find columns";
         };
@@ -92,15 +91,13 @@ sub prepare
         {
             $self->{command}              = 'DROP';
             $self->{table_name}           = $2;
-	    defined $1 and $1 ne "" and
-            $self->{ignore_missing_table} = 1;
+            $self->{ignore_missing_table} = 1 if $1;
         };
         /^\s*SELECT\s+(.*?)\s+FROM\s+(\S+)((.*))?/is
           && do
         {
             $self->{command} = 'SELECT';
-	    defined $1 and $1 ne "" and
-            $self->{column_names} = parse_comma_list($1);
+            $self->{column_names} = parse_comma_list($1) if $1;
             $self->{column_names} or croak "Can't find columns";
             $self->{table_name} = $2;
             if ( my $clauses = $4 )
@@ -118,10 +115,8 @@ sub prepare
         {
             $self->{command}      = 'INSERT';
             $self->{table_name}   = $1;
-	    defined $2 and $2 ne "" and
-            $self->{column_names} = parse_comma_list($2);
-	    defined $4 and $4 ne "" and
-            $self->{values}       = $self->parse_values_list($4);
+            $self->{column_names} = parse_comma_list($2) if $2;
+            $self->{values}       = $self->parse_values_list($4) if $4;
             $self->{values} or croak "Can't parse values";
         };
         /^\s*DELETE\s+FROM\s+(\S+)((.*))?/is
@@ -129,18 +124,15 @@ sub prepare
         {
             $self->{command}      = 'DELETE';
             $self->{table_name}   = $1;
-	    defined $3 and $3 ne "" and
-            $self->{where_clause} = $self->parse_where_clause($3);
+            $self->{where_clause} = $self->parse_where_clause($3) if $3;
         };
         /^\s*UPDATE\s+(\S+)\s+SET\s+(.+)(\s+WHERE\s+.+)/is
           && do
         {
             $self->{command}    = 'UPDATE';
             $self->{table_name} = $1;
-	    defined $2 and $2 ne "" and
-            $self->parse_set_clause($2);
-	    defined $3 and $3 ne "" and
-            $self->{where_clause} = $self->parse_where_clause($3);
+            $self->parse_set_clause($2) if $2;
+            $self->{where_clause} = $self->parse_where_clause($3) if $3;
         };
     }
     croak "Couldn't parse" unless ( $self->{command} and $self->{table_name} );
