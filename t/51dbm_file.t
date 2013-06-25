@@ -159,8 +159,8 @@ else
     @tbl = $dbh->tables (undef, undef, undef, undef);
     is( scalar @tbl, 2, "Found 2 tables");
     # f_dir should always appear before f_dir_search
-    like( $tbl[0], qr{\.fred$}i,  "Fred first" );
-    like( $tbl[1], qr{\.wilma$}i, "Fred second" );
+    like( $tbl[0], qr{(?:^|\.)fred$}i,  "Fred first" );
+    like( $tbl[1], qr{(?:^|\.)wilma$}i, "Fred second" );
 
     my( $n, $sth );
     ok( $sth = $dbh->prepare( 'select * from fred' ), "select from fred" );
