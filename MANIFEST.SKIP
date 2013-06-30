@@ -15,3 +15,4 @@
 ^t/pod-cm.t
 ^devel/
 ^Old/
+^test_output_*/
