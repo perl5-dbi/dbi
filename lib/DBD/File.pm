@@ -541,7 +541,9 @@ sub complete_table_name
 	}
     else {
 	($basename, $dir, undef) = File::Basename::fileparse ($file, $ext);
-	if ($dir eq "./" && ref $meta->{f_dir_search} eq "ARRAY") {
+	# $dir is returned with trailing (back)slash. We just need to check
+	# if it is ".", "./", or ".\"
+	if ($dir =~ m{^[.][/\\]?$} && ref $meta->{f_dir_search} eq "ARRAY") {
 	    foreach my $d ($meta->{f_dir}, @{$meta->{f_dir_search}}) {
 		my $f = File::Spec->catdir ($d, $file);
 		-f $f or next;
