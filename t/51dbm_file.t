@@ -145,8 +145,27 @@ else
     );
 
     # Make sure wilma is not found without f_dir_search
-    @tbl = $dbh->tables (undef, undef, undef, undef);
-    is( scalar @tbl, 1, "Found 1 table");
+    @tbl = $dbh->tables( undef, undef, undef, undef );
+    is( scalar @tbl, 1, "Found 1 table" );
+    ok( $dbh->disconnect(), "disconnect" );
+
+    $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
+	  f_dir               => $dir,
+	  f_dir_search        => [ {
+		  f_dir       => $deep_dir,
+		  f_readonly  => 1,
+		  f_schema    => "reference",
+		  } ],
+	  sql_identifier_case => 2,      # SQL_IC_LOWER
+	}
+    );
+
+    @tbl = $dbh->tables( undef, undef, undef, undef );
+    # diag( $_ ) for @tbl;
+    is( scalar @tbl, 2, "Found 2 tables using hashes" );
+    # f_dir should always appear before f_dir_search
+    like( $tbl[0], qr{(?:^|\.)fred$}i,                "Fred first" );
+    like( $tbl[1], qr{^['"]?reference["']?\.wilma$}i, "Wilma second" );
     ok( $dbh->disconnect(), "disconnect" );
 
     $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
@@ -156,11 +175,12 @@ else
 	}
     );
 
-    @tbl = $dbh->tables (undef, undef, undef, undef);
-    is( scalar @tbl, 2, "Found 2 tables");
+    @tbl = $dbh->tables( undef, undef, undef, undef );
+    # diag( $_ ) for @tbl;
+    is( scalar @tbl, 2, "Found 2 tables using scalars" );
     # f_dir should always appear before f_dir_search
     like( $tbl[0], qr{(?:^|\.)fred$}i,  "Fred first" );
-    like( $tbl[1], qr{(?:^|\.)wilma$}i, "Fred second" );
+    like( $tbl[1], qr{(?:^|\.)wilma$}i, "Wilma second" );
 
     my( $n, $sth );
     ok( $sth = $dbh->prepare( 'select * from fred' ), "select from fred" );

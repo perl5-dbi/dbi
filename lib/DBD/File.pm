@@ -130,7 +130,7 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir}        or $attr->{f_dir}     = $dbh->{f_dir};
+    exists $attr->{f_dir}        or $attr->{f_dir}        = $dbh->{f_dir};
     exists $attr->{f_dir_search} or $attr->{f_dir_search} = $dbh->{f_dir_search};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
@@ -336,6 +336,20 @@ use IO::Dir;
 
 @DBD::File::TableSource::FileSystem::ISA = "DBI::DBD::SqlEngine::TableSource";
 
+sub _search_dirs
+{
+    my  $f_dir_search = shift    or return;
+    ref $f_dir_search eq "ARRAY" or return;
+
+    my @dir;
+    for (@$f_dir_search) {
+	my $d = ref $_ eq "HASH" ? $_->{f_dir} : $_;
+	defined $d && -d $d and push @dir, $d;
+	}
+
+    return @dir;
+    } # _search_dirs
+
 sub data_sources
 {
     my ($class, $drh, $attr) = @_;
@@ -348,9 +362,7 @@ sub data_sources
     delete $attrs{f_dir};
     my $dsn_quote = $drh->{ImplementorClass}->can ("dsn_quote");
     my $dsnextra = join ";", map { $_ . "=" . &{$dsn_quote} ($attrs{$_}) } keys %attrs;
-    my @dir = ($dir);
-    $attr->{f_dir_search} && ref $attr->{f_dir_search} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$attr->{f_dir_search}};
+    my @dir = ($dir, _search_dirs ($attr->{f_dir_search}));
     my @dsns;
     foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
@@ -381,9 +393,7 @@ sub avail_tables
 
     my %seen;
     my @tables;
-    my @dir = ($dir);
-    $dbh->{f_dir_search} && ref $dbh->{f_dir_search} eq "ARRAY" and
-	push @dir, grep { -d $_ } @{$dbh->{f_dir_search}};
+    my @dir = ($dir, _search_dirs ($dbh->{f_dir_search}));
     foreach $dir (@dir) {
 	my $dirh = IO::Dir->new ($dir);
 
@@ -402,8 +412,9 @@ sub avail_tables
 	while (defined ($file = $dirh->read ())) {
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
 	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    $seen{defined $schema ? $schema : "\0"}{$dir}{$tbl}++ or
-		push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
+	    my $tbl_schema = $meta->{f_schema} || $schema;
+	    $seen{defined $tbl_schema ? $tbl_schema : "\0"}{$dir}{$tbl}++ or
+		push @tables, [ undef, $tbl_schema, $tbl, "TABLE", "FILE" ];
 	    }
 	$dirh->close () or
 	    $dbh->set_err ($DBI::stderr, "Cannot close directory $dir: $!");
@@ -545,10 +556,29 @@ sub complete_table_name
 	# if it is ".", "./", or ".\" or "[]" (VMS)
 	if ($dir =~ m{^(?:[.][/\\]?|\[\])$} && ref $meta->{f_dir_search} eq "ARRAY") {
 	    foreach my $d ($meta->{f_dir}, @{$meta->{f_dir_search}}) {
-		my $f = File::Spec->catdir ($d, $file);
-		-f $f or next;
-		$searchdir = Cwd::abs_path ($d);
+		my $check_dir = $d;
+		if (ref $d eq "HASH") {
+		    exists $d->{f_dir} && -d $d->{f_dir} or next;
+		    $check_dir = $d->{f_dir};
+		    }
+
+		-d $check_dir &&
+		    -f File::Spec->catdir ($check_dir, $file) or next;
+
+		# Found!
+		$searchdir = Cwd::abs_path ($check_dir);
 		$dir = "";
+
+		# Add options
+		if (ref $d eq "HASH") {
+		    # This obviously will not work for now, as f_readonly
+		    # does not exist
+		    foreach my $attr (qw( f_readonly f_schema )) {
+			exists $d->{$attr} && exists $meta->{$attr} and
+			    $meta->{$attr} = $d->{$attr};
+			}
+		    }
+
 		last;
 		}
 	    }
@@ -625,7 +655,7 @@ sub complete_table_name
 
     $meta->{f_fqfn} = $fqfn;
     $meta->{f_fqbn} = $fqbn;
-    defined $meta->{f_lockfile} && $meta->{f_lockfile} and
+    $meta->{f_lockfile} and
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
     $dir && !$user_spec_file  and $tbl = File::Spec->catfile ($dir, $tbl);
