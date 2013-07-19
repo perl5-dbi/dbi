@@ -78,7 +78,7 @@ my $expect_active;
     sub DESTROY {
         if ($expect_active < 0) { # inside child
             my $self = shift;
-            exit $self->FETCH('Active') || 0 unless $^O eq 'MSWin32';
+            exit ($self->FETCH('Active') || 0) unless $^O eq 'MSWin32';
 
             # On Win32, the forked child is actually a thread. So don't exit,
             # and report failure directly.
