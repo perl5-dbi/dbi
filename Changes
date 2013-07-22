@@ -6,12 +6,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.628 - 30th June 2013
+=head2 Changes in DBI 1.628 - 22nd July 2013
 
     Fixed missing fields on partial insert via DBI::DBD::SqlEngine
         engines (DBD::CSV, DBD::DBM etc.) [H.Merijn Brand, Jens Rehsack]
     Fixed stack corruption on callbacks RT#85562 RT#84974 [Aaron Schweiger]
     Fixed DBI::SQL::Nano_::Statement handling of "0" [Jens Rehsack]
+    Fixed exit op precedence in test RT#87029 [Reni Urban]
 
     Added support for finding tables in multiple directories
         via new DBD::File f_dir_search attribute [H.Merijn Brand]
