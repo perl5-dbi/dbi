@@ -488,15 +488,16 @@ sub open_data
     my $fn  = "file handle ";
 
     if (defined $fno && $fno >= 0) {
-       $fn .= $fno;
-       if ($flags->{createMode} || $flags->{lockMode}) {
-	   $meta->{fh} = IO::Handle->new_from_fd ($fno, "w+") or
-	       croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
-	   }
-       else {
-	   $meta->{fh} = IO::Handle->new_from_fd ($fno, "r")  or
-	       croak "Cannot open $fn for reading: $! (" . ($!+0) . ")";
-	   }
+	$fn .= $fno;
+	if ($flags->{createMode} || $flags->{lockMode}) {
+	    $meta->{fh} = IO::Handle->new_from_fd ($fno, "w+") or
+		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
+	    }
+	else {
+	    $meta->{fh} = IO::Handle->new_from_fd ($fno, "r")  or
+		croak "Cannot open $fn for reading: $! (" . ($!+0) . ")";
+	    }
+	}
     else { # ScalarIO. PerlIO::get_layers ($meta->{f_file}) will have "scalar"
 	$meta->{fh} = $meta->{f_file};
 	$flags->{f_lock} = 0;
