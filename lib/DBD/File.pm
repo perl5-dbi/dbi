@@ -439,7 +439,7 @@ use Carp;
 my $locking = eval {
     my $fh;
     my $nulldevice = File::Spec->devnull ();
-    open $fh, ">", $nulldevice or croak "Can't open $nulldevice: $!";
+    open  $fh, ">", $nulldevice or croak "Can't open $nulldevice: $!";
     flock $fh, 0;
     close $fh;
     1;
@@ -484,20 +484,25 @@ sub open_data
     my ($self, $meta, $attrs, $flags) = @_;
 
     $flags->{dropMode} and croak "Can't drop a table in stream";
-    my $fn = "file handle " . fileno ($meta->{f_file});
+    my $fno = fileno ($meta->{f_file});
+    my $fn  = "file handle ";
 
-    if ($flags->{createMode} || $flags->{lockMode}) {
-	$meta->{fh} = IO::Handle->new_from_fd (fileno ($meta->{f_file}), "w+") or
-	    croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
-	}
-    else {
-	$meta->{fh} = IO::Handle->new_from_fd (fileno ($meta->{f_file}), "r") or
-	    croak "Cannot open $fn for reading: $! (" . ($!+0) . ")";
+    if (defined $fno && $fno >= 0) {
+       $fn .= $fno;
+       if ($flags->{createMode} || $flags->{lockMode}) {
+	   $meta->{fh} = IO::Handle->new_from_fd ($fno, "w+") or
+	       croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
+	   }
+       else {
+	   $meta->{fh} = IO::Handle->new_from_fd ($fno, "r")  or
+	       croak "Cannot open $fn for reading: $! (" . ($!+0) . ")";
+	   }
+    else { # ScalarIO. PerlIO::get_layers ($meta->{f_file}) will have "scalar"
+	$meta->{fh} = $meta->{f_file};
+	$flags->{f_lock} = 0;
 	}
 
-    if ($meta->{fh}) {
-	$self->apply_encoding ($meta, $fn);
-	} # have $meta->{$fh}
+    $meta->{fh} and $self->apply_encoding ($meta, $fn);
 
     if ($self->can_flock && $meta->{fh}) {
 	my $lm = defined $flags->{f_lock}
@@ -680,9 +685,8 @@ sub open_data
 		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
 	    }
 	else {
-	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
+	    $fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r")) or
 		croak "Cannot open $fn: $! (" . ($!+0) . ")";
-		}
 	    }
 
 	$meta->{fh} = $fh;
@@ -703,9 +707,8 @@ sub open_data
 		croak "Cannot open $fn for writing: $! (" . ($!+0) . ")";
 	    }
 	else {
-	    unless ($fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r"))) {
+	    $fh = IO::File->new ($fn, ($flags->{lockMode} ? "r+" : "r")) or
 		croak "Cannot open $fn: $! (" . ($!+0) . ")";
-		}
 	    }
 
 	$meta->{lockfh} = $fh;
@@ -882,7 +885,7 @@ sub drop ($)
     my $meta = $self->{meta};
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
-    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{fh}     and $meta->{fh}->close ();
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
@@ -920,7 +923,7 @@ sub DESTROY
 {
     my $self = shift;
     my $meta = $self->{meta};
-    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{fh}     and $meta->{fh}->close ();
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
