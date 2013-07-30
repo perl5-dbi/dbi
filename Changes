@@ -10,6 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
     Extended the f_dir_seash with hashes [H.Merijn Brand]
     Fixed support for streams in DBD::File's open_data [H.Merijn Brand]
+    The TYPE attribute should be NUMERIC, even in DBD::File [H.Merijn Brand]
 
 =head2 Changes in DBI 1.628 - 22nd July 2013
 

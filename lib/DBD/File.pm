@@ -280,6 +280,7 @@ my %supported_attrs = (
     PRECISION => 1,
     NULLABLE  => 1,
     );
+my $type_map;
 
 sub FETCH
 {
@@ -306,8 +307,23 @@ sub FETCH
 
 	    my @colnames = $sth->sql_get_colnames ();
 
+	    unless ($type_map) {
+		$type_map = {	# Minimal type set (like CSV)
+		    BLOB    => -4,
+		    TEXT    => -1,
+		    CHAR    =>  1,
+		    INTEGER =>  4,
+		    REAL    =>  7,
+		    VARCHAR => 12,
+		    };
+		my $tia = $sth->{Database}->type_info_all ();
+		# TYPE_NAME => DATA_TYPE
+		$type_map->{$_->[0]} = $_->[1] for grep { ref $_ eq "ARRAY" } @$tia;
+		}
+
 	    $attr eq "TYPE"      and
-		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
+		return [ map { $type_map->{$_} || $_ }
+			 map { $sth->{f_overall_defs}{$_}{data_type}   || "VARCHAR" }
 			    @colnames ];
 
 	    $attr eq "PRECISION" and
