@@ -8,7 +8,7 @@
     require DBI::Gofer::Response;
     require Carp;
 
-    our $VERSION = sprintf("0.%06d", q$Revision: 15326 $ =~ /(\d+)/o);
+    our $VERSION = "0.015327";
 
 #   $Id: Gofer.pm 15326 2012-06-06 16:32:38Z Tim $
 #
@@ -693,7 +693,7 @@
             or return undef; # no more result sets
         #warn "more_results: ".Data::Dumper::Dumper($meta);
 
-        # pull out the special non-atributes first
+        # pull out the special non-attributes first
         my ($rowset, $err, $errstr, $state)
             = delete @{$meta}{qw(rowset err errstr state)};
 
@@ -1159,14 +1159,14 @@ The code reference is called like this:
   $transport = $h->{go_transport};
   $retry = $transport->go_retry_hook->($request, $response, $transport);
 
-If it returns true then the request will be retried, upto the C<retry_limit>.
+If it returns true then the request will be retried, up to the C<retry_limit>.
 If it returns a false but defined value then the request will not be retried.
 If it returns undef then the default behaviour will be used, as if C<retry_hook>
 had not been specified.
 
 The default behaviour is to retry requests where $request->is_idempotent is true,
 or the error message matches C</induced by DBI_GOFER_RANDOM/>.
-    
+
 =head3 cache
 
 Specifies that client-side caching should be performed.  The value is the name

@@ -5,8 +5,7 @@
     require Carp;
 
     our @EXPORT = qw(); # Do NOT @EXPORT anything.
-    our $VERSION = sprintf("12.%06d", q$Revision: 10002 $ =~ /(\d+)/o);
-
+    our $VERSION = "12.010003";
 
 #   $Id: Sponge.pm 10002 2007-09-26 21:03:25Z Tim $
 #
@@ -214,7 +213,7 @@
 
 1;
 
-__END__ 
+__END__
 
 =pod
 
@@ -274,7 +273,7 @@ C<$data> is a reference to the data you are providing, given as an array of arra
 =item *
 
 C<$names> is a reference an array of column names for the C<$data> you are providing.
-The number and order should match the number and ordering of the C<$data> columns. 
+The number and order should match the number and ordering of the C<$data> columns.
 
 =item *
 

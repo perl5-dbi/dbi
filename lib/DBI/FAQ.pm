@@ -8,21 +8,20 @@
 ### This document is Copyright (c)1994-2000 Alligator Descartes, with portions
 ### Copyright (c)1994-2000 their original authors. This module is released under
 ### the 'Artistic' license which you can find in the perl distribution.
-### 
+###
 ### This document is Copyright (c)1997-2000 Alligator Descartes. All rights reserved.
 ### Permission to distribute this document, in full or in part, via email,
 ### Usenet, ftp archives or http is granted providing that no charges are involved,
 ### reasonable attempt is made to use the most current version and all credits
 ### and copyright notices are retained ( the I<AUTHOR> and I<COPYRIGHT> sections ).
-### Requests for other distribution rights, including incorporation into 
+### Requests for other distribution rights, including incorporation into
 ### commercial products, such as books, magazine articles or CD-ROMs should be
 ### made to Alligator Descartes.
-### 
+###
 
 package DBI::FAQ;
 
-our $VERSION = sprintf("1.%06d", q$Revision: 14934 $ =~ /(\d+)/o);
-
+our $VERSION = "1.014935";
 
 =head1 NAME
 
@@ -140,7 +139,7 @@ Here's a table of emulation layer information:
     DBD::Informix   Isqlperl            Under development
     DBD::Ingres     Ingperl             Complete?
     DBD::Sybase     Sybperl             Working? ( Needs verification )
-    DBD::mSQL       Msqlperl            Experimentally released with 
+    DBD::mSQL       Msqlperl            Experimentally released with
                                         DBD::mSQL-0.61
 
 The I<Msqlperl> emulation is a special case. I<Msqlperl> is a perl5 driver
@@ -154,7 +153,7 @@ from CPAN I<via>:
 
 The Comprehensive Perl Archive Network
 resources should be used for retrieving up-to-date versions of the DBI
-and drivers. CPAN may be accessed I<via> Tom Christiansen's splendid 
+and drivers. CPAN may be accessed I<via> Tom Christiansen's splendid
 I<CPAN multiplexer> program located at:
 
     http://www.perl.com/CPAN/
@@ -169,7 +168,7 @@ be up-to-date.
 
 =head2 1.3. Where can I get more information?
 
-There are a few information sources on DBI. 
+There are a few information sources on DBI.
 
 =over 4
 
@@ -251,11 +250,11 @@ or Amazon
 
 I<POD>s are chunks of documentation usually embedded within perl programs
 that document the code ``I<in place>'', providing a useful resource for
-programmers and users of modules. POD for DBI and drivers is beginning to 
+programmers and users of modules. POD for DBI and drivers is beginning to
 become more commonplace, and documentation for these modules can be read
 with the C<perldoc> program included with Perl.
 
-=over 4 
+=over 4
 
 =item The DBI Specification
 
@@ -283,7 +282,7 @@ and quirks of that driver by typing:
 
     perldoc <driver>
 
-For example, the I<DBD::mSQL> driver is bundled with driver-specific 
+For example, the I<DBD::mSQL> driver is bundled with driver-specific
 documentation that can be accessed by typing
 
     perldoc DBD::mSQL
@@ -311,7 +310,7 @@ read by typing:
 
 Users with the Tk module installed may be interested to learn there is a
 Tk-based POD reader available called C<tkpod>, which formats POD in a convenient
-and readable way. This is available I<via> CPAN as the module called 
+and readable way. This is available I<via> CPAN as the module called
 I<Tk::POD> and is highly recommended.
 
 =back
@@ -349,7 +348,7 @@ from about.com.
 
 =item I<README files>
 
-The I<README> files included with each driver occasionally contains 
+The I<README> files included with each driver occasionally contains
 some useful information ( no, really! ) that may be pertinent to the user.
 Please read them. It makes our worthless existences more bearable. These
 can all be read from the main DBI WWW page at:
@@ -396,14 +395,14 @@ As per the US archive above.
 
 =head2 2.1. Compilation problems or "It fails the test!"
 
-First off, consult the README for that driver in case there is useful 
-information about the problem. It may be a known problem for your given 
+First off, consult the README for that driver in case there is useful
+information about the problem. It may be a known problem for your given
 architecture and operating system or database. You can check the README
 files for each driver in advance online at:
 
     http://dbi.perl.org/
 
-If it's a known problem, you'll probably have to wait till it gets fixed. If 
+If it's a known problem, you'll probably have to wait till it gets fixed. If
 you're I<really> needing it fixed, try the following:
 
 =over 4
@@ -426,7 +425,7 @@ What you needed to do to fix it. Please make sure you mention everything.
 
 =item *
 
-Platform information, database version, perl version, module version and 
+Platform information, database version, perl version, module version and
 DBI version.
 
 =back
@@ -474,7 +473,7 @@ and I<any other pertinent information>.
 
 =back
 
-Remember, the more information you send us, the quicker we can track 
+Remember, the more information you send us, the quicker we can track
 problems down. If you send us no useful information, expect nothing back.
 
 Finally, please be aware that some authors, including Tim Bunce, specifically
@@ -554,7 +553,7 @@ advent of a stabler perl and a port of I<MakeMaker>, the project has
 come on by great leaps and bounds.
 
 The I<DBI> and I<DBD::Oracle> Win32 ports are now a standard part of DBI,
-so, downloading I<DBI> of version higher than I<0.81> should work fine as 
+so, downloading I<DBI> of version higher than I<0.81> should work fine as
 should using the most recent I<DBD::Oracle> version.
 
 =head2 3.4 Can I access Microsoft Access or SQL-Server databases with DBI?
@@ -599,14 +598,14 @@ Extracted from ``I<DBI - The Database Interface for Perl 5>'':
         limitation on the usefulness of dbm systems.
 
     However, dbm systems still provide a useful function for users with
-    simple datasets and limited resources, since they are fast, robust and 
+    simple datasets and limited resources, since they are fast, robust and
     extremely well-tested. Perl modules to access dbm systems have now
     been integrated into the core Perl distribution via the
     AnyDBM_File module.''
 
 To sum up, DBM is a perfectly satisfactory solution for essentially read-only
-databases, or small and simple datasets. However, for more 
-scaleable dataset handling, not to mention robust transactional locking, 
+databases, or small and simple datasets. However, for more
+scalable dataset handling, not to mention robust transactional locking,
 users are recommended to use a more powerful database engine I<via> I<DBI>.
 
 Chapter 2 of "Programming the Perl DBI" discusses DBM files in detail.
@@ -684,12 +683,12 @@ the CGI scripts.
 
     Contributed by John D. Groenveld
 
-The Apache C<httpd> maintains a pool of C<httpd> children to service client 
+The Apache C<httpd> maintains a pool of C<httpd> children to service client
 requests.
 
-Using the Apache I<mod_perl> module by I<Doug MacEachern>, the perl 
-interpreter is embedded with the C<httpd> children. The CGI, DBI, and your 
-other favorite modules can be loaded at the startup of each child. These 
+Using the Apache I<mod_perl> module by I<Doug MacEachern>, the perl
+interpreter is embedded with the C<httpd> children. The CGI, DBI, and your
+other favorite modules can be loaded at the startup of each child. These
 modules will not be reloaded unless changed on disk.
 
 For more information on Apache, see the Apache Project's WWW site:
@@ -704,9 +703,9 @@ The I<mod_perl> module can be downloaded from CPAN I<via>:
 
     Contributed by John D. Groenveld
 
-Using Edmund Mergl's I<Apache::DBI> module, database logins are stored in a 
-hash with each of these C<httpd> child. If your application is based on a 
-single database user, this connection can be started with each child. 
+Using Edmund Mergl's I<Apache::DBI> module, database logins are stored in a
+hash with each of these C<httpd> child. If your application is based on a
+single database user, this connection can be started with each child.
 Currently, database connections cannot be shared between C<httpd> children.
 
 I<Apache::DBI> can be downloaded from CPAN I<via>:
@@ -726,7 +725,7 @@ execute in this situation will correctly fail.
 
 One way to solve this problem is to set the environment for your database in a
 C<BEGIN { }> block at the top of your script. Another technique is to configure
-your WWW server to pass-through certain environment variables to your CGI 
+your WWW server to pass-through certain environment variables to your CGI
 scripts.
 
 Similarly, you should check your C<httpd> error logfile for any clues,
@@ -738,7 +737,7 @@ The ``Idiot's Guide To Solving Perl / CGI Problems'' can be located at:
 
     http://www.perl.com/perl/faq/index.html
 
-as can the ``Perl CGI Programming FAQ''. Read I<BOTH> these documents 
+as can the ``Perl CGI Programming FAQ''. Read I<BOTH> these documents
 carefully!
 
 =head2 4.5 How do I get the number of rows returned from a C<SELECT> statement?
@@ -756,7 +755,7 @@ the same time.
 
 It is expected that some future version of the DBI will at least be
 thread-safe (but not thread-hot) by automatically blocking threads
-intering the DBI while it's already in use.
+entering the DBI while it's already in use.
 
 =head2 5.2 How do I handle BLOB data with DBI?
 
@@ -788,8 +787,8 @@ functionality that will automatically truncate the fetched BLOB to the
 size of C<LongReadLen> if it is longer. This does not cause an error to
 occur, but may make your fetched BLOB data useless.
 
-This behaviour is regulated by the C<LongTruncOk> attribute which is 
-defaultly set to a false value ( thus making overlong BLOB fetches fail ).
+This behaviour is regulated by the C<LongTruncOk> attribute which is
+set to a false value by default ( thus making overlong BLOB fetches fail ).
 
     ### Set BLOB handling such that it's 16Kb and can be truncated
     $dbh->{LongReadLen} = 16384;
@@ -956,7 +955,7 @@ Permission to distribute this document, in full or in part, via email,
 Usenet, ftp archives or http is granted providing that no charges are involved,
 reasonable attempt is made to use the most current version and all credits
 and copyright notices are retained ( the I<AUTHOR> and I<COPYRIGHT> sections ).
-Requests for other distribution rights, including incorporation into 
+Requests for other distribution rights, including incorporation into
 commercial products, such as books, magazine articles or CD-ROMs should be
 made to Alligator Descartes.
 

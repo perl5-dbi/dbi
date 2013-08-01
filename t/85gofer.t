@@ -86,7 +86,7 @@ my %trials = (
     #http       => { url => "http://localhost:8001/gofer" },
 );
 
-# too dependant on local config to make a standard test
+# too dependent on local config to make a standard test
 delete $trials{http} unless $username eq 'timbo' && -d '.svn';
 
 my @transports = ($opt_transport) ? ($opt_transport) : (sort keys %trials);

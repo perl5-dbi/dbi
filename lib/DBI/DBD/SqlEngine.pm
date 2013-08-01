@@ -54,7 +54,7 @@ sub driver ($;$)
     # We use a hash here to have one singleton per subclass.
     # (Otherwise DBD::CSV and DBD::DBM, for example, would
     # share the same driver object which would cause problems.)
-    # An alternative would be not not cache the $drh here at all
+    # An alternative would be to not cache the $drh here at all
     # and require that subclasses do that. Subclasses should do
     # their own caching, so caching here just provides extra safety.
     $drh->{$class} and return $drh->{$class};
@@ -638,6 +638,9 @@ sub STORE ($$$)
     {
         # Driver private attributes are lower cased
 
+        ( $attrib, $value ) = $dbh->func( $attrib, $value, "validate_STORE_attr" );
+        $attrib or return;
+
         my $attr_prefix;
         $attrib =~ m/^([a-z]+_)/ and $attr_prefix = $1;
         unless ($attr_prefix)
@@ -648,9 +651,6 @@ sub STORE ($$$)
         }
         my $valid_attrs = $attr_prefix . "valid_attrs";
         my $ro_attrs    = $attr_prefix . "readonly_attrs";
-
-        ( $attrib, $value ) = $dbh->func( $attrib, $value, "validate_STORE_attr" );
-        $attrib or return;
 
         exists $dbh->{$valid_attrs}
           and ( $dbh->{$valid_attrs}{$attrib}
@@ -1269,7 +1269,7 @@ sub fetch ($)
     {
         $sth->set_err(
             $DBI::stderr,
-            "Attempt to fetch row without a preceeding execute () call or from a non-SELECT statement"
+            "Attempt to fetch row without a preceding execute () call or from a non-SELECT statement"
         );
         return;
     }
@@ -2024,7 +2024,7 @@ following:
 
   $dbh->func( "list_tables" );
 
-Everytime where an C<\%attr> argument can be specified, this C<\%attr>
+Every time where an C<\%attr> argument can be specified, this C<\%attr>
 object's C<sql_table_source> attribute is preferred over the C<$dbh>
 attribute or the driver default, eg.
 
@@ -2091,7 +2091,7 @@ After the method C<open_data> has been run successfully, the table's meta
 information are in a state which allowes the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
-L<DBD::File/DBD::File::Table|DBD::File::Table>.
+L<DBD::File::Table|DBD::File/DBD::File::Table>.
 
 =head1 SQL ENGINES
 

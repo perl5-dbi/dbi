@@ -715,7 +715,7 @@ After the method C<open_data> has been run successfully, the table's meta
 information are in a state which allows the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
-L<DBD::File/DBD::File::Table|DBD::File::Table>.
+L<DBD::File::Table|DBD::File/DBD::File::Table>.
 
 =head2 DBI::DBD::SqlEngine::Statement
 
@@ -758,7 +758,7 @@ the file name and the table name could mapped.
 
 Returns the table meta data. If there are none for the required table,
 a new one is initialized. When after bootstrapping a new I<table_meta>
-and L</DBI::DBD::SqlEngine::DataSource|completing the table name> a
+and L<completing the table name|/DBI::DBD::SqlEngine::DataSource> a
 mapping can be established between an existing I<table_meta> and the
 new bootstrapped one, the already existing is used and a mapping
 shortcut between the recent used table name and the already known

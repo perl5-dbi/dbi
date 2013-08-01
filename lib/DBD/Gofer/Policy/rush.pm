@@ -10,7 +10,7 @@ package DBD::Gofer::Policy::rush;
 use strict;
 use warnings;
 
-our $VERSION = sprintf("0.%06d", q$Revision: 10087 $ =~ /(\d+)/o);
+our $VERSION = "0.010088";
 
 use base qw(DBD::Gofer::Policy::Base);
 

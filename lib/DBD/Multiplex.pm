@@ -60,10 +60,9 @@ use DBI ();
 use strict;
 use vars qw($VERSION $drh);
 
-$VERSION = sprintf("2.%06d", q$Revision: 14122 $ =~ /(\d+)/o);
+$VERSION = "2.014123";
 
 $drh = undef;	# Holds driver handle once it has been initialized.
-
 
 #########################################
 # The driver handle constructor.
@@ -157,7 +156,7 @@ sub mx_method_all {
 	}
     }
 
-    # this is where result-selection/comparision functionality can go
+    # this is where result-selection/comparison functionality can go
     my $return_result = $results->[0];
 
     return $return_result->[0] unless wantarray;
@@ -413,7 +412,7 @@ sub connect {
 	    }
 
 	    # The forced DESTROY before calling set_err using pre-cached values
-	    # is due to a wierd DBI interaction re errors and 'last handle'
+	    # is due to a weird DBI interaction re errors and 'last handle'
 	    undef @mx_dbh_list;	# force DESTROY now
 	    $drh->set_err($err, "$errstr [from mx_id=$mx_id: $dsn]");
 	    return;
@@ -603,7 +602,7 @@ for (sort keys %{ $DBI::DBI_methods{db} }) {
 
 
 ########################################
-# AUTOLOAD to catch methods not explictly handled elsewhere,
+# AUTOLOAD to catch methods not explicitly handled elsewhere,
 # including driver-specific methods, and multiplex via func
 # XXX using func isn't quite right, integrate with install_method/can?
 ########################################
@@ -769,7 +768,7 @@ for (sort keys %{ $DBI::DBI_methods{st} }) {
 }
 
 ########################################
-# AUTOLOAD to catch methods not explictly handled elsewhere,
+# AUTOLOAD to catch methods not explicitly handled elsewhere,
 # including driver-specific methods, and multiplex via func
 # XXX using func isn't quite right, integrate with install_method/can?
 ########################################

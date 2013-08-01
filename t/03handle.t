@@ -73,9 +73,9 @@ do {
         [ values %{$ck} ],
         [ $sth1 ]
         ), 
-    '... our statment handle should be in the CachedKids');
+    '... our statement handle should be in the CachedKids');
 
-    ok($sth1->{Active}, '... our first statment is Active');
+    ok($sth1->{Active}, '... our first statement is Active');
     
     {
 	my $warn = 0; # use this to check that we are warned
@@ -87,7 +87,7 @@ do {
 	is($sth1, $sth2, '... prepare_cached returned the same statement handle');
 	cmp_ok($warn,'==', 1, '... we got warned about our first statement handle being still active');
 	
-	ok(!$sth1->{Active}, '... our first statment is no longer Active since we re-prepared it');
+	ok(!$sth1->{Active}, '... our first statement is no longer Active since we re-prepared it');
 
 	my $sth3 = $dbh->prepare_cached($sql, { foo => 1 });
 	isa_ok($sth3, 'DBI::st');
@@ -98,7 +98,7 @@ do {
 	    [ values %{$ck} ],
 	    [ $sth1, $sth3 ]
 	    ), 
-	'... both statment handles should be in the CachedKids');    
+	'... both statement handles should be in the CachedKids');
 
 	ok($sth1->execute("."), '... executing first statement handle again');
 	ok($sth1->{Active}, '... first statement handle is now active again');
@@ -114,7 +114,7 @@ do {
 	    [ values %{$ck} ],
 	    [ $sth2, $sth4 ]
 	    ), 
-	'... second and fourth statment handles should be in the CachedKids');      
+	'... second and fourth statement handles should be in the CachedKids');
 	
 	$sth1->finish;
 	ok(!$sth1->{Active}, '... first statement handle is no longer active');    
@@ -136,7 +136,7 @@ do {
 	    [ values %{$ck} ],
 	    [ $sth2, $sth5 ]
 	    ), 
-	'... second and fourth/fifth statment handles should be in the CachedKids');     
+	'... second and fourth/fifth statement handles should be in the CachedKids');
     }
 
     SKIP: {
@@ -219,7 +219,7 @@ SKIP: {
 # this test checks for reference leaks by testing the Kids attribute
 # which is not supported by DBI::PurePerl, so we just do not run this
 # for DBI::PurePerl all together. Even though some of the tests would
-# pass, it does not make sense becuase in the end, what is actually
+# pass, it does not make sense because in the end, what is actually
 # being tested for will give a false positive
 
 sub work {

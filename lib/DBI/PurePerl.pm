@@ -28,7 +28,7 @@ require utf8;
 } unless defined &utf8::is_utf8;
 
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
-$DBI::PurePerl::VERSION = sprintf("2.%06d", q$Revision: 14285 $ =~ /(\d+)/o);
+$DBI::PurePerl::VERSION = "2.014286";
 
 $DBI::neat_maxlen ||= 400;
 
@@ -120,7 +120,7 @@ use constant IMA_NO_TAINT_IN   	=> 0x0010; #/* don't check for tainted args*/
 use constant IMA_NO_TAINT_OUT   => 0x0020; #/* don't taint results	*/
 use constant IMA_COPY_UP_STMT   => 0x0040; #/* copy sth Statement to dbh */
 use constant IMA_END_WORK	=> 0x0080; #/* set on commit & rollback	*/
-use constant IMA_STUB		=> 0x0100; #/* donothing eg $dbh->connected */
+use constant IMA_STUB		=> 0x0100; #/* do nothing eg $dbh->connected */
 use constant IMA_CLEAR_STMT     => 0x0200; #/* clear Statement before call  */
 use constant IMA_UNRELATED_TO_STMT=> 0x0400; #/* profile as empty Statement   */
 use constant IMA_NOT_FOUND_OKAY	=> 0x0800; #/* not error if not found */
@@ -757,7 +757,7 @@ sub _get_sorted_hash_keys {
             for keys %$hash_ref;
         $num_sort = $sort_guess;
     }
-    
+
     my @keys = keys %$hash_ref;
     no warnings 'numeric';
     my @sorted = ($num_sort)
@@ -951,7 +951,7 @@ sub take_imp_data {
     my $dbh = shift;
     # A reasonable default implementation based on the one in DBI.xs.
     # Typically a pure-perl driver would have their own take_imp_data method
-    # that would delete all but the essential items in the hash before einding with:
+    # that would delete all but the essential items in the hash before ending with:
     #      return $dbh->SUPER::take_imp_data();
     # Of course it's useless if the driver doesn't also implement support for
     # the dbi_imp_data attribute to the connect() method.
@@ -1132,7 +1132,7 @@ you want to use the PurePerl version.
 
  DBI_PUREPERL == 2 Always use PurePerl
 
-You may set the enviornment variable in your shell (e.g. with
+You may set the environment variable in your shell (e.g. with
 set or setenv or export, etc) or else set it in your script like
 this:
 

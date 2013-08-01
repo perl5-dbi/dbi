@@ -5,7 +5,7 @@
     require Carp;
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = sprintf("12.%06d", q$Revision: 14714 $ =~ /(\d+)/o);
+    $VERSION = "12.014715";
 
 #   $Id: NullP.pm 14714 2011-02-22 17:27:07Z Tim $
 #
@@ -41,7 +41,7 @@
     sub connect { # normally overridden, but a handy default
         my $dbh = shift->SUPER::connect(@_)
             or return;
-        $dbh->STORE(Active => 1); 
+        $dbh->STORE(Active => 1);
         $dbh;
     }
 
@@ -105,18 +105,18 @@
         $sth->{ParamAttr}{$param}   = $attr
             if defined $attr; # attr is sticky if not explicitly set
         return 1;
-    }       
+    }
 
     sub execute {
 	my $sth = shift;
         $sth->bind_param($_, $_[$_-1]) for (1..@_);
         if ($sth->{Statement} =~ m/^ \s* SELECT \s+/xmsi) {
-            $sth->STORE(NUM_OF_FIELDS => 1); 
+            $sth->STORE(NUM_OF_FIELDS => 1);
             $sth->{NAME} = [ "fieldname" ];
             # just for the sake of returning something, we return the params
             my $params = $sth->{ParamValues} || {};
             $sth->{dbd_nullp_data} = [ @{$params}{ sort keys %$params } ];
-            $sth->STORE(Active => 1); 
+            $sth->STORE(Active => 1);
         }
         # force a sleep - handy for testing
         elsif ($sth->{Statement} =~ m/^ \s* SLEEP \s+ (\S+) /xmsi) {
@@ -132,7 +132,7 @@
         elsif ($sth->{Statement} =~ m/^ \s* ERROR \s+ (\d+) \s* (.*) /xmsi) {
             return $sth->set_err($1, $2);
         }
-        # anything else is silently ignored, sucessfully
+        # anything else is silently ignored, successfully
 	1;
     }
 

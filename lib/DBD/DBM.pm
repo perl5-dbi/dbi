@@ -176,7 +176,7 @@ sub get_dbm_versions
     eval {
         $dver = $meta->{dbm_type}->VERSION();
 
-        # *) when we're still alive here, everthing went ok - no need to check for $@
+        # *) when we're still alive here, everything went ok - no need to check for $@
         $dtype .= " ($dver)";
     };
     if ( $meta->{dbm_mldbm} )
@@ -650,7 +650,7 @@ DBD::DBM - a DBI driver for DBM & MLDBM files
  });
 
 and other variations on connect() as shown in the L<DBI> docs,
-L<DBD::File/Metadata|DBD::File metadata> and L</Metadata>
+L<DBD::File metadata|DBD::File/Metadata> and L</Metadata>
 shown below.
 
 Use standard DBI prepare, execute, fetch, placeholders, etc.,

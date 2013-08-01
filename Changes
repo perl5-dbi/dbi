@@ -2,11 +2,44 @@
 
 DBI::Changes - List of significant changes to the DBI
 
-(As of $Date$ $Revision$)
-
 =encoding ISO8859-1
 
 =cut
+
+=head2 Changes in DBI 1.628 - 22nd July 2013
+
+    Fixed missing fields on partial insert via DBI::DBD::SqlEngine
+        engines (DBD::CSV, DBD::DBM etc.) [H.Merijn Brand, Jens Rehsack]
+    Fixed stack corruption on callbacks RT#85562 RT#84974 [Aaron Schweiger]
+    Fixed DBI::SQL::Nano_::Statement handling of "0" [Jens Rehsack]
+    Fixed exit op precedence in test RT#87029 [Reni Urban]
+
+    Added support for finding tables in multiple directories
+        via new DBD::File f_dir_search attribute [H.Merijn Brand]
+    Enable compiling by C++ RT#84285 [Kurt Jaeger]
+
+    Typo fixes in pod and comment [David Steinbrunner]
+    Change DBI's docs to refer to git not svn [H.Merijn Brand]
+    Clarify bind_col TYPE attribute is sticky [Martin J. Evans]
+    Fixed reference to $sth in selectall_arrayref docs RT#84873
+    Spelling fixes [Ville Skyttä]
+    Changed $VERSIONs to hardcoded strings [H.Merijn Brand]
+
+=head2 Changes in DBI 1.627 - 16th May 2013
+
+    Fixed VERSION regression in DBI::SQL::Nano [Tim Bunce]
+
+=head2 Changes in DBI 1.626 - 15th May 2013
+
+    Fixed pod text/link was reversed in a few cases RT#85168
+        [H.Merijn Brand]
+
+    Handle aliasing of STORE'd attributes in DBI::DBD::SqlEngine
+        [Jens Rehsack]
+
+    Updated repository URI to git [Jens Rehsack]
+
+    Fixed skip() count arg in t/48dbi_dbd_sqlengine.t [Tim Bunce]
 
 =head2 Changes in DBI 1.625 (svn r15595) 28th March 2013
 
@@ -365,7 +398,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Fixed DBI::PurePerl neat() to behave more like XS neat().
 
   Increased default $DBI::neat_maxlen from 400 to 1000.
-  Increased timeout on tests to accomodate very slow systems.
+  Increased timeout on tests to accommodate very slow systems.
   Changed behaviour of trace levels 1..4 to show less information
     at lower levels.
   Changed the format of the key used for $h->{CachedKids}
@@ -1174,7 +1207,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
   Documentation changes:
     Documented $high_resolution_time = dbi_time() function.
-    Documented that bind_col() can take an atribute hash.
+    Documented that bind_col() can take an attribute hash.
     Clarified documentation for ParamValues attribute hash keys.
     Many good DBI documentation tweaks from Jonathan Leffler,
       including a major update to the DBI::DBD driver author guide.
@@ -1313,7 +1346,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   : If you are still using perl 5.005_03 you should be making plans to
   : upgrade to at least perl 5.6.1, or 5.8.0. Perl 5.8.0 is due to be
   : released in the next week or so.  (Although it's a "point 0" release,
-  : it is the most throughly tested release ever.)
+  : it is the most thoroughly tested release ever.)
 
   Added XS/C implementations of selectrow_array, selectrow_arrayref, and
     selectall_arrayref to Driver.xst. See DBI 1.26 Changes for more info.
@@ -1357,7 +1390,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
   Added C implementations of selectrow_arrayref() and fetchall_arrayref()
     in Driver.xst.  All compiled drivers using Driver.xst will now be
-    faster making those calls. Most noticable with fetchall_arrayref for
+    faster making those calls. Most noticeable with fetchall_arrayref for
     many rows or selectrow_arrayref with a fast query. For example, using
     DBD::mysql a selectrow_arrayref for a single row using a primary key
     is ~20% faster, and fetchall_arrayref for 20000 rows is twice as fast!
@@ -2309,7 +2342,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
   Added DBI->internal->{DebugLog} = $filename;
   Reworked internal logging.
   Added $VERSION.
-  Made disconnect_all a compulsary method for drivers.
+  Made disconnect_all a compulsory method for drivers.
 
 
 =head1 ANCIENT HISTORY

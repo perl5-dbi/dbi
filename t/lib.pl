@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 # lib.pl is the file where database specific things should live,
-# whereever possible. For example, you define certain constants
+# wherever possible. For example, you define certain constants
 # here and the like.
 
 use strict;

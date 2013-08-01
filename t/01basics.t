@@ -141,8 +141,8 @@ is(neat(undef), "undef", '... neat : undef -> "undef"');
 
 ## testing neat_list
 
-is(neat_list([ 1 + 1, "2", undef, "foobarbaz"], 8, "|"), "2|'2'|undef|'foo...'", '... test array argument w/seperator and maxlen');
-is(neat_list([ 1 + 1, "2", undef, "foobarbaz"]), "2, '2', undef, 'foobarbaz'", '... test array argument w/out seperator or maxlen');
+is(neat_list([ 1 + 1, "2", undef, "foobarbaz"], 8, "|"), "2|'2'|undef|'foo...'", '... test array argument w/separator and maxlen');
+is(neat_list([ 1 + 1, "2", undef, "foobarbaz"]), "2, '2', undef, 'foobarbaz'", '... test array argument w/out separator or maxlen');
 
 
 ## ----------------------------------------------------------------------------

@@ -3516,7 +3516,7 @@ XS(XS_DBI_dispatch)
          */
         /* we want to localize $_ for the callback but can't just do that alone
          * because we're not using SAVETMPS & FREETMPS, so we have to get sneaky.
-         * We still localize, so we're safe from the callback dieing,
+         * We still localize, so we're safe from the callback die-ing,
          * but after the callback we manually restore the original $_.
          */
         orig_defsv = DEFSV; /* remember the current $_ */

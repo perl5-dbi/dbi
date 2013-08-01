@@ -35,7 +35,7 @@ use warnings;
 
 use Carp qw(croak);
 
-our $VERSION = sprintf("0.%06d", q$Revision: 9949 $ =~ /(\d+)/o);
+our $VERSION = "0.009950";
 
 
 sub new {

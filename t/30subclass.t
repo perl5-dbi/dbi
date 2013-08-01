@@ -56,7 +56,7 @@ sub fetch {
 		if $row->[0] < 0;
 	# ... and providing alternate results
 	# (although typically would trap and hide and error from SUPER::fetch)
-	return $sth->set_err(2,"Don't exagerate",undef, undef, [ 42,"zz",0 ])
+	return $sth->set_err(2,"Don't exaggerate",undef, undef, [ 42,"zz",0 ])
 		if $row->[0] > 42;
     }
     return $row;
@@ -130,7 +130,7 @@ $row = eval { $sth->fetch };
 isa_ok($row, 'ARRAY');
 is($row->[0], 42);
 is($DBI::err, 2);
-like($DBI::errstr, qr/Don't exagerate/);
+like($DBI::errstr, qr/Don't exaggerate/);
 is($@ =~ /Don't be so negative/, $@);
 
 

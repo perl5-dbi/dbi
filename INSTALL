@@ -24,7 +24,7 @@ precompiled binary of DBI using a package manager (e.g., ppm for ActiveState,
 Synaptic for Ubuntu, port for FreeBSD etc) 
 
 ---
-If you get compiler errors refering to Perl's own header files
+If you get compiler errors referring to Perl's own header files
 (.../CORE/...h) or the compiler complains about bad options etc then
 there is something wrong with your perl installation. If the compiler complains
 of missing files (.../perl.h: error: sys/types.h: No such file) then you may

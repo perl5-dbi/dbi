@@ -60,7 +60,7 @@ If it's not listed above, it's not supported.
 
 =cut
 
-our $VERSION = sprintf("0.%06d", q$Revision: 10314 $ =~ /(\d+)/o);
+our $VERSION = "0.010315";
 
 my %cache;
 

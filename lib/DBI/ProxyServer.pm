@@ -624,7 +624,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 		# hint to organize:
 		# the most specialized rules for single machines/users are 1st
 		# then the denying rules
-		# the the rules about whole networks
+		# then the rules about whole networks
 
 		# rule: internal_webserver
 		# desc: to get statistical information
@@ -651,7 +651,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 		},
 
 		# rule: employee_workplace
-		# desc: get detailled information
+		# desc: get detailed information
 		{
 			# any IP-address is meant here
 			mask => '^10\.95\.81\.(\d+)$',
@@ -809,7 +809,7 @@ Controlling which person at which machine is allowed to access
 
 =item * "mask" is a perl regular expression against the plain ip-address of the machine which wishes to connect _or_ the reverse-lookup from a nameserver.
 
-=item * "accept" tells the dbiproxy-server wether ip-adresse like in "mask" are allowed to connect or not (0/1)
+=item * "accept" tells the dbiproxy-server whether ip-adresse like in "mask" are allowed to connect or not (0/1)
 
 =item * "users" is a reference to a list of usernames which must be matched, this is NOT a regular expression.
 
@@ -817,7 +817,7 @@ Controlling which person at which machine is allowed to access
 
 Controlling which SQL-statements are allowed
 
-You can put every SQL-statement you like in simply ommiting "sql => ...", but the more important thing is to restrict the connection so that only allowed queries are possible.
+You can put every SQL-statement you like in simply omitting "sql => ...", but the more important thing is to restrict the connection so that only allowed queries are possible.
 
 If you include an sql-section in your config-file like this:
 
