@@ -5,25 +5,45 @@ use warnings;
 
 use parent qw(DBI::Test::Conf);
 
+BEGIN
+{
+    eval { require SQL::Statement; };
+}
+
 my %setup = (
-	p => {	name => "DBI::PurePerl",
-		match => qr/^\d/,
-		add => [ '$ENV{DBI_PUREPERL} = 2',
-			 'END { delete $ENV{DBI_PUREPERL}; }' ],
-	},
-	g => {	name => "DBD::Gofer",
-		match => qr/^\d/,
-		add => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'},
-			 q|END { delete $ENV{DBI_AUTOPROXY}; }| ],
-	},
-	n => {	name => "DBI::SQL::Nano",
-		match => qr/^(?:48dbi_dbd_sqlengine|49dbd_file|5\ddbm_\w+|85gofer)\.t$/,
-		add => [ q{$ENV{DBI_SQL_NANO} = 1},
-			 q|END { delete $ENV{DBI_SQL_NANO}; }| ],
-	},
+          pureperl => {
+                        name         => "DBI::PurePerl",
+                        category     => "dbi",
+                        cat_abbrev   => "z",
+                        abbrev       => "p",
+                        init_stub    => [ '$ENV{DBI_PUREPERL} = 2', ],
+                        cleanup_stub => ['delete $ENV{DBI_PUREPERL};'],
+                      },
+          gofer => {
+              name       => "DBD::Gofer",
+              category   => "dbi",
+              cat_abbrev => "z",
+              abbrev     => "g",
+              init_stub => [ q{$ENV{DBI_AUTOPROXY} = 'dbi:Gofer:transport=null;policy=pedantic'}, ],
+              cleanup_stub => [q|delete $ENV{DBI_AUTOPROXY};|],
+          },
+          (
+            ( defined( $INC{'SQL/Statement.pm'} ) and -f $INC{'SQL/Statement.pm'} )
+            ? (
+                nano => {
+                          name         => "DBI::SQL::Nano",
+                          category     => "dbi",
+                          cat_abbrev   => "z",
+                          abbrev       => "n",
+                          init_stub    => [ q{$ENV{DBI_SQL_NANO} = 1}, ],
+                          cleanup_stub => [q|delete $ENV{DBI_SQL_NANO};|],
+                        },
+              )
+            : ()
+          ),
 );
 
-sub setup
+sub conf
 {
     %setup;
 }
