@@ -174,6 +174,8 @@ sub get_dbm_versions
     my $dver;
     my $dtype = $meta->{dbm_type};
     eval {
+        my $tie_type = $meta->{dbm_type};
+        $INC{"$tie_type.pm"} or require "$tie_type.pm";
         $dver = $meta->{dbm_type}->VERSION();
 
         # *) when we're still alive here, everything went ok - no need to check for $@
@@ -183,6 +185,7 @@ sub get_dbm_versions
     {
         $dtype .= ' + MLDBM';
         eval {
+	    $INC{"MLDBM.pm"} or require "MLDBM.pm";
             $dver = MLDBM->VERSION();
             $dtype .= " ($dver)";    # (*)
         };
