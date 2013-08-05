@@ -18,6 +18,10 @@ use strict;
 use lib 'lib'; # for use DBI::DBD
 use DBI::DBD;
 
+use DBI::Test::Conf ();
+
+my @generated_tests = DBI::Test::Conf->setup( AUTHOR_TESTS => 0, SKIP_FILE => "DBI-TEST.SKIP", CONTAINED_DBDS => [ qw'ExampleP DBM File NullP' ] );
+
 $| = 1;
 $^W = 1;
 my $os = $^O;
@@ -91,8 +95,11 @@ my %opts = (
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
-    clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zv*_*.t dbi__null_test_tmp*"
-                ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbiproxy.*log dbitrace.log dbi*.prof ndtest.prt" },
+    clean => { FILES=> join( " ", "\$(DISTVNAME)", "Perl.xsi", "t/zv*_*.t", "dbi__null_test_tmp*",
+				  "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl",
+				  "dbiproxy.*log", "dbitrace.log", "dbi*.prof", "ndtest.prt",
+				  @generated_tests )  },
+    test  => { TESTS => join (" " => 't/*.t xt/*.t', @generated_tests), },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',

@@ -1,66 +1,22 @@
-#!perl -w
-$|=1;
+package DBI::Test::Case::DBI::simple::dbm;
 
 use strict;
 use warnings;
 
-require DBD::DBM;
+use parent qw(DBI::Test::DBI::Case);
 
-use File::Path;
-use File::Spec;
+use Data::Dumper;
+
 use Test::More;
-use Cwd;
-use Config qw(%Config);
-use Storable qw(dclone);
+use DBI::Test;
 
-my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
-
-use DBI;
-use vars qw( @mldbm_types @dbm_types );
+sub filter_drivers
+{
+    my ( $self, $options, @test_dbds ) = @_;
+    return grep { $_ eq "DBM" } @test_dbds;
+}
 
 BEGIN {
-
-    # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
-    # next line forces use of Nano rather than default behaviour
-    # $ENV{DBI_SQL_NANO}=1;
-    # This is done in zv*n*_50dbm_simple.t
-
-    push @mldbm_types, '';
-    if (eval { require 'MLDBM.pm'; }) {
-	push @mldbm_types, qw(Data::Dumper Storable); # both in CORE
-        push @mldbm_types, 'FreezeThaw'   if eval { require 'FreezeThaw.pm' };
-        push @mldbm_types, 'YAML'         if eval { require MLDBM::Serializer::YAML; };
-        push @mldbm_types, 'JSON'         if eval { require MLDBM::Serializer::JSON; };
-    }
-
-    # Potential DBM modules in preference order (SDBM_File first)
-    # skip NDBM and ODBM as they don't support EXISTS
-    my @dbms = qw(SDBM_File GDBM_File DB_File BerkeleyDB NDBM_File ODBM_File);
-    my @use_dbms = @ARGV;
-    if( !@use_dbms && $ENV{DBD_DBM_TEST_BACKENDS} ) {
-	@use_dbms = split ' ', $ENV{DBD_DBM_TEST_BACKENDS};
-    }
-
-    if (lc "@use_dbms" eq "all") {
-	# test with as many of the major DBM types as are available
-        @dbm_types = grep { eval { local $^W; require "$_.pm" } } @dbms;
-    }
-    elsif (@use_dbms) {
-	@dbm_types = @use_dbms;
-    }
-    else {
-	# we only test SDBM_File by default to avoid tripping up
-	# on any broken DBM's that may be installed in odd places.
-	# It's only DBD::DBM we're trying to test here.
-        # (However, if SDBM_File is not available, then use another.)
-        for my $dbm (@dbms) {
-            if (eval { local $^W; require "$dbm.pm" }) {
-                @dbm_types = ($dbm);
-                last;
-            }
-        }
-    }
-
     if( eval { require List::MoreUtils; } )
     {
 	List::MoreUtils->import("part");
@@ -79,11 +35,10 @@ EOP
     }
 }
 
+sub requires_extended { 1 }
+
 my $dbi_sql_nano = not DBD::DBM::Statement->isa('SQL::Statement');
-
-do "t/lib.pl";
-
-my $dir = test_dir ();
+my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i;
 
 my %tests_statement_results = (
     2 => [
@@ -136,52 +91,26 @@ my %tests_statement_results = (
     ],
 );
 
-print "Using DBM modules: @dbm_types\n";
-print "Using MLDBM serializers: @mldbm_types\n" if @mldbm_types;
 
-my %test_statements;
-my %expected_results;
-
-for my $columns ( 2 .. 3 )
+sub run_test
 {
+    use_ok("DBD::DBM") or plan skip_all => "No DBD::DBM tests without DBD::DBM";
+    my @DB_CREDS = @{ $_[1] };
+
+    my %test_statements;
+    my %expected_results;
+
+    my $columns = $DB_CREDS[3]->{dbm_mldbm} ? 3 : 2;
     my $i = 0;
     my @tests = part { $i++ % 2 } @{ $tests_statement_results{$columns} };
     @{ $test_statements{$columns} } = @{$tests[0]};
     @{ $expected_results{$columns} } = @{$tests[1]};
-}
 
-unless (@dbm_types) {
-    plan skip_all => "No DBM modules available";
-}
 
-for my $mldbm ( @mldbm_types ) {
-    my $columns = ($mldbm) ? 3 : 2;
-    for my $dbm_type ( @dbm_types ) {
-	print "\n--- Using $dbm_type ($mldbm) ---\n";
-        eval { do_test( $dbm_type, $mldbm, $columns) }
-            or warn $@;
-    }
-}
+    $DB_CREDS[3]->{f_lockfile} = ".lck";
 
-done_testing();
-
-sub do_test {
-    my ($dtype, $mldbm, $columns) = @_;
-
-    #diag ("Starting test: " . $starting_test_no);
-
-    # The DBI can't test locking here, sadly, because of the risk it'll hang
-    # on systems with broken NFS locking daemons.
-    # (This test script doesn't test that locking actually works anyway.)
-
-    # use f_lockfile in next release - use it here as test case only
-    my $dsn ="dbi:DBM(RaiseError=0,PrintError=1):dbm_type=$dtype;dbm_mldbm=$mldbm;f_lockfile=.lck";
-
-    if ($using_dbd_gofer) {
-        $dsn .= ";f_dir=$dir";
-    }
-
-    my $dbh = DBI->connect( $dsn );
+    my $dsn_str = Data::Dumper->new( [ \@DB_CREDS ] )->Indent(0)->Sortkeys(1)->Quotekeys(0)->Terse(1)->Dump();
+    my $dbh = connect_ok(@DB_CREDS, "Connecting to ");
 
     my $dbm_versions;
     if ($DBI::VERSION >= 1.37   # needed for install_method
@@ -200,9 +129,9 @@ sub do_test {
     SKIP: {
         skip "Can't set attributes after connect using DBD::Gofer", 2
             if $using_dbd_gofer;
-        eval {$dbh->{f_dir}=$dir};
+        eval {$dbh->{f_dir} = $DB_CREDS[3]->{f_dir}};
         ok(!$@);
-        eval {$dbh->{dbm_mldbm}=$mldbm};
+        eval {$dbh->{dbm_mldbm} = $DB_CREDS[3]->{dbm_mldbm}};
         ok(!$@);
     }
 
@@ -222,18 +151,15 @@ sub do_test {
     SKIP:
     for my $idx ( 0 .. $#queries ) {
 	my $sql = $queries[$idx];
-        $sql =~ s/\S*fruit/${dtype}_fruit/; # include dbm type in table name
         $sql =~ s/;$//;
-        #diag($sql);
 
         # XXX FIX INSERT with NULL VALUE WHEN COLUMN NOT NULLABLE
-	$dtype eq 'BerkeleyDB' and !$mldbm and 0 == index($sql, 'INSERT') and $sql =~ s/NULL/''/;
+	defined($DB_CREDS[3]->{dbm_type}) and $DB_CREDS[3]->{dbm_type} eq 'BerkeleyDB' and !defined($DB_CREDS[3]->{dbm_mldbm}) and 0 == index($sql, 'INSERT') and $sql =~ s/NULL/''/;
 
         $sql =~ s/\s*;\s*(?:#(.*))//;
         my $comment = $1;
 
-        my $sth = $dbh->prepare($sql);
-        ok($sth, "prepare $sql") or diag($dbh->errstr || 'unknown error');
+        my $sth = prepare_ok($dbh, $sql, "prepare $sql") or diag($dbh->errstr || 'unknown error');
 
 	my @bind;
 	if($sth->{NUM_OF_PARAMS})
@@ -242,8 +168,8 @@ sub do_test {
 	}
         # if execute errors we will handle it, not PrintError:
         $sth->{PrintError} = 0;
-        my $n = $sth->execute(@bind);
-        ok($n, 'execute') or diag($sth->errstr || 'unknown error');
+	my $bind_str = Data::Dumper->new( [ \@bind ] )->Indent(0)->Sortkeys(1)->Quotekeys(0)->Terse(1)->Dump();
+        my $n = execute_ok($sth, @bind, "execute '$sql' with '$bind_str'") or diag($sth->errstr || 'unknown error');
         next if (!defined($n));
 
 	is( $n, $results[$idx], $sql ) unless( 'ARRAY' eq ref $results[$idx] );
@@ -265,6 +191,8 @@ sub do_test {
     is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
 
     $dbh->disconnect;
-    return 1;
+
+    done_testing();
 }
+
 1;
