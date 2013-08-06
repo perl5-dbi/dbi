@@ -308,6 +308,7 @@ sub FETCH
 	    my @colnames = $sth->sql_get_colnames ();
 
 	    unless ($type_map) {
+		# TYPE_NAME => DATA_TYPE
 		$type_map = {	# Minimal type set (like CSV)
 		    BLOB    => -4,
 		    TEXT    => -1,
@@ -316,9 +317,12 @@ sub FETCH
 		    REAL    =>  7,
 		    VARCHAR => 12,
 		    };
-		my $tia = $sth->{Database}->type_info_all ();
-		# TYPE_NAME => DATA_TYPE
-		$type_map->{$_->[0]} = $_->[1] for grep { ref $_ eq "ARRAY" } @$tia;
+		if (my $tia = $sth->{Database}->type_info_all ()) {
+		    my $tiah = shift @$tia;
+		    my %tiah = map { uc ($_) => $tiah->{$_} } keys %$tiah;
+		    my ($tni, $dti) = map {$tiah->{$_}} "TYPE_NAME", "DATA_TYPE";
+		    $type_map->{$_->[$tni]} = $_->[$dti] for @$tia;
+		    }
 		}
 
 	    $attr eq "TYPE"      and
