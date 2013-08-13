@@ -97,6 +97,7 @@ DELETE * FROM foo -- waste between "DELETE" and "FROM"
           unless eval { require DBIx::ContextualFetch; 1; };
 
 	$DB_CREDS[3]->{sql_dialect} = "ANSI";
+	$DB_CREDS[3]->{RootClass}   = "DBIx::ContextualFetch";
 	$dsn_str = Data::Dumper->new( [ \@DB_CREDS ] )->Indent(0)->Sortkeys(1)->Quotekeys(0)->Terse(1)->Dump();
 	my $dbh2 = connect_ok( @DB_CREDS, "Connect to $dsn_str" );
         is ref $dbh2, 'DBIx::ContextualFetch::db', 'root class is DBIx::ContextualFetch';
