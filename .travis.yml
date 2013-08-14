@@ -1,4 +1,6 @@
 language: perl
+before_script:
+  - export PERL_CPANM_OPT="--verbose --no-interactive $( echo $PERL_CPANM_OPT | sed 's/--skip-satisfied//' )"
 perl:
   - "5.18"
   - "5.16"
