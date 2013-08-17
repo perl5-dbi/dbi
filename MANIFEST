@@ -68,6 +68,19 @@ lib/DBI/ProfileSubs.pm
 lib/DBI/ProxyServer.pm		The proxy drivers server
 lib/DBI/PurePerl.pm		A DBI.xs emulation in Perl
 lib/DBI/SQL/Nano.pm		A 'smaller than micro' SQL parser
+lib/DBI/Test/Case/DBI/attributes/ActiveKids.pm
+lib/DBI/Test/Case/DBI/attributes/Active.pm
+lib/DBI/Test/Case/DBI/attributes/CachedKids.pm
+lib/DBI/Test/Case/DBI/attributes/Executed.pm
+lib/DBI/Test/Case/DBI/attributes/Kids.pm
+lib/DBI/Test/Case/DBI/attributes/Type.pm
+lib/DBI/Test/Case/DBI/simple/dbm.pm
+lib/DBI/Test/Case/DBI/simple/file.pm
+lib/DBI/Test/Case/DBI/simple/sql_engine.pm
+lib/DBI/Test/DBI/Case.pm
+lib/DBI/Test/DBI/Conf.pm
+lib/DBI/Test/DBI/DSN/Provider/DBM.pm
+lib/DBI/Test/DBI/List.pm
 lib/DBI/Util/_accessor.pm       A very¬cut-down version of Class::Accessor::Fast
 lib/DBI/Util/CacheMemory.pm     A very cut-down version of Cache::Memory
 lib/DBI/W32ODBC.pm		An experimental DBI emulation layer for Win32::ODBC
@@ -97,10 +110,6 @@ t/40profile.t
 t/41prof_dump.t
 t/42prof_data.t
 t/43prof_env.t
-t/48dbi_dbd_sqlengine.t         Tests for DBI::DBD::SqlEngine
-t/49dbd_file.t			DBD::File API and very basic tests
-t/50dbm_simple.t		simple DBD::DBM tests
-t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
 t/52dbm_complex.t		Complex DBD::DBM tests with SQL::Statement
 t/60preparse.t
 t/65transact.t
