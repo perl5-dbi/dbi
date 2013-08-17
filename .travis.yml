@@ -1,5 +1,5 @@
 language: perl
-before_script:
+before_install:
   - export PERL_CPANM_OPT="--verbose --no-interactive $( echo $PERL_CPANM_OPT | sed 's/--skip-satisfied//' )"
 perl:
   - "5.16"
