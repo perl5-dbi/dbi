@@ -4312,8 +4312,10 @@ so:
   });
 
 If you're using C<connect_cached()>, use the C<connect_cached.connected>
-callback, instead. For example, to set the time zone on connection to a
-PostgreSQL database, try this:
+callback, instead. This is because C<connected()> is called for both new and
+reused database handles, but you want to execute a callback only the when a
+new database handle is returned. For example, to set the time zone on
+connection to a PostgreSQL database, try this:
 
   my $cb = {
       'connect_cached.connected' => sub {
