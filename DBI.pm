@@ -2807,6 +2807,21 @@ other code that may be using the same handle. When connect_cached()
 returns a handle the attributes will be reset to their initial values.
 This can cause problems, especially with the C<AutoCommit> attribute.
 
+Also, to ensure that the attributes passed are always the same, avoid passing
+references inline. For example, the C<Callbacks> attribute is specified as a
+hash reference. Be sure to declare it external to the call to
+connect_cached(), such that the hash reference is not re-created on every
+call. A package-level lexical works well:
+
+  package MyDBH;
+  my $cb = {
+      'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
+  };
+
+  sub dbh {
+      DBI->connect_cached( $dsn, $username, $auth, { Callbacks => $cb });
+  }
+
 Where multiple separate parts of a program are using connect_cached()
 to connect to the same database with the same (initial) attributes
 it is a good idea to add a private attribute to the connect_cached()
@@ -4261,6 +4276,12 @@ in a C<connect_cached.reused> callback, like so:
 The upshot is that new database handles are created with C<AutoCommit>
 enabled, while cached database handles are left in whatever transaction state
 they happened to be in when retrieved from the cache.
+
+Note that we've also used a lexical for the callbacks hash reference. This is
+because C<connect_cached()> returns a new database handle if any of the
+attributes passed to is have changed. If we used an inline hash reference,
+C<connect_cached()> would return a new database handle every time. Which would
+rather defeat the purpose.
 
 A more common application for callbacks is setting connection state only when a
 new connection is made (by connect() or connect_cached()). Adding a callback to
