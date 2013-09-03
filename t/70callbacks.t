@@ -9,7 +9,7 @@ use DBI;
 BEGIN {
         plan skip_all => '$h->{Callbacks} attribute not supported for DBI::PurePerl'
                 if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
-        plan tests => 63;
+        plan tests => 65;
 }
 
 $| = 1;
@@ -146,8 +146,9 @@ and (the already special-case) "connect_cached.reused".
 my @args = (
     $dsn, '', '', {
         Callbacks => {
-            "connect_cached.new"    => sub { $called{new}++; return; },
-            "connect_cached.reused" => sub { $called{cached}++; return; },
+            "connect_cached.new"       => sub { $called{new}++; return; },
+            "connect_cached.reused"    => sub { $called{cached}++; return; },
+            "connect_cached.connected" => sub { $called{connected}++; return; },
         }
     }
 );
@@ -160,10 +161,12 @@ is keys %called, 0, 'no callback for plain connect';
 ok $dbh = DBI->connect_cached(@args), "Create handle with callbacks";
 is $called{new}, 1, "connect_cached.new called";
 is $called{cached}, undef, "connect_cached.reused not yet called";
+is $called{connected}, 1, "connect_cached.connected called";
 
 ok $dbh = DBI->connect_cached(@args), "Create handle with callbacks";
 is $called{cached}, 1, "connect_cached.reused called";
 is $called{new}, 1, "connect_cached.new not called again";
+is $called{connected}, 1, "connect_cached.connected not called called";
 
 
 # --- test ChildCallbacks.
