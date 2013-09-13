@@ -122,7 +122,6 @@ my %opts = (
 );
 if (@generated_tests) {
     local $" = " ";
-    $opts{PREREQ_PM}{"DBI::Test"} = "0.001";
     $opts{clean}{FILES} .= " @generated_tests";
     $opts{test}{TESTS}  .= " @generated_tests";
 }
