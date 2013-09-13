@@ -18,9 +18,24 @@ use strict;
 use lib 'lib'; # for use DBI::DBD
 use DBI::DBD;
 
-use DBI::Test::Conf ();
+eval "use DBI::Test::Conf ();";
+my @generated_tests;
+if ($@) {
+    warn "******\n",
+         "******\tDBI::Test is not installed.\n",
+         "******\tIt will be required in one of the upcoming releases.\n",
+         "******\n";
+    sleep 2;
+} else {
+    use lib "lib";
 
-my @generated_tests = DBI::Test::Conf->setup( AUTHOR_TESTS => 0, SKIP_FILE => "DBI-TEST.SKIP", CONTAINED_DBDS => [ qw'ExampleP DBM File NullP' ] );
+    local $" = " ";
+    @generated_tests = DBI::Test::Conf->setup (
+	AUTHOR_TESTS   => 0,
+	SKIP_FILE      => "DBI-TEST.SKIP",
+	CONTAINED_DBDS => [qw{ ExampleP DBM File NullP }],
+    );
+}
 
 $| = 1;
 $^W = 1;
@@ -97,15 +112,20 @@ my %opts = (
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
     clean => { FILES=> join( " ", "\$(DISTVNAME)", "Perl.xsi", "t/zv*_*.t", "dbi__null_test_tmp*",
 				  "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl",
-				  "dbiproxy.*log", "dbitrace.log", "dbi*.prof", "ndtest.prt",
-				  @generated_tests )  },
-    test  => { TESTS => join (" " => 't/*.t xt/*.t', @generated_tests), },
+				  "dbiproxy.*log", "dbitrace.log", "dbi*.prof", "ndtest.prt" )},
+    test  => { TESTS => 't/*.t xt/*.t' },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest tardist',
 	PREOP => '$(MAKE) -f Makefile.old distdir',
 	COMPRESS => 'gzip -v9', SUFFIX => 'gz',
     },
 );
+if (@generated_tests) {
+    local $" = " ";
+    $opts{PREREQ_PM}{"DBI::Test"} = "0.001";
+    $opts{clean}{FILES} .= " @generated_tests";
+    $opts{test}{TESTS}  .= " @generated_tests";
+}
 $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
 if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
