@@ -1496,13 +1496,17 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	}
 
 	# If the caller has provided a callback then call it
-	if ($cb and $cb = $cb->{"connect_cached.new"}) {
+	if ($cb and (my $new_cb = $cb->{"connect_cached.new"})) {
 	    local $_ = "connect_cached.new";
-	    $cb->($dbh, $dsn, $user, $auth, $attr);
+	    $new_cb->($dbh, $dsn, $user, $auth, $attr);
 	}
 
 	$dbh = $drh->connect(@_);
 	$cache->{$key} = $dbh;	# replace prev entry, even if connect failed
+	if ($cb and (my $conn_cb = $cb->{"connect_cached.connected"})) {
+	    local $_ = "connect_cached.connected";
+	    $conn_cb->($dbh, $dsn, $user, $auth, $attr);
+	}
 	return $dbh;
     }
 
@@ -4216,7 +4220,7 @@ example above, or use the special C<ChildCallbacks> key described below.
 B<Special Keys in Callbacks Attribute>
 
 In addition to DBI handle method names, the C<Callbacks> hash reference
-supports three additional keys.
+supports four additional keys.
 
 The first is the C<ChildCallbacks> key. When a statement handle is created from
 a database handle the C<ChildCallbacks> key of the database handle's
@@ -4239,11 +4243,12 @@ was called in your application, you could write:
       print "The execute method was called $exec_count times\n";
   }
 
-The other two special keys are C<connect_cached.new> and
-C<connect_cached.reused>. These keys define callbacks that are called when
-C<connect_cached()> is called, but allow different behaviors depending on
-whether a new handle is created or a handle is returned. The callback is
-invoked with these arguments: C<$dbh, $dsn, $user, $auth, $attr>.
+The other three special keys are C<connect_cached.new>,
+C<connect_cached.connected>, and C<connect_cached.reused>. These keys define
+callbacks that are called when C<connect_cached()> is called, but allow
+different behaviors depending on whether a new handle is created or a handle
+is returned. The callback is invoked with these arguments:
+C<$dbh, $dsn, $user, $auth, $attr>.
 
 For example, some applications uses C<connect_cached()> to connect with
 C<AutoCommit> enabled and then disable C<AutoCommit> temporarily for
@@ -4253,11 +4258,12 @@ C<AutoCommit> on, forcing a commit of the transaction. See the L</connect_cached
 documentation for one way to deal with that. Here we'll describe an alternative
 approach using a callback.
 
-Because the C<connect_cached.*> callbacks are invoked before connect_cached()
-has applied the connect attributes you can use a callback to edit the attributes
-that will be applied.  To prevent a cached handle from having its transactions
-committed before it's returned, you can eliminate the C<AutoCommit> attribute
-in a C<connect_cached.reused> callback, like so:
+Because the C<connect_cached.new> and C<connect_cached.reused> callbacks are
+invoked before C<connect_cached()> has applied the connect attributes, you can
+use them to edit the attributes that will be applied. To prevent a cached
+handle from having its transactions committed before it's returned, you can
+eliminate the C<AutoCommit> attribute in a C<connect_cached.reused> callback,
+like so:
 
   my $cb = {
       'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
@@ -4283,15 +4289,16 @@ attributes passed to is have changed. If we used an inline hash reference,
 C<connect_cached()> would return a new database handle every time. Which would
 rather defeat the purpose.
 
-A more common application for callbacks is setting connection state only when a
-new connection is made (by connect() or connect_cached()). Adding a callback to
-the connected method makes this easy.
-This method is a no-op by default (unless you subclass the DBI and change it).
-The DBI calls it to indicate that a new connection has been made and the connection
-attributes have all been set.  You can
-give it a bit of added functionality by applying a callback to it. For
-example, to make sure that MySQL understands your application's ANSI-compliant
-SQL, set it up like so:
+A more common application for callbacks is setting connection state only when
+a new connection is made (by connect() or connect_cached()). Adding a callback
+to the connected method (when using C<connect>) or via
+C<connect_cached.connected> (when useing connect_cached()>) makes this easy.
+The connected() method is a no-op by default (unless you subclass the DBI and
+change it). The DBI calls it to indicate that a new connection has been made
+and the connection attributes have all been set. You can give it a bit of
+added functionality by applying a callback to it. For example, to make sure
+that MySQL understands your application's ANSI-compliant SQL, set it up like
+so:
 
   my $dbh = DBI->connect($dsn, $username, $auth, {
       Callbacks => {
@@ -4303,6 +4310,21 @@ SQL, set it up like so:
           },
       }
   });
+
+If you're using C<connect_cached()>, use the C<connect_cached.connected>
+callback, instead. For example, to set the time zone on connection to a
+PostgreSQL database, try this:
+
+  my $cb = {
+      'connect_cached.connected' => sub {
+          shift->do('SET timezone = UTC');
+      }
+  };
+
+  sub dbh {
+      my $self = shift;
+      DBI->connect_cached( $dsn, $username, $auth, { Callbacks => $cb });
+  }
 
 One significant limitation with callbacks is that there can only be one per
 method per handle. This means it's easy for one use of callbacks to interfere
