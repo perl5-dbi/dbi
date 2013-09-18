@@ -18,8 +18,8 @@ use strict;
 use lib 'lib'; # for use DBI::DBD
 use DBI::DBD;
 
-eval "use DBI::Test::Conf ();";
 my @generated_tests;
+eval "local \$ENV{DBI_PUREPERL} = 2; require DBI::Test::Conf;";
 if ($@) {
     warn "******\n",
          "******\tDBI::Test is not installed.\n",
@@ -27,8 +27,6 @@ if ($@) {
          "******\n";
     sleep 2;
 } else {
-    use lib "lib";
-
     local $" = " ";
     @generated_tests = DBI::Test::Conf->setup (
 	AUTHOR_TESTS   => 0,
