@@ -3478,7 +3478,7 @@ XS(XS_DBI_dispatch)
         SV *err_sv;
         if (trace_level && SvOK(err_sv=DBIc_ERR(imp_xxh))) {
             PerlIO *logfp = DBILOGFP;
-            PerlIO_printf(logfp, "    !! %s: %s CLEARED by call to %s method\n",
+            PerlIO_printf(logfp, "    !! The %s '%s' was CLEARED by call to %s method\n",
                 SvTRUE(err_sv) ? "ERROR" : strlen(SvPV_nolen(err_sv)) ? "warn" : "info",
                 neatsvpv(DBIc_ERR(imp_xxh),0), meth_name);
         }
