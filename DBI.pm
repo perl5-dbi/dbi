@@ -235,8 +235,6 @@ BEGIN {
 	SQL_INTERVAL_HOUR_TO_MINUTE
 	SQL_INTERVAL_HOUR_TO_SECOND
 	SQL_INTERVAL_MINUTE_TO_SECOND
-	DBIstcf_DISCARD_STRING
-	DBIstcf_STRICT
    ) ],
    sql_cursor_types => [ qw(
 	 SQL_CURSOR_FORWARD_ONLY
@@ -248,6 +246,8 @@ BEGIN {
    utils     => [ qw(
 	neat neat_list $neat_maxlen dump_results looks_like_number
 	data_string_diff data_string_desc data_diff sql_type_cast
+	DBIstcf_DISCARD_STRING
+	DBIstcf_STRICT
    ) ],
    profile   => [ qw(
 	dbi_profile dbi_profile_merge dbi_profile_merge_nodes dbi_time
