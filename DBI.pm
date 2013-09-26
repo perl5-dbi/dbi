@@ -1238,7 +1238,7 @@ sub _new_drh {	# called by DBD::<drivername>::driver()
     # Provide default storage for State,Err and Errstr.
     # Note that these are shared by all child handles by default! XXX
     # State must be undef to get automatic faking in DBI::var::FETCH
-    my ($h_state_store, $h_err_store, $h_errstr_store) = (undef, 0, '');
+    my ($h_state_store, $h_err_store, $h_errstr_store) = (undef, undef, '');
     my $attr = {
 	# these attributes get copied down to child handles by default
 	'State'		=> \$h_state_store,  # Holder for DBI::state
