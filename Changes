@@ -16,6 +16,7 @@ DBI::Changes - List of significant changes to the DBI
         export [Martin J. Evans]
     Add clarification of the ReadOnly attribute when the driver cannot
       ensure read only [Martin J. Evans]
+    Added test case 91_store_warning.t to illustrate rt#89015 [Martin J. Evans]
 
 =head2 Changes in DBI 1.628 - 22nd July 2013
 
