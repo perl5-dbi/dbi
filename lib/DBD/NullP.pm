@@ -84,7 +84,7 @@
             $value = ($value) ? -901 : -900;
 	} elsif ($attrib eq 'nullp_set_err') {
            # a fake attribute to produce a test case where STORE issues a warning
-           $dbh->set_err('0', 'a test error');
+           $dbh->set_err($value, $value);
        }
 	return $dbh->SUPER::STORE($attrib, $value);
     }
