@@ -14,6 +14,8 @@ DBI::Changes - List of significant changes to the DBI
     Stop setting err to 0 when creating a new drh [Martin J. Evans]
     Fix RT#83132 - move DBIstcf* constants to util
         export [Martin J. Evans]
+    Add clarification of the ReadOnly attribute when the driver cannot
+      ensure read only [Martin J. Evans]
 
 =head2 Changes in DBI 1.628 - 22nd July 2013
 

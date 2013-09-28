@@ -4129,6 +4129,12 @@ Otherwise the attribute is simply advisory.
 A driver can set the C<ReadOnly> attribute itself to indicate that the data it
 is connected to cannot be changed for some reason.
 
+If the driver cannot ensure the C<ReadOnly> attribute is adhered to it
+will record a warning.  In this case reading the C<ReadOnly> attribute
+back after it is set true will return true even if the underlying
+driver cannot ensure this (so any application knows the application
+declared itself ReadOnly).
+
 Library modules and proxy drivers can use the attribute to influence
 their behavior.  For example, the DBD::Gofer driver considers the
 C<ReadOnly> attribute when making a decision about whether to retry an
