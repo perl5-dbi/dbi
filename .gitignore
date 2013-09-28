@@ -27,3 +27,10 @@ xx*
 ModList
 git-svn-modlist
 git-dpull
+*~
+dbilogstrip
+dbiprof
+dll.base
+dll.exp
+dbiproxy
+DBI.def
