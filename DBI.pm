@@ -2604,8 +2604,8 @@ produced like this:
   }
 
 These constants are defined by SQL/CLI, ODBC or both.
-C<SQL_BIGINT> is (currently) omitted, because SQL/CLI and ODBC provide
-conflicting codes.
+C<SQL_BIGINT> has conflicting codes in SQL/CLI and ODBC,
+DBI uses the ODBC one.
 
 See the L</type_info>, L</type_info_all>, and L</bind_param> methods
 for possible uses.
