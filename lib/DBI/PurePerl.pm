@@ -166,6 +166,7 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
         Err
         Errstr
 	ErrCount
+	ErrChangeCount
 	FetchHashKeyName
 	HandleError
 	HandleSetErr
@@ -298,7 +299,7 @@ sub  _install_method {
     }
 
     push @pre_call_frag, q{
-	my $ErrCount = $h->{ErrCount};
+	my $ErrChangeCount = $h->{ErrChangeCount};
     };
 
     push @pre_call_frag, q{
@@ -347,7 +348,7 @@ sub  _install_method {
     } if IMA_IS_FACTORY & $bitmask;
 
     push @post_call_frag, q{
-	$keep_error = 0 if $keep_error && $h->{ErrCount} > $ErrCount;
+	$keep_error = 0 if $keep_error && $h->{ErrChangeCount} > $ErrChangeCount;
 
 	$DBI::err    = $h->{err};
 	$DBI::errstr = $h->{errstr};
@@ -536,6 +537,7 @@ sub _setup_handle {
     $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{"dbi_pp_pid"} = $$;
     $h_inner->{ErrCount} = 0;
+    $h_inner->{ErrChangeCount} = 0;
     $h_inner->{Active} = 1;
 }
 
@@ -919,6 +921,7 @@ sub set_err {
     ) {
         $h->{err} = $DBI::err = $errnum;
 	++$h->{ErrCount} if $errnum;
+	++$h->{ErrChangeCount};
 	++$err_changed;
     }
 

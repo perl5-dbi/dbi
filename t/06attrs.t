@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 148;
+use Test::More tests => 149;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -172,15 +172,13 @@ ok($sth->{Executed}, '... checking Executed attribute for sth');	# even though i
 ok($dbh->{Executed}, '... checking Exceuted attribute for dbh');	# due to $sth->prepare, even though it failed
 
 cmp_ok($sth->{ErrCount}, '==', 1, '... checking ErrCount attribute for sth');
-eval { 
-    $sth->{ErrCount} = 42 
-};
+
+cmp_ok($sth->{ErrChangeCount}, '==', 1, '... checking ErrChangeCount attribute for sth');
+eval { $sth->{ErrChangeCount} = 42 };
 like($@, qr/STORE failed:/, '... checking exception');
-
-cmp_ok($sth->{ErrCount}, '==', 42 , '... checking ErrCount attribute for sth (after assignment)');
-
-$sth->{ErrCount} = 0;
-cmp_ok($sth->{ErrCount}, '==', 0, '... checking ErrCount attribute for sth (after reset)');
+cmp_ok($sth->{ErrChangeCount}, '==', 42 , '... checking ErrChangeCount attribute for sth (after assignment)');
+$sth->{ErrChangeCount} = 0;
+cmp_ok($sth->{ErrChangeCount}, '==', 0, '... checking ErrChangeCount attribute for sth (after reset)');
 
 # booleans
 ok( $sth->{Warn},               '... checking Warn attribute for sth');

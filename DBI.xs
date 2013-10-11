@@ -822,6 +822,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         err_changed = 1;
         if (SvTRUE(h_err))      /* new error */
             ++DBIc_ErrCount(imp_xxh);
+        ++DBIc_ErrChangeCount(imp_xxh);
     }
 
     if (err_changed) {
@@ -2059,6 +2060,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "ErrCount")) {
         DBIc_ErrCount(imp_xxh) = SvUV(valuesv);
     }
+    else if (strEQ(key, "ErrChangeCount")) {
+        DBIc_ErrChangeCount(imp_xxh) = SvUV(valuesv);
+    }
     else if (strEQ(key, "LongReadLen")) {
         if (SvNV(valuesv) < 0 || SvNV(valuesv) > MAX_LongReadLen)
             croak("Can't set LongReadLen < 0 or > %ld",MAX_LongReadLen);
@@ -2457,6 +2461,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             else if (strEQ(key, "ErrCount")) {
                 valuesv = newSVuv(DBIc_ErrCount(imp_xxh));
+            }
+            else if (strEQ(key, "ErrChangeCount")) {
+                valuesv = newSVuv(DBIc_ErrChangeCount(imp_xxh));
             }
             break;
 
@@ -3135,7 +3142,7 @@ XS(XS_DBI_dispatch)
     meth_types meth_type;
     int is_unrelated_to_Statement = 0;
     int keep_error = FALSE;
-    UV  ErrCount = UV_MAX;
+    UV  ErrChangeCount = UV_MAX;
     int i, outitems;
     int call_depth;
     int is_nested_call;
@@ -3484,8 +3491,8 @@ XS(XS_DBI_dispatch)
         }
         DBIh_CLEAR_ERROR(imp_xxh);
     }
-    else {      /* we check for change in ErrCount during call */
-        ErrCount = DBIc_ErrCount(imp_xxh);
+    else {      /* we check for change in ErrChangeCount during call */
+        ErrChangeCount = DBIc_ErrChangeCount(imp_xxh);
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
@@ -3755,10 +3762,11 @@ XS(XS_DBI_dispatch)
         }
     }
 
-    /* if we didn't clear err before the call, check if ErrCount has gone up */
+    /* if we didn't clear err before the call, check if ErrChangeCount has gone up */
     /* if so, we turn off keep_error so error is acted on                    */
-    if (keep_error && DBIc_ErrCount(imp_xxh) > ErrCount)
+    if (keep_error && DBIc_ErrChangeCount(imp_xxh) > ErrChangeCount) {
         keep_error = 0;
+    }
 
     err_sv = DBIc_ERR(imp_xxh);
 
@@ -3773,7 +3781,7 @@ XS(XS_DBI_dispatch)
         if (SvOK(err_sv)) {
             PerlIO_printf(logfp, "    %s %s %s %s (err#%ld)\n", (keep_error) ? "  " : "!!",
                 SvTRUE(err_sv) ? "ERROR:" : strlen(SvPV_nolen(err_sv)) ? "warn:" : "info:",
-                neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0), (long)DBIc_ErrCount(imp_xxh));
+                neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0), (long)DBIc_ErrChangeCount(imp_xxh));
         }
         PerlIO_printf(logfp,"%c%c  <%c %s",
                     (call_depth > 1)  ? '0'+call_depth-1 : (PL_dirty?'!':' '),

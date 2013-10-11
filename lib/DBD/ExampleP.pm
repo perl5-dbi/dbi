@@ -243,8 +243,12 @@
 
     sub STORE {
 	my ($dbh, $attrib, $value) = @_;
-	# would normally validate and only store known attributes
-	# else pass up to DBI to handle
+	# store only known attributes else pass up to DBI to handle
+        if ($attrib eq 'examplep_set_err') {
+            # a fake attribute to enable a test case where STORE issues a warning
+            $dbh->set_err($value, $value);
+            return;
+        }
 	if ($attrib eq 'AutoCommit') {
 	    # convert AutoCommit values to magic ones to let DBI
 	    # know that the driver has 'handled' the AutoCommit attribute

@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 89;
+use Test::More;
 
 ## ----------------------------------------------------------------------------
 ## 08keeperr.t
@@ -34,7 +34,7 @@ use base 'DBI::st';
 
 sub execute {
     my $sth = shift;
-    # we localize an attribute here to check that the correpoding STORE
+    # we localize an attribute here to check that the corresponding STORE
     # at scope exit doesn't clear any recorded error
     local $sth->{Warn} = 0;
     my $rv = $sth->SUPER::execute(@_);
@@ -68,6 +68,9 @@ my $err2 = test_select( DBI->connect(@con_info) );
 Test::More::like($err2, qr/^DBD::(ExampleP|Multiplex|Gofer)::db selectrow_arrayref failed: opendir/, '... checking error');
 
 package main;
+
+my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i;
+
 
 # test ping does not destroy the errstr
 sub ping_keeps_err {
@@ -128,8 +131,15 @@ $dbh->{PrintError} = 1;
 $dbh->{PrintWarn}  = 1;
 
 # warning handler
-my %warn = ( failed => 0, warning => 0 );
-my @handlewarn = (0,0,0);
+my %warn;
+my @handlewarn;
+
+sub reset_warn_counts {
+    %warn = ( failed => 0, warning => 0 );
+    @handlewarn = (0,0,0);
+}
+reset_warn_counts();
+
 $SIG{__WARN__} = sub {
     my $msg = shift;
     if ($msg =~ /^DBD::\w+::\S+\s+(\S+)\s+(\w+)/) {
@@ -204,7 +214,6 @@ is($dbh->errstr, "(got info)\n(got warn)\n(got more info)",
 cmp_ok($warn{warning}, '==', 2,      '... $warn{warning} is 2');
 is_deeply(\@handlewarn, [ 2, 1, 0 ], '... the @handlewarn array is (2, 1, 0)');
 
-
 # ----
 
 $dbh->{RaiseError} = 0;
@@ -265,8 +274,7 @@ is($dbh->state, "",       '... $dbh->state is an empty string');
 
 # ----
 
-%warn = ( failed => 0, warning => 0 );
-@handlewarn = (0,0,0);
+reset_warn_counts();
 
 # ----
 
@@ -310,7 +318,27 @@ is($dbh->errstr, "errstr99", '... $dbh->errstr is as we expected');
 is($dbh->state,  "OV123",    '... $dbh->state is as we expected');
 $dbh->disconnect;
 
+# ---
+
 ping_keeps_err();
+
+# ---
+
+reset_warn_counts();
+
+SKIP: {
+    skip 'set_err keep_error skipped for Gofer', 2
+        if $using_dbd_gofer;
+    $dbh->{examplep_set_err} = "0";
+    cmp_ok($warn{warning}, '==', 1,      'warning generated for set_err("0") in STORE');
+    $dbh->{examplep_set_err} = "";
+    cmp_ok($warn{warning}, '==', 1,      'no extra warning generated for set_err("") in STORE');
+}
+
+# ---
+
+# ----
+done_testing();
 
 1;
 # end

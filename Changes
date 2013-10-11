@@ -8,12 +8,15 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes
 
+    Fixed err for new drh to be undef not to 0 [Martin J. Evans]
+    Fixed RT#83132 - moved DBIstcf* constants to util
+        export tag [Martin J. Evans]
     Added connect_cached.connected Callback PR#3 [David E. Wheeler]
+    Added ErrChangeCount attribute and used it to make PrintWarn work
+        for methods like STORE that don't clear err RT#89015 [Tim Bunce]
+
     Clarify effect of refs in connect_cached attributes [David E. Wheeler]
     Clarify wording of log message when err is cleared.
-    Fixed err for new drh to be undef not to 0 [Martin J. Evans]
-    Fix RT#83132 - move DBIstcf* constants to util
-        export [Martin J. Evans]
     Extended ReadOnly attribute docs for when the driver cannot
       ensure read only [Martin J. Evans]
     Corrected SQL_BIGINT docs to say ODBC value is used PR#5 [ilmari]

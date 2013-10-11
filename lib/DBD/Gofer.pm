@@ -25,7 +25,7 @@
         CachedKids
         Callbacks
         DbTypeSubclass
-        ErrCount Executed
+        ErrCount ErrChangeCount Executed
         FetchHashKeyName
         HandleError HandleSetErr
         InactiveDestroy
