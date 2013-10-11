@@ -15,6 +15,9 @@ DBI::Changes - List of significant changes to the DBI
     Added ErrChangeCount attribute and used it to make PrintWarn work
         for methods like STORE that don't clear err RT#89015 [Tim Bunce]
 
+    Changed tracing to no longer show quote and quote_identifier calls
+        at trace level 1.
+
     Clarify effect of refs in connect_cached attributes [David E. Wheeler]
     Clarify wording of log message when err is cleared.
     Extended ReadOnly attribute docs for when the driver cannot

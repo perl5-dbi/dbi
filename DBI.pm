@@ -449,8 +449,8 @@ my $keeperr = { O=>0x0004 };
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
 	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000, T=>0x200 },
-	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
-	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
+	quote      	=> { U =>[2,3, '$string [, $data_type ]' ],   O=>0x0430, T=>2 },
+	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ], O=>0x0430, T=>2 },
 	rows       	=> $keeperr,
 
 	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x2200 },
