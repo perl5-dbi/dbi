@@ -2736,8 +2736,7 @@ variables if no C<$data_source> is specified.)
 The C<AutoCommit> and C<PrintError> attributes for each connection
 default to "on". (See L</AutoCommit> and L</PrintError> for more information.)
 However, it is strongly recommended that you explicitly define C<AutoCommit>
-rather than rely on the default. The C<PrintWarn> attribute defaults to
-on if $^W is true, i.e., perl is running with warnings enabled.
+rather than rely on the default. The C<PrintWarn> attribute defaults to true.
 
 The C<\%attr> parameter can be used to alter the default settings of
 C<PrintError>, C<RaiseError>, C<AutoCommit>, and other attributes. For example:
@@ -2754,7 +2753,7 @@ over the C<$username> and C<$password> parameters.
 You can also define connection attribute values within the C<$data_source>
 parameter. For example:
 
-  dbi:DriverName(PrintWarn=>1,PrintError=>0,Taint=>1):...
+  dbi:DriverName(PrintWarn=>0,PrintError=>0,Taint=>1):...
 
 Individual attributes values specified in this way take precedence over
 any conflicting values specified via the C<\%attr> parameter to C<connect>.
@@ -3717,16 +3716,13 @@ The C<AutoInactiveDestroy> attribute was added in DBI 1.614.
 Type: boolean, inherited
 
 The C<PrintWarn> attribute controls the printing of warnings recorded
-by the driver.  When set to a true value the DBI will check method
+by the driver.  When set to a true value (the default) the DBI will check method
 calls to see if a warning condition has been set. If so, the DBI
 will effectively do a C<warn("$class $method warning: $DBI::errstr")>
 where C<$class> is the driver class and C<$method> is the name of
 the method which failed. E.g.,
 
   DBD::Oracle::db execute warning: ... warning text here ...
-
-By default, C<DBI-E<gt>connect> sets C<PrintWarn> "on" if $^W is true,
-i.e., perl is running with warnings enabled.
 
 If desired, the warnings can be caught and processed using a C<$SIG{__WARN__}>
 handler or modules like CGI::Carp and CGI::ErrorWrap.

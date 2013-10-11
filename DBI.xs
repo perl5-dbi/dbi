@@ -1327,7 +1327,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
                    |DBIcf_ACTIVE        /* drivers are 'Active' by default      */
                    |DBIcf_AutoCommit    /* advisory, driver must manage this    */
         );
-        DBIc_set(imp, DBIcf_PrintWarn, PL_dowarn); /* set if warnings enabled   */
+        DBIc_set(imp, DBIcf_PrintWarn, 1);
     }
     else {
         DBIc_PARENT_H(imp)    = (SV*)SvREFCNT_inc(p_h); /* ensure it lives      */

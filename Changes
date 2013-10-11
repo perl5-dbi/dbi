@@ -8,6 +8,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes
 
+NOTE: This trial release enables PrintWarn regardless of $^W
+This may or may not be included in the upcoming release.
+
     Fixed err for new drh to be undef not to 0 [Martin J. Evans]
     Fixed RT#83132 - moved DBIstcf* constants to util
         export tag [Martin J. Evans]

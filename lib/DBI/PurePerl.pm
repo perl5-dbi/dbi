@@ -525,7 +525,7 @@ sub _setup_handle {
     }
     else {	# setting up a driver handle
         $h_inner->{Warn}		= 1;
-        $h_inner->{PrintWarn}		= $^W;
+        $h_inner->{PrintWarn}		= 1;
         $h_inner->{AutoCommit}		= 1;
         $h_inner->{TraceLevel}		= 0;
         $h_inner->{CompatMode}		= (1==0);
