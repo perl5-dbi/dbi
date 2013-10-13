@@ -15,8 +15,8 @@ This may or may not be included in the upcoming release.
     Fixed RT#83132 - moved DBIstcf* constants to util
         export tag [Martin J. Evans]
     Added connect_cached.connected Callback PR#3 [David E. Wheeler]
-    Added ErrChangeCount attribute and used it to make PrintWarn work
-        for methods like STORE that don't clear err RT#89015 [Tim Bunce]
+    PrintWarn is now triggered by warnings recorded in methods like STORE
+        that don't clear err RT#89015 [Tim Bunce]
 
     Changed tracing to no longer show quote and quote_identifier calls
         at trace level 1.

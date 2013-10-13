@@ -166,7 +166,6 @@ my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
         Err
         Errstr
 	ErrCount
-	ErrChangeCount
 	FetchHashKeyName
 	HandleError
 	HandleSetErr
@@ -270,36 +269,36 @@ sub  _install_method {
 
     if (IMA_KEEP_ERR & $bitmask) {
 	push @pre_call_frag, q{
-	    my $keep_error = 1;
+	    my $keep_error = DBI::_err_hash($h);
 	};
     }
     else {
 	my $ke_init = (IMA_KEEP_ERR_SUB & $bitmask)
-		? q{= $h->{dbi_pp_parent}->{dbi_pp_call_depth} }
+		? q{= ($h->{dbi_pp_parent}->{dbi_pp_call_depth} && DBI::_err_hash($h)) }
 		: "";
 	push @pre_call_frag, qq{
 	    my \$keep_error $ke_init;
 	};
-	my $keep_error_code = q{
+	my $clear_error_code = q{
 	    #warn "$method_name cleared err";
 	    $h->{err}    = $DBI::err    = undef;
 	    $h->{errstr} = $DBI::errstr = undef;
 	    $h->{state}  = $DBI::state  = '';
 	};
-	$keep_error_code = q{
+	$clear_error_code = q{
 	    printf $DBI::tfh "    !! %s: %s CLEARED by call to }.$method_name.q{ method\n".
 		    $h->{err}, $h->{err}
 		if defined $h->{err} && $DBI::dbi_debug & 0xF;
-	}. $keep_error_code
+	}. $clear_error_code
 	    if exists $ENV{DBI_TRACE};
 	push @pre_call_frag, ($ke_init)
-		? qq{ unless (\$keep_error) { $keep_error_code }}
-		: $keep_error_code
+		? qq{ unless (\$keep_error) { $clear_error_code }}
+		: $clear_error_code
 	    unless $method_name eq 'set_err';
     }
 
     push @pre_call_frag, q{
-	my $ErrChangeCount = $h->{ErrChangeCount};
+	my $ErrCount = $h->{ErrCount};
     };
 
     push @pre_call_frag, q{
@@ -348,7 +347,11 @@ sub  _install_method {
     } if IMA_IS_FACTORY & $bitmask;
 
     push @post_call_frag, q{
-	$keep_error = 0 if $keep_error && $h->{ErrChangeCount} > $ErrChangeCount;
+        if ($keep_error) {
+            $keep_error = 0
+                if $h->{ErrCount} > $ErrCount
+                or DBI::_err_hash($h) ne $keep_error;
+        }
 
 	$DBI::err    = $h->{err};
 	$DBI::errstr = $h->{errstr};
@@ -537,7 +540,6 @@ sub _setup_handle {
     $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{"dbi_pp_pid"} = $$;
     $h_inner->{ErrCount} = 0;
-    $h_inner->{ErrChangeCount} = 0;
     $h_inner->{Active} = 1;
 }
 
@@ -768,6 +770,10 @@ sub _get_sorted_hash_keys {
     return \@sorted;
 }
 
+sub _err_hash {
+    return 1 unless defined $_[0]->{err};
+    return "$_[0]->{err} $_[0]->{errstr}"
+}
 
 
 package
@@ -921,7 +927,6 @@ sub set_err {
     ) {
         $h->{err} = $DBI::err = $errnum;
 	++$h->{ErrCount} if $errnum;
-	++$h->{ErrChangeCount};
 	++$err_changed;
     }
 

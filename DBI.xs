@@ -822,7 +822,6 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         err_changed = 1;
         if (SvTRUE(h_err))      /* new error */
             ++DBIc_ErrCount(imp_xxh);
-        ++DBIc_ErrChangeCount(imp_xxh);
     }
 
     if (err_changed) {
@@ -839,6 +838,34 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     }
 
     return 1;
+}
+
+
+/* err_hash returns a U32 'hash' value representing the current err 'level'
+ * (err/warn/info) and errstr. It's used by the dispatcher as a way to detect
+ * a new or changed warning during a 'keep err' method like STORE. Always returns >0.
+ * The value is 1 for no err/warn/info and guarantees that err > warn > info.
+ * (It's a bit of a hack but the original approach in 70fe6bd76 using a new
+ * ErrChangeCount attribute would break binary compatibility with drivers.)
+ * The chance that two realistic errstr values would hash the same, even with
+ * only 30 bits, is deemed to small to even bother documenting.
+ */
+static U32
+err_hash(imp_xxh_t *imp_xxh)
+{
+    SV *err_sv = DBIc_ERR(imp_xxh);
+    SV *errstr_sv;
+    I32 hash = 1;
+    if (SvOK(err_sv)) {
+        errstr_sv = DBIc_ERRSTR(imp_xxh);
+        if (SvOK(errstr_sv))
+             hash = -dbi_hash(SvPV_nolen(errstr_sv), 0); /* make positive */
+        else hash = 0;
+        hash >>= 1; /* free up extra bit (top bit is already free) */
+        hash |= (SvTRUE(err_sv)) ? 0x80000000 /* err, or warn, or info */
+              : (SvCUR(err_sv) ) ? 0x40000000 : 0x20000000;
+    }
+    return hash;
 }
 
 
@@ -2060,9 +2087,6 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "ErrCount")) {
         DBIc_ErrCount(imp_xxh) = SvUV(valuesv);
     }
-    else if (strEQ(key, "ErrChangeCount")) {
-        DBIc_ErrChangeCount(imp_xxh) = SvUV(valuesv);
-    }
     else if (strEQ(key, "LongReadLen")) {
         if (SvNV(valuesv) < 0 || SvNV(valuesv) > MAX_LongReadLen)
             croak("Can't set LongReadLen < 0 or > %ld",MAX_LongReadLen);
@@ -2461,9 +2485,6 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
             }
             else if (strEQ(key, "ErrCount")) {
                 valuesv = newSVuv(DBIc_ErrCount(imp_xxh));
-            }
-            else if (strEQ(key, "ErrChangeCount")) {
-                valuesv = newSVuv(DBIc_ErrChangeCount(imp_xxh));
             }
             break;
 
@@ -3141,8 +3162,8 @@ XS(XS_DBI_dispatch)
     int is_DESTROY;
     meth_types meth_type;
     int is_unrelated_to_Statement = 0;
-    int keep_error = FALSE;
-    UV  ErrChangeCount = UV_MAX;
+    U32 keep_error = FALSE;
+    UV  ErrCount = UV_MAX;
     int i, outitems;
     int call_depth;
     int is_nested_call;
@@ -3491,8 +3512,10 @@ XS(XS_DBI_dispatch)
         }
         DBIh_CLEAR_ERROR(imp_xxh);
     }
-    else {      /* we check for change in ErrChangeCount during call */
-        ErrChangeCount = DBIc_ErrChangeCount(imp_xxh);
+    else {      /* we check for change in ErrCount/err_hash during call */
+        ErrCount = DBIc_ErrCount(imp_xxh);
+        if (keep_error)
+            keep_error = err_hash(imp_xxh);
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
@@ -3762,10 +3785,13 @@ XS(XS_DBI_dispatch)
         }
     }
 
-    /* if we didn't clear err before the call, check if ErrChangeCount has gone up */
-    /* if so, we turn off keep_error so error is acted on                    */
-    if (keep_error && DBIc_ErrChangeCount(imp_xxh) > ErrChangeCount) {
-        keep_error = 0;
+    if (keep_error) {
+        /* if we didn't clear err before the call, check to see if a new error
+         * or warning has been recorded. If so, turn off keep_error so it gets acted on
+         */
+        if (DBIc_ErrCount(imp_xxh) > ErrCount || err_hash(imp_xxh) != keep_error) {
+            keep_error = 0;
+        }
     }
 
     err_sv = DBIc_ERR(imp_xxh);
@@ -3781,7 +3807,7 @@ XS(XS_DBI_dispatch)
         if (SvOK(err_sv)) {
             PerlIO_printf(logfp, "    %s %s %s %s (err#%ld)\n", (keep_error) ? "  " : "!!",
                 SvTRUE(err_sv) ? "ERROR:" : strlen(SvPV_nolen(err_sv)) ? "warn:" : "info:",
-                neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0), (long)DBIc_ErrChangeCount(imp_xxh));
+                neatsvpv(err_sv,0), neatsvpv(DBIc_ERRSTR(imp_xxh),0), (long)DBIc_ErrCount(imp_xxh));
         }
         PerlIO_printf(logfp,"%c%c  <%c %s",
                     (call_depth > 1)  ? '0'+call_depth-1 : (PL_dirty?'!':' '),

@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 149;
+use Test::More;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -173,12 +173,8 @@ ok($dbh->{Executed}, '... checking Exceuted attribute for dbh');	# due to $sth->
 
 cmp_ok($sth->{ErrCount}, '==', 1, '... checking ErrCount attribute for sth');
 
-cmp_ok($sth->{ErrChangeCount}, '==', 1, '... checking ErrChangeCount attribute for sth');
-eval { $sth->{ErrChangeCount} = 42 };
-like($@, qr/STORE failed:/, '... checking exception');
-cmp_ok($sth->{ErrChangeCount}, '==', 42 , '... checking ErrChangeCount attribute for sth (after assignment)');
-$sth->{ErrChangeCount} = 0;
-cmp_ok($sth->{ErrChangeCount}, '==', 0, '... checking ErrChangeCount attribute for sth (after reset)');
+$sth->{ErrCount} = 0;
+cmp_ok($sth->{ErrCount}, '==', 0, '... checking ErrCount attribute for sth (after reset)');
 
 # booleans
 ok( $sth->{Warn},               '... checking Warn attribute for sth');
@@ -304,6 +300,8 @@ sub check_inherited {
 check_inherited($drh, "ReadOnly", 1, 0);
 
 }
+
+done_testing();
 
 1;
 # end

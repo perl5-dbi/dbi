@@ -327,12 +327,16 @@ ping_keeps_err();
 reset_warn_counts();
 
 SKIP: {
+    # we could test this with gofer is we used a different keep_err method other than STORE
+    # to trigger the set_err calls
     skip 'set_err keep_error skipped for Gofer', 2
         if $using_dbd_gofer;
-    $dbh->{examplep_set_err} = "0";
+
+    $dbh->{examplep_set_err} = ""; # set information state
+    cmp_ok($warn{warning}, '==', 0,      'no extra warning generated for set_err("") in STORE');
+
+    $dbh->{examplep_set_err} = "0"; # set warning state
     cmp_ok($warn{warning}, '==', 1,      'warning generated for set_err("0") in STORE');
-    $dbh->{examplep_set_err} = "";
-    cmp_ok($warn{warning}, '==', 1,      'no extra warning generated for set_err("") in STORE');
 }
 
 # ---

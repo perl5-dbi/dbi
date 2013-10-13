@@ -3915,23 +3915,12 @@ Type: unsigned integer
 
 The C<ErrCount> attribute is incremented whenever the set_err()
 method records an error. It isn't incremented by warnings or
-information states (unlike L</ErrChangeCount>). It is not reset by the DBI at any time.
+information states. It is not reset by the DBI at any time.
 
 The C<ErrCount> attribute was added in DBI 1.41. Older drivers may
 not have been updated to use set_err() to record errors and so this
 attribute may not be incremented when using them.
 
-=head3 C<ErrChangeCount>
-
-Type: unsigned integer
-
-The C<ErrChangeCount> attribute is incremented whenever the set_err()
-method records a new error, warning, or informational state.
-It is not reset by the DBI at any time.
-
-The C<ErrChangeCount> attribute was added in DBI 1.629. Older drivers may
-not have been updated to use set_err() to record errors and so this
-attribute may not be incremented when using them.
 
 =head3 C<ShowErrorStatement>
 

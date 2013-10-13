@@ -111,7 +111,6 @@ typedef struct dbih_com_attr_st {
     SV *Err;            /* Native engine error code             */
     SV *Errstr;         /* Native engine error message          */
     UV ErrCount;
-    UV ErrChangeCount;
     U32  LongReadLen;   /* auto read length for long/blob types */
     SV *FetchHashKeyName;       /* for fetchrow_hashref         */
     /* (NEW FIELDS?... DON'T FORGET TO UPDATE dbih_clearcom()!) */
@@ -248,7 +247,6 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIc_ERR(imp)           SvRV(_imp2com(imp, attr.Err))
 #define DBIc_ERRSTR(imp)        SvRV(_imp2com(imp, attr.Errstr))
 #define DBIc_ErrCount(imp)      _imp2com(imp, attr.ErrCount)
-#define DBIc_ErrChangeCount(imp) _imp2com(imp, attr.ErrChangeCount)
 #define DBIc_LongReadLen(imp)   _imp2com(imp, attr.LongReadLen)
 #define DBIc_LongReadLen_init   80      /* may change */
 #define DBIc_FetchHashKeyName(imp) (_imp2com(imp, attr.FetchHashKeyName))
