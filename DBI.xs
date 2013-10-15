@@ -851,7 +851,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
  * only 30 bits, is deemed to small to even bother documenting.
  */
 static U32
-err_hash(imp_xxh_t *imp_xxh)
+err_hash(pTHX_ imp_xxh_t *imp_xxh)
 {
     SV *err_sv = DBIc_ERR(imp_xxh);
     SV *errstr_sv;
@@ -3515,7 +3515,7 @@ XS(XS_DBI_dispatch)
     else {      /* we check for change in ErrCount/err_hash during call */
         ErrCount = DBIc_ErrCount(imp_xxh);
         if (keep_error)
-            keep_error = err_hash(imp_xxh);
+            keep_error = err_hash(aTHX_ imp_xxh);
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
@@ -3789,7 +3789,7 @@ XS(XS_DBI_dispatch)
         /* if we didn't clear err before the call, check to see if a new error
          * or warning has been recorded. If so, turn off keep_error so it gets acted on
          */
-        if (DBIc_ErrCount(imp_xxh) > ErrCount || err_hash(imp_xxh) != keep_error) {
+        if (DBIc_ErrCount(imp_xxh) > ErrCount || err_hash(aTHX_ imp_xxh) != keep_error) {
             keep_error = 0;
         }
     }
