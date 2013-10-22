@@ -635,7 +635,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
                 sv_catpvn(infosv, &mg->mg_type, 1);
             sv_catpvn(infosv, ")", 1);
         }
-        if (SvGMAGICAL(sv))
+        if (SvGMAGICAL(sv) && !PL_dirty)
             mg_get(sv);         /* trigger magic to FETCH the value     */
     }
 
