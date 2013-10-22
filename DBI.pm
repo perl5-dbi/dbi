@@ -11,7 +11,7 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-our $XS_VERSION = our $VERSION = "1.628_60"; # ==> ALSO update the version in the pod text below!
+our $XS_VERSION = our $VERSION = "1.629_50"; # ==> ALSO update the version in the pod text below!
 $VERSION = eval $VERSION;
 }
 

@@ -6,10 +6,11 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.628_60 - 22nd Oct 2013
+=head2 Changes in DBI 1.629_50 - 22nd Oct 2013
 
 NOTE: This trial release enables PrintWarn regardless of $^W
 This may or may not be included in the upcoming release.
+Please test with your own application code.
 
     Fixed err for new drh to be undef not to 0 [Martin J. Evans]
     Fixed RT#83132 - moved DBIstcf* constants to util
