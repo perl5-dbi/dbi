@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.629
+=head2 Changes in DBI 1.628_60 - 22nd Oct 2013
 
 NOTE: This trial release enables PrintWarn regardless of $^W
 This may or may not be included in the upcoming release.
@@ -20,6 +20,7 @@ This may or may not be included in the upcoming release.
     Changed tracing to no longer show quote and quote_identifier calls
         at trace level 1.
     Clarified wording of log message when err is cleared.
+    Changed bootstrap to use $XS_VERSION RT#89618 [Andreas Koenig]
 
     Added connect_cached.connected Callback PR#3 [David E. Wheeler]
 

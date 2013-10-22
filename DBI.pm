@@ -11,7 +11,8 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-$VERSION = "1.629"; # ==> ALSO update the version in the pod text below!
+our $XS_VERSION = our $VERSION = "1.628_60"; # ==> ALSO update the version in the pod text below!
+$VERSION = eval $VERSION;
 }
 
 =head1 NAME
@@ -137,7 +138,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.629
+This is the DBI specification that corresponds to DBI version 1.628_60
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -262,12 +263,12 @@ $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 # then you haven't installed the DBI correctly. Read the README
 # then install it again.
 if ( $ENV{DBI_PUREPERL} ) {
-    eval { bootstrap DBI } if       $ENV{DBI_PUREPERL} == 1;
+    eval { bootstrap DBI $XS_VERSION } if       $ENV{DBI_PUREPERL} == 1;
     require DBI::PurePerl  if $@ or $ENV{DBI_PUREPERL} >= 2;
     $DBI::PurePerl ||= 0; # just to silence "only used once" warnings
 }
 else {
-    bootstrap DBI;
+    bootstrap DBI $XS_VERSION;
 }
 
 $EXPORT_TAGS{preparse_flags} = [ grep { /^DBIpp_\w\w_/ } keys %{__PACKAGE__."::"} ];
