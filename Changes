@@ -14,15 +14,16 @@ This may or may not be included in the upcoming release.
     Fixed err for new drh to be undef not to 0 [Martin J. Evans]
     Fixed RT#83132 - moved DBIstcf* constants to util
         export tag [Martin J. Evans]
-    Added connect_cached.connected Callback PR#3 [David E. Wheeler]
     PrintWarn is now triggered by warnings recorded in methods like STORE
         that don't clear err RT#89015 [Tim Bunce]
 
     Changed tracing to no longer show quote and quote_identifier calls
         at trace level 1.
+    Clarified wording of log message when err is cleared.
 
-    Clarify effect of refs in connect_cached attributes [David E. Wheeler]
-    Clarify wording of log message when err is cleared.
+    Added connect_cached.connected Callback PR#3 [David E. Wheeler]
+
+    Clarified effect of refs in connect_cached attributes [David E. Wheeler]
     Extended ReadOnly attribute docs for when the driver cannot
       ensure read only [Martin J. Evans]
     Corrected SQL_BIGINT docs to say ODBC value is used PR#5 [ilmari]
