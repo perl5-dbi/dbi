@@ -458,7 +458,7 @@
 
     sub ping {
         my $dbh = shift;
-        return $dbh->set_err(0, "can't ping while not connected") # warning
+        return $dbh->set_err('', "can't ping while not connected") # info
             unless $dbh->SUPER::FETCH('Active');
         my $skip_ping = $dbh->{go_policy}->skip_ping();
         return ($skip_ping) ? 1 : $dbh->go_dbh_method(undef, 'ping', @_);

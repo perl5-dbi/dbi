@@ -20,6 +20,7 @@ Please test with your own application code.
 
     Changed tracing to no longer show quote and quote_identifier calls
         at trace level 1.
+    Changed DBD::Gofer ping while disconnected set_err from warn to info.
     Clarified wording of log message when err is cleared.
     Changed bootstrap to use $XS_VERSION RT#89618 [Andreas Koenig]
 
