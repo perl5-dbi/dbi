@@ -4618,7 +4618,9 @@ _handles(sv)
     (void)cv;
     EXTEND(SP, 2);
     PUSHs(oh);  /* returns outer handle then inner */
-    PUSHs(ih);
+    if (GIMME != G_SCALAR) {
+        PUSHs(ih);
+    }
 
 
 void
