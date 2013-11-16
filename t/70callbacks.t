@@ -9,11 +9,10 @@ use DBI;
 BEGIN {
         plan skip_all => '$h->{Callbacks} attribute not supported for DBI::PurePerl'
                 if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
-        plan tests => 65;
 }
 
 $| = 1;
-my $dsn = "dbi:ExampleP:";
+my $dsn = "dbi:ExampleP:drv_foo=drv_bar";
 my %called;
 
 ok my $dbh = DBI->connect($dsn, '', ''), "Create dbh";
@@ -31,6 +30,8 @@ ok $dbh->{Callbacks} = {
 	is $_, 'ping', '$_ holds method name';
 	is @_, 1, '@_ holds 1 values';
 	is ref $_[0], 'DBI::db', 'first is $dbh';
+        ok tied(%{$_[0]}), '$dbh is tied (outer) handle'
+            or DBI::dump_handle($_[0], 'tied?', 10);
 	$called{$_}++;
 	return;
     },
@@ -143,12 +144,39 @@ and (the already special-case) "connect_cached.reused".
 
 =cut
 
+my $driver_dsn = (DBI->parse_dsn($dsn))[4] or die 'panic';
+
 my @args = (
-    $dsn, '', '', {
+    $dsn, 'u', 'p', {
         Callbacks => {
-            "connect_cached.new"       => sub { $called{new}++; return; },
-            "connect_cached.reused"    => sub { $called{cached}++; return; },
-            "connect_cached.connected" => sub { $called{connected}++; return; },
+            "connect_cached.new"       => sub {
+                my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
+                ok tied(%$dbh), 'connect_cached.new $h is tied (outer) handle'
+                    if $dbh; # $dbh is typically undef or a dead/disconnected $dbh
+                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                is $user, 'u', 'user';
+                is $auth, 'p', 'pass';
+                $called{new}++;
+                return;
+            },
+            "connect_cached.reused"    => sub {
+                my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
+                ok tied(%$dbh), 'connect_cached.reused $h is tied (outer) handle';
+                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                is $user, 'u', 'user';
+                is $auth, 'p', 'pass';
+                $called{cached}++;
+                return;
+            },
+            "connect_cached.connected" => sub {
+                my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
+                ok tied(%$dbh), 'connect_cached.connected $h is tied (outer) handle';
+                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                is $user, 'u', 'user';
+                is $auth, 'p', 'pass';
+                $called{connected}++;
+                return;
+            },
         }
     }
 );
@@ -192,6 +220,8 @@ ok $sth->execute, 'Execute';
 is $called{execute}, 1, 'Execute callback should have been called';
 ok $sth->fetch, 'Fetch';
 is $called{fetch}, 1, 'Fetch callback should have been called';
+
+done_testing();
 
 __END__
 

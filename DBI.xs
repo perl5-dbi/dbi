@@ -3555,7 +3555,7 @@ XS(XS_DBI_dispatch)
 
         EXTEND(SP, items+1);
         PUSHMARK(SP);
-        PUSHs(h);                       /* push inner handle, then others params */
+        PUSHs(orig_h);                  /* push outer handle, then others params */
         for (i=1; i < items; ++i) {     /* start at 1 to skip handle */
             PUSHs( ST(i) );
         }
