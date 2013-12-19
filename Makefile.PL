@@ -65,7 +65,7 @@ my %opts = (
 	    license     => 'http://dev.perl.org/licenses/',
 	    homepage    => 'http://dbi.perl.org/',
 	},
-	recommends => {
+	suggests => {
 	    'RPC::PlServer'  => 0.2001,
 	    'Net::Daemon'    => 0,
 	    'SQL::Statement' => 1.402,
