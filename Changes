@@ -9,12 +9,19 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.631
 
 NOTE: This release changes the handle passed to Callbacks from being an 'inner'
-handle to being an 'outer' handle.  It's unlikely changes will be needed but,
-if you have code that makes use of Callbacks, you should be sure you understand
-what this change means and review your callback code.
+handle to being an 'outer' handle. If you have code that makes use of Callbacks,
+you should be sure you understand what this change means and review your
+callback code.
 
     Changed the handle passed to Callbacks from being an 'inner'
         handle to being an 'outer' handle.
+
+    Improved reliability of concurrent testing
+        PR#8 [Peter Rabbitson]
+    Changed optional dependencies to "suggest"
+        PR#9 [Karen Etheridge]
+    Changed to avoid mg_get in neatsvpv during global destruction
+        PR#10 [Matt Phillips]
 
 =head2 Changes in DBI 1.630 - 28th Oct 2013
 
