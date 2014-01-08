@@ -55,8 +55,13 @@ sub testing {
 
     # RT #77137: a thread created from a thread was crashing the
     # interpreter
+    my $subthread = threads->new(sub {});
 
-    threads->new(sub {})->join();
+    # provide a little insurance against thread scheduling issues (hopefully)
+    # http://www.nntp.perl.org/group/perl.cpan.testers/2009/06/msg4369660.html
+    eval { select undef, undef, undef, 0.2 };
+
+    $subthread->join();
 }
 
 # load up the threads
@@ -69,11 +74,11 @@ push @thr, threads_sub->create( \&testing )
 # join all the threads
 
 foreach my $thread (@thr) {
-    $thread->join;
-
     # provide a little insurance against thread scheduling issues (hopefully)
     # http://www.nntp.perl.org/group/perl.cpan.testers/2009/06/msg4369660.html
     eval { select undef, undef, undef, 0.2 };
+
+    $thread->join;
 }
 
 pass('... all tests have passed');

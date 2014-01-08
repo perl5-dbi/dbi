@@ -214,7 +214,7 @@ ok(($filesz == $newfsz), '... regular fh: trace_msg after changing trace output'
 $dbh->trace(0);	# disable trace
 
 {   # Open trace to glob. started failing in perl-5.10
-    my $tf = "foo.log";
+    my $tf = "foo.log.$$";
     1 while unlink $tf;
     1 while unlink "*main::FOO";
     1 while unlink "*main::STDERR";
