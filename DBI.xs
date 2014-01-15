@@ -862,8 +862,9 @@ err_hash(pTHX_ imp_xxh_t *imp_xxh)
              hash = -dbi_hash(SvPV_nolen(errstr_sv), 0); /* make positive */
         else hash = 0;
         hash >>= 1; /* free up extra bit (top bit is already free) */
-        hash |= (SvTRUE(err_sv)) ? 0x80000000 /* err, or warn, or info */
-              : (SvCUR(err_sv) ) ? 0x40000000 : 0x20000000;
+        hash |= (SvTRUE(err_sv))                  ? 0x80000000 /* err */
+              : (SvPOK(err_sv) && !SvCUR(err_sv)) ? 0x20000000 /* '' = info */
+                                                  : 0x40000000;/* 0 or '0' = warn */
     }
     return hash;
 }
