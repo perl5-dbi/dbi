@@ -14,6 +14,7 @@ you should be sure you understand what this change means and review your
 callback code.
 
     Fixed err_hash handling of integer err RT#92172 [Dagfinn Ilmari]
+    Fixed use of \Q vs \E in t/70callbacks.t
 
     Changed the handle passed to Callbacks from being an 'inner'
         handle to being an 'outer' handle.

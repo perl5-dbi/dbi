@@ -153,7 +153,7 @@ my @args = (
                 my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
                 ok tied(%$dbh), 'connect_cached.new $h is tied (outer) handle'
                     if $dbh; # $dbh is typically undef or a dead/disconnected $dbh
-                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                like $cb_dsn, qr/\Q$driver_dsn/, 'dsn';
                 is $user, 'u', 'user';
                 is $auth, 'p', 'pass';
                 $called{new}++;
@@ -162,7 +162,7 @@ my @args = (
             "connect_cached.reused"    => sub {
                 my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
                 ok tied(%$dbh), 'connect_cached.reused $h is tied (outer) handle';
-                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                like $cb_dsn, qr/\Q$driver_dsn/, 'dsn';
                 is $user, 'u', 'user';
                 is $auth, 'p', 'pass';
                 $called{cached}++;
@@ -171,7 +171,7 @@ my @args = (
             "connect_cached.connected" => sub {
                 my ($dbh, $cb_dsn, $user, $auth, $attr) = @_;
                 ok tied(%$dbh), 'connect_cached.connected $h is tied (outer) handle';
-                like $cb_dsn, qr/\E$driver_dsn/, 'dsn';
+                like $cb_dsn, qr/\Q$driver_dsn/, 'dsn';
                 is $user, 'u', 'user';
                 is $auth, 'p', 'pass';
                 $called{connected}++;
