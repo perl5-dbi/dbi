@@ -10,8 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
 NOTE: This release changes the handle passed to Callbacks from being an 'inner'
 handle to being an 'outer' handle. If you have code that makes use of Callbacks,
-you should be sure you understand what this change means and review your
-callback code.
+ensure that you understand what this change means and review your callback code.
 
     Fixed err_hash handling of integer err RT#92172 [Dagfinn Ilmari]
     Fixed use of \Q vs \E in t/70callbacks.t
