@@ -504,14 +504,19 @@ sub _setup_handle {
 	    $h_inner->{$_} = $parent->{$_}
 		if exists $parent->{$_} && !exists $h_inner->{$_};
 	}
-	if (ref($parent) =~ /::db$/) {
+	if (ref($parent) =~ /::db$/) { # is sth
 	    $h_inner->{Database} = $parent;
 	    $parent->{Statement} = $h_inner->{Statement};
 	    $h_inner->{NUM_OF_PARAMS} = 0;
+            $h_inner->{Active} = 0; # driver sets true when there's data to fetch
 	}
-	elsif (ref($parent) =~ /::dr$/){
+	elsif (ref($parent) =~ /::dr$/){ # is dbh
 	    $h_inner->{Driver} = $parent;
+            $h_inner->{Active} = 0;
 	}
+        else {
+            warn "panic: ".ref($parent); # should never happen
+        }
 	$h_inner->{dbi_pp_parent} = $parent;
 
 	# add to the parent's ChildHandles
@@ -536,11 +541,11 @@ sub _setup_handle {
 	$h_inner->{LongReadLen}		||= 80;
 	$h_inner->{ChildHandles}        ||= [] if $HAS_WEAKEN;
 	$h_inner->{Type}                ||= 'dr';
+        $h_inner->{Active}              = 1;
     }
     $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{"dbi_pp_pid"} = $$;
     $h_inner->{ErrCount} = 0;
-    $h_inner->{Active} = 0; # driver should set true when there's data to fetch
 }
 
 sub constant {

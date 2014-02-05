@@ -551,7 +551,7 @@
             go_last_insert_id_args => $lii_args,
             go_cache => $go_cache,
         });
-        $sth->STORE(Active => 0);
+        $sth->STORE(Active => 0); # XXX needed? It should be the default
 
         my $skip_prepare_check = $policy->skip_prepare_check($attr, $dbh, $statement, $attr, $sth);
         if (not $skip_prepare_check) {
