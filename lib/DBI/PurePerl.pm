@@ -540,7 +540,7 @@ sub _setup_handle {
     $h_inner->{"dbi_pp_call_depth"} = 0;
     $h_inner->{"dbi_pp_pid"} = $$;
     $h_inner->{ErrCount} = 0;
-    $h_inner->{Active} = 1;
+    $h_inner->{Active} = 0; # driver should set true when there's data to fetch
 }
 
 sub constant {
