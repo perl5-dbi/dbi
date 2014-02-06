@@ -1856,7 +1856,7 @@ dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
         PERL_UNUSED_VAR(attribs);
         croak("Statement has no result columns to bind%s",
             DBIc_ACTIVE(imp_sth)
-                ? "" : " (perhaps you need to call execute first)");
+                ? "" : " (perhaps you need to successfully call execute first, or again)");
     }
 
     if ( (av = DBIc_FIELDS_AV(imp_sth)) == Nullav)

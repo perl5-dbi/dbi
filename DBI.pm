@@ -1888,7 +1888,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $fields = $sth->FETCH('NUM_OF_FIELDS') || 0;
 	if ($fields <= 0 && !$sth->{Active}) {
 	    return $sth->set_err($DBI::stderr, "Statement has no result columns to bind"
-		    ." (perhaps you need to successfully call execute first)");
+		    ." (perhaps you need to successfully call execute first, or again)");
 	}
 	# Backwards compatibility for old-style call with attribute hash
 	# ref as first arg. Skip arg if undef or a hash ref.
