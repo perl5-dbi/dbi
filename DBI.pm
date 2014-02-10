@@ -345,6 +345,7 @@ my $dbd_prefix_registry = {
   mvsftp_      => { class => 'DBD::MVS_FTPSQL',     },
   mysql_       => { class => 'DBD::mysql',          },
   mx_          => { class => 'DBD::Multiplex',      },
+  neo_         => { class => 'DBD::Neo4p',          },
   nullp_       => { class => 'DBD::NullP',          },
   odbc_        => { class => 'DBD::ODBC',           },
   ora_         => { class => 'DBD::Oracle',         },
@@ -4936,7 +4937,7 @@ unknown or unimplemented information types. For example:
 See L</"Standards Reference Information"> for more detailed information
 about the information types and their meanings and possible return values.
 
-The DBI::Const::GetInfoType module exports a %GetInfoType hash that
+The L<DBI::Const::GetInfoType> module exports a %GetInfoType hash that
 can be used to map info type names to numbers. For example:
 
   $database_version = $dbh->get_info( $GetInfoType{SQL_DBMS_VER} );
