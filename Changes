@@ -10,7 +10,8 @@ DBI::Changes - List of significant changes to the DBI
 
     Fixed DBD::PurePerl to not set $sth->{Active} true by default
         drivers are expected to set it true as needed.
-
+    Fixed DBI::DBD::SqlEngine to complain loudly when prerequite
+        driver_prefix is not fulfilled (RT#93204) [Jens Rehsack]
 
 =head2 Changes in DBI 1.631 - 20th Jan 2014
 
