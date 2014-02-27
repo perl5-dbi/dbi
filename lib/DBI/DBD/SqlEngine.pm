@@ -95,6 +95,12 @@ EOI
             $dbclass->install_method($method);
         }
     }
+    else
+    {
+        warn "Using DBI::DBD::SqlEngine with unregistered driver.\n"
+          . "Reading documentation how to prevent is strongly recommended.\n";
+
+    }
 
     # XXX inject DBD::XXX::Statement unless exists
 
