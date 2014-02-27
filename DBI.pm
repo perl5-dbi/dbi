@@ -113,6 +113,12 @@ personally. The I<dbi-users> mailing list has lots of experienced
 people who should be able to help you if you need it. If you do email
 Tim he is very likely to just forward it to the mailing list.
 
+=head3 IRC
+
+DBI IRC Channel: #dbi on irc.perl.org (L<irc://irc.perl.org/#dbi>)
+
+=for html <a href="http://chat.mibbit.com/#dbi@irc.perl.org">(click for instant chatroom login)</a>
+
 =head3 Online
 
 StackOverflow has a DBI tag L<http://stackoverflow.com/questions/tagged/dbi>
