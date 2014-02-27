@@ -97,7 +97,7 @@ EOI
     }
     else
     {
-        warn "Using DBI::DBD::SqlEngine with unregistered driver.\n"
+        warn "Using DBI::DBD::SqlEngine with unregistered driver $class.\n"
           . "Reading documentation how to prevent is strongly recommended.\n";
 
     }
@@ -1698,6 +1698,9 @@ by DBI::DBD::SqlEngine.
 Currently the API of DBI::DBD::SqlEngine is experimental and will
 likely change in the near future to provide the table meta data basics
 like DBD::File.
+
+DBI::DBD::SqlEngine expects that any driver in inheritance chain has
+a L<DBI prefix|DBI::DBD/The_database_handle_constructor>.
 
 =head2 Metadata
 

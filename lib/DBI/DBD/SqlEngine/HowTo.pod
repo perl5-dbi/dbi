@@ -30,8 +30,15 @@ L<DBI::DBD/CREATING A NEW DRIVER>.
 
 =head1 CREATING DRIVER CLASSES
 
-Do you have an entry in DBI's DBD registry? For this guide, a prefix of
-C<foo_> is assumed.
+Do you have an entry in DBI's DBD registry? DBI::DBD::SqlEngine expect
+having a unique prefix for every driver class in inheritance chain.
+
+It's easy to get a prefix - just drop the DBI team a note
+(L<DBI/GETTING_HELP>). If you want for some reason hide your work, take
+a look at L<Class::Method::Modifiers> how to wrap a private prefix method
+around existing C<driver_prefix>.
+
+For this guide, a prefix of C<foo_> is assumed.
 
 =head2 Sample Skeleton
 
