@@ -350,6 +350,7 @@ my $dbd_prefix_registry = {
   msql_        => { class => 'DBD::mSQL',           },
   mvsftp_      => { class => 'DBD::MVS_FTPSQL',     },
   mysql_       => { class => 'DBD::mysql',          },
+  mu_          => { class => 'DBD::Multi'           },
   mx_          => { class => 'DBD::Multiplex',      },
   neo_         => { class => 'DBD::Neo4p',          },
   nullp_       => { class => 'DBD::NullP',          },
