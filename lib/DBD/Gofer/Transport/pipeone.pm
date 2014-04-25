@@ -168,14 +168,15 @@ sub receive_response_by_transport {
     my $info = $self->connection_info || die;
     my ($pid, $rfh, $efh, $ios, $cmd) = @{$info}{qw(pid rfh efh ios cmd)};
 
-    my $frozen_response;
+    my $frozen_response = '';
     my $stderr_msg;
 
     $self->read_response_from_fh( {
         $efh => {
             error => sub { warn "error reading response stderr: $!"; 1 },
             eof   => sub { warn "eof on stderr" if 0; 1 },
-            read  => sub { $stderr_msg .= $_; 0 },
+            read  => sub { defined $stderr_msg or $stderr_msg = '';
+                $stderr_msg .= $_; 0 },
         },
         $rfh => {
             error => sub { warn "error reading response: $!"; 1 },
