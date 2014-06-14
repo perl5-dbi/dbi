@@ -94,7 +94,7 @@ use warnings;
 	    $sth->{TYPE} = $attribs->{TYPE}
 		    || [ (DBI::SQL_VARCHAR()) x $numFields ];
 	    $sth->{PRECISION} = $attribs->{PRECISION}
-		    || [ map { length($sth->{NAME}->[$_]) } 0..$numFields -1 ];
+		    || _max_columnar_lengths($numFields, $rows);
 	    $sth->{SCALE} = $attribs->{SCALE}
 		    || [ (0) x $numFields ];
 	    $sth->{NULLABLE} = $attribs->{NULLABLE}
@@ -153,6 +153,19 @@ use warnings;
 	my ($dbh, @args) = @_;
 	return $dbh->set_err(42, "not enough parameters") unless @args >= 2;
 	return \@args;
+    }
+
+    sub _max_columnar_lengths {
+	my ($numFields, $rows) = @_;
+	my @precision = (0,) x $numFields;
+	my $len;
+	for my $row (@$rows) {
+	    for my $i (0 .. $numFields - 1) {
+		next unless defined $len = length($row->[$i]);
+		$precision[$i] = $len if $len > $precision[$i];
+	    }
+	}
+	return wantarray ? @precision : \@precision;
     }
 }
 
@@ -281,7 +294,7 @@ The number and order should match the number and ordering of the C<$data> column
 
 C<%attr> is a hash of other standard DBI attributes that you might pass to a prepare statement.
 
-Currently only NAME, TYPE, and PRECISION are supported.
+Currently only NAME, TYPE, and PRECISION are supported.  PRECISION will be automatically computed if not supplied.
 
 =back
 
