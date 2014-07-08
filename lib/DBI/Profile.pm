@@ -831,7 +831,12 @@ sub as_text {
         for (@path) {
             s/[\r\n]+/ /g;
             s/$separator_re/ /g;
-            $_ = sprintf $format_path_element, $_, ++$idx;
+            if ($format_path_element eq "%s") {
+              $_ = sprintf $format_path_element, $_;
+              ++$idx;
+            } else {
+              $_ = sprintf $format_path_element, $_, ++$idx;
+            }
         }
         push @text, sprintf $format,
             join($separator, @path),                  # 1=path

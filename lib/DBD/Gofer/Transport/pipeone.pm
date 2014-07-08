@@ -169,7 +169,7 @@ sub receive_response_by_transport {
     my ($pid, $rfh, $efh, $ios, $cmd) = @{$info}{qw(pid rfh efh ios cmd)};
 
     my $frozen_response;
-    my $stderr_msg;
+    my $stderr_msg = '';
 
     $self->read_response_from_fh( {
         $efh => {
