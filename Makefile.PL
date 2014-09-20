@@ -64,6 +64,7 @@ my %opts = (
 	    MailingList => 'mailto:dbi-dev@perl.org',
 	    license     => 'http://dev.perl.org/licenses/',
 	    homepage    => 'http://dbi.perl.org/',
+	    IRC		=> 'irc://irc.perl.org/#dbi',
 	},
 	suggests => {
 	    'RPC::PlServer'  => 0.2001,
