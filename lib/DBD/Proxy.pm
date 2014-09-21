@@ -973,6 +973,13 @@ The workaround is storing the modified local copy back to the server:
   $dbh->{"csv_tables"} = $tables;
 
 
+=head1 SECURITY WARNING
+
+L<RPC::PlClient> used underneath is not secure due to serializing and
+deserializing data with L<Storable> module. Use the proxy driver only in
+trusted environment.
+
+
 =head1 AUTHOR AND COPYRIGHT
 
 This module is Copyright (c) 1997, 1998
