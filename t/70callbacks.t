@@ -221,6 +221,16 @@ is $called{execute}, 1, 'Execute callback should have been called';
 ok $sth->fetch, 'Fetch';
 is $called{fetch}, 1, 'Fetch callback should have been called';
 
+# stress test for stack reallocation and mark handling -- RT#86744
+my $stress_count = 3000;
+my $place_holders = join(',', ('?') x $stress_count);
+my @params = ('t') x $stress_count;
+my $stress_dbh = DBI->connect( 'DBI:NullP:test');
+my $stress_sth = $stress_dbh->prepare("select 1");
+$stress_sth->{Callbacks}{execute} = sub { return; };
+$stress_sth->execute(@params);
+
+
 done_testing();
 
 __END__
