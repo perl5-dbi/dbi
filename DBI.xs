@@ -5445,6 +5445,19 @@ FETCH(h, keysv)
     ST(0) = dbih_get_attr_k(h, keysv, 0);
     (void)cv;
 
+void
+DELETE(h, keysv)
+    SV *        h
+    SV *        keysv
+    CODE:
+    /* only private_* keys can be deleted, for others DELETE acts like FETCH */
+    /* because the DBI internals rely on certain handle attributes existing  */
+    if (strnEQ(SvPV_nolen(keysv),"private_",8))
+        ST(0) = hv_delete_ent((HV*)SvRV(h), keysv, 0, 0);
+    else
+        ST(0) = dbih_get_attr_k(h, keysv, 0);
+    (void)cv;
+
 
 void
 private_data(h)

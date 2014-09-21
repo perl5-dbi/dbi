@@ -79,6 +79,13 @@ is_deeply [ $dbh->FETCH_many(qw(HandleError FetchHashKeyName LongReadLen ErrCoun
           [ undef, qw(NAME 80 0) ], 'should be able to FETCH_many';
 
 is $dbh->{examplep_private_dbh_attrib}, 42, 'should see driver-private dbh attribute value';
+is delete $dbh->{examplep_private_dbh_attrib}, 42, 'delete on non-private attribute acts like fetch';
+is $dbh->{examplep_private_dbh_attrib}, 42, 'value unchanged after delete';
+
+$dbh->{private_foo} = 42;
+is $dbh->{private_foo}, 42, 'should see private_foo dbh attribute value';
+is delete $dbh->{private_foo}, 42, 'delete should return private_foo dbh attribute value';
+is $dbh->{private_foo}, undef, 'value of private_foo after delete should be undef';
 
 # Raise an error.
 eval { 

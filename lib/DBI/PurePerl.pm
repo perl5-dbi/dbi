@@ -893,6 +893,11 @@ sub STORE {
     $h->{$key} = $is_flag_attribute{$key} ? !!$value : $value;
     return 1;
 }
+sub DELETE {
+    my ($h, $key) = @_;
+    return $h->FETCH($key) unless $key =~ /^private_/;
+    return delete $h->{$key};
+}
 sub err    { return shift->{err}    }
 sub errstr { return shift->{errstr} }
 sub state  { return shift->{state}  }

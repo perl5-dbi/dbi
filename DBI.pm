@@ -411,6 +411,7 @@ my $keeperr = { O=>0x0004 };
 	'FIRSTKEY'	=> $keeperr,
 	'NEXTKEY'	=> $keeperr,
 	'STORE'		=> { O=>0x0418 | 0x4 },
+	'DELETE'	=> { O=>0x0404 },
 	can		=> { O=>0x0100 }, # special case, see dispatch
 	debug 	 	=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
 	dump_handle 	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
