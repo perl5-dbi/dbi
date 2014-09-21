@@ -12,6 +12,7 @@ DBI::Changes - List of significant changes to the DBI
         drivers are expected to set it true as needed.
     Fixed DBI::DBD::SqlEngine to complain loudly when prerequite
         driver_prefix is not fulfilled (RT#93204) [Jens Rehsack]
+    Fixed redundant sprintf argument warning RT#97062 [Reini Urban]
 
 =head2 Changes in DBI 1.631 - 20th Jan 2014
 
