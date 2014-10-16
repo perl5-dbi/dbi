@@ -207,6 +207,31 @@ ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
 ok ($dbh->do ("drop table $tbl"), "table drop");
 is (-s $tbl_file, undef, "Test table removed"); # -s => size test
 
+# ==================== Nonexisting top-dir ========================
+my %drh = DBI->installed_drivers;
+my $qer = qr{\bNo such directory};
+foreach my $tld ("./non-existing", "nonexisting_folder", "/Fr-dle/hurd0k/ok$$") {
+    is (DBI->connect ("dbi:File:", undef, undef, {
+	f_dir      => $tld,
+
+	RaiseError => 0,
+	PrintError => 0,
+	}), undef, "Should not be able to open a DB to $tld");
+    like ($DBI::errstr, $qer, "Error message");
+    $drh{File}->set_err (undef, "");
+    is ($DBI::errstr, undef, "Cleared error");
+    my $dbh;
+    eval { $dbh = DBI->connect ("dbi:File:", undef, undef, {
+	f_dir      => $tld,
+
+	RaiseError => 1,
+	PrintError => 0,
+	})};
+    is ($dbh, undef, "connect () should die on $tld with RaiseError");
+    like ($@,           $qer, "croak message");
+    like ($DBI::errstr, $qer, "Error message");
+    }
+
 done_testing ();
 
 sub DBD::File::Table::fetch_row ($$)
