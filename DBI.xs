@@ -4157,7 +4157,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
     char rt_comment = '\0';
     char *dest, *start;
     const char *src;
-    const char *style = "", *laststyle = '\0';
+    const char *style = "", *laststyle = NULL;
     SV *new_stmt_sv;
 
     (void)foo;
