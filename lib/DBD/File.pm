@@ -35,7 +35,7 @@ use base qw( DBI::DBD::SqlEngine );
 use Carp;
 use vars qw( @ISA $VERSION $drh );
 
-$VERSION = "0.42";
+$VERSION = "0.43";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
@@ -85,6 +85,8 @@ use warnings;
 
 use vars qw( @ISA $imp_data_size );
 
+use Carp;
+
 @DBD::File::dr::ISA           = qw( DBI::DBD::SqlEngine::dr );
 $DBD::File::dr::imp_data_size = 0;
 
@@ -99,6 +101,31 @@ sub dsn_quote
 
 # XXX rewrite using TableConfig ...
 sub default_table_source { "DBD::File::TableSource::FileSystem" }
+
+sub connect
+{
+    my ($drh, $dbname, $user, $auth, $attr) = @_;
+
+    # We do not (yet) care about conflicting attributes here
+    # my $dbh = DBI->connect ("dbi:CSV:f_dir=test", undef, undef, { f_dir => "text" });
+    # will test here that both test and text should exist
+    if (my $attr_hash = (DBI->parse_dsn ($dbname))[3]) {
+	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
+	    my $msg = "No such directory '$attr_hash->{f_dir}";
+	    $drh->set_err (2, $msg);
+	    $attr_hash->{RaiseError} and croak $msg;
+	    return;
+	    }
+	}
+    if ($attr and defined $attr->{f_dir} && ! -d $attr->{f_dir}) {
+	my $msg = "No such directory '$attr->{f_dir}";
+	$drh->set_err (2, $msg);
+	$attr->{RaiseError} and croak $msg;
+	return;
+	}
+
+    return $drh->SUPER::connect ($dbname, $user, $auth, $attr);
+    } # connect
 
 sub disconnect_all
 {
@@ -130,7 +157,7 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir}        or $attr->{f_dir}     = $dbh->{f_dir};
+    exists $attr->{f_dir}        or $attr->{f_dir}        = $dbh->{f_dir};
     exists $attr->{f_dir_search} or $attr->{f_dir_search} = $dbh->{f_dir_search};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
@@ -343,6 +370,10 @@ sub data_sources
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
     defined $dir or return; # Stream-based databases do not have f_dir
+    unless (-d $dir && -r $dir && -x $dir) {
+	$drh->set_err ($DBI::stderr, "Cannot use directory $dir from f_dir");
+	return;
+	}
     my %attrs;
     $attr and %attrs = %$attr;
     delete $attrs{f_dir};
