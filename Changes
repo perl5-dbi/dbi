@@ -25,6 +25,8 @@ DBI::Changes - List of significant changes to the DBI
 
     Added security notice to DBD::Proxy and DBI::ProxyServer because they
         use Storable which is insecure. Thanks to ppisar@redhat.com RT#90475
+    Added note to AutoInactiveDestroy docs strongly recommending that it
+        is enabled in all new code.
 
 =head2 Changes in DBI 1.631 - 20th Jan 2014
 

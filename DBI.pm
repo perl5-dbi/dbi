@@ -3690,8 +3690,8 @@ the destruction of inherited handles cause the corresponding handles in the
 parent process to cease working.
 
 Either the parent or the child process, but not both, should set
-C<InactiveDestroy> true on all their shared handles. Alternatively the
-L</AutoInactiveDestroy> can be set in the parent on connect.
+C<InactiveDestroy> true on all their shared handles. Alternatively, and
+preferably, the L</AutoInactiveDestroy> can be set in the parent on connect.
 
 To help tracing applications using fork the process id is shown in
 the trace log whenever a DBI or handle trace() method is called.
@@ -3704,12 +3704,15 @@ from the DBI's method dispatcher, e.g. >= 9.
 Type: boolean, inherited
 
 The L</InactiveDestroy> attribute, described above, needs to be explicitly set
-in the child process after a fork(). This is a problem if the code that performs
-the fork() is not under your control, perhaps in a third-party module.
-Use C<AutoInactiveDestroy> to get around this situation.
+in the child process after a fork(), on every active database and statement handle.
+This is a problem if the code that performs the fork() is not under your
+control, perhaps in a third-party module.  Use C<AutoInactiveDestroy> to get
+around this situation.
 
 If set true, the DESTROY method will check the process id of the handle and, if
 different from the current process id, it will set the I<InactiveDestroy> attribute.
+It is strongly recommended that C<AutoInactiveDestroy> is enabled on all new code
+(it's only not enabled by default to avoid backwards compatibility problems).
 
 This is the example it's designed to deal with:
 
