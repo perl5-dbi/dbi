@@ -2707,7 +2707,7 @@ L</Generating the get_info method>.
 With the pre-requisites in place, you might type:
 
     perl -MDBI::DBD::Metadata -we \
-       "write_typeinfo (qw{ dbi:ODBC:foo_db username password Driver })"
+       "write_typeinfo_pm (qw{ dbi:ODBC:foo_db username password Driver })"
 
 The procedure writes to standard output the code that should be added to
 your F<Driver.pm> file and the code that should be written to
