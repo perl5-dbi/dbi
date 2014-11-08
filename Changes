@@ -8,7 +8,9 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.633
 
-    Made t/42prof_data.t more informative
+    Fixed selectrow_*ref to return undef on error in list context
+        instead if an empty list.
+    Changed t/42prof_data.t more informative
 
 =head2 Changes in DBI 1.632 - 5th Nov 2014
 

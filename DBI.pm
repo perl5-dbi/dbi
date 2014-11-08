@@ -1636,9 +1636,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     sub _do_selectrow {
 	my ($method, $dbh, $stmt, $attr, @bind) = @_;
 	my $sth = ((ref $stmt) ? $stmt : $dbh->prepare($stmt, $attr))
-	    or return;
+	    or return undef;
 	$sth->execute(@bind)
-	    or return;
+	    or return undef;
 	my $row = $sth->$method()
 	    and $sth->finish;
 	return $row;
