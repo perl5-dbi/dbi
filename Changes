@@ -11,8 +11,10 @@ DBI::Changes - List of significant changes to the DBI
     Fixed selectrow_*ref to return undef on error in list context
         instead if an empty list.
     Changed t/42prof_data.t more informative
+    Changed $sth->{TYPE} to be NUMERIC in DBD::File drivers as per the
+	DBI docs. Note TYPE_NAME is now also available. [H.Merijn Brand]
 
-=head2 Changes in DBI 1.632 - 5th Nov 2014
+=head2 Changes in DBI 1.632 - 9th Nov 2014
 
     Fixed risk of memory corruption with many arguments to methods
         originally reported by OSCHWALD for Callbacks but may apply

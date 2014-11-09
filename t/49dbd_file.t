@@ -176,8 +176,10 @@ ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
 $rowidx = 0;
 SKIP: {
-    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 3;
     ok ($sth->execute, "execute on $tbl");
+    like ($_, qr{^[0-9]+$},   "TYPE is numeric")  for @{$sth->{TYPE}};
+    like ($_, qr{^[A-Z]\w+$}, "TYPE_NAME is set") for @{$sth->{TYPE_NAME}};
     $dbh->errstr and diag $dbh->errstr;
     }
 
