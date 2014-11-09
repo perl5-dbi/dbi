@@ -321,12 +321,38 @@ sub FETCH
 
 	    # fill overall_defs unless we know
 	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
+		my $types = $sth->{Database}{Types};
+		unless ($types) { # Feth types only once per database
+		    if (my $t = $sth->{Database}->type_info_all ()) {
+			foreach my $i (1 .. $#$t) {
+			    $types->{uc $t->[$i][0]}   = $t->[$i][1];
+			    $types->{$t->[$i][1]} ||= uc $t->[$i][0];
+			    }
+			}
+		    # sane defaults
+		    for ([  0, ""		],
+			 [  1, "CHAR"		],
+			 [  4, "INTEGER"	],
+			 [ 12, "VARCHAR"	],
+			 ) {
+			$types->{$_->[0]} ||= $_->[1];
+			$types->{$_->[1]} ||= $_->[0];
+			}
+		    $sth->{Database}{Types} = $types;
+		    }
 		my $all_meta =
 		    $sth->{Database}->func ("*", "table_defs", "get_sql_engine_meta");
 		while (my ($tbl, $meta) = each %$all_meta) {
 		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
 		    foreach (keys %{$meta->{table_defs}{columns}}) {
-			$sth->{f_overall_defs}{$_} = $meta->{table_defs}{columns}{$_};
+			my $field_info = $meta->{table_defs}{columns}{$_};
+			if (defined $field_info->{data_type} &&
+				    $field_info->{data_type} !~ m/^[0-9]+$/) {
+			    $field_info->{type_name} = uc $field_info->{data_type};
+			    $field_info->{data_type} = $types->{$field_info->{type_name}} || 0;
+			    }
+			$field_info->{type_name} ||= $types->{$field_info->{data_type}} || "CHAR";
+			$sth->{f_overall_defs}{$_} = $field_info;
 			}
 		    }
 		}
@@ -334,7 +360,11 @@ sub FETCH
 	    my @colnames = $sth->sql_get_colnames ();
 
 	    $attr eq "TYPE"      and
-		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
+		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || 12 }
+			    @colnames ];
+
+	    $attr eq "TYPE_NAME" and
+		return [ map { $sth->{f_overall_defs}{$_}{type_name}   || "VARCHAR" }
 			    @colnames ];
 
 	    $attr eq "PRECISION" and
