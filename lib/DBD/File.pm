@@ -322,7 +322,7 @@ sub FETCH
 	    # fill overall_defs unless we know
 	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
 		my $types = $sth->{Database}{Types};
-		unless ($types) { # Feth types only once per database
+		unless ($types) { # Fetch types only once per database
 		    if (my $t = $sth->{Database}->type_info_all ()) {
 			foreach my $i (1 .. $#$t) {
 			    $types->{uc $t->[$i][0]}   = $t->[$i][1];
@@ -342,7 +342,8 @@ sub FETCH
 		    }
 		my $all_meta =
 		    $sth->{Database}->func ("*", "table_defs", "get_sql_engine_meta");
-		while (my ($tbl, $meta) = each %$all_meta) {
+		foreach my $tbl (keys %$all_meta) {
+		    my $meta = $all_meta->{$tbl};
 		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
 		    foreach (keys %{$meta->{table_defs}{columns}}) {
 			my $field_info = $meta->{table_defs}{columns}{$_};
