@@ -12,7 +12,10 @@ DBI::Changes - List of significant changes to the DBI
         instead if an empty list.
     Changed t/42prof_data.t more informative
     Changed $sth->{TYPE} to be NUMERIC in DBD::File drivers as per the
-	DBI docs. Note TYPE_NAME is now also available. [H.Merijn Brand]
+        DBI docs. Note TYPE_NAME is now also available. [H.Merijn Brand]
+
+    Added multi_ prefix for DBD::Multi (Dan Wright) and ad2_ prefix for
+        DBD::AnyData2
 
 =head2 Changes in DBI 1.632 - 9th Nov 2014
 
