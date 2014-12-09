@@ -328,6 +328,7 @@ sub DBI::var::STORE    { Carp::croak("Can't modify \$DBI::${$_[0]} special varia
 
 my $dbd_prefix_registry = {
   ad_          => { class => 'DBD::AnyData',        },
+  ad2_         => { class => 'DBD::AnyData2',       },
   ado_         => { class => 'DBD::ADO',            },
   amzn_        => { class => 'DBD::Amazon',         },
   best_        => { class => 'DBD::BestWins',       },
