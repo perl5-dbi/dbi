@@ -16,6 +16,8 @@ DBI::Changes - List of significant changes to the DBI
     Fixed compilation error on bleadperl due GVSV no longer being an lvalue
         [Dagfinn Ilmari Mannsåker]
 
+    Added docs for escaping placeholders using a backslash.
+    Added docs for get_info(9000) indicating ability to escape placeholders.
     Added multi_ prefix for DBD::Multi (Dan Wright) and ad2_ prefix for
         DBD::AnyData2
 

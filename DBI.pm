@@ -2420,6 +2420,11 @@ If the C<:>I<N> form of placeholder is supported by the driver you're using,
 then you should be able to use either L</bind_param> or L</execute> to bind
 values. Check your driver documentation.
 
+Some drivers allow you to prevent the recognition of a placeholder by placing a
+single backslash character (C<\>) immediately before it. The driver will remove
+the backslash character and ignore the placeholder, passing it unchanged to the
+backend. If the driver supports this then L</get_info>(9000) will return true.
+
 With most drivers, placeholders can't be used for any element of a
 statement that would prevent the database server from validating the
 statement and creating a query execution plan for it. For example:
@@ -4968,6 +4973,13 @@ of information types to ensure the DBI itself works properly:
    29  SQL_IDENTIFIER_QUOTE_CHAR   '`'           '"'
    41  SQL_CATALOG_NAME_SEPARATOR  '.'           '@'
   114  SQL_CATALOG_LOCATION        1             2
+
+Values from 9000 to 9999 for get_info are officially reserved for use by Perl DBI.
+Values in that range which have been assigned a meaning are defined here:
+
+C<9000>: true if a backslash character (C<\>) before placeholder-like text
+(e.g. C<?>, C<:foo>) will prevent it being treated as a placeholder by the driver.
+The backslash will be removed before the text is passed to the backend.
 
 =head3 C<table_info>
 
