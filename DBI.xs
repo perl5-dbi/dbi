@@ -2900,7 +2900,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 PUSHs( sv_2mortal(newSVpv(method_pv,0)));
                 PUTBACK;
                 SAVE_DEFSV; /* local($_) = $statement */
-                DEFSV = statement_sv;
+                DEFSV_set(statement_sv);
                 items = call_sv(code_sv, G_ARRAY);
                 SPAGAIN;
                 SP -= items ;
@@ -3554,7 +3554,7 @@ XS(XS_DBI_dispatch)
          */
         orig_defsv = DEFSV; /* remember the current $_ */
         SAVE_DEFSV;         /* local($_) = $method_name */
-        DEFSV = sv_2mortal(newSVpv(meth_name,0));
+        DEFSV_set(sv_2mortal(newSVpv(meth_name,0)));
 
         EXTEND(SP, items+1);
         PUSHMARK(SP);
@@ -3571,7 +3571,7 @@ XS(XS_DBI_dispatch)
         /* put $_ back now, but with an incremented ref count to compensate
          * for the ref count decrement that will happen when we exit the scope.
          */
-        DEFSV = SvREFCNT_inc(orig_defsv);
+        DEFSV_set(SvREFCNT_inc(orig_defsv));
 
         if (trace_level)
             PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned%s\n",
