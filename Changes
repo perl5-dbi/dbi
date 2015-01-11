@@ -6,7 +6,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.633
+=head2 Changes in DBI 1.633 - 11th Jan 2015
 
     Fixed selectrow_*ref to return undef on error in list context
         instead if an empty list.
