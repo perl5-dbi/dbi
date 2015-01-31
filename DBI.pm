@@ -4726,7 +4726,9 @@ statement, such as C<$sth-E<gt>{NUM_OF_FIELDS}>, until after C<$sth-E<gt>execute
 has been called. Portable applications should take this into account.
 
 In general, DBI drivers do not parse the contents of the statement
-(other than simply counting any L</Placeholders>). The statement is
+(other than simply counting any
+L<Placeholders|/"Placeholders and Bind Values">).
+The statement is
 passed directly to the database engine, sometimes known as pass-thru
 mode. This has advantages and disadvantages. On the plus side, you can
 access all the functionality of the engine being used. On the downside,
