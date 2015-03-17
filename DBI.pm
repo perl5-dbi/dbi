@@ -1391,7 +1391,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    unless $class =~ /^DBD::(\w+)::(dr|db|st)$/;
 	my ($driver, $subtype) = ($1, $2);
 	Carp::croak("invalid method name '$method'")
-	    unless $method =~ m/^([a-z]+_)\w+$/;
+	    unless $method =~ m/^([a-z][a-z0-9]*_)\w+$/;
 	my $prefix = $1;
 	my $reg_info = $dbd_prefix_registry->{$prefix};
 	Carp::carp("method name prefix '$prefix' is not associated with a registered driver") unless $reg_info;
