@@ -130,11 +130,19 @@ ok ($sth = $dbh->table_info (), "table_info");
 is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } sort "000_just_testing", $tbl ], "table_info gives test table");
 
 SKIP: {
-    $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
+    $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 6;
     ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");
     is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set single meta datum");
     ok ($dbh->f_set_meta ($tbl, { f_dir => $dir }), "set multiple meta data");
     is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set multiple meta attributes");
+
+    ok($dbh->f_new_meta("t_bsgdf_3544G2z", {
+	f_ext	=> undef,
+	f_dir	=> $dir,
+	}), "initialize new table (meta) with settings");
+
+    my $t_bsgdf_file = File::Spec->catfile (Cwd::abs_path ($dir), "t_bsgdf_3544G2z");
+    is($t_bsgdf_file, $dbh->f_get_meta ("t_bsgdf_3544G2z", "f_fqfn"), "verify create meta from scratch");
     }
 
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");

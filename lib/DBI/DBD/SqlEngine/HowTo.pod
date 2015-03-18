@@ -194,10 +194,10 @@ DBI::DBD::SqlEngine provides only readonly access to this structure,
 modifications are still allowed.
 
 Primarily DBI::DBD::SqlEngine provides access via the setters
-C<get_sql_engine_meta>, C<get_single_table_meta>, C<set_single_table_meta>,
-C<set_sql_engine_meta> and C<clear_sql_engine_meta>. Those methods are
-easily accessible by the users via the C<< $dbh->func () >> interface
-provided by DBI. Well, many users don't feel comfortize when calling
+C<new_sql_engine_meta>, C<get_sql_engine_meta>, C<get_single_table_meta>,
+C<set_single_table_meta>, C<set_sql_engine_meta> and C<clear_sql_engine_meta>.
+Those methods are easily accessible by the users via the C<< $dbh->func () >>
+interface provided by DBI. Well, many users don't feel comfortize when calling
 
     # don't require extension for tables cars
     $dbh->func ("cars", "f_ext", ".csv", "set_sql_engine_meta");
