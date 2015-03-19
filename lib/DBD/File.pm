@@ -956,6 +956,8 @@ sub DESTROY
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
+
+    $self->SUPER::DESTROY();
     } # DESTROY
 
 1;
