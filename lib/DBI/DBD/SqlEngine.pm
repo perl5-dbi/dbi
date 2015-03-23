@@ -1456,6 +1456,11 @@ sub open_table ($$$$$)
                 };
     $self->{command} eq "DROP" and $flags->{dropMode} = 1;
 
+    my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
+      or croak "Cannot find appropriate meta for table '$table'";
+
+    defined $table_meta->{sql_table_class} and $class = $table_meta->{sql_table_class};
+
     # because column name mapping is initialized in constructor ...
     # and therefore specific opening operations might be done before
     # reaching DBI::DBD::SqlEngine::Table->new(), we need to intercept
@@ -1463,8 +1468,6 @@ sub open_table ($$$$$)
     my $write_op = $createMode || $lockMode || $flags->{dropMode};
     if ($write_op)
     {
-        my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
-          or croak "Cannot find appropriate file for table '$table'";
         $table_meta->{readonly}
           and croak "Table '$table' is marked readonly - "
           . $self->{command}
