@@ -816,7 +816,9 @@ sub new_sql_engine_meta
     }
 
     $dbh->{sql_meta}{$table} = { %{$values} };
-    ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    my $class;
+    defined $values->{sql_table_class} and $class = $values->{sql_table_class};
+    defined $class or ( $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
     # XXX we should never hit DBD::File::Table::get_table_meta here ...
     my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, $respect_case );
     1;
