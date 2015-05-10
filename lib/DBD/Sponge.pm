@@ -219,6 +219,8 @@ use warnings;
     }
 
     sub _max_col_lengths {
+	# Compute result set PRECISION (data length) by looking for the
+	# max lengths of each column's data.
 	my ($numFields, $rows) = @_;
 	my @precision = (0,) x $numFields;
 	my $len;
@@ -280,33 +282,38 @@ No username and password are needed.
 
 =item *
 
-The C<$statement> here is an arbitrary statement or name you want
-to provide as identity of your data. If you're using DBI::Profile
-it will appear in the profile data.
+The C<$statement> here is an arbitrary statement or name you want to
+provide as identity of your data. If you're using DBI::Profile it will
+appear in the profile data.
 
-Generally it's expected that you are preparing a statement handle
-as if a C<select> statement happened.
-
-=item *
-
-C<$data> is a reference to the data you are providing, given as an array of arrays.
+Generally it's expected that you are preparing a statement handle as if
+a C<select> statement happened.
 
 =item *
 
-C<$names> is a reference an array of column names for the C<$data> you are providing.
-The number and order should match the number and ordering of the C<$data> columns.
+C<$data> is a reference to the data you are providing, given as an array
+of arrays.
 
 =item *
 
-C<%attr> is a hash of other standard DBI attributes that you might pass to a prepare statement.
+C<$names> is a reference an array of column names for the C<$data> you
+are providing.  The number and order should match the number and
+ordering of the C<$data> columns.
 
-Currently only NAME, TYPE, and PRECISION are supported.  PRECISION will be automatically computed if not supplied.
+=item *
+
+C<%attr> is a hash of other standard DBI attributes that you might pass
+to a prepare statement.
+
+Currently only NAME, TYPE, and PRECISION are supported.  TYPE defaults
+to SQL_VARCHAR.  PRECISION will be lazily computed if not supplied.
 
 =back
 
 =head1 BUGS
 
-Using this module to prepare INSERT-like statements is not currently documented.
+Using this module to prepare INSERT-like statements is not currently
+documented.
 
 =head1 AUTHOR AND COPYRIGHT
 
