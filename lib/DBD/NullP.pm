@@ -1,7 +1,7 @@
 use strict;
 {
     package DBD::NullP;
-    
+
     require DBI;
     require Carp;
 

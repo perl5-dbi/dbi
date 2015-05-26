@@ -16,7 +16,6 @@ use Carp;
 use DBI;
 use DBI::Const::GetInfoType qw(%GetInfoType);
 
-# Perl 5.005_03 does not recognize 'our' but perl 5.008 is minimun version
 our @ISA = qw(Exporter);
 our @EXPORT = qw(write_getinfo_pm write_typeinfo_pm);
 
