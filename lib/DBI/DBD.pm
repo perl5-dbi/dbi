@@ -1,6 +1,6 @@
 package DBI::DBD;
 # vim:ts=8:sw=4
-
+use strict;
 use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
 # don't use Revision here because that's not in svn:keywords so that the

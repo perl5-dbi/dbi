@@ -18,6 +18,8 @@
 
 # some file-scoped lexicals:
 
+use strict;
+
 my %parent_only_attr = (
     # mx needs to manage errors from children
     RaiseError => 1, PrintError => 1, HandleError => 1,
@@ -287,7 +289,7 @@ sub mx_error_subroutine {
 { #================================================================ DRIVER ===
 
 package DBD::Multiplex::dr;
-    $imp_data_size = $imp_data_size = 0;
+    our $imp_data_size = $imp_data_size = 0;
     use strict;
 
 ########################################
@@ -447,7 +449,7 @@ sub disconnect_all { } # needed for DBI < ~1.35
 { #============================================================== DATABASE ===
 
 package DBD::Multiplex::db;
-	$imp_data_size = $imp_data_size = 0;
+	our $imp_data_size = $imp_data_size = 0;
 	use strict;
 
 ########################################
@@ -621,7 +623,7 @@ sub AUTOLOAD {
 { #============================================================= STATEMENT ===
 
 package DBD::Multiplex::st;
-$imp_data_size = $imp_data_size = 0;
+our $imp_data_size = $imp_data_size = 0;
 use strict;
 
 ########################################
