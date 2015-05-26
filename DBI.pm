@@ -3643,7 +3643,7 @@ Type: array ref
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
 contents of the array are weak-refs and will become undef when the
-handle goes out of scope.
+handle goes out of scope. (They're cleared out occasionally.)
 
 C<ChildHandles> returns undef if your perl version does not support weak
 references (check the L<Scalar::Util|Scalar::Util> module).  The referenced
@@ -7663,6 +7663,23 @@ an C<eval> block.
 You can stash private data into DBI handles
 via C<$h-E<gt>{private_..._*}>.  See the entry under L</ATTRIBUTES
 COMMON TO ALL HANDLES> for info and important caveats.
+
+=head2 Memory Leaks
+
+When tracking down memory leaks using tools like L<Devel::Leak>
+you'll find that some DBI internals are reported as 'leaking' memory.
+This is very unlikely to be a real leak.  The DBI has various caches to improve
+performance and the apparrent leaks are simply the normal operation of these
+caches.
+
+The most frequent sources of the apparrent leaks are L</ChildHandles>,
+L</prepare_cached> and L</connect_cached>.
+
+For example http://stackoverflow.com/questions/13338308/perl-dbi-memory-leak
+
+Given how widely the DBI is used, you can rest assured that if a new release of
+the DBI did have a real leak it would be discovered, reported, and fixed
+immediately. The leak you're looking for is probably elsewhere. Good luck!
 
 
 =head1 TRACING
