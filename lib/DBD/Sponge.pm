@@ -1,3 +1,4 @@
+use strict;
 {
     package DBD::Sponge;
 
@@ -14,7 +15,7 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-    $drh = undef;	# holds driver handle once initialised
+    our $drh = undef;	# holds driver handle once initialised
     my $methods_already_installed;
 
     sub driver{
@@ -40,13 +41,13 @@
 
 
 {   package DBD::Sponge::dr; # ====== DRIVER ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     # we use default (dummy) connect method
 }
 
 
 {   package DBD::Sponge::db; # ====== DATABASE ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
     sub prepare {
@@ -156,7 +157,7 @@
 
 
 {   package DBD::Sponge::st; # ====== STATEMENT ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
     sub execute {

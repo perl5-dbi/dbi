@@ -2,6 +2,7 @@
 
 package Bundle::DBI;
 
+use strict;
 our $VERSION = "12.008696";
 
 1;
