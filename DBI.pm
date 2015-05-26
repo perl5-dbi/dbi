@@ -4731,7 +4731,8 @@ statement, such as C<$sth-E<gt>{NUM_OF_FIELDS}>, until after C<$sth-E<gt>execute
 has been called. Portable applications should take this into account.
 
 In general, DBI drivers do not parse the contents of the statement
-(other than simply counting any L</Placeholders>). The statement is
+(other than simply counting any L<Placeholders|/Placeholders and Bind Values>).
+The statement is
 passed directly to the database engine, sometimes known as pass-thru
 mode. This has advantages and disadvantages. On the plus side, you can
 access all the functionality of the engine being used. On the downside,
@@ -5995,7 +5996,7 @@ mark character (C<?>). For example:
   $sth->execute;
   DBI::dump_results($sth);
 
-See L</"Placeholders and Bind Values"> for more information.
+See L</Placeholders and Bind Values> for more information.
 
 
 B<Data Types for Placeholders>
@@ -6047,7 +6048,7 @@ For example:
 The C<CONVERT> function used here is just an example. The actual function
 and syntax will vary between different databases and is non-portable.
 
-See also L</"Placeholders and Bind Values"> for more information.
+See also L</Placeholders and Bind Values> for more information.
 
 
 =head3 C<bind_param_inout>
@@ -6073,7 +6074,7 @@ pick a generous length, i.e., a length larger than the longest value that would 
 returned.  The only cost of using a larger value than needed is wasted memory.
 
 Undefined values or C<undef> are used to indicate null values.
-See also L</"Placeholders and Bind Values"> for more information.
+See also L</Placeholders and Bind Values> for more information.
 
 
 =head3 C<bind_param_array>
