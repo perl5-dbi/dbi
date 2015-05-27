@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 {
     package DBD::Sponge;
 
@@ -195,7 +196,9 @@ use strict;
 	}
 	return $sth->_set_fbav($row);
     }
+    no warnings qw(once);
     *fetchrow_arrayref = \&fetch;
+    use warnings qw(once);
 
     sub FETCH {
 	my ($sth, $attrib) = @_;

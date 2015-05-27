@@ -18,6 +18,7 @@
 #######################################################################
 require 5.008;
 use strict;
+use warnings;
 
 #################
 package DBD::DBM;
@@ -61,7 +62,10 @@ sub CLONE
 #####################
 package DBD::DBM::dr;
 #####################
-$DBD::DBM::dr::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::DBM::dr::imp_data_size = 0;
+}
 @DBD::DBM::dr::ISA           = qw(DBD::File::dr);
 
 # you could put some :dr private methods here
@@ -73,7 +77,10 @@ $DBD::DBM::dr::imp_data_size = 0;
 #####################
 package DBD::DBM::db;
 #####################
-$DBD::DBM::db::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::DBM::db::imp_data_size = 0;
+}
 @DBD::DBM::db::ISA           = qw(DBD::File::db);
 
 use Carp qw/carp/;
@@ -207,7 +214,10 @@ sub get_dbm_versions
 #####################
 package DBD::DBM::st;
 #####################
-$DBD::DBM::st::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::DBM::st::imp_data_size = 0;
+}
 @DBD::DBM::st::ISA           = qw(DBD::File::st);
 
 sub FETCH
@@ -386,6 +396,7 @@ sub open_data
 
         if ( $meta->{dbm_mldbm} )
         {
+            no warnings qw(once);
             $MLDBM::UseDB      = $meta->{dbm_usedb};
             $MLDBM::Serializer = $meta->{dbm_mldbm};
         }

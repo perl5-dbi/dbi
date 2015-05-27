@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 {
     package DBD::NullP;
     
@@ -149,7 +150,9 @@ use strict;
 	}
         return $sth->_set_fbav(shift @$data);
     }
+    no warnings qw(once);
     *fetch = \&fetchrow_arrayref; # alias
+    use warnings qw(once);
 
     sub FETCH {
 	my ($sth, $attrib) = @_;
