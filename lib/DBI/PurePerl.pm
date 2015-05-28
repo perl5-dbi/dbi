@@ -493,6 +493,7 @@ sub _setup_handle {
     my $h_inner = tied(%$h) || $h;
     if (($DBI::dbi_debug & 0xF) >= 4) {
 	local $^W;
+	no warnings qw(uninitialized); 
 	print $DBI::tfh "      _setup_handle(@_)\n";
     }
     $h_inner->{"imp_data"} = $imp_data;

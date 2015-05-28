@@ -99,7 +99,7 @@ my %DEFAULT_SERVER_OPTIONS;
 	    'finish' => 1
 	    }
     };
-    if ($Config::Config{'usethreads'} eq 'define') {
+    if (defined($Config::Config{'usethreads'}) and $Config::Config{'usethreads'} eq 'define') {
 	$o->{'mode'} = 'threads';
     } elsif ($Config::Config{'d_fork'} eq 'define') {
 	$o->{'mode'} = 'fork';
@@ -216,7 +216,7 @@ sub CallMethod {
     # $dbh. However, we'd have a reference loop in that case and
     # I would be concerned about garbage collection. :-(
     $dbh->{'private_server'} = $server;
-    $server->Debug("CallMethod: => " . do { local $^W; join(",", @_)});
+    $server->Debug("CallMethod: => " . do { local $^W; no warnings qw(uninitialized); join(",", @_)});
     my @result = eval { $server->SUPER::CallMethod(@_) };
     my $msg = $@;
     undef $dbh->{'private_server'};
