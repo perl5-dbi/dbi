@@ -816,7 +816,9 @@ sub new_sql_engine_meta
     }
 
     $dbh->{sql_meta}{$table} = { %{$values} };
-    ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    my $class;
+    defined $values->{sql_table_class} and $class = $values->{sql_table_class};
+    defined $class or ( $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
     # XXX we should never hit DBD::File::Table::get_table_meta here ...
     my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, $respect_case );
     1;
@@ -1456,6 +1458,11 @@ sub open_table ($$$$$)
                 };
     $self->{command} eq "DROP" and $flags->{dropMode} = 1;
 
+    my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
+      or croak "Cannot find appropriate meta for table '$table'";
+
+    defined $table_meta->{sql_table_class} and $class = $table_meta->{sql_table_class};
+
     # because column name mapping is initialized in constructor ...
     # and therefore specific opening operations might be done before
     # reaching DBI::DBD::SqlEngine::Table->new(), we need to intercept
@@ -1463,8 +1470,6 @@ sub open_table ($$$$$)
     my $write_op = $createMode || $lockMode || $flags->{dropMode};
     if ($write_op)
     {
-        my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
-          or croak "Cannot find appropriate file for table '$table'";
         $table_meta->{readonly}
           and croak "Table '$table' is marked readonly - "
           . $self->{command}

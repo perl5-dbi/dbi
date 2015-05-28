@@ -7,9 +7,10 @@
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
-
+use strict;
 package DBI::Const::GetInfo::ODBC;
 
+our (%InfoTypes,%ReturnTypes,%ReturnValues,);
 =head1 NAME
 
 DBI::Const::GetInfo::ODBC - ODBC Constants for GetInfo

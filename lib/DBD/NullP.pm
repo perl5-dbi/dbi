@@ -1,11 +1,12 @@
+use strict;
 {
     package DBD::NullP;
 
     require DBI;
     require Carp;
 
-    @EXPORT = qw(); # Do NOT @EXPORT anything.
-    $VERSION = "12.014715";
+    our @EXPORT = qw(); # Do NOT @EXPORT anything.
+    our $VERSION = "12.014715";
 
 #   $Id: NullP.pm 14714 2011-02-22 17:27:07Z Tim $
 #
@@ -14,7 +15,7 @@
 #   You may distribute under the terms of either the GNU General Public
 #   License or the Artistic License, as specified in the Perl README file.
 
-    $drh = undef;	# holds driver handle once initialised
+    our $drh = undef;	# holds driver handle once initialised
 
     sub driver{
 	return $drh if $drh;
@@ -35,7 +36,7 @@
 
 
 {   package DBD::NullP::dr; # ====== DRIVER ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
     sub connect { # normally overridden, but a handy default
@@ -51,7 +52,7 @@
 
 
 {   package DBD::NullP::db; # ====== DATABASE ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
     use Carp qw(croak);
 
@@ -99,7 +100,7 @@
 
 
 {   package DBD::NullP::st; # ====== STATEMENT ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
     sub bind_param {

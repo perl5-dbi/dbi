@@ -18,6 +18,7 @@
 ### commercial products, such as books, magazine articles or CD-ROMs should be
 ### made to Alligator Descartes.
 ###
+use strict;
 
 package DBI::FAQ;
 

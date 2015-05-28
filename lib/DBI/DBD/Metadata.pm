@@ -8,19 +8,19 @@ package DBI::DBD::Metadata;
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
 
+use strict;
+
 use Exporter ();
 use Carp;
 
 use DBI;
 use DBI::Const::GetInfoType qw(%GetInfoType);
 
-# Perl 5.005_03 does not recognize 'our'
-@ISA = qw(Exporter);
-@EXPORT = qw(write_getinfo_pm write_typeinfo_pm);
+our @ISA = qw(Exporter);
+our @EXPORT = qw(write_getinfo_pm write_typeinfo_pm);
 
-$VERSION = "2.014214";
+our $VERSION = "2.014214";
 
-use strict;
 
 =head1 NAME
 

@@ -1,11 +1,15 @@
 {
     package DBD::ExampleP;
 
+    use strict;
     use Symbol;
 
     use DBI qw(:sql_types);
 
     require File::Spec;
+   
+    our (@EXPORT,$VERSION,@statnames,%statnames,@stattypes,%stattypes,
+	@statprec,%statprec,$drh,);
 
     @EXPORT = qw(); # Do NOT @EXPORT anything.
     $VERSION = "12.014311";
