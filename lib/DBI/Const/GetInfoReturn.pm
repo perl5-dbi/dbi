@@ -10,6 +10,7 @@
 package DBI::Const::GetInfoReturn;
 
 use strict;
+use warnings;
 
 use Exporter ();
 

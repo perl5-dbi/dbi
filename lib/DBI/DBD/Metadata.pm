@@ -9,6 +9,7 @@ package DBI::DBD::Metadata;
 # License or the Artistic License, as specified in the Perl README file.
 
 use strict;
+use warnings;
 
 use Exporter ();
 use Carp;

@@ -1,5 +1,6 @@
 package DBI::Util::_accessor;
 use strict;
+use warnings;
 use Carp;
 our $VERSION = "0.009479";
 

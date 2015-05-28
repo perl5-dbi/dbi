@@ -24,6 +24,7 @@
 
 require 5.004;
 use strict;
+use warnings;
 
 use RPC::PlServer 0.2001;
 require DBI;

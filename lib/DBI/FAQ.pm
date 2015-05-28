@@ -19,6 +19,7 @@
 ### made to Alligator Descartes.
 ###
 use strict;
+use warnings;
 
 package DBI::FAQ;
 

@@ -674,6 +674,7 @@ many forward references.  (Patches welcome!)
 
 
 use strict;
+use warnings;
 use vars qw(@ISA @EXPORT @EXPORT_OK $VERSION);
 use Exporter ();
 use UNIVERSAL ();
