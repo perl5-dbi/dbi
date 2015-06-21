@@ -2060,8 +2060,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
             }
 	}
 	elsif ($mode eq 'HASH') {
-            if (keys %$slice) {
-                keys %$slice; # reset the iterator
+            if (keys %$slice) { # resets the iterator
                 my $name2idx = $sth->FETCH('NAME_lc_hash');
                 while ( my ($name, $unused) = each %$slice ) {
                     my $idx = $name2idx->{lc $name};
