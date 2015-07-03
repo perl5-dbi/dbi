@@ -4634,7 +4634,7 @@ In which case the array is copied and each value decremented before
 passing to C</fetchall_arrayref>.
 
 You may often want to fetch an array of rows where each row is stored as a
-hash. That can be done simple using:
+hash. That can be done simply using:
 
   my $emps = $dbh->selectall_arrayref(
       "SELECT ename FROM emp ORDER BY ename",
