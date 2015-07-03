@@ -1,7 +1,8 @@
+use strict;
+use warnings;
+
 {
     package DBD::Gofer;
-
-    use strict;
 
     require DBI;
     require DBI::Gofer::Request;
@@ -137,8 +138,7 @@
 
 {   package DBD::Gofer::dr; # ====== DRIVER ======
 
-    $imp_data_size = 0;
-    use strict;
+    our $imp_data_size = 0;
 
     sub connect_cached {
         my ($drh, $dsn, $user, $auth, $attr)= @_;
@@ -264,8 +264,7 @@
 
 
 {   package DBD::Gofer::db; # ====== DATABASE ======
-    $imp_data_size = 0;
-    use strict;
+    our $imp_data_size = 0;
     use Carp qw(carp croak);
 
     my %dbh_local_store_attrib = %DBD::Gofer::xxh_local_store_attrib;
@@ -570,13 +569,13 @@
         }, $if_active);
     }
 
+    no warnings qw(once);
     *go_cache = \&DBD::Gofer::go_cache;
 }
 
 
 {   package DBD::Gofer::st; # ====== STATEMENT ======
-    $imp_data_size = 0;
-    use strict;
+    our $imp_data_size = 0;
 
     my %sth_local_store_attrib = (%DBD::Gofer::xxh_local_store_attrib, NUM_OF_FIELDS => 1);
 
@@ -740,8 +739,9 @@
         $sth->finish;     # no more data so finish
         return undef;
     }
+    no warnings qw(once);
     *fetch = \&fetchrow_arrayref; # alias
-
+    use warnings qw(once);
 
     sub fetchall_arrayref {
         my ($sth, $slice, $max_rows) = @_;
@@ -802,7 +802,7 @@
         push @{ $sth->{go_method_calls} }, [ 'execute_array', $attr ];
         return $sth->go_sth_method($attr);
     }
-
+    no warnings qw(once);
     *go_cache = \&DBD::Gofer::go_cache;
 }
 

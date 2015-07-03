@@ -1,7 +1,9 @@
+use strict;
+use warnings;
+
 {
     package DBD::ExampleP;
 
-    use strict;
     use Symbol;
 
     use DBI qw(:sql_types);
@@ -59,8 +61,7 @@
 
 
 {   package DBD::ExampleP::dr; # ====== DRIVER ======
-    $imp_data_size = 0;
-    use strict;
+    our $imp_data_size = 0;
 
     sub connect { # normally overridden, but a handy default
         my($drh, $dbname, $user, $auth)= @_;
@@ -86,7 +87,7 @@
 
 
 {   package DBD::ExampleP::db; # ====== DATABASE ======
-    $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
     sub prepare {
@@ -297,8 +298,8 @@
 
 
 {   package DBD::ExampleP::st; # ====== STATEMENT ======
-    $imp_data_size = 0;
-    use strict; no strict 'refs'; # cause problems with filehandles
+    our $imp_data_size = 0;
+    no strict 'refs'; # cause problems with filehandles
 
     sub bind_param {
 	my($sth, $param, $value, $attribs) = @_;
@@ -385,7 +386,9 @@
 
 	return $sth->_set_fbav(\@new);
     }
+    no warnings qw(once);
     *fetchrow_arrayref = \&fetch;
+    use warnings qw(once);
 
 
     sub finish {
@@ -428,6 +431,7 @@
 	return $sth->SUPER::STORE($attrib, $value);
     }
 
+    no warnings qw(once);
     *parse_trace_flag = \&DBD::ExampleP::db::parse_trace_flag;
 }
 

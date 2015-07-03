@@ -17,6 +17,7 @@ package		# hide from PAUSE
 ########################################################################
 
 use strict;
+use warnings;
 use Carp;
 require Symbol;
 
@@ -27,7 +28,9 @@ require utf8;
     return !(length($_[0]) == bytes::length($_[0]))
 } unless defined &utf8::is_utf8;
 
+no warnings qw(once);
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
+use warnings qw(once);
 $DBI::PurePerl::VERSION = "2.014286";
 
 $DBI::neat_maxlen ||= 400;
@@ -490,6 +493,7 @@ sub _setup_handle {
     my $h_inner = tied(%$h) || $h;
     if (($DBI::dbi_debug & 0xF) >= 4) {
 	local $^W;
+	no warnings qw(uninitialized); 
 	print $DBI::tfh "      _setup_handle(@_)\n";
     }
     $h_inner->{"imp_data"} = $imp_data;
@@ -798,6 +802,7 @@ sub swap_inner_handle {
     my ($h1, $h2) = @_;
     # can't make this work till we can get the outer handle from the inner one
     # probably via a WeakRef
+    no warnings qw(once);
     return $h1->set_err($DBI::stderr, "swap_inner_handle not currently supported by DBI::PurePerl");
 }
 
@@ -984,7 +989,9 @@ sub take_imp_data {
     delete $dbh->{$_} for (keys %is_valid_attribute);
     delete $dbh->{$_} for grep { m/^dbi_/ } keys %$dbh;
     # warn "@{[ %$dbh ]}";
+    no warnings qw(once);
     local $Storable::forgive_me = 1; # in case there are some CODE refs
+    use warnings qw(once);
     my $imp_data = Storable::freeze($dbh);
     # XXX um, should probably untie here - need to check dispatch behaviour
     return $imp_data;

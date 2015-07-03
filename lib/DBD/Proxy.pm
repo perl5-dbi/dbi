@@ -21,6 +21,7 @@
 #
 
 use strict;
+use warnings;
 use Carp;
 
 require DBI;
@@ -91,7 +92,10 @@ sub proxy_set_err {
 
 package DBD::Proxy::dr; # ====== DRIVER ======
 
-$DBD::Proxy::dr::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::Proxy::dr::imp_data_size = 0;
+}
 
 sub connect ($$;$$) {
     my($drh, $dsn, $user, $auth, $attr)= @_;
@@ -217,7 +221,10 @@ sub DESTROY { undef }
 
 package DBD::Proxy::db; # ====== DATABASE ======
 
-$DBD::Proxy::db::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::Proxy::db::imp_data_size = 0;
+}
 
 # XXX probably many more methods need to be added here
 # in order to trigger our AUTOLOAD to redirect them to the server.
@@ -478,7 +485,10 @@ sub type_info_all {
 
 package DBD::Proxy::st; # ====== STATEMENT ======
 
-$DBD::Proxy::st::imp_data_size = 0;
+{
+    no warnings qw(once);
+    $DBD::Proxy::st::imp_data_size = 0;
+}
 
 use vars qw(%ATTR);
 
@@ -505,7 +515,9 @@ use vars qw(%ATTR);
     'NUM_OF_PARAMS' => 'cache_only'
 );
 
+no warnings qw(once);
 *AUTOLOAD = \&DBD::Proxy::db::AUTOLOAD;
+use warnings qw(once);
 
 sub execute ($@) {
     my $sth = shift;
@@ -622,7 +634,9 @@ sub fetch ($) {
     $sth->{'proxy_rows'}++;
     return $sth->_set_fbav($row);
 }
+no warnings qw(once);
 *fetchrow_arrayref = \&fetch;
+use warnings qw(once);
 
 sub rows ($) {
     my $rows = shift->{'proxy_rows'};
@@ -713,7 +727,10 @@ sub bind_param ($$$@) {
     my $sth = shift; my $param = shift;
     $sth->{'proxy_params'}->[$param-1] = [@_];
 }
+
+no warnings qw(once);
 *bind_param_inout = \&bind_param;
+use warnings qw(once);
 
 sub DESTROY {
     my $sth = shift;
