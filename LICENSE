@@ -16,7 +16,7 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See  either
 the GNU General Public License or the Artistic License for more details.
 
-At the end of this docoument is  copy of the Artistic License in this LCENSE.
+At the end of this docoument is  copy of the Artistic License in this LICENSE.
 
 After the next paragraf there is a copy of the GNU General Public License.
 If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
@@ -49,7 +49,6 @@ spells all this out for your protection, so you may prefer to use that.
 
 --- The GNU General Public License, Version 1, February 1989 ---
 
-This software is Copyright (c) 2013 by Nicholas R. Perez <nperez@cpan.org>.
 
 This is free software, licensed under:
 
@@ -308,8 +307,6 @@ That's all there is to it!
 
 
 --- The Artistic License 1.0 ---
-
-This software is Copyright (c) 2013 by Nicholas R. Perez <nperez@cpan.org>.
 
 This is free software, licensed under:
 
