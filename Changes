@@ -8,9 +8,18 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.634
 
-    Fixed support for DBD prefixes with numbers (Jens Rehsack)
+    Enabled strictures on all modules (Jose Luis Perez Diez) #22
+        Note that this might cause new exceptions in existing code.
+        Please take time for extra testing before deploying to production.
+
+    Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
+    Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24
+    Corrected pod xref to Placeholders section (Matthew D. Fuller)
+    Corrected pod grammar (Nick Tonkin) #25
 
     Added extra initializer for DBI::DBD::SqlEngine based DBD's (Jens Rehsack)
+    Added Memory Leaks section to the DBI docs (Tim)
+    Added Artistic v1 & GPL v1 LICENSE file (Jose Luis Perez Diez) #21
 
 =head2 Changes in DBI 1.633 - 11th Jan 2015
 
