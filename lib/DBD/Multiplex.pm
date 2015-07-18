@@ -289,7 +289,7 @@ sub mx_error_subroutine {
 { #================================================================ DRIVER ===
 
 package DBD::Multiplex::dr;
-    our $imp_data_size = $imp_data_size = 0;
+    our $imp_data_size = 0;
     use strict;
 
 ########################################
@@ -449,7 +449,7 @@ sub disconnect_all { } # needed for DBI < ~1.35
 { #============================================================== DATABASE ===
 
 package DBD::Multiplex::db;
-	our $imp_data_size = $imp_data_size = 0;
+	our $imp_data_size = 0;
 	use strict;
 
 ########################################
@@ -623,7 +623,7 @@ sub AUTOLOAD {
 { #============================================================= STATEMENT ===
 
 package DBD::Multiplex::st;
-our $imp_data_size = $imp_data_size = 0;
+our $imp_data_size = 0;
 use strict;
 
 ########################################
