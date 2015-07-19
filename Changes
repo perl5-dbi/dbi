@@ -6,11 +6,14 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.634
+=head2 Changes in DBI 1.633_91 - 19th July 2015
 
     Enabled strictures on all modules (Jose Luis Perez Diez) #22
         Note that this might cause new exceptions in existing code.
         Please take time for extra testing before deploying to production.
+    Improve handling of row count on 32bit int systems, add sanity check warn
+        Relevant if "perl -V:'i(nt|v)size'" reports different sizes
+        and either you execute statements that might affect >=2,147,483,648 rows.
 
     Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
     Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24
