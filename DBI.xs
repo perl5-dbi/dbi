@@ -1372,7 +1372,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
     if (DBIc_TYPE(imp) == DBIt_ST) {
         imp_sth_t *imp_sth = (imp_sth_t*)imp;
-        DBIc_ROW_COUNT(imp_sth)  = -1;
+        DBIc_ROW_COUNT(imp_sth) = -1;
     }
 
     DBIc_COMSET_on(imp);        /* common data now set up               */
@@ -3802,7 +3802,7 @@ XS(XS_DBI_dispatch)
     if (trace_level >= (is_nested_call ? 3 : 1)) {
         PerlIO *logfp = DBILOGFP;
         const int is_fetch  = (meth_type == methtype_fetch_star && DBIc_TYPE(imp_xxh)==DBIt_ST);
-        const int row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
+        const IV row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
         if (is_fetch && row_count>=2 && trace_level<=4 && SvOK(ST(0))) {
             /* skip the 'middle' rows to reduce output */
             goto skip_meth_return_trace;
@@ -3861,7 +3861,7 @@ XS(XS_DBI_dispatch)
             PerlIO_printf(logfp," ) [%d items]", outitems);
         }
         if (is_fetch && row_count) {
-            PerlIO_printf(logfp," row%d", row_count);
+            PerlIO_printf(logfp," row%"IVdf, row_count);
         }
         if (qsv) /* flag as quick and peek at the first arg (still on the stack) */
             PerlIO_printf(logfp," (%s from cache)", neatsvpv(st1,0));
