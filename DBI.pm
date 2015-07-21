@@ -1761,7 +1761,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $sth    = $dbh->table_info(@args[0,1,2,3,4]) or return;
 	my $tables = $sth->fetchall_arrayref or return;
 	my @tables;
-	if ($dbh->get_info(29)) { # SQL_IDENTIFIER_QUOTE_CHAR
+	if (defined($args[3]) && $args[3] eq '%' # special case for tables('','','','%')
+	    && grep {defined($_) && $_ eq ''} @args[0,1,2]
+	) {
+	    @tables = map { $_->[3] } @$tables;
+	} elsif ($dbh->get_info(29)) { # SQL_IDENTIFIER_QUOTE_CHAR
 	    @tables = map { $dbh->quote_identifier( @{$_}[0,1,2] ) } @$tables;
 	}
 	else {		# temporary old style hack (yeach)

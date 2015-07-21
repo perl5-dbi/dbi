@@ -13,7 +13,8 @@ DBI::Changes - List of significant changes to the DBI
         Please take time for extra testing before deploying to production.
     Improve handling of row count on 32bit int systems, add sanity check warn
         Relevant if "perl -V:'i(nt|v)size'" reports different sizes
-        and either you execute statements that might affect >=2,147,483,648 rows.
+        and you execute statements that might affect >=2,147,483,648 rows.
+    Added support for tables('', '', '', '%') special case (Martin J. Evans)
 
     Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
     Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24
