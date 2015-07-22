@@ -8,6 +8,23 @@
 
 #include "Driver_xst.h"
 
+# we call dbd_st_execute in places where we don't assign the result
+# so to save a mess of #ifdef's we arrange for dbd_st_execute to work
+# as dbd_st_execute_iv if that's defined
+#if defined(dbd_st_execute_iv)
+#undef dbd_st_execute
+#define dbd_st_execute dbd_st_execute_iv
+#endif
+# - same idea for dbd_st_rows
+#if defined(dbd_st_rows_iv)
+#undef dbd_st_rows
+#define dbd_st_rows dbd_st_rows_iv
+#endif
+# - same idea for dbd_db_do4
+#if defined(dbd_db_do4_iv)
+#undef dbd_db_do4
+#define dbd_db_do4 dbd_db_do4_iv
+#endif
 
 MODULE = DBD::~DRIVER~  PACKAGE = DBD::~DRIVER~
 
@@ -240,7 +257,7 @@ do(dbh, statement, params = Nullsv)
     {
     D_imp_dbh(dbh);
     IV retval;
-    retval = dbd_db_do4(dbh, imp_dbh, statement, params);
+    retval = dbd_db_do4(dbh, imp_dbh, statement, params); /* might be dbd_db_do4_iv via macro */
     /* remember that dbd_db_do4 must return <= -2 for error     */
     if (retval == 0)            /* ok with no rows affected     */
         XST_mPV(0, "0E0");      /* (true but zero)              */
@@ -582,7 +599,7 @@ execute(sth, ...)
     SV *        sth
     CODE:
     D_imp_sth(sth);
-    int retval;         /* XXX int type is an accident of history */
+    IV retval;
     if (items > 1) {    /* need to bind params */
         if (!dbdxst_bind_params(sth, imp_sth, items, ax) ) {
             XSRETURN_UNDEF;
@@ -590,7 +607,7 @@ execute(sth, ...)
     }
     /* XXX this code is duplicated in selectrow_arrayref above  */
     DBIc_ROW_COUNT(imp_sth) = 0;
-    retval = dbd_st_execute(sth, imp_sth);
+    retval = dbd_st_execute(sth, imp_sth); /* might be dbd_st_execute_iv via macro */
     /* remember that dbd_st_execute must return <= -2 for error */
     if (retval == 0)            /* ok with no rows affected     */
         XST_mPV(0, "0E0");      /* (true but zero)              */
@@ -621,7 +638,7 @@ execute(sth, ...)
             DBIc_ROW_COUNT(imp_sth) != 0
         ) {
             if ((DBIc_ROW_COUNT(imp_sth) & 0xEFFF) != (retval & 0xEFFF))
-                warn("execute is returning %d but DBIc_ROW_COUNT is %"IVdf, retval, DBIc_ROW_COUNT(imp_sth));
+                warn("execute is returning %"IVdf" but DBIc_ROW_COUNT is %"IVdf, (IV)retval, DBIc_ROW_COUNT(imp_sth));
         }
         XST_mIV(0, retval);     /* row_count */
     }

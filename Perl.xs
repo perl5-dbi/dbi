@@ -27,7 +27,7 @@ struct imp_sth_st {
 
 #define dbd_discon_all(drh, imp_drh)            (drh=drh,imp_drh=imp_drh,1)
 #define dbd_dr_data_sources(drh, imp_drh, attr) (drh=drh,imp_drh=imp_drh,Nullav)
-#define dbd_db_do4(dbh,imp_dbh,p3,p4)           (dbh=dbh,imp_dbh=imp_dbh,p3=p3,p4=p4,-2)
+#define dbd_db_do4_iv(dbh,imp_dbh,p3,p4)        (dbh=dbh,imp_dbh=imp_dbh,p3=p3,p4=p4,-2)
 #define dbd_db_last_insert_id(dbh, imp_dbh, p3,p4,p5,p6, attr) \
         (dbh=dbh,imp_dbh=imp_dbh,p3=p3,p4=p4,p5=p5,p6=p6,&PL_sv_undef)
 #define dbd_take_imp_data(h, imp_xxh, p3)       (h=h,imp_xxh=imp_xxh,&PL_sv_undef)

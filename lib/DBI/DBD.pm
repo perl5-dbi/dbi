@@ -27,12 +27,14 @@ DBI::DBD - Perl DBI Database Driver Writer's Guide
 
 This document is I<still> a minimal draft which is in need of further work.
 
-The changes will occur both because the B<DBI> specification is changing
-and hence the requirements on B<DBD> drivers change, and because feedback
-from people reading this document will suggest improvements to it.
+Please read the B<DBI> documentation first and fully.  Then look at the
+implementation of some high-profile and regularly maintained drivers like
+DBD::Oracle, DBD::ODBC, DBD::Pg etc. (Those are no no particular order.)
 
-Please read the B<DBI> documentation first and fully, including the B<DBI> FAQ.
-Then reread the B<DBI> specification again as you're reading this. It'll help.
+Then reread the B<DBI> specification and the code of those drivers again as
+you're reading this. It'll help.  Where this document and the driver code
+differ it's likely that the driver code is more correct, especially if multiple
+drivers do the same thing.
 
 This document is a patchwork of contributions from various authors.
 More contributions (preferably as patches) are very welcome.
@@ -1795,6 +1797,12 @@ additional information about I<PERL_NO_GET_CONTEXT>.
 This header file has two jobs:
 
 First it defines data structures for your private part of the handles.
+Note that the DBI provides many common fields for you. For example
+the statement handle (imp_sth) already has a row_count field with an IV type
+that accessed via the DBIc_ROW_COUNT(imp_sth) macro. Using this is strongly
+recommended as it's built in to some DBI internals so the DBI can 'just work'
+in more cases and you'll have less driver-specific code to write.
+Study DBIXS.h to see what's included with each type of handle.
 
 Second it defines macros that rename the generic names like
 C<dbd_db_login()> to database specific names like C<ora_db_login()>. This
@@ -1817,6 +1825,10 @@ a function like dbd_db_login6 but with scalar pointers for the dbname,
 username and password), it will be used instead. This will allow your
 login6 function to see if there are any Unicode characters in the
 dbname.
+
+Similarly defining dbd_db_do4_iv is prefered over dbd_db_do4, dbd_st_rows_iv
+over dbd_st_rows, and dbd_st_execute_iv over dbd_st_execute. The *_iv forms are
+declared to return the IV type instead of an int.
 
 People used to just pick Oracle's F<dbdimp.c> and use the same names,
 structures and types. I strongly recommend against that. At first glance

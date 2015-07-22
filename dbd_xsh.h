@@ -27,7 +27,8 @@ int      dbd_db_login  _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, 
 /* Note: interface of dbd_db_do changed in v1.33 */
 /* Old prototype: dbd_db_do _((SV *sv, char *statement)); */
 /* dbd_db_do: optional: defined by a driver if the DBI default version is too slow */
-int      dbd_db_do4 _((SV *dbh, imp_dbh_t *imp_dbh, char *statement, SV *params));
+int      dbd_db_do4    _((SV *dbh, imp_dbh_t *imp_dbh, char *statement, SV *params));
+IV       dbd_db_do4_iv _((SV *dbh, imp_dbh_t *imp_dbh, char *statement, SV *params));
 int      dbd_db_commit     _((SV *dbh, imp_dbh_t *imp_dbh));
 int      dbd_db_rollback   _((SV *dbh, imp_dbh_t *imp_dbh));
 int      dbd_db_disconnect _((SV *dbh, imp_dbh_t *imp_dbh));
@@ -40,7 +41,9 @@ AV      *dbd_db_data_sources _((SV *dbh, imp_dbh_t *imp_dbh, SV *attr));
 int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));
 int      dbd_st_prepare_sv _((SV *sth, imp_sth_t *imp_sth, SV *statement, SV *attribs));
 int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
-int      dbd_st_execute _((SV *sth, imp_sth_t *imp_sth));
+IV       dbd_st_rows_iv _((SV *sth, imp_sth_t *imp_sth));
+int      dbd_st_execute    _((SV *sth, imp_sth_t *imp_sth));
+IV       dbd_st_execute_iv _((SV *sth, imp_sth_t *imp_sth));
 AV      *dbd_st_fetch   _((SV *sth, imp_sth_t *imp_sth));
 int      dbd_st_finish3 _((SV *sth, imp_sth_t *imp_sth, int from_destroy));
 int      dbd_st_finish  _((SV *sth, imp_sth_t *imp_sth)); /* deprecated */
