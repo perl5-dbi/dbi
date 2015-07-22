@@ -11,7 +11,7 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-our $XS_VERSION = our $VERSION = "1.633_91"; # ==> ALSO update the version in the pod text below!
+our $XS_VERSION = our $VERSION = "1.633_92"; # ==> ALSO update the version in the pod text below!
 $VERSION = eval $VERSION;
 }
 
@@ -137,6 +137,8 @@ If you think you've found a bug then please read
 "How to Report Bugs Effectively" by Simon Tatham:
 L<http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
 
+If you think you've found a memory leak then read L</Memory Leaks>.
+
 Your problem is most likely related to the specific DBD driver module you're
 using. If that's the case then click on the 'Bugs' link on the L<http://metacpan.org>
 page for your driver. Only submit a bug report against the DBI itself if you're
@@ -144,7 +146,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.633_91
+This is the DBI specification that corresponds to DBI version 1.633_92
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
