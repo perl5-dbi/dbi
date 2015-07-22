@@ -1588,9 +1588,13 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $quoted_id = join '.', grep { defined } @id;
 
 	if ($catalog) {			# add catalog correctly
-	    $quoted_id = ($info->[2] == 2)	# SQL_CL_END
-		    ? $quoted_id . $info->[1] . $catalog
-		    : $catalog   . $info->[1] . $quoted_id;
+        if ($quoted_id) {
+            $quoted_id = ($info->[2] == 2)	# SQL_CL_END
+                ? $quoted_id . $info->[1] . $catalog
+                    : $catalog   . $info->[1] . $quoted_id;
+        } else {
+            $quoted_id = $catalog;
+        }
 	}
 	return $quoted_id;
     }

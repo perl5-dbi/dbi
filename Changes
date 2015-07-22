@@ -16,6 +16,10 @@ DBI::Changes - List of significant changes to the DBI
         and you execute statements that might affect >=2,147,483,648 rows.
     Added support for tables('', '', '', '%') special case (Martin J. Evans)
     Added test case 91_store_warning.t to illustrate rt#89015 [Martin J. Evans]
+    Fixed quote_identifier that was adding a trailing separator when there
+        was only a catalog (Martin J. Evans)
+    Minor fix to DBD::NullP in fetchrow_arrayref which was calling _set_fbav
+        incorrectly (Martin J. Evans)
 
     Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
     Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24

@@ -56,6 +56,42 @@ use strict;
     use strict;
     use Carp qw(croak);
 
+    # Added get_info to support tests in 10examp.t
+    sub get_info {
+        my ($dbh, $type) = @_;
+
+        if ($type == 29) {      # identifier quote
+            return '"';
+        }
+        return;
+    }
+
+    # Added table_info to support tests in 10examp.t
+    sub table_info {
+        my ($dbh, $catalog, $schema, $table, $type) = @_;
+
+        my ($outer, $sth) = DBI::_new_sth($dbh, {
+            'Statement'     => 'tables',
+        });
+        if (defined($type) && $type eq '%' && # special case for tables('','','','%')
+                grep {defined($_) && $_ eq ''} ($catalog, $schema, $table)) {
+            $outer->{dbd_nullp_data} = [[undef, undef, undef, 'TABLE', undef],
+                                        [undef, undef, undef, 'VIEW', undef],
+                                        [undef, undef, undef, 'ALIAS', undef]];
+        } elsif (defined($catalog) && $catalog eq '%' && # special case for tables('%','','')
+                grep {defined($_) && $_ eq ''} ($schema, $table)) {
+            $outer->{dbd_nullp_data} = [['catalog1', undef, undef, undef, undef],
+                                        ['catalog2', undef, undef, undef, undef]];
+        } else {
+            $outer->{dbd_nullp_data} = [['catalog', 'schema', 'table1', 'TABLE']];
+            $outer->{dbd_nullp_data} = [['catalog', 'schema', 'table2', 'TABLE']];
+            $outer->{dbd_nullp_data} = [['catalog', 'schema', 'table3', 'TABLE']];
+        }
+        $outer->STORE(NUM_OF_FIELDS => 5);
+        $sth->STORE(Active => 1);
+        return $outer;
+    }
+
     sub prepare {
 	my ($dbh, $statement)= @_;
 
@@ -142,12 +178,12 @@ use strict;
 
     sub fetchrow_arrayref {
 	my $sth = shift;
-	my $data = $sth->{dbd_nullp_data};
+	my $data = shift @{$sth->{dbd_nullp_data}};
         if (!$data || !@$data) {
             $sth->finish;     # no more data so finish
             return undef;
 	}
-        return $sth->_set_fbav(shift @$data);
+        return $sth->_set_fbav($data);
     }
     *fetch = \&fetchrow_arrayref; # alias
 
