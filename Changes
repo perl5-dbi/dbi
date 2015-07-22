@@ -15,6 +15,7 @@ DBI::Changes - List of significant changes to the DBI
         Relevant if "perl -V:'i(nt|v)size'" reports different sizes
         and you execute statements that might affect >=2,147,483,648 rows.
     Added support for tables('', '', '', '%') special case (Martin J. Evans)
+    Added test case 91_store_warning.t to illustrate rt#89015 [Martin J. Evans]
 
     Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
     Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24
