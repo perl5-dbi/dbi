@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 229;
+use Test::More tests => 234;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -41,7 +41,7 @@ sub check_connect_cached {
 	# connect_cached
 	# ------------------------------------------
 	# This test checks that connect_cached works
-	# and how it then relates to the CachedKids 
+	# and how it then relates to the CachedKids
 	# attribute for the driver.
 
 	ok my $dbh_cached_1 = DBI->connect_cached('dbi:ExampleP:', '', '', { TraceLevel=>0, Executed => 0 });
@@ -51,7 +51,7 @@ sub check_connect_cached {
 	is($dbh_cached_1, $dbh_cached_2, '... these 2 handles are cached, so they are the same');
 
 	ok my $dbh_cached_3 = DBI->connect_cached('dbi:ExampleP:', '', '', { examplep_foo => 1 });
-	
+
 	isnt($dbh_cached_3, $dbh_cached_2, '... this handle was created with different parameters, so it is not the same');
 
         # check that cached_connect applies attributes to handles returned from the cache
@@ -64,12 +64,12 @@ sub check_connect_cached {
 
 	my $drh = $dbh->{Driver};
 	isa_ok($drh, "DBI::dr");
-	
-	my @cached_kids = values %{$drh->{CachedKids}};	
+
+	my @cached_kids = values %{$drh->{CachedKids}};
 	ok(eq_set(\@cached_kids, [ $dbh_cached_1, $dbh_cached_3 ]), '... these are our cached kids');
 
-	$drh->{CachedKids} = {};	
-	cmp_ok(scalar(keys %{$drh->{CachedKids}}), '==', 0, '... we have emptied out cache');	
+	$drh->{CachedKids} = {};
+	cmp_ok(scalar(keys %{$drh->{CachedKids}}), '==', 0, '... we have emptied out cache');
 }
 
 check_connect_cached();
@@ -480,15 +480,15 @@ ok(!$dbh->{HandleError});
 {
 	# dump_results;
 	my $sth = $dbh->prepare($std_sql);
-	
+
 	isa_ok($sth, "DBI::st");
-	
+
 	if (length(File::Spec->updir)) {
 	  ok($sth->execute(File::Spec->updir));
 	} else {
 	  ok($sth->execute('../'));
 	}
-	
+
 	my $dump_file = "dumpcsr.tst.$$";
 	SKIP: {
             skip "# dump_results test skipped: unable to open $dump_file: $!\n", 4
@@ -570,6 +570,35 @@ SKIP: {
         defined(delete $tables{$t}) or print "Unexpected table: $t\n";
     }
     is(keys(%tables), 0);
+}
+
+{
+    # some tests on special cases for the older tables call
+    # uses DBD::NullP and relies on 2 facts about DBD::NullP:
+    # 1) it has a get_info for for 29 - the quote chr
+    # 2) it has a table_info which returns some types and catalogs
+    my $dbhnp = DBI->connect('dbi:NullP:test');
+
+    # this special case should just return a list of table types
+    my @types = $dbhnp->tables('','','','%');
+    ok(scalar(@types), 'we got some table types');
+    my $defined = grep {defined($_)} @types;
+    is($defined, scalar(@types), 'all table types are defined');
+  SKIP: {
+        skip "some table types were not defined", 1 if ($defined != scalar(@types));
+        my $found_sep = grep {$_ =~ '\.'} @types;
+        is($found_sep, 0, 'no name separators in table types') or diag(Dumper(\@types));
+    };
+
+    # this special case should just return a list of catalogs
+    my @catalogs = $dbhnp->tables('%', '', '');
+    ok(scalar(@catalogs), 'we got some catalogs');
+  SKIP: {
+        skip "no catalogs found", 1 if !scalar(@catalogs);
+        my $found_sep = grep {$_ =~ '\.'} @catalogs;
+        is($found_sep, 0, 'no name separators in catalogs') or diag(Dumper(\@catalogs));
+    };
+    $dbhnp->disconnect;
 }
 
 $dbh->disconnect;
