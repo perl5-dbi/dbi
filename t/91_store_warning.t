@@ -25,6 +25,7 @@ plan tests => 1;
 
 my $dbh = DBI->connect('dbi:NullP:', '', '', {PrintWarn => 1});
 
-$dbh->{nullp_set_err} = '0';    # sets a warning with err msg "0"
+$dbh->set_err("0", "warning");
+#$dbh->{nullp_set_err} = '0';    # sets a warning with err msg "0"
 #warn('fred'); # this would make this test succeed when DBI doesn't issue the warning
 ok($warning, "Warning recorded by store");
