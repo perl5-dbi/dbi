@@ -41,6 +41,7 @@ DBI->setup_driver("DBI::DBD::SqlEngine");    # only needed once but harmless to 
 
 my %accessors = (
                   versions   => "get_driver_versions",
+                  new_meta   => "new_sql_engine_meta",
                   get_meta   => "get_sql_engine_meta",
                   set_meta   => "set_sql_engine_meta",
                   clear_meta => "clear_sql_engine_meta",
@@ -94,6 +95,12 @@ EOI
             eval $inject;
             $dbclass->install_method($method);
         }
+    }
+    else
+    {
+        warn "Using DBI::DBD::SqlEngine with unregistered driver $class.\n"
+          . "Reading documentation how to prevent is strongly recommended.\n";
+
     }
 
     # XXX inject DBD::XXX::Statement unless exists
@@ -386,6 +393,7 @@ sub init_valid_attributes
                              sql_init_phase             => 1,    # Only during initialization
                              sql_meta                   => 1,    # meta data for tables
                              sql_meta_map               => 1,    # mapping table for identifier case
+			     sql_data_source            => 1,    # reasonable datasource class
                               };
     $dbh->{sql_readonly_attrs} = {
                                sql_engine_version         => 1,    # DBI::DBD::SqlEngine version
@@ -765,7 +773,7 @@ sub get_sql_engine_meta
       and $table = [ grep { $_ =~ $table } keys %{ $dbh->{sql_meta} } ];
 
     ref $table || ref $attr
-      or return &$gstm( $dbh, $table, $attr );
+      or return $gstm->( $dbh, $table, $attr );
 
     ref $table or $table = [$table];
     ref $attr  or $attr  = [$attr];
@@ -783,13 +791,38 @@ sub get_sql_engine_meta
         my %tattrs;
         foreach my $aname ( @{$attr} )
         {
-            $tattrs{$aname} = &$gstm( $dbh, $tname, $aname );
+            $tattrs{$aname} = $gstm->( $dbh, $tname, $aname );
         }
         $results{$tname} = \%tattrs;
     }
 
     return \%results;
 }    # get_sql_engine_meta
+
+sub new_sql_engine_meta
+{
+    my ( $dbh, $table, $values ) = @_;
+    my $respect_case = 0;
+
+    "HASH" eq ref $values
+      or croak "Invalid argument for \$values - SCALAR or HASH expected but got " . ref $values;
+
+    $table =~ s/^\"// and $respect_case = 1;    # handle quoted identifiers
+    $table =~ s/\"$//;
+
+    unless ($respect_case)
+    {
+        defined $dbh->{sql_meta_map}{$table} and $table = $dbh->{sql_meta_map}{$table};
+    }
+
+    $dbh->{sql_meta}{$table} = { %{$values} };
+    my $class;
+    defined $values->{sql_table_class} and $class = $values->{sql_table_class};
+    defined $class or ( $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
+    # XXX we should never hit DBD::File::Table::get_table_meta here ...
+    my ( undef, $meta ) = $class->get_table_meta( $dbh, $table, $respect_case );
+    1;
+}    # new_sql_engine_meta
 
 sub set_single_table_meta
 {
@@ -800,7 +833,7 @@ sub set_single_table_meta
       and return $dbh->STORE( $attr, $value );
 
     ( my $class = $dbh->{ImplementorClass} ) =~ s/::db$/::Table/;
-    ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 );
+    ( undef, $meta ) = $class->get_table_meta( $dbh, $table, 1 ); # 1 means: respect case
     $meta or croak "No such table '$table'";
     $class->set_table_meta_attr( $meta, $attr, $value );
 
@@ -821,7 +854,7 @@ sub set_sql_engine_meta
       and $table = [ grep { $_ =~ $table } keys %{ $dbh->{sql_meta} } ];
 
     ref $table || ref $attr
-      or return &$sstm( $dbh, $table, $attr, $value );
+      or return $sstm->( $dbh, $table, $attr, $value );
 
     ref $table or $table = [$table];
     ref $attr or $attr = { $attr => $value };
@@ -833,10 +866,9 @@ sub set_sql_engine_meta
 
     foreach my $tname ( @{$table} )
     {
-        my %tattrs;
         while ( my ( $aname, $aval ) = each %$attr )
         {
-            &$sstm( $dbh, $tname, $aname, $aval );
+            $sstm->( $dbh, $tname, $aname, $aval );
         }
     }
 
@@ -1426,6 +1458,11 @@ sub open_table ($$$$$)
                 };
     $self->{command} eq "DROP" and $flags->{dropMode} = 1;
 
+    my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
+      or croak "Cannot find appropriate meta for table '$table'";
+
+    defined $table_meta->{sql_table_class} and $class = $table_meta->{sql_table_class};
+
     # because column name mapping is initialized in constructor ...
     # and therefore specific opening operations might be done before
     # reaching DBI::DBD::SqlEngine::Table->new(), we need to intercept
@@ -1433,8 +1470,6 @@ sub open_table ($$$$$)
     my $write_op = $createMode || $lockMode || $flags->{dropMode};
     if ($write_op)
     {
-        my ( $tblnm, $table_meta ) = $class->get_table_meta( $data->{Database}, $table, 1 )
-          or croak "Cannot find appropriate file for table '$table'";
         $table_meta->{readonly}
           and croak "Table '$table' is marked readonly - "
           . $self->{command}
@@ -1619,6 +1654,14 @@ sub new
     return $className->SUPER::new($tbl);
 }    # new
 
+sub DESTROY
+{
+    my $self = shift;
+    my $meta = $self->{meta};
+    $self->{row} and undef $self->{row};
+    ()
+}
+
 1;
 
 =pod
@@ -1692,6 +1735,9 @@ by DBI::DBD::SqlEngine.
 Currently the API of DBI::DBD::SqlEngine is experimental and will
 likely change in the near future to provide the table meta data basics
 like DBD::File.
+
+DBI::DBD::SqlEngine expects that any driver in inheritance chain has
+a L<DBI prefix|DBI::DBD/The_database_handle_constructor>.
 
 =head2 Metadata
 

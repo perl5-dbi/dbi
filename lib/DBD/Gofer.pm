@@ -458,7 +458,7 @@
 
     sub ping {
         my $dbh = shift;
-        return $dbh->set_err(0, "can't ping while not connected") # warning
+        return $dbh->set_err('', "can't ping while not connected") # info
             unless $dbh->SUPER::FETCH('Active');
         my $skip_ping = $dbh->{go_policy}->skip_ping();
         return ($skip_ping) ? 1 : $dbh->go_dbh_method(undef, 'ping', @_);
@@ -551,7 +551,7 @@
             go_last_insert_id_args => $lii_args,
             go_cache => $go_cache,
         });
-        $sth->STORE(Active => 0);
+        $sth->STORE(Active => 0); # XXX needed? It should be the default
 
         my $skip_prepare_check = $policy->skip_prepare_check($attr, $dbh, $statement, $attr, $sth);
         if (not $skip_prepare_check) {

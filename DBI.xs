@@ -635,7 +635,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
                 sv_catpvn(infosv, &mg->mg_type, 1);
             sv_catpvn(infosv, ")", 1);
         }
-        if (SvGMAGICAL(sv))
+        if (SvGMAGICAL(sv) && !PL_dirty)
             mg_get(sv);         /* trigger magic to FETCH the value     */
     }
 
@@ -838,6 +838,35 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     }
 
     return 1;
+}
+
+
+/* err_hash returns a U32 'hash' value representing the current err 'level'
+ * (err/warn/info) and errstr. It's used by the dispatcher as a way to detect
+ * a new or changed warning during a 'keep err' method like STORE. Always returns >0.
+ * The value is 1 for no err/warn/info and guarantees that err > warn > info.
+ * (It's a bit of a hack but the original approach in 70fe6bd76 using a new
+ * ErrChangeCount attribute would break binary compatibility with drivers.)
+ * The chance that two realistic errstr values would hash the same, even with
+ * only 30 bits, is deemed to small to even bother documenting.
+ */
+static U32
+err_hash(pTHX_ imp_xxh_t *imp_xxh)
+{
+    SV *err_sv = DBIc_ERR(imp_xxh);
+    SV *errstr_sv;
+    I32 hash = 1;
+    if (SvOK(err_sv)) {
+        errstr_sv = DBIc_ERRSTR(imp_xxh);
+        if (SvOK(errstr_sv))
+             hash = -dbi_hash(SvPV_nolen(errstr_sv), 0); /* make positive */
+        else hash = 0;
+        hash >>= 1; /* free up extra bit (top bit is already free) */
+        hash |= (SvTRUE(err_sv))                  ? 0x80000000 /* err */
+              : (SvPOK(err_sv) && !SvCUR(err_sv)) ? 0x20000000 /* '' = info */
+                                                  : 0x40000000;/* 0 or '0' = warn */
+    }
+    return hash;
 }
 
 
@@ -1326,7 +1355,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
                    |DBIcf_ACTIVE        /* drivers are 'Active' by default      */
                    |DBIcf_AutoCommit    /* advisory, driver must manage this    */
         );
-        DBIc_set(imp, DBIcf_PrintWarn, PL_dowarn); /* set if warnings enabled   */
+        DBIc_set(imp, DBIcf_PrintWarn, 1);
     }
     else {
         DBIc_PARENT_H(imp)    = (SV*)SvREFCNT_inc(p_h); /* ensure it lives      */
@@ -1343,7 +1372,7 @@ dbih_make_com(SV *p_h, imp_xxh_t *p_imp_xxh, const char *imp_class, STRLEN imp_s
 
     if (DBIc_TYPE(imp) == DBIt_ST) {
         imp_sth_t *imp_sth = (imp_sth_t*)imp;
-        DBIc_ROW_COUNT(imp_sth)  = -1;
+        DBIc_ROW_COUNT(imp_sth) = -1;
     }
 
     DBIc_COMSET_on(imp);        /* common data now set up               */
@@ -1827,7 +1856,7 @@ dbih_sth_bind_col(SV *sth, SV *col, SV *ref, SV *attribs)
         PERL_UNUSED_VAR(attribs);
         croak("Statement has no result columns to bind%s",
             DBIc_ACTIVE(imp_sth)
-                ? "" : " (perhaps you need to call execute first)");
+                ? "" : " (perhaps you need to successfully call execute first, or again)");
     }
 
     if ( (av = DBIc_FIELDS_AV(imp_sth)) == Nullav)
@@ -2871,7 +2900,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 PUSHs( sv_2mortal(newSVpv(method_pv,0)));
                 PUTBACK;
                 SAVE_DEFSV; /* local($_) = $statement */
-                DEFSV = statement_sv;
+                DEFSV_set(statement_sv);
                 items = call_sv(code_sv, G_ARRAY);
                 SPAGAIN;
                 SP -= items ;
@@ -3118,6 +3147,7 @@ XS(XS_DBI_dispatch);            /* prototype to pass -Wmissing-prototypes */
 XS(XS_DBI_dispatch)
 {
     dXSARGS;
+    dORIGMARK;
     dMY_CXT;
 
     SV *h   = ST(0);            /* the DBI handle we are working with   */
@@ -3134,7 +3164,7 @@ XS(XS_DBI_dispatch)
     int is_DESTROY;
     meth_types meth_type;
     int is_unrelated_to_Statement = 0;
-    int keep_error = FALSE;
+    U32 keep_error = FALSE;
     UV  ErrCount = UV_MAX;
     int i, outitems;
     int call_depth;
@@ -3418,6 +3448,7 @@ XS(XS_DBI_dispatch)
                     XPUSHs(*hp);
                     PUTBACK;
                     call_method("DESTROY", G_DISCARD|G_EVAL|G_KEEPERR);
+                    MSPAGAIN;
                 }
                 else {
                     imp_xxh_t *imp_xxh = dbih_getcom2(aTHX_ *hp, 0);
@@ -3484,8 +3515,10 @@ XS(XS_DBI_dispatch)
         }
         DBIh_CLEAR_ERROR(imp_xxh);
     }
-    else {      /* we check for change in ErrCount during call */
+    else {      /* we check for change in ErrCount/err_hash during call */
         ErrCount = DBIc_ErrCount(imp_xxh);
+        if (keep_error)
+            keep_error = err_hash(aTHX_ imp_xxh);
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
@@ -3508,8 +3541,8 @@ XS(XS_DBI_dispatch)
         SV *code = SvRV(*hook_svp);
         I32 skip_dispatch = 0;
         if (trace_level)
-            PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked\n",
-                (PL_dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0));
+            PerlIO_printf(DBILOGFP, "%c   {{ %s callback %s being invoked with %ld args\n",
+                (PL_dirty?'!':' '), meth_name, neatsvpv(*hook_svp,0), (long)items);
 
         /* we don't use ENTER,SAVETMPS & FREETMPS,LEAVE because we may need mortal
          * results to live long enough to be returned to our caller
@@ -3521,24 +3554,24 @@ XS(XS_DBI_dispatch)
          */
         orig_defsv = DEFSV; /* remember the current $_ */
         SAVE_DEFSV;         /* local($_) = $method_name */
-        DEFSV = sv_2mortal(newSVpv(meth_name,0));
+        DEFSV_set(sv_2mortal(newSVpv(meth_name,0)));
 
         EXTEND(SP, items+1);
         PUSHMARK(SP);
-        PUSHs(h);                       /* push inner handle, then others params */
+        PUSHs(orig_h);                  /* push outer handle, then others params */
         for (i=1; i < items; ++i) {     /* start at 1 to skip handle */
             PUSHs( ST(i) );
         }
         PUTBACK;
         outitems = call_sv(code, G_ARRAY); /* call the callback code */
-        SPAGAIN;
+        MSPAGAIN;
 
         /* The callback code can undef $_ to indicate to skip dispatch */
         skip_dispatch = !SvOK(DEFSV);
         /* put $_ back now, but with an incremented ref count to compensate
          * for the ref count decrement that will happen when we exit the scope.
          */
-        DEFSV = SvREFCNT_inc(orig_defsv);
+        DEFSV_set(SvREFCNT_inc(orig_defsv));
 
         if (trace_level)
             PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned%s\n",
@@ -3755,17 +3788,21 @@ XS(XS_DBI_dispatch)
         }
     }
 
-    /* if we didn't clear err before the call, check if ErrCount has gone up */
-    /* if so, we turn off keep_error so error is acted on                    */
-    if (keep_error && DBIc_ErrCount(imp_xxh) > ErrCount)
-        keep_error = 0;
+    if (keep_error) {
+        /* if we didn't clear err before the call, check to see if a new error
+         * or warning has been recorded. If so, turn off keep_error so it gets acted on
+         */
+        if (DBIc_ErrCount(imp_xxh) > ErrCount || err_hash(aTHX_ imp_xxh) != keep_error) {
+            keep_error = 0;
+        }
+    }
 
     err_sv = DBIc_ERR(imp_xxh);
 
     if (trace_level >= (is_nested_call ? 3 : 1)) {
         PerlIO *logfp = DBILOGFP;
         const int is_fetch  = (meth_type == methtype_fetch_star && DBIc_TYPE(imp_xxh)==DBIt_ST);
-        const int row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
+        const IV row_count = (is_fetch) ? DBIc_ROW_COUNT((imp_sth_t*)imp_xxh) : 0;
         if (is_fetch && row_count>=2 && trace_level<=4 && SvOK(ST(0))) {
             /* skip the 'middle' rows to reduce output */
             goto skip_meth_return_trace;
@@ -3824,7 +3861,7 @@ XS(XS_DBI_dispatch)
             PerlIO_printf(logfp," ) [%d items]", outitems);
         }
         if (is_fetch && row_count) {
-            PerlIO_printf(logfp," row%d", row_count);
+            PerlIO_printf(logfp," row%"IVdf, row_count);
         }
         if (qsv) /* flag as quick and peek at the first arg (still on the stack) */
             PerlIO_printf(logfp," (%s from cache)", neatsvpv(st1,0));
@@ -3855,7 +3892,7 @@ XS(XS_DBI_dispatch)
                 XPUSHs(&PL_sv_yes);
                 PUTBACK;
                 call_method("STORE", G_DISCARD);
-                SPAGAIN;
+                MSPAGAIN;
             }
         }
     }
@@ -4012,7 +4049,7 @@ XS(XS_DBI_dispatch)
             XPUSHs( result );
             PUTBACK;
             items = call_sv(*hook_svp, G_SCALAR);
-            SPAGAIN;
+            MSPAGAIN;
             status = (items) ? POPs : &PL_sv_undef;
             PUTBACK;
             if (trace_level)
@@ -4120,7 +4157,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
     char rt_comment = '\0';
     char *dest, *start;
     const char *src;
-    const char *style = "", *laststyle = '\0';
+    const char *style = "", *laststyle = NULL;
     SV *new_stmt_sv;
 
     (void)foo;
@@ -4584,7 +4621,9 @@ _handles(sv)
     (void)cv;
     EXTEND(SP, 2);
     PUSHs(oh);  /* returns outer handle then inner */
-    PUSHs(ih);
+    if (GIMME != G_SCALAR) {
+        PUSHs(ih);
+    }
 
 
 void
@@ -5406,6 +5445,19 @@ FETCH(h, keysv)
     SV *        keysv
     CODE:
     ST(0) = dbih_get_attr_k(h, keysv, 0);
+    (void)cv;
+
+void
+DELETE(h, keysv)
+    SV *        h
+    SV *        keysv
+    CODE:
+    /* only private_* keys can be deleted, for others DELETE acts like FETCH */
+    /* because the DBI internals rely on certain handle attributes existing  */
+    if (strnEQ(SvPV_nolen(keysv),"private_",8))
+        ST(0) = hv_delete_ent((HV*)SvRV(h), keysv, 0, 0);
+    else
+        ST(0) = dbih_get_attr_k(h, keysv, 0);
     (void)cv;
 
 

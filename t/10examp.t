@@ -489,7 +489,7 @@ ok(!$dbh->{HandleError});
 	  ok($sth->execute('../'));
 	}
 	
-	my $dump_file = 'dumpcsr.tst';
+	my $dump_file = "dumpcsr.tst.$$";
 	SKIP: {
             skip "# dump_results test skipped: unable to open $dump_file: $!\n", 4
                 unless open(DUMP_RESULTS, ">$dump_file");

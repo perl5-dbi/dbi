@@ -759,7 +759,6 @@ proxying the connect_cached method. The proxy server will hold the
 database connections open in a cache. The CGI script then trades the
 database connect/disconnect overhead for the DBD::Proxy
 connect/disconnect overhead which is typically much less.
-I<Note that the connect_cached method is new and still experimental.>
 
 
 =head1 CONNECTING TO THE DATABASE
@@ -846,7 +845,7 @@ less secure than the usercipher/userkey secret and readable by anyone.
 The usercipher/userkey secret is B<your> private secret.
 
 Of course encryption requires an appropriately configured server. See
-<DBD::ProxyServer/CONFIGURATION FILE>.
+L<DBD::ProxyServer/CONFIGURATION FILE>.
 
 =item debug
 
@@ -972,6 +971,13 @@ The workaround is storing the modified local copy back to the server:
   $tables = $dbh->{"csv_tables"};
   $tables->{"passwd"} = { "sep_char" => ":", "eol" => "\n";
   $dbh->{"csv_tables"} = $tables;
+
+
+=head1 SECURITY WARNING
+
+L<RPC::PlClient> used underneath is not secure due to serializing and
+deserializing data with L<Storable> module. Use the proxy driver only in
+trusted environment.
 
 
 =head1 AUTHOR AND COPYRIGHT

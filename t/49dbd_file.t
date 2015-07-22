@@ -130,11 +130,19 @@ ok ($sth = $dbh->table_info (), "table_info");
 is_deeply (\@tables, [ map { [ undef, undef, $_, 'TABLE', 'FILE' ] } sort "000_just_testing", $tbl ], "table_info gives test table");
 
 SKIP: {
-    $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 4;
+    $using_dbd_gofer and skip "modifying meta data doesn't work with Gofer-AutoProxy", 6;
     ok ($dbh->f_set_meta ($tbl, "f_dir", $dir), "set single meta datum");
     is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set single meta datum");
     ok ($dbh->f_set_meta ($tbl, { f_dir => $dir }), "set multiple meta data");
     is ($tbl_file, $dbh->f_get_meta ($tbl, "f_fqfn"), "verify set multiple meta attributes");
+
+    ok($dbh->f_new_meta("t_bsgdf_3544G2z", {
+	f_ext	=> undef,
+	f_dir	=> $dir,
+	}), "initialize new table (meta) with settings");
+
+    my $t_bsgdf_file = File::Spec->catfile (Cwd::abs_path ($dir), "t_bsgdf_3544G2z");
+    is($t_bsgdf_file, $dbh->f_get_meta ("t_bsgdf_3544G2z", "f_fqfn"), "verify create meta from scratch");
     }
 
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
@@ -176,8 +184,10 @@ ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
 ok ($sth = $dbh->prepare ("select * from $tbl"), "Prepare select * from $tbl");
 $rowidx = 0;
 SKIP: {
-    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 1;
+    $using_dbd_gofer and skip "method intrusion didn't work with proxying", 3;
     ok ($sth->execute, "execute on $tbl");
+    like ($_, qr{^[0-9]+$},   "TYPE is numeric")  for @{$sth->{TYPE}};
+    like ($_, qr{^[A-Z]\w+$}, "TYPE_NAME is set") for @{$sth->{TYPE_NAME}};
     $dbh->errstr and diag $dbh->errstr;
     }
 
@@ -206,6 +216,31 @@ ok ($dbh = DBI->connect ("dbi:File:", undef, undef, {
 
 ok ($dbh->do ("drop table $tbl"), "table drop");
 is (-s $tbl_file, undef, "Test table removed"); # -s => size test
+
+# ==================== Nonexisting top-dir ========================
+my %drh = DBI->installed_drivers;
+my $qer = qr{\bNo such directory};
+foreach my $tld ("./non-existing", "nonexisting_folder", "/Fr-dle/hurd0k/ok$$") {
+    is (DBI->connect ("dbi:File:", undef, undef, {
+	f_dir      => $tld,
+
+	RaiseError => 0,
+	PrintError => 0,
+	}), undef, "Should not be able to open a DB to $tld");
+    like ($DBI::errstr, $qer, "Error message");
+    $drh{File}->set_err (undef, "");
+    is ($DBI::errstr, undef, "Cleared error");
+    my $dbh;
+    eval { $dbh = DBI->connect ("dbi:File:", undef, undef, {
+	f_dir      => $tld,
+
+	RaiseError => 1,
+	PrintError => 0,
+	})};
+    is ($dbh, undef, "connect () should die on $tld with RaiseError");
+    like ($@,           $qer, "croak message");
+    like ($DBI::errstr, $qer, "Error message");
+    }
 
 done_testing ();
 

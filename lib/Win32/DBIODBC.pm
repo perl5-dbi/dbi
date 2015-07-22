@@ -1,7 +1,7 @@
 package			# hide this package from CPAN indexer
 	Win32::ODBC;
 
-#use strict;
+use strict;
 
 use DBI;
 

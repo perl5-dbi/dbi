@@ -6,17 +6,107 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes
+=head2 Changes in DBI 1.633_91 - 19th July 2015
+
+    Enabled strictures on all modules (Jose Luis Perez Diez) #22
+        Note that this might cause new exceptions in existing code.
+        Please take time for extra testing before deploying to production.
+    Improve handling of row count on 32bit int systems, add sanity check warn
+        Relevant if "perl -V:'i(nt|v)size'" reports different sizes
+        and you execute statements that might affect >=2,147,483,648 rows.
+    Added support for tables('', '', '', '%') special case (Martin J. Evans)
+    Added test case 91_store_warning.t to illustrate rt#89015 [Martin J. Evans]
+
+    Fixed support for DBD prefixes with numbers (Jens Rehsack) #19
+    Removed redundant keys() call in fetchall_arrayref with hash slice (ilmari) #24
+    Corrected pod xref to Placeholders section (Matthew D. Fuller)
+    Corrected pod grammar (Nick Tonkin) #25
+
+    Added extra initializer for DBI::DBD::SqlEngine based DBD's (Jens Rehsack)
+    Added Memory Leaks section to the DBI docs (Tim)
+    Added Artistic v1 & GPL v1 LICENSE file (Jose Luis Perez Diez) #21
+
+=head2 Changes in DBI 1.633 - 11th Jan 2015
+
+    Fixed selectrow_*ref to return undef on error in list context
+        instead if an empty list.
+    Changed t/42prof_data.t more informative
+    Changed $sth->{TYPE} to be NUMERIC in DBD::File drivers as per the
+        DBI docs. Note TYPE_NAME is now also available. [H.Merijn Brand]
+    Fixed compilation error on bleadperl due DEFSV no longer being an lvalue
+        [Dagfinn Ilmari Mannsåker]
+
+    Added docs for escaping placeholders using a backslash.
+    Added docs for get_info(9000) indicating ability to escape placeholders.
+    Added multi_ prefix for DBD::Multi (Dan Wright) and ad2_ prefix for
+        DBD::AnyData2
+
+=head2 Changes in DBI 1.632 - 9th Nov 2014
+
+    Fixed risk of memory corruption with many arguments to methods
+        originally reported by OSCHWALD for Callbacks but may apply
+        to other functionality in DBI method dispatch RT#86744.
+    Fixed DBD::PurePerl to not set $sth->{Active} true by default
+        drivers are expected to set it true as needed.
+    Fixed DBI::DBD::SqlEngine to complain loudly when prerequite
+        driver_prefix is not fulfilled (RT#93204) [Jens Rehsack]
+    Fixed redundant sprintf argument warning RT#97062 [Reini Urban]
+    Fixed security issue where DBD::File drivers would open files
+        from folders other than specifically passed using the
+        f_dir attribute RT#99508 [H.Merijn Brand]
+
+    Changed delete $h->{$key} to work for keys with 'private_' prefix
+        per request in RT#83156. local $h->{$key} works as before.
+
+    Added security notice to DBD::Proxy and DBI::ProxyServer because they
+        use Storable which is insecure. Thanks to ppisar@redhat.com RT#90475
+    Added note to AutoInactiveDestroy docs strongly recommending that it
+        is enabled in all new code.
+
+=head2 Changes in DBI 1.631 - 20th Jan 2014
+
+NOTE: This release changes the handle passed to Callbacks from being an 'inner'
+handle to being an 'outer' handle. If you have code that makes use of Callbacks,
+ensure that you understand what this change means and review your callback code.
+
+    Fixed err_hash handling of integer err RT#92172 [Dagfinn Ilmari]
+    Fixed use of \Q vs \E in t/70callbacks.t
+
+    Changed the handle passed to Callbacks from being an 'inner'
+        handle to being an 'outer' handle.
+
+    Improved reliability of concurrent testing
+        PR#8 [Peter Rabbitson]
+    Changed optional dependencies to "suggest"
+        PR#9 [Karen Etheridge]
+    Changed to avoid mg_get in neatsvpv during global destruction
+        PR#10 [Matt Phillips]
+
+=head2 Changes in DBI 1.630 - 28th Oct 2013
+
+NOTE: This release enables PrintWarn by default regardless of $^W.
+Your applications may generate more log messages than before.
+
+    Fixed err for new drh to be undef not to 0 [Martin J. Evans]
+    Fixed RT#83132 - moved DBIstcf* constants to util
+        export tag [Martin J. Evans]
+    PrintWarn is now triggered by warnings recorded in methods like STORE
+        that don't clear err RT#89015 [Tim Bunce]
+
+    Changed tracing to no longer show quote and quote_identifier calls
+        at trace level 1.
+    Changed DBD::Gofer ping while disconnected set_err from warn to info.
+    Clarified wording of log message when err is cleared.
+    Changed bootstrap to use $XS_VERSION RT#89618 [Andreas Koenig]
 
     Added connect_cached.connected Callback PR#3 [David E. Wheeler]
-    Clarify effect of refs in connect_cached attributes [David E. Wheeler]
-    Clarify wording of log message when err is cleared.
-    Stop setting err to 0 when creating a new drh [Martin J. Evans]
-    Fix RT#83132 - move DBIstcf* constants to util
-        export [Martin J. Evans]
-    Add clarification of the ReadOnly attribute when the driver cannot
+
+    Clarified effect of refs in connect_cached attributes [David E. Wheeler]
+    Extended ReadOnly attribute docs for when the driver cannot
       ensure read only [Martin J. Evans]
-    Added test case 91_store_warning.t to illustrate rt#89015 [Martin J. Evans]
+    Corrected SQL_BIGINT docs to say ODBC value is used PR#5 [ilmari]
+
+There was no DBI 1.629 release.
 
 =head2 Changes in DBI 1.628 - 22nd July 2013
 

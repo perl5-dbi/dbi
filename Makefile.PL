@@ -64,8 +64,9 @@ my %opts = (
 	    MailingList => 'mailto:dbi-dev@perl.org',
 	    license     => 'http://dev.perl.org/licenses/',
 	    homepage    => 'http://dbi.perl.org/',
+	    IRC		=> 'irc://irc.perl.org/#dbi',
 	},
-	recommends => {
+	suggests => {
 	    'RPC::PlServer'  => 0.2001,
 	    'Net::Daemon'    => 0,
 	    'SQL::Statement' => 1.402,
@@ -90,7 +91,7 @@ my %opts = (
     EXE_FILES => [ "dbiproxy$ext_pl", "dbiprof$ext_pl", "dbilogstrip$ext_pl" ],
     DIR => [ ],
     dynamic_lib => { OTHERLDFLAGS => "$::opt_g" },
-    clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zv*_*.t dbi__null_test_tmp*"
+    clean => { FILES=> "\$(DISTVNAME) Perl.xsi t/zv*_*.t dbi__null_test_tmp* test_output_*"
                 ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbiproxy.*log dbitrace.log dbi*.prof ndtest.prt" },
     dist  => {
 	DIST_DEFAULT=> 'clean distcheck disttest tardist',

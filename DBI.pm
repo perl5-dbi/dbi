@@ -11,7 +11,8 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-$VERSION = "1.628"; # ==> ALSO update the version in the pod text below!
+our $XS_VERSION = our $VERSION = "1.633_91"; # ==> ALSO update the version in the pod text below!
+$VERSION = eval $VERSION;
 }
 
 =head1 NAME
@@ -112,6 +113,12 @@ personally. The I<dbi-users> mailing list has lots of experienced
 people who should be able to help you if you need it. If you do email
 Tim he is very likely to just forward it to the mailing list.
 
+=head3 IRC
+
+DBI IRC Channel: #dbi on irc.perl.org (L<irc://irc.perl.org/#dbi>)
+
+=for html <a href="http://chat.mibbit.com/#dbi@irc.perl.org">(click for instant chatroom login)</a>
+
 =head3 Online
 
 StackOverflow has a DBI tag L<http://stackoverflow.com/questions/tagged/dbi>
@@ -137,7 +144,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.628
+This is the DBI specification that corresponds to DBI version 1.633_91
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -262,12 +269,12 @@ $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 # then you haven't installed the DBI correctly. Read the README
 # then install it again.
 if ( $ENV{DBI_PUREPERL} ) {
-    eval { bootstrap DBI } if       $ENV{DBI_PUREPERL} == 1;
+    eval { bootstrap DBI $XS_VERSION } if       $ENV{DBI_PUREPERL} == 1;
     require DBI::PurePerl  if $@ or $ENV{DBI_PUREPERL} >= 2;
     $DBI::PurePerl ||= 0; # just to silence "only used once" warnings
 }
 else {
-    bootstrap DBI;
+    bootstrap DBI $XS_VERSION;
 }
 
 $EXPORT_TAGS{preparse_flags} = [ grep { /^DBIpp_\w\w_/ } keys %{__PACKAGE__."::"} ];
@@ -321,6 +328,7 @@ sub DBI::var::STORE    { Carp::croak("Can't modify \$DBI::${$_[0]} special varia
 
 my $dbd_prefix_registry = {
   ad_          => { class => 'DBD::AnyData',        },
+  ad2_         => { class => 'DBD::AnyData2',       },
   ado_         => { class => 'DBD::ADO',            },
   amzn_        => { class => 'DBD::Amazon',         },
   best_        => { class => 'DBD::BestWins',       },
@@ -330,6 +338,7 @@ my $dbd_prefix_registry = {
   dbi_         => { class => 'DBI',                 },
   dbm_         => { class => 'DBD::DBM',            },
   df_          => { class => 'DBD::DF',             },
+  examplep_    => { class => 'DBD::ExampleP',       },
   f_           => { class => 'DBD::File',           },
   file_        => { class => 'DBD::TextFile',       },
   go_          => { class => 'DBD::Gofer',          },
@@ -342,7 +351,9 @@ my $dbd_prefix_registry = {
   msql_        => { class => 'DBD::mSQL',           },
   mvsftp_      => { class => 'DBD::MVS_FTPSQL',     },
   mysql_       => { class => 'DBD::mysql',          },
+  multi_       => { class => 'DBD::Multi'           },
   mx_          => { class => 'DBD::Multiplex',      },
+  neo_         => { class => 'DBD::Neo4p',          },
   nullp_       => { class => 'DBD::NullP',          },
   odbc_        => { class => 'DBD::ODBC',           },
   ora_         => { class => 'DBD::Oracle',         },
@@ -402,6 +413,7 @@ my $keeperr = { O=>0x0004 };
 	'FIRSTKEY'	=> $keeperr,
 	'NEXTKEY'	=> $keeperr,
 	'STORE'		=> { O=>0x0418 | 0x4 },
+	'DELETE'	=> { O=>0x0404 },
 	can		=> { O=>0x0100 }, # special case, see dispatch
 	debug 	 	=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
 	dump_handle 	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
@@ -448,8 +460,8 @@ my $keeperr = { O=>0x0004 };
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
 	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000, T=>0x200 },
-	quote      	=> { U =>[2,3, '$string [, $data_type ]' ], O=>0x0430 },
-	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ],    O=>0x0430 },
+	quote      	=> { U =>[2,3, '$string [, $data_type ]' ],   O=>0x0430, T=>2 },
+	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ], O=>0x0430, T=>2 },
 	rows       	=> $keeperr,
 
 	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x2200 },
@@ -1379,7 +1391,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    unless $class =~ /^DBD::(\w+)::(dr|db|st)$/;
 	my ($driver, $subtype) = ($1, $2);
 	Carp::croak("invalid method name '$method'")
-	    unless $method =~ m/^([a-z]+_)\w+$/;
+	    unless $method =~ m/^([a-z][a-z0-9]*_)\w+$/;
 	my $prefix = $1;
 	my $reg_info = $dbd_prefix_registry->{$prefix};
 	Carp::carp("method name prefix '$prefix' is not associated with a registered driver") unless $reg_info;
@@ -1498,7 +1510,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# If the caller has provided a callback then call it
 	if ($cb and (my $new_cb = $cb->{"connect_cached.new"})) {
 	    local $_ = "connect_cached.new";
-	    $new_cb->($dbh, $dsn, $user, $auth, $attr);
+	    $new_cb->($dbh, $dsn, $user, $auth, $attr); # $dbh is dead or undef
 	}
 
 	$dbh = $drh->connect(@_);
@@ -1626,9 +1638,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     sub _do_selectrow {
 	my ($method, $dbh, $stmt, $attr, @bind) = @_;
 	my $sth = ((ref $stmt) ? $stmt : $dbh->prepare($stmt, $attr))
-	    or return;
+	    or return undef;
 	$sth->execute(@bind)
-	    or return;
+	    or return undef;
 	my $row = $sth->$method()
 	    and $sth->finish;
 	return $row;
@@ -1749,7 +1761,11 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $sth    = $dbh->table_info(@args[0,1,2,3,4]) or return;
 	my $tables = $sth->fetchall_arrayref or return;
 	my @tables;
-	if ($dbh->get_info(29)) { # SQL_IDENTIFIER_QUOTE_CHAR
+	if (defined($args[3]) && $args[3] eq '%' # special case for tables('','','','%')
+	    && grep {defined($_) && $_ eq ''} @args[0,1,2]
+	) {
+	    @tables = map { $_->[3] } @$tables;
+	} elsif ($dbh->get_info(29)) { # SQL_IDENTIFIER_QUOTE_CHAR
 	    @tables = map { $dbh->quote_identifier( @{$_}[0,1,2] ) } @$tables;
 	}
 	else {		# temporary old style hack (yeach)
@@ -1886,7 +1902,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $fields = $sth->FETCH('NUM_OF_FIELDS') || 0;
 	if ($fields <= 0 && !$sth->{Active}) {
 	    return $sth->set_err($DBI::stderr, "Statement has no result columns to bind"
-		    ." (perhaps you need to successfully call execute first)");
+		    ." (perhaps you need to successfully call execute first, or again)");
 	}
 	# Backwards compatibility for old-style call with attribute hash
 	# ref as first arg. Skip arg if undef or a hash ref.
@@ -2048,8 +2064,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
             }
 	}
 	elsif ($mode eq 'HASH') {
-            if (keys %$slice) {
-                keys %$slice; # reset the iterator
+            if (keys %$slice) { # resets the iterator
                 my $name2idx = $sth->FETCH('NAME_lc_hash');
                 while ( my ($name, $unused) = each %$slice ) {
                     my $idx = $name2idx->{lc $name};
@@ -2408,6 +2423,11 @@ If the C<:>I<N> form of placeholder is supported by the driver you're using,
 then you should be able to use either L</bind_param> or L</execute> to bind
 values. Check your driver documentation.
 
+Some drivers allow you to prevent the recognition of a placeholder by placing a
+single backslash character (C<\>) immediately before it. The driver will remove
+the backslash character and ignore the placeholder, passing it unchanged to the
+backend. If the driver supports this then L</get_info>(9000) will return true.
+
 With most drivers, placeholders can't be used for any element of a
 statement that would prevent the database server from validating the
 statement and creating a query execution plan for it. For example:
@@ -2604,8 +2624,8 @@ produced like this:
   }
 
 These constants are defined by SQL/CLI, ODBC or both.
-C<SQL_BIGINT> is (currently) omitted, because SQL/CLI and ODBC provide
-conflicting codes.
+C<SQL_BIGINT> has conflicting codes in SQL/CLI and ODBC,
+DBI uses the ODBC one.
 
 See the L</type_info>, L</type_info_all>, and L</bind_param> methods
 for possible uses.
@@ -2735,8 +2755,7 @@ variables if no C<$data_source> is specified.)
 The C<AutoCommit> and C<PrintError> attributes for each connection
 default to "on". (See L</AutoCommit> and L</PrintError> for more information.)
 However, it is strongly recommended that you explicitly define C<AutoCommit>
-rather than rely on the default. The C<PrintWarn> attribute defaults to
-on if $^W is true, i.e., perl is running with warnings enabled.
+rather than rely on the default. The C<PrintWarn> attribute defaults to true.
 
 The C<\%attr> parameter can be used to alter the default settings of
 C<PrintError>, C<RaiseError>, C<AutoCommit>, and other attributes. For example:
@@ -2753,7 +2772,7 @@ over the C<$username> and C<$password> parameters.
 You can also define connection attribute values within the C<$data_source>
 parameter. For example:
 
-  dbi:DriverName(PrintWarn=>1,PrintError=>0,Taint=>1):...
+  dbi:DriverName(PrintWarn=>0,PrintError=>0,Taint=>1):...
 
 Individual attributes values specified in this way take precedence over
 any conflicting values specified via the C<\%attr> parameter to C<connect>.
@@ -3627,7 +3646,7 @@ Type: array ref
 The ChildHandles attribute contains a reference to an array of all the
 handles created by this handle which are still accessible.  The
 contents of the array are weak-refs and will become undef when the
-handle goes out of scope.
+handle goes out of scope. (They're cleared out occasionally.)
 
 C<ChildHandles> returns undef if your perl version does not support weak
 references (check the L<Scalar::Util|Scalar::Util> module).  The referenced
@@ -3681,8 +3700,8 @@ the destruction of inherited handles cause the corresponding handles in the
 parent process to cease working.
 
 Either the parent or the child process, but not both, should set
-C<InactiveDestroy> true on all their shared handles. Alternatively the
-L</AutoInactiveDestroy> can be set in the parent on connect.
+C<InactiveDestroy> true on all their shared handles. Alternatively, and
+preferably, the L</AutoInactiveDestroy> can be set in the parent on connect.
 
 To help tracing applications using fork the process id is shown in
 the trace log whenever a DBI or handle trace() method is called.
@@ -3695,12 +3714,15 @@ from the DBI's method dispatcher, e.g. >= 9.
 Type: boolean, inherited
 
 The L</InactiveDestroy> attribute, described above, needs to be explicitly set
-in the child process after a fork(). This is a problem if the code that performs
-the fork() is not under your control, perhaps in a third-party module.
-Use C<AutoInactiveDestroy> to get around this situation.
+in the child process after a fork(), on every active database and statement handle.
+This is a problem if the code that performs the fork() is not under your
+control, perhaps in a third-party module.  Use C<AutoInactiveDestroy> to get
+around this situation.
 
 If set true, the DESTROY method will check the process id of the handle and, if
 different from the current process id, it will set the I<InactiveDestroy> attribute.
+It is strongly recommended that C<AutoInactiveDestroy> is enabled on all new code
+(it's only not enabled by default to avoid backwards compatibility problems).
 
 This is the example it's designed to deal with:
 
@@ -3716,16 +3738,13 @@ The C<AutoInactiveDestroy> attribute was added in DBI 1.614.
 Type: boolean, inherited
 
 The C<PrintWarn> attribute controls the printing of warnings recorded
-by the driver.  When set to a true value the DBI will check method
+by the driver.  When set to a true value (the default) the DBI will check method
 calls to see if a warning condition has been set. If so, the DBI
 will effectively do a C<warn("$class $method warning: $DBI::errstr")>
 where C<$class> is the driver class and C<$method> is the name of
 the method which failed. E.g.,
 
   DBD::Oracle::db execute warning: ... warning text here ...
-
-By default, C<DBI-E<gt>connect> sets C<PrintWarn> "on" if $^W is true,
-i.e., perl is running with warnings enabled.
 
 If desired, the warnings can be caught and processed using a C<$SIG{__WARN__}>
 handler or modules like CGI::Carp and CGI::ErrorWrap.
@@ -4619,7 +4638,7 @@ In which case the array is copied and each value decremented before
 passing to C</fetchall_arrayref>.
 
 You may often want to fetch an array of rows where each row is stored as a
-hash. That can be done simple using:
+hash. That can be done simply using:
 
   my $emps = $dbh->selectall_arrayref(
       "SELECT ename FROM emp ORDER BY ename",
@@ -4715,7 +4734,8 @@ statement, such as C<$sth-E<gt>{NUM_OF_FIELDS}>, until after C<$sth-E<gt>execute
 has been called. Portable applications should take this into account.
 
 In general, DBI drivers do not parse the contents of the statement
-(other than simply counting any L</Placeholders>). The statement is
+(other than simply counting any L<Placeholders|/Placeholders and Bind Values>).
+The statement is
 passed directly to the database engine, sometimes known as pass-thru
 mode. This has advantages and disadvantages. On the plus side, you can
 access all the functionality of the engine being used. On the downside,
@@ -4938,7 +4958,7 @@ unknown or unimplemented information types. For example:
 See L</"Standards Reference Information"> for more detailed information
 about the information types and their meanings and possible return values.
 
-The DBI::Const::GetInfoType module exports a %GetInfoType hash that
+The L<DBI::Const::GetInfoType> module exports a %GetInfoType hash that
 can be used to map info type names to numbers. For example:
 
   $database_version = $dbh->get_info( $GetInfoType{SQL_DBMS_VER} );
@@ -4957,6 +4977,13 @@ of information types to ensure the DBI itself works properly:
    29  SQL_IDENTIFIER_QUOTE_CHAR   '`'           '"'
    41  SQL_CATALOG_NAME_SEPARATOR  '.'           '@'
   114  SQL_CATALOG_LOCATION        1             2
+
+Values from 9000 to 9999 for get_info are officially reserved for use by Perl DBI.
+Values in that range which have been assigned a meaning are defined here:
+
+C<9000>: true if a backslash character (C<\>) before placeholder-like text
+(e.g. C<?>, C<:foo>) will prevent it being treated as a placeholder by the driver.
+The backslash will be removed before the text is passed to the backend.
 
 =head3 C<table_info>
 
@@ -5972,7 +5999,7 @@ mark character (C<?>). For example:
   $sth->execute;
   DBI::dump_results($sth);
 
-See L</"Placeholders and Bind Values"> for more information.
+See L</Placeholders and Bind Values> for more information.
 
 
 B<Data Types for Placeholders>
@@ -6024,7 +6051,7 @@ For example:
 The C<CONVERT> function used here is just an example. The actual function
 and syntax will vary between different databases and is non-portable.
 
-See also L</"Placeholders and Bind Values"> for more information.
+See also L</Placeholders and Bind Values> for more information.
 
 
 =head3 C<bind_param_inout>
@@ -6050,7 +6077,7 @@ pick a generous length, i.e., a length larger than the longest value that would 
 returned.  The only cost of using a larger value than needed is wasted memory.
 
 Undefined values or C<undef> are used to indicate null values.
-See also L</"Placeholders and Bind Values"> for more information.
+See also L</Placeholders and Bind Values> for more information.
 
 
 =head3 C<bind_param_array>
@@ -7073,7 +7100,7 @@ For example:
   my $sth2 = $dbh->prepare( $sth1->{Statement} );
   my $ParamValues = $sth1->{ParamValues} || {};
   my $ParamTypes  = $sth1->{ParamTypes}  || {};
-  $sth2->bind_param($_, $ParamValues->{$_} $ParamTypes->{$_})
+  $sth2->bind_param($_, $ParamValues->{$_}, $ParamTypes->{$_})
     for keys %{ {%$ParamValues, %$ParamTypes} };
   $sth2->execute();
 
@@ -7639,6 +7666,23 @@ an C<eval> block.
 You can stash private data into DBI handles
 via C<$h-E<gt>{private_..._*}>.  See the entry under L</ATTRIBUTES
 COMMON TO ALL HANDLES> for info and important caveats.
+
+=head2 Memory Leaks
+
+When tracking down memory leaks using tools like L<Devel::Leak>
+you'll find that some DBI internals are reported as 'leaking' memory.
+This is very unlikely to be a real leak.  The DBI has various caches to improve
+performance and the apparrent leaks are simply the normal operation of these
+caches.
+
+The most frequent sources of the apparrent leaks are L</ChildHandles>,
+L</prepare_cached> and L</connect_cached>.
+
+For example http://stackoverflow.com/questions/13338308/perl-dbi-memory-leak
+
+Given how widely the DBI is used, you can rest assured that if a new release of
+the DBI did have a real leak it would be discovered, reported, and fixed
+immediately. The leak you're looking for is probably elsewhere. Good luck!
 
 
 =head1 TRACING

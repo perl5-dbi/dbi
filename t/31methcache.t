@@ -142,6 +142,10 @@ run_tests("magic", new_handle());
 
 SKIP: {
     skip "no threads / perl < 5.8.9", 12 unless $has_threads;
+
+    skip "weaken itself is buggy on 5.8.1 (magic killbackrefs panic "
+        ."triggered by threads, fixed in 5.8.2)"
+    , 12 unless $] > 5.008001;
     # only enable this when handles are allowed to be shared across threads
     #{
     #    my @h = new_handle();

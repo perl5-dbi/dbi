@@ -867,6 +867,13 @@ Don't try to put parameters into the sql-query like this:
 =back
 
 
+=head1 SECURITY WARNING
+
+L<RPC::PlServer> used underneath is not secure due to serializing and
+deserializing data with L<Storable> module. Use the proxy driver only in
+trusted environment.
+
+
 =head1 AUTHOR
 
     Copyright (c) 1997    Jochen Wiedmann

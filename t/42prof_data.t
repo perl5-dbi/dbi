@@ -38,11 +38,15 @@ my $dbh = DBI->connect("dbi:ExampleP:", '', '',
                        { RaiseError=>1, Profile=>"6/DBI::ProfileDumper/File:$prof_file" });
 isa_ok( $dbh, 'DBI::db', 'Created connection' );
 
-# do a little work, but enough to ensure we don't get 0's on systems with low res timers
-foreach (1..6) {
+require DBI::Profile;
+DBI::Profile->import(qw(dbi_time));
+
+# do enough work to avoid 0's on systems that are very fast or have low res timers
+my $t1 = dbi_time();
+foreach (1..20) {
   $dbh->do("set dummy=$_");
   my $sth = $dbh->prepare($sql);
-  for my $loop (1..50) {  
+  for my $loop (1..90) {  
     $sth->execute(".");
     $sth->fetchrow_hashref;
     $sth->finish;
@@ -51,6 +55,8 @@ foreach (1..6) {
 }
 $dbh->disconnect;
 undef $dbh;
+my $t2 = dbi_time();
+note sprintf "DBI work done in %fs (%f - %f)", $t2-$t1, $t2, $t1;
 
 
 # wrote the profile to disk?

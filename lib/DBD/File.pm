@@ -35,7 +35,7 @@ use base qw( DBI::DBD::SqlEngine );
 use Carp;
 use vars qw( @ISA $VERSION $drh );
 
-$VERSION = "0.42";
+$VERSION = "0.44";
 
 $drh = undef;		# holds driver handle(s) once initialized
 
@@ -85,6 +85,8 @@ use warnings;
 
 use vars qw( @ISA $imp_data_size );
 
+use Carp;
+
 @DBD::File::dr::ISA           = qw( DBI::DBD::SqlEngine::dr );
 $DBD::File::dr::imp_data_size = 0;
 
@@ -99,6 +101,31 @@ sub dsn_quote
 
 # XXX rewrite using TableConfig ...
 sub default_table_source { "DBD::File::TableSource::FileSystem" }
+
+sub connect
+{
+    my ($drh, $dbname, $user, $auth, $attr) = @_;
+
+    # We do not (yet) care about conflicting attributes here
+    # my $dbh = DBI->connect ("dbi:CSV:f_dir=test", undef, undef, { f_dir => "text" });
+    # will test here that both test and text should exist
+    if (my $attr_hash = (DBI->parse_dsn ($dbname))[3]) {
+	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
+	    my $msg = "No such directory '$attr_hash->{f_dir}";
+	    $drh->set_err (2, $msg);
+	    $attr_hash->{RaiseError} and croak $msg;
+	    return;
+	    }
+	}
+    if ($attr and defined $attr->{f_dir} && ! -d $attr->{f_dir}) {
+	my $msg = "No such directory '$attr->{f_dir}";
+	$drh->set_err (2, $msg);
+	$attr->{RaiseError} and croak $msg;
+	return;
+	}
+
+    return $drh->SUPER::connect ($dbname, $user, $auth, $attr);
+    } # connect
 
 sub disconnect_all
 {
@@ -130,7 +157,7 @@ sub data_sources
 {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
-    exists $attr->{f_dir}        or $attr->{f_dir}     = $dbh->{f_dir};
+    exists $attr->{f_dir}        or $attr->{f_dir}        = $dbh->{f_dir};
     exists $attr->{f_dir_search} or $attr->{f_dir_search} = $dbh->{f_dir_search};
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
@@ -294,12 +321,39 @@ sub FETCH
 
 	    # fill overall_defs unless we know
 	    unless (exists $sth->{f_overall_defs} && ref $sth->{f_overall_defs}) {
+		my $types = $sth->{Database}{Types};
+		unless ($types) { # Fetch types only once per database
+		    if (my $t = $sth->{Database}->type_info_all ()) {
+			foreach my $i (1 .. $#$t) {
+			    $types->{uc $t->[$i][0]}   = $t->[$i][1];
+			    $types->{$t->[$i][1]} ||= uc $t->[$i][0];
+			    }
+			}
+		    # sane defaults
+		    for ([  0, ""		],
+			 [  1, "CHAR"		],
+			 [  4, "INTEGER"	],
+			 [ 12, "VARCHAR"	],
+			 ) {
+			$types->{$_->[0]} ||= $_->[1];
+			$types->{$_->[1]} ||= $_->[0];
+			}
+		    $sth->{Database}{Types} = $types;
+		    }
 		my $all_meta =
 		    $sth->{Database}->func ("*", "table_defs", "get_sql_engine_meta");
-		while (my ($tbl, $meta) = each %$all_meta) {
+		foreach my $tbl (keys %$all_meta) {
+		    my $meta = $all_meta->{$tbl};
 		    exists $meta->{table_defs} && ref $meta->{table_defs} or next;
 		    foreach (keys %{$meta->{table_defs}{columns}}) {
-			$sth->{f_overall_defs}{$_} = $meta->{table_defs}{columns}{$_};
+			my $field_info = $meta->{table_defs}{columns}{$_};
+			if (defined $field_info->{data_type} &&
+				    $field_info->{data_type} !~ m/^[0-9]+$/) {
+			    $field_info->{type_name} = uc $field_info->{data_type};
+			    $field_info->{data_type} = $types->{$field_info->{type_name}} || 0;
+			    }
+			$field_info->{type_name} ||= $types->{$field_info->{data_type}} || "CHAR";
+			$sth->{f_overall_defs}{$_} = $field_info;
 			}
 		    }
 		}
@@ -307,7 +361,11 @@ sub FETCH
 	    my @colnames = $sth->sql_get_colnames ();
 
 	    $attr eq "TYPE"      and
-		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || "CHAR" }
+		return [ map { $sth->{f_overall_defs}{$_}{data_type}   || 12 }
+			    @colnames ];
+
+	    $attr eq "TYPE_NAME" and
+		return [ map { $sth->{f_overall_defs}{$_}{type_name}   || "VARCHAR" }
 			    @colnames ];
 
 	    $attr eq "PRECISION" and
@@ -343,6 +401,10 @@ sub data_sources
 	? $attr->{f_dir}
 	: File::Spec->curdir ();
     defined $dir or return; # Stream-based databases do not have f_dir
+    unless (-d $dir && -r $dir && -x $dir) {
+	$drh->set_err ($DBI::stderr, "Cannot use directory $dir from f_dir");
+	return;
+	}
     my %attrs;
     $attr and %attrs = %$attr;
     delete $attrs{f_dir};
@@ -894,6 +956,8 @@ sub DESTROY
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
+
+    $self->SUPER::DESTROY();
     } # DESTROY
 
 1;

@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 148;
+use Test::More;
 
 ## ----------------------------------------------------------------------------
 ## 06attrs.t - ...
@@ -79,6 +79,13 @@ is_deeply [ $dbh->FETCH_many(qw(HandleError FetchHashKeyName LongReadLen ErrCoun
           [ undef, qw(NAME 80 0) ], 'should be able to FETCH_many';
 
 is $dbh->{examplep_private_dbh_attrib}, 42, 'should see driver-private dbh attribute value';
+is delete $dbh->{examplep_private_dbh_attrib}, 42, 'delete on non-private attribute acts like fetch';
+is $dbh->{examplep_private_dbh_attrib}, 42, 'value unchanged after delete';
+
+$dbh->{private_foo} = 42;
+is $dbh->{private_foo}, 42, 'should see private_foo dbh attribute value';
+is delete $dbh->{private_foo}, 42, 'delete should return private_foo dbh attribute value';
+is $dbh->{private_foo}, undef, 'value of private_foo after delete should be undef';
 
 # Raise an error.
 eval { 
@@ -172,12 +179,6 @@ ok($sth->{Executed}, '... checking Executed attribute for sth');	# even though i
 ok($dbh->{Executed}, '... checking Exceuted attribute for dbh');	# due to $sth->prepare, even though it failed
 
 cmp_ok($sth->{ErrCount}, '==', 1, '... checking ErrCount attribute for sth');
-eval { 
-    $sth->{ErrCount} = 42 
-};
-like($@, qr/STORE failed:/, '... checking exception');
-
-cmp_ok($sth->{ErrCount}, '==', 42 , '... checking ErrCount attribute for sth (after assignment)');
 
 $sth->{ErrCount} = 0;
 cmp_ok($sth->{ErrCount}, '==', 0, '... checking ErrCount attribute for sth (after reset)');
@@ -306,6 +307,8 @@ sub check_inherited {
 check_inherited($drh, "ReadOnly", 1, 0);
 
 }
+
+done_testing();
 
 1;
 # end
