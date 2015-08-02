@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
         Note that this might cause new exceptions in existing code.
         Please take time for extra testing before deploying to production.
     Improved handling of row counts for compiled drivers and enable them to
-        return 64bit (IV) row counts by defaining new macros.
+        return larger row counts (IV type) by defining new *_iv macros.
     Fixed quote_identifier that was adding a trailing separator when there
         was only a catalog (Martin J. Evans)
 
