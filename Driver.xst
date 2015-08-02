@@ -8,19 +8,23 @@
 
 #include "Driver_xst.h"
 
-# we call dbd_st_execute in places where we don't assign the result
-# so to save a mess of #ifdef's we arrange for dbd_st_execute to work
+# Historically dbd_db_do4, dbd_st_execute, and dbd_st_rows returned an 'int' type.
+# That's only 32 bits (31+sign) so isn't sufficient for very large row counts
+# So now instead of defining those macros, drivers can define dbd_db_do4_iv,
+# dbd_st_execute_iv, and dbd_st_rows_iv to be the names of functions that
+# return an 'IV' type. They could also set DBIc_ROW_COUNT(imp_sth).
+#
+# To save a mess of #ifdef's we arrange for dbd_st_execute (etc) to work
 # as dbd_st_execute_iv if that's defined
+#
 #if defined(dbd_st_execute_iv)
 #undef dbd_st_execute
 #define dbd_st_execute dbd_st_execute_iv
 #endif
-# - same idea for dbd_st_rows
 #if defined(dbd_st_rows_iv)
 #undef dbd_st_rows
 #define dbd_st_rows dbd_st_rows_iv
 #endif
-# - same idea for dbd_db_do4
 #if defined(dbd_db_do4_iv)
 #undef dbd_db_do4
 #define dbd_db_do4 dbd_db_do4_iv
@@ -611,37 +615,10 @@ execute(sth, ...)
     /* remember that dbd_st_execute must return <= -2 for error */
     if (retval == 0)            /* ok with no rows affected     */
         XST_mPV(0, "0E0");      /* (true but zero)              */
-    else if (retval == -1)      /* -1: ok but unknown row count */
-        XST_mIV(0, -1);
-    else if (retval <= -2)      /* -2: (or less) error          */
-        XST_mUNDEF(0);
-    else {
-        /* dbd_st_execute returns an int and that might be a 32 bit type
-         * but the row count might be larger than can fit in 31 bits.
-         * The DBIc_ROW_COUNT macro has an IV type which is more likely
-         * to be 64 bits on modern systems that might be using a 32 bit int.
-         * So we'd like to use DBIc_ROW_COUNT as the return value of execute
-         * but there's a risk that some drivers don't set DBIc_ROW_COUNT.
-         * XXX So here, for now, we're performing a temporary experiment:
-         * if retval>0 (checked above) and DBIc_ROW_COUNT>0 then we
-         * warn if the bottom 31 bits don't match. (That might generate
-         * spurious warnings for row counts > 31 bits but that should be very rare and
-         * execute is returning the wrong row count in that case anyway.)
-         * If we don't get reports of warnings then we could change to using:
-         * XST_mIV(0, (DBIc_ROW_COUNT(imp_sth) > 0) ? DBIc_ROW_COUNT(imp_sth) : retval);
-         * in which case driver authors can make dbd_st_execute just return(1)
-         * if the the row count is known and stored in DBIc_ROW_COUNT.
-         */
-        if (
-            sizeof(retval) != sizeof(IV) &&
-            DBIc_WARN(imp_sth) &&
-            DBIc_ROW_COUNT(imp_sth) != 0
-        ) {
-            if ((DBIc_ROW_COUNT(imp_sth) & 0xEFFF) != (retval & 0xEFFF))
-                warn("execute is returning %"IVdf" but DBIc_ROW_COUNT is %"IVdf, (IV)retval, DBIc_ROW_COUNT(imp_sth));
-        }
-        XST_mIV(0, retval);     /* row_count */
-    }
+    else if (retval < -1)       /* -1 == unknown number of rows */
+        XST_mUNDEF(0);          /* <= -2 means error            */
+    else
+        XST_mIV(0, retval);     /* typically 1, rowcount or -1  */
 
 
 #ifdef dbd_st_execute_for_fetch

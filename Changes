@@ -6,14 +6,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.633_92 - 22nd July 2015
+=head2 Changes in DBI 1.633_93 - 2nd August 2015
 
     Enabled strictures on all modules (Jose Luis Perez Diez) #22
         Note that this might cause new exceptions in existing code.
         Please take time for extra testing before deploying to production.
-    Improved handling of row count on 32bit int systems, add sanity check warn
-        Relevant if "perl -V:'i(nt|v)size'" reports different sizes
-        and you execute statements that might affect >=2,147,483,648 rows.
+    Improved handling of row counts for compiled drivers and enable them to
+        return 64bit (IV) row counts by defaining new macros.
     Fixed quote_identifier that was adding a trailing separator when there
         was only a catalog (Martin J. Evans)
 
