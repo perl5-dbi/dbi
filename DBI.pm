@@ -2080,7 +2080,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
                 }
 	    }
 	    else {
-		$sth->bind_columns( \( @row{ @{$sth->FETCH($sth->FETCH('FetchHashKeyName')) } } ) );
+		my @column_names = @{ $sth->FETCH($sth->FETCH('FetchHashKeyName')) };
+		return [] if !@column_names;
+
+		$sth->bind_columns( \( @row{@column_names} ) );
 	    }
 	}
 	else {
