@@ -3145,7 +3145,8 @@ L<http://www.isthe.com/chongo/tech/comp/fnv/> for more information.
 Both types are implemented in C and are very fast.
 
 This function doesn't have much to do with databases, except that
-it can be handy to store hash values in a database.
+it can sometimes be handy to store such values in a database.
+It also doesn't have much to do with perl hashes, like %foo.
 
 =head3 C<sql_type_cast>
 
