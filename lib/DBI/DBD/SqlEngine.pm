@@ -1877,7 +1877,7 @@ state of SQL::Statement):
   * AnyData
 
 Defaults to "CSV".  Because an SQL::Parser is instantiated only once and
-SQL::Parser doesn't allow to modify the dialect once instantiated,
+SQL::Parser doesn't allow one to modify the dialect once instantiated,
 it's strongly recommended to set this flag before any statement is
 executed (best place is connect attribute hash).
 

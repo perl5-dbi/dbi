@@ -1826,7 +1826,7 @@ username and password), it will be used instead. This will allow your
 login6 function to see if there are any Unicode characters in the
 dbname.
 
-Similarly defining dbd_db_do4_iv is prefered over dbd_db_do4, dbd_st_rows_iv
+Similarly defining dbd_db_do4_iv is preferred over dbd_db_do4, dbd_st_rows_iv
 over dbd_st_rows, and dbd_st_execute_iv over dbd_st_execute. The *_iv forms are
 declared to return the IV type instead of an int.
 

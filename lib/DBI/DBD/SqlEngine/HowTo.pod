@@ -127,7 +127,7 @@ C<init_valid_attributes> to your db class:
 	};
 	$dbh->{foo_readonly_attrs} = {
 	    foo_version 	=> 1,	# ensure no-one modifies the driver version
-	    foo_valid_attrs	=> 1,	# do not permit to add more valid attributes ...
+	    foo_valid_attrs	=> 1,	# do not permit one to add more valid attributes ...
 	    foo_readonly_attrs	=> 1,	# ... or make the immutable mutable
 	    foo_manager		=> 1,	# manager is set internally only
 	};
@@ -234,7 +234,7 @@ C<init_valid_attributes> (re-capture L</Deal with own attributes>):
 	};
 	$dbh->{foo_readonly_attrs} = {
 	    foo_version 	=> 1,	# ensure no-one modifies the driver version
-	    foo_valid_attrs	=> 1,	# do not permit to add more valid attributes ...
+	    foo_valid_attrs	=> 1,	# do not permit one to add more valid attributes ...
 	    foo_readonly_attrs	=> 1,	# ... or make the immutable mutable
 	    foo_manager		=> 1,	# manager is set internally only
 	    foo_meta            => 1,   # ensure public interface to modify table meta attributes are immutable

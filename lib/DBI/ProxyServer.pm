@@ -474,7 +474,7 @@ GID's can be passed as group names or numeric values.
 =item I<localaddr> (B<--localaddr=ip>)
 
 By default a daemon is listening to any IP number that a machine
-has. This attribute allows to restrict the server to the given
+has. This attribute allows one to restrict the server to the given
 IP number.
 
 =item I<localport> (B<--localport=port>)
