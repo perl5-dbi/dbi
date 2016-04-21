@@ -225,8 +225,6 @@ sub  _install_method {
     return if $method_name eq 'can';
 
     push @pre_call_frag, q{
-        # ignore DESTROY for outer handle (DESTROY for inner likely to follow soon)
-	return if $h_inner;
         # handle AutoInactiveDestroy and InactiveDestroy
         $h->{InactiveDestroy} = 1
             if $h->{AutoInactiveDestroy} and $$ != $h->{dbi_pp_pid};

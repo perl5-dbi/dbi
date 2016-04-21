@@ -1735,7 +1735,7 @@ dbih_clearcom(imp_xxh_t *imp_xxh)
         sv_free((SV*)DBIc_FIELDS_AV(imp_sth));
     }
 
-    sv_free(DBIc_IMP_DATA(imp_xxh));    /* do this first        */
+    sv_free(DBIc_IMP_DATA(imp_xxh));            /* do this first        */
     if (DBIc_TYPE(imp_xxh) <= DBIt_ST) {        /* DBIt_FD doesn't have attr */
         sv_free(_imp2com(imp_xxh, attr.TraceLevel));
         sv_free(_imp2com(imp_xxh, attr.State));

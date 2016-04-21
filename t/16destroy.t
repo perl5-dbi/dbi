@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More tests => 20;
+use Test::More;
 
 BEGIN{ use_ok( 'DBI' ) }
 
@@ -145,3 +145,5 @@ FORK: {
         $expect_active = -1;
     }
 }
+
+done_testing;
