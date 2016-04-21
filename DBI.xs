@@ -2922,7 +2922,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                             warn("Ignored ref returned by code ref in Profile Path");
                         break;
                     }
-                    dest_node = _profile_next_node(dest_node, SvPV_nolen(item_sv));
+                    dest_node = _profile_next_node(dest_node, (SvOK(item_sv) ? SvPV_nolen(item_sv) : "undef"));
                 }
                 PUTBACK;
                 if (items == -2) /* this profile data was vetoed */

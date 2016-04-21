@@ -308,9 +308,10 @@ The current Statement is in $_. The statement string should not be modified,
 so most subs start with C<local $_ = $_;>.
 
 The list of values it returns is used at that point in the Profile Path.
+Any undefined values are treated as the string "C<undef>".
 
 The sub can 'veto' (reject) a profile sample by including a reference to undef
-in the returned list. That can be useful when you want to only profile
+(C<\undef>) in the returned list. That can be useful when you want to only profile
 statements that match a certain pattern, or only profile certain methods.
 
 =head3 Subroutine Specifier
