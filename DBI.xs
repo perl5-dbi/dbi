@@ -2037,6 +2037,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     int    on = (SvTRUE(valuesv));
     int    internal = 1; /* DBIh_IN_PERL_DBD(imp_xxh); -- for DBD's in perl */
     int    cacheit = 0;
+    int    weakenit = 0; /* eg for CachedKids ref */
     (void)dbikey;
 
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 3)
@@ -2188,6 +2189,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         && SvROK(valuesv) && SvTYPE(SvRV(valuesv))==SVt_PVHV
     ) {
         cacheit = 1;
+        weakenit = 1;
     }
     else if (keylen==9 && strEQ(key, "Callbacks")) {
         if ( on && (!SvROK(valuesv) || (SvTYPE(SvRV(valuesv)) != SVt_PVHV)) )
@@ -2259,7 +2261,13 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         cacheit = 1;
     }
     if (cacheit) {
-        (void)hv_store((HV*)SvRV(h), key, keylen, newSVsv(valuesv), 0);
+        SV *sv_for_cache = newSVsv(valuesv);
+        (void)hv_store((HV*)SvRV(h), key, keylen, sv_for_cache, 0);
+        if (weakenit) {
+#ifdef sv_rvweaken
+            sv_rvweaken(sv_for_cache);
+#endif
+        }
     }
     return TRUE;
 }

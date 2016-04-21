@@ -889,6 +889,7 @@ sub STORE {
 	    $h,$key,$value);
     }
     $h->{$key} = $is_flag_attribute{$key} ? !!$value : $value;
+    Scalar::Util::weaken($h->{$key}) if $key eq 'CachedKids';
     return 1;
 }
 sub DELETE {
