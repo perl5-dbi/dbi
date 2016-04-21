@@ -22,6 +22,9 @@ my $executor = DBI::Gofer::Execute->new();
 
 sub run_one_stdio {
 
+    binmode STDIN;
+    binmode STDOUT;
+
     my $transport = DBI::Gofer::Transport::pipeone->new();
 
     my $frozen_request = do { local $/; <STDIN> };
