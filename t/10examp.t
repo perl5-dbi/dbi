@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 234;
+use Test::More tests => 238;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -328,6 +328,13 @@ ok(exists $r->[0]{MoDe});
 ok(exists $r->[0]{NamE});
 ok($r->[0]{MoDe} eq $row_a[0]);
 ok($r->[0]{NamE} eq $row_a[2]);
+ok(@$r == $rows);
+
+print "selectall_array\n";
+$r = [ $dbh->selectall_array($std_sql, undef, $dir) ];
+ok($r);
+ok(@{$r->[0]} == 3);
+ok("@{$r->[0]}" eq "@row_a");
 ok(@$r == $rows);
 
 print "selectall_hashref\n";

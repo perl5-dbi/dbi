@@ -458,6 +458,7 @@ my $keeperr = { O=>0x0004 };
 	selectrow_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectrow_hashref=>{ U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectall_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
+	selectall_array   =>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	ping       	=> { U =>[1,1], O=>0x0404 },
@@ -1660,6 +1661,10 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my $row = _do_selectrow('fetchrow_arrayref', @_) or return;
 	return $row->[0] unless wantarray;
 	return @$row;
+    }
+
+    sub selectall_array {
+        return @{ shift->selectall_arrayref(@_) || [] };
     }
 
     # XXX selectall_arrayref also has C implementation in Driver.xst
@@ -4663,6 +4668,18 @@ Or, to fetch into an array instead of an array ref:
   @result = @{ $dbh->selectall_arrayref($sql, { Slice => {} }) };
 
 See L</fetchall_arrayref> method for more details.
+
+=head3 C<selectall_array>
+
+  @ary = $dbh->selectall_array($statement);
+  @ary = $dbh->selectall_array($statement, \%attr);
+  @ary = $dbh->selectall_array($statement, \%attr, @bind_values);
+
+This is a convenience wrapper around L<selectall_arrayref> that returns
+the rows directly as a list, rather than a reference to an array of rows.
+
+Note that if L</RaiseError> is not set then you can't tell the difference
+between returning no rows and an error. Using RaiseError is best practice.
 
 =head3 C<selectall_hashref>
 
