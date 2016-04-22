@@ -32,6 +32,7 @@ DBI::Changes - List of significant changes to the DBI
     Removed/updated broken links in docs
         thanks to mbeijen PR#29
     Clarified docs for DBI::hash($string)
+    Removed the ancient DBI::FAQ module RT#102714
 
 
 =head2 Changes in DBI 1.634 - 3rd August 2015
