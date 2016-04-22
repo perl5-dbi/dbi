@@ -6,6 +6,32 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.634_50
+
+    Fixed DBD::Gofer for utf8-enabled STDIN/STDOUT
+        thanks to mauke PR#32
+    Fixed fetchall_arrayref({}) behavior with no columns
+        thanks to Dan McGee PR#31
+    Fixed tied CachedKids ref leak in attribute cache by weakening
+        thanks to Michael Conrad RT#113852
+    Ceased to ignore DESTROY of outer handle in DBI::PurePerl
+    Treat undef in DBI::Profile Path as string "undef"
+        thanks to fREW Schmidt RT#113298
+
+    Added @ary = $dbh->selectall_array(...) method
+        thanks to Ed Avis RT#106411
+    Added appveyor support (Travis like CI for windows)
+        thanks to mbeijen PR#30
+
+    Corrected spelling errors in pod
+        thanks to Gregor Herrmann RT#107838
+    Corrected and/or removed broken links to SQL standards
+        thanks to David Pottage RT#111437
+    Removed/updated broken links in docs
+        thanks to mbeijen PR#29
+    Clarified docs for DBI::hash($string)
+
+
 =head2 Changes in DBI 1.634 - 3rd August 2015
 
     Enabled strictures on all modules (Jose Luis Perez Diez) #22
