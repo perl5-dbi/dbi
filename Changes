@@ -14,6 +14,8 @@ DBI::Changes - List of significant changes to the DBI
         thanks to Dan McGee PR#31
     Fixed tied CachedKids ref leak in attribute cache by weakening
         thanks to Michael Conrad RT#113852
+    Fixed "panic: attempt to copy freed scalar" upon commit() or rollback()
+        thanks to fbriere for detailed bug report RT#102791
     Ceased to ignore DESTROY of outer handle in DBI::PurePerl
     Treat undef in DBI::Profile Path as string "undef"
         thanks to fREW Schmidt RT#113298
