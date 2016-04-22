@@ -33,6 +33,7 @@ DBI::Changes - List of significant changes to the DBI
         thanks to mbeijen PR#29
     Clarified docs for DBI::hash($string)
     Removed the ancient DBI::FAQ module RT#102714
+    Fixed t/pod.t to require Test::Pod >= 1.41 RT#101769
 
 
 =head2 Changes in DBI 1.634 - 3rd August 2015
