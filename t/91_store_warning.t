@@ -10,22 +10,28 @@
 #  the dispatcher has logic to notice if ErrCount went up during a call and disables keep_err in that case.
 # I think something similar might be needed for err. E.g., "if it's defined now but wasn't defined before" then
 # act appropriately.
+
 use strict;
-use Test::More;
 use warnings;
+use Test::More;
 use DBI;
 
 my $warning;
 
-$SIG{__WARN__} = sub {
-    $warning = $_[0];
-};
-
-plan tests => 1;
+$SIG{__WARN__} = sub { $warning = $_[0] };
 
 my $dbh = DBI->connect('dbi:NullP:', '', '', {PrintWarn => 1});
 
-$dbh->set_err("0", "warning");
-#$dbh->{nullp_set_err} = '0';    # sets a warning with err msg "0"
-#warn('fred'); # this would make this test succeed when DBI doesn't issue the warning
-ok($warning, "Warning recorded by store");
+is $warning, undef, 'initially not set';
+
+$dbh->set_err("0", "warning plain");
+like $warning, qr/^DBD::\w+::db set_err warning: warning plain/, "Warning recorded by store";
+
+$dbh->set_err(undef, undef);
+undef $warning;
+
+$dbh->set_err("0", "warning \N{U+263A} smiley face");
+like $warning, qr/^DBD::\w+::db set_err warning: warning \N{U+263A} smiley face/, "Warning recorded by store"
+    or warn DBI::data_string_desc($warning);
+
+done_testing;

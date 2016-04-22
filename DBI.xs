@@ -6,10 +6,6 @@
  *
  * See COPYRIGHT section in DBI.pm for usage and distribution rights.
  */
-#define NEED_grok_number
-#define NEED_grok_numeric_radix
-#define NEED_newRV_noinc
-#define NEED_sv_2pv_flags
 
 #define IN_DBI_XS 1     /* see DBIXS.h */
 #define PERL_NO_GET_CONTEXT
@@ -198,7 +194,7 @@ typedef struct dbi_ima_st {
 #define IMA_FUNC_REDIRECT         0x00000002  /* is $h->func(..., "method")   */
 #define IMA_KEEP_ERR              0x00000004  /* don't reset err & errstr     */
 #define IMA_KEEP_ERR_SUB          0x00000008  /*  '' if in a nested call      */
-#define IMA_NO_TAINT_IN           0x00000010  /* don't check for tainted args */
+#define IMA_NO_TAINT_IN           0x00000010  /* don't check for PL_tainted args */
 #define IMA_NO_TAINT_OUT          0x00000020  /* don't taint results          */
 #define IMA_COPY_UP_STMT          0x00000040  /* copy sth Statement to dbh    */
 #define IMA_END_WORK              0x00000080  /* method is commit or rollback */
@@ -4078,13 +4074,13 @@ XS(XS_DBI_dispatch)
         }
         if (is_warning) {
             if (DBIc_has(imp_xxh, DBIcf_PrintWarn))
-                warn("%s", SvPV_nolen(msg));
+                warn_sv(msg);
         }
         else if (!hook_svp && SvTRUE(err_sv)) {
             if (DBIc_has(imp_xxh, DBIcf_PrintError))
-                warn("%s", SvPV_nolen(msg));
+                warn_sv(msg);
             if (DBIc_has(imp_xxh, DBIcf_RaiseError))
-                croak("%s", SvPV_nolen(msg));
+                croak_sv(msg);
         }
     }
     else if (profile_t1) { /* see also dbi_profile() call a few lines above */
