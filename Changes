@@ -8,6 +8,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.634_50
 
+    Fixed RaiseError/PrintError for UTF-8 errors/warnings. RT#102404
     Fixed DBD::Gofer for utf8-enabled STDIN/STDOUT
         thanks to mauke PR#32
     Fixed fetchall_arrayref({}) behavior with no columns
