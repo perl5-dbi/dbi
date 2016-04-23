@@ -720,6 +720,17 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 }
 
 
+static void
+copy_statement_to_parent(pTHX_ SV *h, imp_xxh_t *imp_xxh)
+{
+    SV *parent = DBIc_PARENT_H(imp_xxh);
+    if (parent) {
+        SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
+        (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
+    }
+}
+
+
 static int
 set_err_char(SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method)
 {
@@ -736,6 +747,7 @@ set_err_char(SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char 
     method_sv = (method && *method) ? sv_2mortal(newSVpvn(method, strlen(method))) : &PL_sv_undef;
     return set_err_sv(h, imp_xxh, err_sv, errstr_sv, state_sv, method_sv);
 }
+
 
 static int
 set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method)
@@ -782,6 +794,12 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
             );
         if (SvTRUE(response_sv))        /* handler says it has handled it, so... */
             return 0;
+    }
+    else {
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"    -- HandleSetErr err=%s, errstr=%s, state=%s, %s\n",
+                neatsvpv(err,0), neatsvpv(errstr,0), neatsvpv(state,0), neatsvpv(method,0)
+            );
     }
 
     if (!SvOK(err)) {   /* clear err / errstr / state */
@@ -831,6 +849,10 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         }
         else
             (void)SvOK_off(h_state);    /* see DBIc_STATE_adjust */
+
+        /* ensure that the parent's Statement attribute reflects the latest error */
+        /* so that ShowErrorStatement is reliable */
+        copy_statement_to_parent(aTHX_ h, imp_xxh);
     }
 
     return 1;
@@ -3493,10 +3515,7 @@ XS(XS_DBI_dispatch)
         call_depth = ++DBIc_CALL_DEPTH(imp_xxh);
 
         if (ima_flags & IMA_COPY_UP_STMT) { /* execute() */
-            SV *parent = DBIc_PARENT_H(imp_xxh);
-            SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
-            /* XXX sv_copy() if Profiling? */
-            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
+            copy_statement_to_parent(aTHX_ h, imp_xxh);
         }
         is_nested_call =
             (call_depth > 1
