@@ -3,7 +3,10 @@
 ~$
 ^\.aspell\.local\.pws$
 ^\.travis\.yml
+^\.appveyor\.yml
 ^\.git
+^\.gdbinit
+^\.DS_Store
 \.html$
 \.old$
 ^blib/

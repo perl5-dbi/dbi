@@ -5,6 +5,7 @@ DBIXS.h				The DBI XS public interface for Drivers (DBD::...)
 Driver.xst			Template driver xs file
 Driver_xst.h			Template driver xs support code
 INSTALL
+LICENSE
 MANIFEST
 Makefile.PL			The Makefile generator
 Perl.xs				Test harness (currently) for Driver.xst
@@ -50,7 +51,6 @@ lib/DBI/DBD/Metadata.pm		Metadata tools for people writing DBI drivers
 lib/DBI/DBD/SqlEngine.pm	SQL Engine for drivers without an own
 lib/DBI/DBD/SqlEngine/Developers.pod	DBI::DBD::SqlEngine API Documentation
 lib/DBI/DBD/SqlEngine/HowTo.pod	HowTo ... write a DBI::DBD::SqlEngine based driver
-lib/DBI/FAQ.pm			The DBI FAQ in module form for perldoc
 lib/DBI/Gofer/Execute.pm        Execution logic for DBD::Gofer server
 lib/DBI/Gofer/Request.pm        Request object from DBD::Gofer
 lib/DBI/Gofer/Response.pm       Response object for DBD::Gofer
@@ -102,15 +102,18 @@ t/49dbd_file.t			DBD::File API and very basic tests
 t/50dbm_simple.t		simple DBD::DBM tests
 t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
 t/52dbm_complex.t		Complex DBD::DBM tests with SQL::Statement
+t/53sqlengine_adv.t
 t/60preparse.t
 t/65transact.t
 t/70callbacks.t
 t/72childhandles.t
+t/73cachedkids.t
 t/80proxy.t
 t/85gofer.t
 t/86gofer_fail.t
 t/87gofer_cache.t
 t/90sql_type_cast.t
+t/91_store_warning.t
 t/lib.pl		Utility functions for test scripts
 t/pod.t
 t/pod-coverage.t
