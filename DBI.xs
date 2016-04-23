@@ -84,6 +84,13 @@ extern Pid_t getpid (void);
 #  define BROKEN_DUP_ANY_PTR
 #endif
 
+#ifndef warn_sv
+static void warn_sv(SV *sv) { warn(SvPV_nolen(sv)); }
+#endif
+#ifndef croak_sv
+static void croak_sv(SV *sv) { croak(SvPV_nolen(sv)); }
+#endif
+
 /* types of method name */
 
 typedef enum {
