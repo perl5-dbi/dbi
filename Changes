@@ -21,6 +21,7 @@ DBI::Changes - List of significant changes to the DBI
     Ceased to ignore DESTROY of outer handle in DBI::PurePerl
     Treat undef in DBI::Profile Path as string "undef"
         thanks to fREW Schmidt RT#113298
+    Remove trailing semicolon in SQL::Nano parser
 
     Added @ary = $dbh->selectall_array(...) method
         thanks to Ed Avis RT#106411

@@ -76,6 +76,7 @@ sub prepare
 {
     my ( $self, $sql ) = @_;
     $sql =~ s/\s+$//;
+    $sql =~ s/\s*;$//;
     for ($sql)
     {
         /^\s*CREATE\s+TABLE\s+(.*?)\s*\((.+)\)\s*$/is
