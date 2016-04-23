@@ -2669,7 +2669,7 @@ is a reference to a hash containing the parsed attribute names and values.
 $driver_dsn is the last part of the DBI DSN string. For example:
 
   ($scheme, $driver, $attr_string, $attr_hash, $driver_dsn)
-      = DBI->parse_dsn("DBI:MyDriver(RaiseError=>1):db=test;port=42");
+      = DBI->parse_dsn("dbi:MyDriver(RaiseError=>1):db=test;port=42");
   $scheme      = 'dbi';
   $driver      = 'MyDriver';
   $attr_string = 'RaiseError=>1';

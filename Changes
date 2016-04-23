@@ -21,7 +21,8 @@ DBI::Changes - List of significant changes to the DBI
     Ceased to ignore DESTROY of outer handle in DBI::PurePerl
     Treat undef in DBI::Profile Path as string "undef"
         thanks to fREW Schmidt RT#113298
-    Remove trailing semicolon in SQL::Nano parser
+    Fix SQL::Nano parser to ignore trailing semicolon
+        thanks to H.Merijn Brand.
 
     Added @ary = $dbh->selectall_array(...) method
         thanks to Ed Avis RT#106411
@@ -32,6 +33,8 @@ DBI::Changes - List of significant changes to the DBI
         thanks to Gregor Herrmann RT#107838
     Corrected and/or removed broken links to SQL standards
         thanks to David Pottage RT#111437
+    Corrected doc example to use dbi: instead of DBI: in DSN
+        thanks to Michael R. Davis RT#101181
     Removed/updated broken links in docs
         thanks to mbeijen PR#29
     Clarified docs for DBI::hash($string)
