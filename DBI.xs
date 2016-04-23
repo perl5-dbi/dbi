@@ -730,8 +730,10 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
 static void
 copy_statement_to_parent(pTHX_ SV *h, imp_xxh_t *imp_xxh)
 {
+    if (PL_dirty)
+        return;
     SV *parent = DBIc_PARENT_H(imp_xxh);
-    if (parent) {
+    if (parent && SvROK(parent)) {
         SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
         (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
     }
