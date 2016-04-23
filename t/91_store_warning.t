@@ -30,8 +30,11 @@ like $warning, qr/^DBD::\w+::db set_err warning: warning plain/, "Warning record
 $dbh->set_err(undef, undef);
 undef $warning;
 
-$dbh->set_err("0", "warning \N{U+263A} smiley face");
-like $warning, qr/^DBD::\w+::db set_err warning: warning \N{U+263A} smiley face/, "Warning recorded by store"
-    or warn DBI::data_string_desc($warning);
+SKIP: {
+    skip "Perl version $] too old for unicode test", 2 unless $] >= 5.014;
+    $dbh->set_err("0", "warning \N{U+263A} smiley face");
+    like $warning, qr/^DBD::\w+::db set_err warning: warning \N{U+263A} smiley face/, "Warning recorded by store"
+        or warn DBI::data_string_desc($warning);
+}
 
 done_testing;
