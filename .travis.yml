@@ -1,5 +1,7 @@
 language: perl
 perl:
+  - "5.22"
+  - "5.22-extras"
   - "5.20"
   - "5.20-extras"
   - "5.18"
