@@ -6,11 +6,11 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
-=head2 Changes in DBI 1.634_50
+=head2 Changes in DBI 1.635 - 24th April 2016
 
     Fixed RaiseError/PrintError for UTF-8 errors/warnings. RT#102404
     Fixed cases where ShowErrorStatement might show incorrect Statement RT#97434
-    Fixed DBD::Gofer for utf8-enabled STDIN/STDOUT
+    Fixed DBD::Gofer for UTF-8-enabled STDIN/STDOUT
         thanks to mauke PR#32
     Fixed fetchall_arrayref({}) behavior with no columns
         thanks to Dan McGee PR#31
@@ -41,6 +41,35 @@ DBI::Changes - List of significant changes to the DBI
     Removed the ancient DBI::FAQ module RT#102714
     Fixed t/pod.t to require Test::Pod >= 1.41 RT#101769
 
+This release was developed at the Perl QA Hackathon 2016
+L<http://act.qa-hackathon.org/qa2016/>
+which was made possible by the generosity of many sponsors:
+
+L<https://www.fastmail.com> FastMail,
+L<https://www.ziprecruiter.com> ZipRecruiter,
+L<http://www.activestate.com> ActiveState,
+L<http://www.opusvl.com> OpusVL,
+L<https://www.strato.com> Strato,
+L<http://www.surevoip.co.uk> SureVoIP,
+L<http://www.cv-library.co.uk> CV-Library,
+L<https://www.iinteractive.com/> Infinity,
+L<https://opensource.careers/perl-careers/> Perl Careers,
+L<https://www.mongodb.com> MongoDB,
+L<https://www.thinkproject.com> thinkproject!,
+L<https://www.dreamhost.com/> Dreamhost,
+L<http://www.perl6.org/> Perl 6,
+L<http://www.perl-services.de/> Perl Services,
+L<https://www.evozon.com/> Evozon,
+L<http://www.booking.com> Booking,
+L<http://eligo.co.uk> Eligo,
+L<http://www.oetiker.ch/> Oetiker+Partner,
+L<http://capside.com/en/> CAPSiDE,
+L<https://www.procura.nl/> Procura,
+L<https://constructor.io/> Constructor.io,
+L<https://metacpan.org/author/BABF> Robbie Bow,
+L<https://metacpan.org/author/RSAVAGE> Ron Savage,
+L<https://metacpan.org/author/ITCHARLIE> Charlie Gonzalez,
+L<https://twitter.com/jscook2345> Justin Cook.
 
 =head2 Changes in DBI 1.634 - 3rd August 2015
 
