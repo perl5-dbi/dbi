@@ -2,7 +2,7 @@
 
 use strict;
 
-use Test::More;
+use Test::More tests => 20; # use explicit plan to avoid race hazard
 
 BEGIN{ use_ok( 'DBI' ) }
 
@@ -146,4 +146,3 @@ FORK: {
     }
 }
 
-done_testing;
