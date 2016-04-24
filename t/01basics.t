@@ -4,6 +4,7 @@ use strict;
 
 use Test::More tests => 130;
 use File::Spec;
+use Config;
 
 $|=1;
 
@@ -37,12 +38,15 @@ $|=1;
 
 ## load DBI and export some symbols
 BEGIN {
+        diag "--- Perl $] on $Config{archname}";
+
 	use_ok('DBI', qw(
 					:sql_types
 					:sql_cursor_types
 					:utils
 					));
 }
+
 
 ## ----------------------------------------------------------------------------
 ## testing the :sql_types exports
