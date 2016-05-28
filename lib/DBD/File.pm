@@ -602,7 +602,7 @@ sub complete_table_name
 	$user_spec_file = 1;
 	}
     else {
-	($basename, $dir, undef) = File::Basename::fileparse ($file, $ext);
+	($basename, $dir, undef) = File::Basename::fileparse ($file, qr{\Q$ext\E});
 	# $dir is returned with trailing (back)slash. We just need to check
 	# if it is ".", "./", or ".\" or "[]" (VMS)
 	if ($dir =~ m{^(?:[.][/\\]?|\[\])$} && ref $meta->{f_dir_search} eq "ARRAY") {
