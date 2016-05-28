@@ -593,7 +593,7 @@ sub complete_table_name
 	    }
 	}
 
-    # (my $tbl = $file) =~ s/$ext$//i;
+    # (my $tbl = $file) =~ s/\Q$ext\E$//i;
     my ($tbl, $basename, $dir, $fn_ext, $user_spec_file, $searchdir);
     if ($file_is_table and defined $meta->{f_file}) {
 	$tbl = $file;
@@ -673,12 +673,12 @@ sub complete_table_name
 	    }
 	@f > 0 && @f <= 2 and $file = $f[0];
 	!$respect_case && $meta->{sql_identifier_case} == 4 and # XXX SQL_IC_MIXED
-	    ($tbl = $file) =~ s/$ext$//i;
+	    ($tbl = $file) =~ s/\Q$ext\E$//i;
 
 	my $tmpfn = $file;
 	if ($ext && $req) {
             # File extension required
-            $tmpfn =~ s/$ext$//i or return;
+            $tmpfn =~ s/\Q$ext\E$//i or return;
             }
 	}
 
