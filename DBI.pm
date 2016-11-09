@@ -4598,7 +4598,7 @@ L</fetchrow_arrayref> into a single call. It returns the first row of
 data from the statement.  The C<$statement> parameter can be a previously
 prepared statement handle, in which case the C<prepare> is skipped.
 
-If any method fails, and L</RaiseError> is not set, C<selectrow_array>
+If any method fails, and L</RaiseError> is not set, C<selectrow_arrayref>
 will return undef.
 
 
