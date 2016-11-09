@@ -385,6 +385,7 @@ my $dbd_prefix_registry = {
   wmi_         => { class => 'DBD::WMI',            },
   x_           => { }, # for private use
   xbase_       => { class => 'DBD::XBase',          },
+  xmlsimple_   => { class => 'DBD::XMLSimple',      },
   xl_          => { class => 'DBD::Excel',          },
   yaswi_       => { class => 'DBD::Yaswi',          },
 };
