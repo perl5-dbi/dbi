@@ -122,14 +122,11 @@ DBI IRC Channel: #dbi on irc.perl.org (L<irc://irc.perl.org/#dbi>)
 =head3 Online
 
 StackOverflow has a DBI tag L<http://stackoverflow.com/questions/tagged/dbi>
-with over 400 questions.
+with over 800 questions.
 
 The DBI home page at L<http://dbi.perl.org/> and the DBI FAQ
 at L<http://faq.dbi-support.com/> may be worth a visit.
 They include links to other resources, but I<are rather out-dated>.
-
-I don't recommend the DBI cpanforum (at http://www.cpanforum.com/dist/DBI)
-because relatively few people read it compared with dbi-users@perl.org.
 
 =head3 Reporting a Bug
 
