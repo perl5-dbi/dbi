@@ -171,6 +171,7 @@ related to the DBI can be found at L<https://metacpan.org/search?q=DBI>.
 
 # The POD text continues at the end of the file.
 
+use Scalar::Util ();
 use Carp();
 use DynaLoader ();
 use Exporter ();
@@ -525,7 +526,6 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
 
 # End of init code
 
-
 END {
     return unless defined &DBI::trace_msg; # return unless bootstrap'd ok
     local ($!,$?);
@@ -606,7 +606,8 @@ sub connect {
 	DBI->trace_msg("    -> $class->$connect_meth(".join(", ",@args).")\n");
     }
     Carp::croak('Usage: $class->connect([$dsn [,$user [,$passwd [,\%attr]]]])')
-	if (ref $old_driver or ($attr and not ref $attr) or ref $pass);
+        if (ref $old_driver or ($attr and not ref $attr) or
+            (ref $pass and not defined Scalar::Util::blessed($pass)));
 
     # extract dbi:driver prefix from $dsn into $1
     $dsn =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i

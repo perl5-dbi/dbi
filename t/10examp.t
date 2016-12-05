@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 238;
+use Test::More tests => 242;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -34,6 +34,31 @@ ok !eval {
 }, 'connect should fail';
 like($@, qr/install_driver\(NoneSuch\) failed/, '... we should have an exception here');
 ok(!$dbh, '... $dbh2 should not be defined');
+
+{
+    my ($error, $tdbh);
+    eval {
+        $tdbh = DBI->connect('dbi:ExampleP:', '', []);
+    } or do {
+        $error= $@ || "Zombie Error";
+    };
+    like($error,qr/Usage:/,"connect with unblessed ref password should fail");
+    ok(!defined($tdbh), '... $dbh should not be defined');
+}
+{
+    package Test::Secret;
+    use overload '""' => sub { return "" };
+}
+{
+    my ($error,$tdbh);
+    eval {
+        $tdbh = DBI->connect('dbi:ExampleP:', '', bless [], "Test::Secret");
+    } or do {
+        $error= $@ || "Zombie Error";
+    };
+    ok(!$error,"connect with blessed ref password should not fail");
+    ok(defined($tdbh), '... $dbh should be defined');
+}
 
 $dbh = DBI->connect('dbi:ExampleP:', '', '');
 
