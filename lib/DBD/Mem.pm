@@ -6,7 +6,7 @@
 #
 #      Jens Rehsack
 #
-#  Copyright (C) 2016 by Jens Rehsack
+#  Copyright (C) 2016,2017 by Jens Rehsack
 #
 #  All rights reserved.
 #
@@ -282,3 +282,95 @@ sub seek
 }
 
 1;
+
+=head1 NAME
+
+DBD::Mem - a DBI driver for Mem & MLMem files
+
+=head1 SYNOPSIS
+
+ use DBI;
+ $dbh = DBI->connect('dbi:Mem:', undef, undef, {});
+ $dbh = DBI->connect('dbi:Mem:', undef, undef, {RaiseError => 1});
+
+ # or
+ $dbh = DBI->connect('dbi:Mem:');
+ $dbh = DBI->connect('DBI:Mem(RaiseError=1):');
+
+and other variations on connect() as shown in the L<DBI> docs and 
+<DBI::DBD::SqlEngine metadata|DBI::DBD::SqlEngine/Metadata>.
+
+Use standard DBI prepare, execute, fetch, placeholders, etc.,
+see L<QUICK START> for an example.
+
+=head1 DESCRIPTION
+
+DBD::Mem is a database management system that works right out of the box.
+If you have a standard installation of Perl and DBI you can begin creating,
+accessing, and modifying simple database tables without any further modules.
+You can add other modules (e.g., SQL::Statement) for improved functionality.
+
+DBD::Mem doesn't store any data persistently - all data has the lifetime of
+the instantiated C<$dbh>. The main reason to use DBD::Mem is to use extended
+features of L<SQL::Statement> where temporary tables are required. One can
+use DBD::Mem to simulate C<VIEWS> or sub-queries.
+
+Bundling C<DBD::Mem> with L<DBI> will allow us further compatibility checks
+of L<DBI::DBD::SqlEngine> beyond the capabilities of L<DBD::File> and
+L<DBD::DBM>. This will ensure DBI provided basis for drivers like
+L<DBD::AnyData2> or L<DBD::Amazon> are better prepared and tested for
+not-file based backends.
+
+=head2 Metadata
+
+There're no new meta data introduced by C<DBD::Mem>. See
+L<DBI::DBD::SqlEngine/Metadata> for full description.
+
+=head1 GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
+
+If you need help installing or using DBD::Mem, please write to the DBI
+users mailing list at L<mailto:dbi-users@perl.org> or to the
+comp.lang.perl.modules newsgroup on usenet.  I cannot always answer
+every question quickly but there are many on the mailing list or in
+the newsgroup who can.
+
+DBD developers for DBD's which rely on DBI::DBD::SqlEngine or DBD::Mem or
+use one of them as an example are suggested to join the DBI developers
+mailing list at L<mailto:dbi-dev@perl.org> and strongly encouraged to join our
+IRC channel at L<irc://irc.perl.org/dbi>.
+
+If you have suggestions, ideas for improvements, or bugs to report, please
+report a bug as described in DBI. Do not mail any of the authors directly,
+you might not get an answer.
+
+When reporting bugs, please send the output of C<< $dbh->mem_versions($table) >>
+for a table that exhibits the bug and as small a sample as you can make of
+the code that produces the bug.  And of course, patches are welcome, too
+:-).
+
+If you need enhancements quickly, you can get commercial support as
+described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
+at rehsack@cpan.org for commercial support.
+
+=head1 AUTHOR AND COPYRIGHT
+
+This module is written by Jens Rehsack < rehsack AT cpan.org >.
+
+ Copyright (c) 2016- by Jens Rehsack, all rights reserved.
+
+You may freely distribute and/or modify this module under the terms of
+either the GNU General Public License (GPL) or the Artistic License, as
+specified in the Perl README file.
+
+=head1 SEE ALSO
+
+L<DBI> for the Database interface of the Perl Programming Language.
+
+L<SQL::Statement> and L<DBI::SQL::Nano> for the available SQL engines.
+
+L<SQL::Statement::RAM> where the implementation is shamelessly stolen from
+to allow DBI bundled Pure-Perl drivers increase the test coverage.
+
+L<DBD::SQLite> using C<dbname=:memory:> for an incredible fast in-memory database engine.
+
+=cut
