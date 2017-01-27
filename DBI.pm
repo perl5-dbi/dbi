@@ -2746,7 +2746,7 @@ handle, or it I<dies> with an error message that includes the string
 will die
 on a driver installation failure and will only return C<undef> on a
 connect failure, in which case C<$DBI::errstr> will hold the error message.
-Use C<eval { ... }> if you need to catch the "C<install_driver>" error.
+Use C<eval { ... 1; }> if you need to catch the "C<install_driver>" error.
 
 The C<$data_source> argument (with the "C<dbi:...:>" prefix removed) and the
 C<$username> and C<$password> arguments are then passed to the driver for
@@ -3798,21 +3798,21 @@ that failed. E.g.,
 If you turn C<RaiseError> on then you'd normally turn C<PrintError> off.
 If C<PrintError> is also on, then the C<PrintError> is done first (naturally).
 
-Typically C<RaiseError> is used in conjunction with C<eval { ... }>
+Typically C<RaiseError> is used in conjunction with C<eval { ... 1; }>
 to catch the exception that's been thrown and followed by an
-C<if ($@) { ... }> block to handle the caught exception.
+C<or do { ... };> block to handle the caught exception.
 For example:
 
   eval {
     ...
     $sth->execute();
     ...
-  };
-  if ($@) {
+    1;
+  } or do {
     # $sth->err and $DBI::err will be true if error was from DBI
     warn $@; # print the error
     ... # do whatever you need to deal with the error
-  }
+  };
 
 In that eval block the $DBI::lasth variable can be useful for
 diagnosis and reporting if you can't be sure which handle triggered
@@ -7248,7 +7248,7 @@ C<AutoCommit> is off.  See L</AutoCommit> for details of using C<AutoCommit>
 with various types of databases.
 
 The recommended way to implement robust transactions in Perl
-applications is to use C<RaiseError> and S<C<eval { ... }>>
+applications is to use C<RaiseError> and S<C<eval { ... 1; }>>
 (which is very fast, unlike S<C<eval "...">>). For example:
 
   $dbh->{AutoCommit} = 0;  # enable transactions, if possible
@@ -7258,14 +7258,14 @@ applications is to use C<RaiseError> and S<C<eval { ... }>>
       bar(...)        # including inserts
       baz(...)        # and updates
       $dbh->commit;   # commit the changes if we get this far
-  };
-  if ($@) {
+      1;
+  } or do {
       warn "Transaction aborted because $@";
       # now rollback to undo the incomplete changes
       # but do it in an eval{} as it may also fail
       eval { $dbh->rollback };
       # add other application on-error-clean-up code here
-  }
+  };
 
 If the C<RaiseError> attribute is not set, then DBI calls would need to be
 manually checked for errors, typically like this:
@@ -7483,18 +7483,23 @@ to refer to some code that will be executed when an ALRM signal
 arrives and then to call alarm($seconds) to schedule an ALRM signal
 to be delivered $seconds in the future. For example:
 
+  my $failed;
   eval {
     local $SIG{ALRM} = sub { die "TIMEOUT\n" }; # N.B. \n required
     eval {
       alarm($seconds);
       ... code to execute with timeout here (which may die) ...
-    };
+      1;
+    } or $failed = 1;
     # outer eval catches alarm that might fire JUST before this alarm(0)
     alarm(0);  # cancel alarm (if code ran fast)
-    die "$@" if $@;
-  };
-  if ( $@ eq "TIMEOUT\n" ) { ... }
-  elsif ($@) { ... } # some other error
+    die "$@" if $failed;
+    1;
+  } or $failed = 1;
+  if ( $failed ) {
+    if ( defined $@ and $@ eq "TIMEOUT\n" ) { ... }
+    else { ... } # some other error
+  }
 
 The first (outer) eval is used to avoid the unlikely but possible
 chance that the "code to execute" dies and the alarm fires before it
@@ -7527,17 +7532,20 @@ The code would look something like this (for the DBD-Oracle connect()):
    my $oldaction = POSIX::SigAction->new();
    sigaction( SIGALRM, $action, $oldaction );
    my $dbh;
+   my $failed;
    eval {
       eval {
         alarm(5); # seconds before time out
         $dbh = DBI->connect("dbi:Oracle:$dsn" ... );
-      };
+        1;
+      } or $failed = 1;
       alarm(0); # cancel alarm (if connect worked fast)
-      die "$@\n" if $@; # connect died
-   };
+      die "$@\n" if $failed; # connect died
+      1;
+   } or $failed = 1;
    sigaction( SIGALRM, $oldaction );  # restore original signal handler
-   if ( $@ ) {
-     if ($@ eq "connect timeout\n") {...}
+   if ( $failed ) {
+     if ( defined $@ and $@ eq "connect timeout\n" ) {...}
      else { # connect died }
    }
 
