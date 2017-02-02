@@ -116,7 +116,7 @@ Name of file to read. Takes precedence over C<Files>.
 
 If true, the files are deleted after being read.
 
-Actually the files are renamed with a C.deleteme> suffix before being read,
+Actually the files are renamed with a C<deleteme> suffix before being read,
 and then, after reading all the files, they're all deleted together.
 
 The files are locked while being read which, combined with the rename, makes it
