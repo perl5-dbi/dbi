@@ -4794,7 +4794,7 @@ DPPP_(my_eval_pv)(char *p, I32 croak_on_error)
     PUTBACK;
 
     if (croak_on_error && SvTRUE(GvSV(errgv)))
-        croak(SvPVx(GvSV(errgv), na));
+        croak("%s", SvPVx(GvSV(errgv), na));
 
     return sv;
 }
