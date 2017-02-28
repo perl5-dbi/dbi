@@ -9,6 +9,7 @@ DBI::Changes - List of significant changes to the DBI
 =head2 Changes in DBI 1.637 - ...
 
     Fix extentension detection for DBD::File related drivers
+    Fix tests for perl without dot in @INC RT#120443
 
 =head2 Changes in DBI 1.636 - 24th April 2016
 

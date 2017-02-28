@@ -139,7 +139,7 @@ ok("@{[sort values %{$csr_b->{NAME_lc_hash}}]}" eq "0 1 2");
 ok("@{[sort keys   %{$csr_b->{NAME_uc_hash}}]}" eq "MODE NAME SIZE");
 ok("@{[sort values %{$csr_b->{NAME_uc_hash}}]}" eq "0 1 2");
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 # get a dir always readable on all platforms
 #my $dir = getcwd() || cwd();

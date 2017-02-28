@@ -93,7 +93,7 @@ my $haveSS = DBD::DBM::Statement->isa('SQL::Statement');
 plan skip_all => "DBI::SQL::Nano is being used" unless ( $haveSS );
 plan skip_all => "Not running with MLDBM" unless ( @mldbm_types );
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 my $dir = test_dir ();
 

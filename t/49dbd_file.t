@@ -17,7 +17,7 @@ BEGIN { $tbl = "db_". $$ . "_" };
 use_ok ("DBI");
 use_ok ("DBD::File");
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 my $dir = test_dir ();
 

@@ -20,7 +20,7 @@ if (my $ap = $ENV{DBI_AUTOPROXY}) { # limit the insanity
         if $ap !~ /policy=pedantic\b/i;
 }
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 # 0=SQL::Statement if avail, 1=DBI::SQL::Nano
 # next line forces use of Nano rather than default behaviour

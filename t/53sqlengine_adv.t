@@ -21,7 +21,7 @@ use DBI;
 # <[Sno]> what I could do is create a new test case where inserting into a DBD::DBM and after that clone the meta into a DBD::File $dbh
 # <[Sno]> would that help to get a better picture?
 
-do "t/lib.pl";
+do "./t/lib.pl";
 my $dir = test_dir();
 
 my $dbm_dbh = DBI->connect( 'dbi:DBM:', undef, undef, {

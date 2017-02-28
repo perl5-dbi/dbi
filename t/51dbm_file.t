@@ -13,7 +13,7 @@ my $using_dbd_gofer = ( $ENV{DBI_AUTOPROXY} || '' ) =~ /^dbi:Gofer.*transport=/i
 
 use DBI;
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 my $dir = test_dir();
 

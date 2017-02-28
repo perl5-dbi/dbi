@@ -81,7 +81,7 @@ EOP
 
 my $dbi_sql_nano = not DBD::DBM::Statement->isa('SQL::Statement');
 
-do "t/lib.pl";
+do "./t/lib.pl";
 
 my $dir = test_dir ();
 
