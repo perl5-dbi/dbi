@@ -3571,6 +3571,7 @@ XS(XS_DBI_dispatch)
         && SvROK(*hook_svp)
     ) {
         SV *orig_defsv;
+        SV *temp_defsv;
         SV *code = SvRV(*hook_svp);
         I32 skip_dispatch = 0;
         if (trace_level)
@@ -3587,7 +3588,11 @@ XS(XS_DBI_dispatch)
          */
         orig_defsv = DEFSV; /* remember the current $_ */
         SAVE_DEFSV;         /* local($_) = $method_name */
-        DEFSV_set(sv_2mortal(newSVpv(meth_name,0)));
+        temp_defsv = sv_2mortal(newSVpv(meth_name,0));
+# ifdef SvTEMP_off
+        SvTEMP_off(temp_defsv);
+# endif
+        DEFSV_set(temp_defsv);
 
         EXTEND(SP, items+1);
         PUSHMARK(SP);

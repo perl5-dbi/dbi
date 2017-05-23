@@ -27,7 +27,9 @@ is $dbh->{Callbacks}, undef, "Callbacks set to undef again";
 
 ok $dbh->{Callbacks} = {
     ping => sub {
-	is $_, 'ping', '$_ holds method name';
+	my $m = $_;
+	is $m, 'ping', '$m holds method name';
+	is $_, 'ping', '$_ holds method name (not stolen)';
 	is @_, 1, '@_ holds 1 values';
 	is ref $_[0], 'DBI::db', 'first is $dbh';
         ok tied(%{$_[0]}), '$dbh is tied (outer) handle'
