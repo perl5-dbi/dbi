@@ -56,7 +56,7 @@ This module can also be used to roll your own profile analysis:
 =head1 DESCRIPTION
 
 This module offers the ability to read, manipulate and format
-DBI::ProfileDumper profile data.
+L<DBI::ProfileDumper> profile data.
 
 Conceptually, a profile consists of a series of records, or nodes,
 each of each has a set of statistics and set of keys.  Each record
@@ -116,7 +116,7 @@ Name of file to read. Takes precedence over C<Files>.
 
 If true, the files are deleted after being read.
 
-Actually the files are renamed with a C.deleteme> suffix before being read,
+Actually the files are renamed with a C<deleteme> suffix before being read,
 and then, after reading all the files, they're all deleted together.
 
 The files are locked while being read which, combined with the rename, makes it
@@ -360,7 +360,7 @@ sub clone {
 =head2 $header = $prof->header();
 
 Returns a reference to a hash of header values.  These are the key
-value pairs included in the header section of the DBI::ProfileDumper
+value pairs included in the header section of the L<DBI::ProfileDumper>
 data format.  For example:
 
   $header = {
@@ -380,7 +380,7 @@ sub header { shift->{_header} }
 
 Returns a reference the sorted nodes array.  Each element in the array
 is a single record in the data set.  The first seven elements are the
-same as the elements provided by DBI::Profile.  After that each key is
+same as the elements provided by L<DBI::Profile>.  After that each key is
 in a separate element.  For example:
 
  $nodes = [
@@ -580,7 +580,7 @@ sub match {
 
 =head2 $Data = $prof->Data()
 
-Returns the same Data hash structure as seen in DBI::Profile.  This
+Returns the same Data hash structure as seen in L<DBI::Profile>.  This
 structure is not sorted.  The nodes() structure probably makes more
 sense for most analysis.
 
