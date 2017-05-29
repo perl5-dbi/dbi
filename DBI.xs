@@ -85,10 +85,10 @@ extern Pid_t getpid (void);
 #endif
 
 #ifndef warn_sv
-static void warn_sv(SV *sv) { dTHX; warn(SvPV_nolen(sv)); }
+static void warn_sv(SV *sv) { dTHX; warn("%s", SvPV_nolen(sv)); }
 #endif
 #ifndef croak_sv
-static void croak_sv(SV *sv) { dTHX; croak(SvPV_nolen(sv)); }
+static void croak_sv(SV *sv) { dTHX; croak("%s", SvPV_nolen(sv)); }
 #endif
 
 /* types of method name */
@@ -494,7 +494,7 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
 
 /* handy for embedding into condition expression for debugging */
 /*
-static int warn1(char *s) { warn(s); return 1; }
+static int warn1(char *s) { warn("%s", s); return 1; }
 static int dump1(SV *sv)  { dTHX; sv_dump(sv); return 1; }
 */
 
