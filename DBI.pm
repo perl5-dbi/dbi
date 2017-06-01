@@ -300,14 +300,6 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
     DBI->trace_msg("DBI connect via $DBI::connect_via in $INC{'Apache/DBI.pm'}\n");
 }
 
-# check for weaken support, used by ChildHandles
-my $HAS_WEAKEN = eval {
-    require Scalar::Util;
-    # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken( \my $test ); # same test as in t/72childhandles.t
-    1;
-};
-
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
 sub installed_drivers { %DBI::installed_drh }
 %DBI::installed_methods = (); # XXX undocumented, may change
