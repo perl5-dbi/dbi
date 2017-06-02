@@ -171,6 +171,7 @@ related to the DBI can be found at L<https://metacpan.org/search?q=DBI>.
 
 # The POD text continues at the end of the file.
 
+use Scalar::Util ();
 use Carp();
 use DynaLoader ();
 use Exporter ();
@@ -299,14 +300,6 @@ if ($INC{'Apache/DBI.pm'} && $ENV{MOD_PERL}) {
     $DBI::connect_via = "Apache::DBI::connect";
     DBI->trace_msg("DBI connect via $DBI::connect_via in $INC{'Apache/DBI.pm'}\n");
 }
-
-# check for weaken support, used by ChildHandles
-my $HAS_WEAKEN = eval {
-    require Scalar::Util;
-    # this will croak() if this Scalar::Util doesn't have a working weaken().
-    Scalar::Util::weaken( \my $test ); # same test as in t/72childhandles.t
-    1;
-};
 
 %DBI::installed_drh = ();  # maps driver names to installed driver handles
 sub installed_drivers { %DBI::installed_drh }
@@ -533,7 +526,6 @@ while ( my ($class, $meths) = each %DBI::DBI_methods ) {
 
 # End of init code
 
-
 END {
     return unless defined &DBI::trace_msg; # return unless bootstrap'd ok
     local ($!,$?);
@@ -614,7 +606,8 @@ sub connect {
 	DBI->trace_msg("    -> $class->$connect_meth(".join(", ",@args).")\n");
     }
     Carp::croak('Usage: $class->connect([$dsn [,$user [,$passwd [,\%attr]]]])')
-	if (ref $old_driver or ($attr and not ref $attr) or ref $pass);
+        if (ref $old_driver or ($attr and not ref $attr) or
+            (ref $pass and not defined Scalar::Util::blessed($pass)));
 
     # extract dbi:driver prefix from $dsn into $1
     $dsn =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i
