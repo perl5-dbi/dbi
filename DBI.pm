@@ -341,6 +341,7 @@ my $dbd_prefix_registry = {
   mo_          => { class => 'DBD::MO',             },
   monetdb_     => { class => 'DBD::monetdb',        },
   msql_        => { class => 'DBD::mSQL',           },
+  multi_       => { class => 'DBD::Multi',          },
   mvsftp_      => { class => 'DBD::MVS_FTPSQL',     },
   mysql_       => { class => 'DBD::mysql',          },
   multi_       => { class => 'DBD::Multi'           },
