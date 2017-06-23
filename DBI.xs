@@ -3617,7 +3617,7 @@ XS(XS_DBI_dispatch)
         {
             MAGIC *outer_magic = SvMAGIC(SvRV(orig_h));
             if (outer_magic->mg_type != 'P')
-                outer_magic = mg_find(SvRV(h), 'P');
+                outer_magic = mg_find(SvRV(orig_h), 'P');
             if (outer_magic != mg) {
                 SV    *inner_handle = outer_magic->mg_obj;
                 MAGIC *inner_magic  = SvMAGIC(SvRV(inner_handle));
