@@ -246,8 +246,7 @@ $stress_sth->execute(@params);
     $dbh->{Callbacks} = { ping => $cb };
     no warnings qw/once redefine/;
     local *DBD::ExampleP::db::ping = sub {
-        my ($dbh) = @_;
-        my $new = tied %$dbh;
+        my ($new) = @_;
         isnt $old, $new, 'inner handle replaced inside method';
     };
     $dbh->ping();
