@@ -736,7 +736,8 @@ copy_statement_to_parent(pTHX_ SV *h, imp_xxh_t *imp_xxh)
     parent = DBIc_PARENT_H(imp_xxh);
     if (parent && SvROK(parent)) {
         SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
-        (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
+        if (SvOK(tmp_sv))
+            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
     }
 }
 
