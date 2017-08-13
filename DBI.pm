@@ -2746,7 +2746,7 @@ handle, or it I<dies> with an error message that includes the string
 will die
 on a driver installation failure and will only return C<undef> on a
 connect failure, in which case C<$DBI::errstr> will hold the error message.
-Use C<eval { ... 1; }> if you need to catch the "C<install_driver>" error.
+Use C<eval> if you need to catch the "C<install_driver>" error.
 
 The C<$data_source> argument (with the "C<dbi:...:>" prefix removed) and the
 C<$username> and C<$password> arguments are then passed to the driver for
@@ -3798,23 +3798,24 @@ that failed. E.g.,
 If you turn C<RaiseError> on then you'd normally turn C<PrintError> off.
 If C<PrintError> is also on, then the C<PrintError> is done first (naturally).
 
-Typically C<RaiseError> is used in conjunction with C<eval { ... 1; }>
-to catch the exception that's been thrown and followed by an
-C<or do { ... };> block to handle the caught exception.
+Typically C<RaiseError> is used in conjunction with C<eval>,
+or a module like L<Try::Tiny> or L<TryCatch>,
+to catch the exception that's been thrown and handle it.
 For example:
 
-  eval {
+  use Try::Tiny;
+
+  try {
     ...
     $sth->execute();
     ...
-    1;
-  } or do {
+  } catch {
     # $sth->err and $DBI::err will be true if error was from DBI
-    warn $@; # print the error
+    warn $_; # print the error (which Try::Tiny puts into $_)
     ... # do whatever you need to deal with the error
   };
 
-In that eval block the $DBI::lasth variable can be useful for
+In the catch block the $DBI::lasth variable can be useful for
 diagnosis and reporting if you can't be sure which handle triggered
 the error.  For example, $DBI::lasth->{Type} and $DBI::lasth->{Statement}.
 
@@ -7248,24 +7249,24 @@ C<AutoCommit> is off.  See L</AutoCommit> for details of using C<AutoCommit>
 with various types of databases.
 
 The recommended way to implement robust transactions in Perl
-applications is to use C<RaiseError> and S<C<eval { ... 1; }>>
-(which is very fast, unlike S<C<eval "...">>). For example:
+applications is to enable L</RaiseError> and catch the error that's 'thrown' as
+an exception.  For example, using L<Try::Tiny>:
 
+  use Try::Tiny;
   $dbh->{AutoCommit} = 0;  # enable transactions, if possible
   $dbh->{RaiseError} = 1;
-  eval {
+  try {
       foo(...)        # do lots of work here
       bar(...)        # including inserts
       baz(...)        # and updates
       $dbh->commit;   # commit the changes if we get this far
-      1;
-  } or do {
-      warn "Transaction aborted because $@";
+  } catch {
+      warn "Transaction aborted because $_"; # Try::Tiny copies $@ into $_
       # now rollback to undo the incomplete changes
       # but do it in an eval{} as it may also fail
       eval { $dbh->rollback };
       # add other application on-error-clean-up code here
-  };
+  }
 
 If the C<RaiseError> attribute is not set, then DBI calls would need to be
 manually checked for errors, typically like this:
