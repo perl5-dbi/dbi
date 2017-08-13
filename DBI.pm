@@ -4779,7 +4779,7 @@ Like L</prepare> except that the statement handle returned will be
 stored in a hash associated with the C<$dbh>. If another call is made to
 C<prepare_cached> with the same C<$statement> and C<%attr> parameter values,
 then the corresponding cached C<$sth> will be returned without contacting the
-database server.
+database server. Be sure to understand the cautions and caveats noted below.
 
 The C<$if_active> parameter lets you adjust the behaviour if an
 already cached statement handle is still Active.  There are several
@@ -4861,6 +4861,12 @@ like:
 
 which will ensure that prepare_cached only returns statements cached
 by that line of code in that source file.
+
+Also, to ensure the attributes passed are always the same, avoid passing
+references inline. For example, the Slice attribute is specified as a
+reference. Be sure to declare it external to the call to prepare_cached(), such
+that a new hash reference is not created on every call. See L</connect_cached>
+for more details and examples.
 
 If you'd like the cache to managed intelligently, you can tie the
 hashref returned by C<CachedKids> to an appropriate caching module,
