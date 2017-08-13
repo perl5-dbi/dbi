@@ -2268,6 +2268,16 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     ) ) {
         cacheit = 1;
     }
+    /* deal with: NAME_(uc|lc), NAME_hash, NAME_(uc|lc)_hash */
+    else if ((keylen==7 || keylen==9 || keylen==12)
+        && strnEQ(key, "NAME_", 5)
+        && (    (keylen==9 && strEQ(key, "NAME_hash"))
+           ||   ((key[5]=='u' || key[5]=='l') && key[6] == 'c'
+                && (!key[7] || strnEQ(&key[7], "_hash", 5)))
+           )
+        ) {
+        cacheit = 1;
+    }
     else {      /* XXX should really be an event ? */
         if (isUPPER(*key)) {
             char *msg = "Can't set %s->{%s}: unrecognised attribute name or invalid value%s";

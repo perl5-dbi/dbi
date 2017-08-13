@@ -1,6 +1,7 @@
 #!perl -w
 
 use strict;
+use Storable qw(dclone);
 
 use Test::More;
 
@@ -254,6 +255,15 @@ is(ref($nhash_uc), 'HASH', '... checking type of NAME_uc_hash attribute for sth'
 cmp_ok(scalar(keys(%{$nhash_uc})), '==', 2, '... checking number of keys returned');
 cmp_ok($nhash_uc->{CTIME},         '==', 0, '... checking values returned');
 cmp_ok($nhash_uc->{NAME},          '==', 1, '... checking values returned');
+
+unless ($using_autoproxy) {
+    # set ability to set sth attributes that are usually set internally
+    for $a (qw(NAME NAME_lc NAME_uc NAME_hash NAME_lc_hash NAME_uc_hash)) {
+        my $v = $sth->{$a};
+        ok(eval { $sth->{$a} = dclone($sth->{$a}) }, "Can set sth $a");
+        is_deeply($sth->{$a}, $v, "Can get set sth $a");
+    }
+}
 
 my $type = $sth->{TYPE};
 is(ref($type), 'ARRAY', '... checking type of TYPE attribute for sth');
