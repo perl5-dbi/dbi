@@ -11,7 +11,7 @@ package DBI;
 require 5.008_001;
 
 BEGIN {
-our $XS_VERSION = our $VERSION = "1.636"; # ==> ALSO update the version in the pod text below!
+our $XS_VERSION = our $VERSION = "1.637"; # ==> ALSO update the version in the pod text below!
 $VERSION = eval $VERSION;
 }
 
@@ -143,7 +143,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.636
+This is the DBI specification that corresponds to DBI version 1.637
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -7261,7 +7261,7 @@ an exception.  For example, using L<Try::Tiny>:
       baz(...)        # and updates
       $dbh->commit;   # commit the changes if we get this far
   } catch {
-      warn "Transaction aborted because $_"; # Try::Tiny copies $@ into $_
+      warn "Transaction aborted because $_"; # Try::Tiny copies $@ into $_
       # now rollback to undo the incomplete changes
       # but do it in an eval{} as it may also fail
       eval { $dbh->rollback };

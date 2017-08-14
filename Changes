@@ -8,8 +8,24 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.637 - ...
 
-    Fix extentension detection for DBD::File related drivers
+    Fix use of externally controlled format string (CWE-134) thanks to pali #44
+        This could cause a crash if, for example, a db error contained a %.
+        https://cwe.mitre.org/data/definitions/134.html
+    Fix extension detection for DBD::File related drivers
     Fix tests for perl without dot in @INC RT#120443
+    Fix loss of error message on parent handle, thanks to charsbar #34
+    Fix disappearing $_ inside callbacks, thanks to robschaber #47
+
+    Allow objects to be used as passwords without throwing an error, thanks to demerphq #40
+    Allow $sth NAME_* attributes to be set from Perl code, re #45
+    Added support for DBD::XMLSimple thanks to nigelhorne #38
+
+    Documentation updates:
+    Improve examples using eval to be more correct, thanks to pali #39
+    Add cautionary note to prepare_cached docs re refs in %attr #46
+    Small POD changes (Getting Help -> Online) thanks to openstrike #33
+    Adds links to more module names and fix typo, thanks to oalders #43
+    Typo fix thanks to bor #37
 
 =head2 Changes in DBI 1.636 - 24th April 2016
 
