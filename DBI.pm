@@ -7266,7 +7266,7 @@ an exception.  For example, using L<Try::Tiny>:
       # but do it in an eval{} as it may also fail
       eval { $dbh->rollback };
       # add other application on-error-clean-up code here
-  }
+  };
 
 If the C<RaiseError> attribute is not set, then DBI calls would need to be
 manually checked for errors, typically like this:
