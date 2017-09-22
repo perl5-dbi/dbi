@@ -15,6 +15,7 @@ DBI::Changes - List of significant changes to the DBI
     Fix tests for perl without dot in @INC RT#120443
     Fix loss of error message on parent handle, thanks to charsbar #34
     Fix disappearing $_ inside callbacks, thanks to robschaber #47
+    Fix dependency on Storable for perl older than 5.8.9
 
     Allow objects to be used as passwords without throwing an error, thanks to demerphq #40
     Allow $sth NAME_* attributes to be set from Perl code, re #45
