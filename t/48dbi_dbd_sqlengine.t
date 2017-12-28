@@ -24,13 +24,13 @@ my $dbh = DBI->connect( "DBI:File:", undef, undef, { PrintError => 0, RaiseError
 for my $sql ( split "\n", <<"" )
     CREATE TABLE foo (id INT, foo TEXT)
     CREATE TABLE bar (id INT, baz TEXT)
-    INSERT INTO foo VALUES (1, "Hello world")
-    INSERT INTO bar VALUES (1, "Bugfixes welcome")
-    INSERT bar VALUES (2, "Bug reports, too")
+    INSERT INTO foo VALUES (1, 'Hello world')
+    INSERT INTO bar VALUES (1, 'Bugfixes welcome')
+    INSERT bar VALUES (2, 'Bug reports, too')
     SELECT foo FROM foo where ID=1
-    UPDATE bar SET id=5 WHERE baz="Bugfixes welcome"
+    UPDATE bar SET id=5 WHERE baz='Bugfixes welcome'
     DELETE FROM foo
-    DELETE FROM bar WHERE baz="Bugfixes welcome"
+    DELETE FROM bar WHERE baz='Bugfixes welcome'
 
 {
     my $sth;
@@ -42,7 +42,7 @@ for my $sql ( split "\n", <<"" )
 for my $line ( split "\n", <<"" )
     Junk -- Junk
     CREATE foo (id INT, foo TEXT) -- missing table
-    INSERT INTO bar (1, "Bugfixes welcome") -- missing "VALUES"
+    INSERT INTO bar (1, 'Bugfixes welcome') -- missing "VALUES"
     UPDATE bar id=5 WHERE baz="Bugfixes welcome" -- missing "SET"
     DELETE * FROM foo -- waste between "DELETE" and "FROM"
 
