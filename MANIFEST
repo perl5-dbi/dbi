@@ -103,6 +103,7 @@ t/50dbm_simple.t		simple DBD::DBM tests
 t/51dbm_file.t			extended DBD::File tests (through DBD::DBM)
 t/52dbm_complex.t		Complex DBD::DBM tests with SQL::Statement
 t/53sqlengine_adv.t
+t/54_dbd_mem.t
 t/60preparse.t
 t/65transact.t
 t/70callbacks.t

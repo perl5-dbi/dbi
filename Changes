@@ -8,11 +8,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =head2 Changes in DBI 1.638 - ...
 
+    Fix UTF-8 support for warn/croak calls within DBI internals,
+        thanks to pali #53
     Fix dependency on Storable for perl older than 5.8.9,
         thanks to H.Merijn Brand.
 
     Add DBD::Mem driver, a pure-perl in-memory driver using DBI::DBD::SqlEngine,
         thanks to Jens Rehsack #42
+
+    Corrected missing semicolon in example in documentation,
+        thanks to pali #55
 
 =head2 Changes in DBI 1.637 - 16th August 2017
 
