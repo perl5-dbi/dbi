@@ -39,6 +39,7 @@ lib/DBD/Gofer/Transport/corostream.pm Async Gofer transport using Coro and AnyEv
 lib/DBD/Gofer/Transport/null.pm DBD::Gofer transport that executes in same process (for testing)
 lib/DBD/Gofer/Transport/pipeone.pm DBD::Gofer transport to new subprocess for each request
 lib/DBD/Gofer/Transport/stream.pm DBD::Gofer transport for ssh etc
+lib/DBD/Mem.pm                  A pure-perl in-memory driver using DBI::DBD::SqlEngine
 lib/DBD/NullP.pm		An empty example Driver module
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
