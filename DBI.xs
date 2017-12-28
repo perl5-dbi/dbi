@@ -85,10 +85,10 @@ extern Pid_t getpid (void);
 #endif
 
 #ifndef warn_sv
-static void warn_sv(SV *sv) { dTHX; warn("%s", SvPV_nolen(sv)); }
+static void warn_sv(SV *sv) { dTHX; warn("%" SVf, SVfARG(sv)); }
 #endif
 #ifndef croak_sv
-static void croak_sv(SV *sv) { dTHX; croak("%s", SvPV_nolen(sv)); }
+static void croak_sv(SV *sv) { dTHX; sv_setsv(ERRSV, sv); croak(NULL); }
 #endif
 
 /* types of method name */
