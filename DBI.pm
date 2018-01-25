@@ -338,6 +338,7 @@ my $dbd_prefix_registry = {
   ing_         => { class => 'DBD::Ingres',         },
   ix_          => { class => 'DBD::Informix',       },
   jdbc_        => { class => 'DBD::JDBC',           },
+  mariadb_     => { class => 'DBD::MariaDB',        },
   mem_         => { class => 'DBD::Mem',            },
   mo_          => { class => 'DBD::MO',             },
   monetdb_     => { class => 'DBD::monetdb',        },
