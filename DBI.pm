@@ -1779,7 +1779,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		    my $schema = $_->[1];
 		    # a sad hack (mostly for Informix I recall)
 		    my $quote = ($schema eq uc($schema)) ? '' : '"';
-		    $name = "$quote$schema$quote.$name"
+		    $name = "$quote$schema$quote.$quote$name$quote"
 		}
 		$name;
 	    } @$tables;
