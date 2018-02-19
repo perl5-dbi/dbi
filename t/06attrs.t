@@ -256,7 +256,14 @@ cmp_ok(scalar(keys(%{$nhash_uc})), '==', 2, '... checking number of keys returne
 cmp_ok($nhash_uc->{CTIME},         '==', 0, '... checking values returned');
 cmp_ok($nhash_uc->{NAME},          '==', 1, '... checking values returned');
 
-unless ($using_autoproxy) {
+if (
+  ! $using_autoproxy
+    and
+  # Older Storable does not work properly with tied handles
+  # Instead of hard-depending on newer Storable, just skip this
+  # particular test outright
+  eval { Storable->VERSION("2.16") }
+) {
     # set ability to set sth attributes that are usually set internally
     for $a (qw(NAME NAME_lc NAME_uc NAME_hash NAME_lc_hash NAME_uc_hash)) {
         my $v = $sth->{$a};
