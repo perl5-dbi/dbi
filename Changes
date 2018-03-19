@@ -6,6 +6,10 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Unreleased changes
+
+    Remove dependency on Storable introduced in 1.639
+
 =head2 Changes in DBI 1.640 - 28th January 2018
 
     Fix test t/91_store_warning.t for perl 5.10.0

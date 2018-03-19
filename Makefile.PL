@@ -76,7 +76,6 @@ my %opts = (
 	},
     },
     PREREQ_PM => {
-	  'Storable' => 2.16,
 	  ( $^O eq 'MSWin32' ? ( 'File::Spec' => 3.31, ) : () ),
     },
     CONFLICTS => {
