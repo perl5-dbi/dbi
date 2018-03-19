@@ -122,6 +122,7 @@ _login(dbh, dbname, username, password, attribs=Nullsv)
 #elif defined(dbd_db_login6)
     ST(0) = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs) ? &PL_sv_yes : &PL_sv_no;
 #else
+    PERL_UNUSED_ARG(attribs);
     ST(0) = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p) ? &PL_sv_yes : &PL_sv_no;
 #endif
     }
