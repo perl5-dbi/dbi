@@ -67,7 +67,7 @@ if ($DBI::PurePerl) {
 
 # Create an empty config file to make sure that settings aren't
 # overloaded by /etc/dbiproxy.conf
-my $config_file = "dbiproxytst.conf";
+my $config_file = "./dbiproxytst.conf";
 unlink $config_file;
 (open(FILE, ">$config_file")  and
  (print FILE "{}\n")          and
