@@ -477,6 +477,7 @@ my $keeperr = { O=>0x0004 };
 	bind_param	=> { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout=> { U =>[4,5,'$parameter, \\$var, $maxlen, [, \%attr]'] },
 	execute		=> { U =>[1,0,'[@args]'], O=>0x1040 },
+	last_insert_id	=> { U =>[1,6,'[$catalog [,$schema [,$table_name [,$field_name [, \%attr ]]]]]'], O=>0x2800 },
 
 	bind_param_array  => { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout_array => { U =>[4,5,'$parameter, \\@var, $maxlen, [, \%attr]'] },
@@ -2029,6 +2030,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	return ($tuples, $rc_total);
     }
 
+    sub last_insert_id {
+        return shift->{Database}->last_insert_id(@_);
+    }
 
     sub fetchall_arrayref {	# ALSO IN Driver.xst
 	my ($sth, $slice, $max_rows) = @_;
@@ -6415,6 +6419,21 @@ each array ref in turn:
 
 The C<execute_for_fetch> method was added in DBI 1.38.
 
+=head3 C<last_insert_id>
+
+  $rv = $sth->last_insert_id();
+  $rv = $sth->last_insert_id($catalog, $schema, $table, $field);
+  $rv = $sth->last_insert_id($catalog, $schema, $table, $field, \%attr);
+
+Returns a value 'identifying' the row inserted by last execution of the
+statement C<$sth>, if possible.
+
+For some drivers the value may be 'identifying' the row inserted by the
+last executed statement, not by C<$sth>.
+
+See database handle method last_insert_id for all details.
+
+The C<last_insert_id> statement method was added in DBI 1.642.
 
 =head3 C<fetchrow_arrayref>
 

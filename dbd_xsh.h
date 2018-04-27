@@ -44,6 +44,7 @@ int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
 IV       dbd_st_rows_iv _((SV *sth, imp_sth_t *imp_sth));
 int      dbd_st_execute    _((SV *sth, imp_sth_t *imp_sth));
 IV       dbd_st_execute_iv _((SV *sth, imp_sth_t *imp_sth));
+SV      *dbd_st_last_insert_id _((SV *sth, imp_sth_t *imp_sth, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
 AV      *dbd_st_fetch   _((SV *sth, imp_sth_t *imp_sth));
 int      dbd_st_finish3 _((SV *sth, imp_sth_t *imp_sth, int from_destroy));
 int      dbd_st_finish  _((SV *sth, imp_sth_t *imp_sth)); /* deprecated */
