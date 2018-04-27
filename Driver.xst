@@ -278,7 +278,7 @@ do(dbh, statement, params = Nullsv)
 #ifdef dbd_db_last_insert_id
 
 void
-last_insert_id(dbh, catalog, schema, table, field, attr=Nullsv)
+last_insert_id(dbh, catalog=&PL_sv_undef, schema=&PL_sv_undef, table=&PL_sv_undef, field=&PL_sv_undef, attr=Nullsv)
     SV *        dbh
     SV *        catalog
     SV *        schema

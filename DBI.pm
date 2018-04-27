@@ -443,7 +443,7 @@ my $keeperr = { O=>0x0004 };
 	commit     	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
 	rollback   	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
 	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
-	last_insert_id	=> { U =>[5,6,'$catalog, $schema, $table_name, $field_name [, \%attr ]'], O=>0x2800 },
+	last_insert_id	=> { U =>[1,6,'[$catalog [,$schema [,$table_name [,$field_name [, \%attr ]]]]]'], O=>0x2800 },
 	preparse    	=> {  }, # XXX
 	prepare    	=> { U =>[2,3,'$statement [, \%attr]'],                    O=>0xA200 },
 	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'],   O=>0xA200 },
@@ -4504,6 +4504,7 @@ database handle.
 
 =head3 C<last_insert_id>
 
+  $rv = $dbh->last_insert_id();
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field);
   $rv = $dbh->last_insert_id($catalog, $schema, $table, $field, \%attr);
 
