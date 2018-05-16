@@ -278,7 +278,7 @@ do(dbh, statement, params = Nullsv)
 #ifdef dbd_db_last_insert_id
 
 void
-last_insert_id(dbh, catalog, schema, table, field, attr=Nullsv)
+last_insert_id(dbh, catalog=&PL_sv_undef, schema=&PL_sv_undef, table=&PL_sv_undef, field=&PL_sv_undef, attr=Nullsv)
     SV *        dbh
     SV *        catalog
     SV *        schema
@@ -637,6 +637,24 @@ execute_for_fetch(sth, fetch_tuple_sub, tuple_status = Nullsv)
 
 #endif
 
+
+#ifdef dbd_st_last_insert_id
+
+void
+last_insert_id(sth, catalog=&PL_sv_undef, schema=&PL_sv_undef, table=&PL_sv_undef, field=&PL_sv_undef, attr=Nullsv)
+    SV *        sth
+    SV *        catalog
+    SV *        schema
+    SV *        table
+    SV *        field
+    SV *        attr
+    CODE:
+    {
+    D_imp_sth(sth);
+    ST(0) = dbd_st_last_insert_id(sth, imp_sth, catalog, schema, table, field, attr);
+    }
+
+#endif
 
 
 void
