@@ -8423,16 +8423,6 @@ available, thanks to O'Reilly, at:
 
   http://www.oreilly.de/catalog/perldbiger/
 
-=head1 TRAINING
-
-References to DBI related training resources. No recommendation implied.
-
-  http://www.treepax.co.uk/
-  http://www.keller.com/dbweb/
-
-(If you offer professional DBI related training services,
-please send me your details so I can add them here.)
-
 =head1 OTHER RELATED WORK AND PERL MODULES
 
 =over 4
