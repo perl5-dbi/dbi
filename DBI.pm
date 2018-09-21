@@ -613,13 +613,14 @@ sub connect {
             (ref $pass and not defined Scalar::Util::blessed($pass)));
 
     # extract dbi:driver prefix from $dsn into $1
+    my $orig_dsn = $dsn;
     $dsn =~ s/^dbi:(\w*?)(?:\((.*?)\))?://i
 			or '' =~ /()/; # ensure $1 etc are empty if match fails
     my $driver_attrib_spec = $2 || '';
 
     # Set $driver. Old style driver, if specified, overrides new dsn style.
     $driver = $old_driver || $1 || $ENV{DBI_DRIVER}
-	or Carp::croak("Can't connect to data source '$dsn' "
+	or Carp::croak("Can't connect to data source '$orig_dsn' "
             ."because I can't work out what driver to use "
             ."(it doesn't seem to contain a 'dbi:driver:' prefix "
             ."and the DBI_DRIVER env var is not set)");
