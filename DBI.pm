@@ -4702,8 +4702,8 @@ yields a tree of nested hashes.
 
 If a row has the same key as an earlier row then it replaces the earlier row.
 
-If any method except C<fetchrow_hashref> fails, and L</RaiseError> is not set,
-C<selectall_hashref> will return C<undef>.  If C<fetchrow_hashref> fails and
+If any method except C<fetchall_hashref> fails, and L</RaiseError> is not set,
+C<selectall_hashref> will return C<undef>.  If C<fetchall_hashref> fails and
 L</RaiseError> is not set, then it will return with whatever data it
 has fetched thus far. $DBI::err should be checked to catch that.
 
