@@ -251,19 +251,27 @@ selectrow_arrayref(...)
 #endif
 
 
-#ifdef dbd_db_do4 /* deebeedee-deebee-doo, deebee-doobee-dah? */
+#if defined(dbd_db_do6) || defined(dbd_db_do4)
 
 void
-do(dbh, statement, params = Nullsv)
+do(dbh, statement, params = Nullsv, ...)
     SV *        dbh
-    char *      statement
+    SV *        statement
     SV *        params
     CODE:
     {
     D_imp_dbh(dbh);
     IV retval;
-    retval = dbd_db_do4(dbh, imp_dbh, statement, params); /* might be dbd_db_do4_iv via macro */
-    /* remember that dbd_db_do4 must return <= -2 for error     */
+#ifdef dbd_db_do6
+    /* items is a number of arguments passed to XSUB, supplied by xsubpp compiler */
+    /* ax contains stack base offset used by ST() macro, supplied by xsubpp compiler */
+    retval = dbd_db_do6(dbh, imp_dbh, statement, params, items-3, ax+3);
+#else
+    if (items > 3)
+        croak_xs_usage(cv,  "dbh, statement, params = Nullsv");
+    retval = dbd_db_do4(dbh, imp_dbh, SvPV_nolen(statement), params); /* might be dbd_db_do4_iv via macro */
+#endif
+    /* remember that dbd_db_do* must return <= -2 for error     */
     if (retval == 0)            /* ok with no rows affected     */
         XST_mPV(0, "0E0");      /* (true but zero)              */
     else if (retval < -1)       /* -1 == unknown number of rows */
