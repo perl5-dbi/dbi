@@ -88,7 +88,7 @@ C<foo_> is assumed.
 
     1;
 
-Tiny, eh? And all you have now is a DBD named foo which will is able to
+Tiny, eh? And all you have now is a DBD named foo which will be able to
 deal with temporary tables, as long as you use L<SQL::Statement>. In
 L<DBI::SQL::Nano> environments, this DBD can do nothing.
 
