@@ -44,6 +44,7 @@ ok(!$dbh->{AutoInactiveDestroy}, '... checking AutoInactiveDestroy attribute for
 ok(!$dbh->{PrintError},         '... checking PrintError attribute for dbh');
 ok( $dbh->{PrintWarn},          '... checking PrintWarn attribute for dbh');	# true because of perl -w above
 ok( $dbh->{RaiseError},         '... checking RaiseError attribute for dbh');
+ok(!$dbh->{RaiseWarn},          '... checking RaiseWarn attribute for dbh');
 ok(!$dbh->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for dbh');
 ok(!$dbh->{ChopBlanks},         '... checking ChopBlanks attribute for dbh');
 ok(!$dbh->{LongTruncOk},        '... checking LongTrunkOk attribute for dbh');
@@ -124,6 +125,7 @@ ok(!$drh->{AutoInactiveDestroy}, '... checking AutoInactiveDestroy attribute for
 ok(!$drh->{PrintError},         '... checking PrintError attribute for drh');
 ok( $drh->{PrintWarn},          '... checking PrintWarn attribute for drh');	# true because of perl -w above
 ok(!$drh->{RaiseError},         '... checking RaiseError attribute for drh');
+ok(!$dbh->{RaiseWarn},          '... checking RaiseWarn attribute for dbh');
 ok(!$drh->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for drh');
 ok(!$drh->{ChopBlanks},         '... checking ChopBlanks attribute for drh');
 ok(!$drh->{LongTruncOk},        '... checking LongTrunkOk attribute for drh');
@@ -193,6 +195,7 @@ ok(!$sth->{AutoInactiveDestroy}, '... checking AutoInactiveDestroy attribute for
 ok(!$sth->{PrintError},         '... checking PrintError attribute for sth');
 ok( $sth->{PrintWarn},          '... checking PrintWarn attribute for sth');
 ok( $sth->{RaiseError},         '... checking RaiseError attribute for sth');
+ok(!$dbh->{RaiseWarn},          '... checking RaiseWarn attribute for dbh');
 ok(!$sth->{ShowErrorStatement}, '... checking ShowErrorStatement attribute for sth');
 ok(!$sth->{ChopBlanks},         '... checking ChopBlanks attribute for sth');
 ok(!$sth->{LongTruncOk},        '... checking LongTrunkOk attribute for sth');

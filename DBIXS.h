@@ -287,6 +287,7 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_PrintWarn   0x100000      /* warn() on warning (err="0")          */
 #define DBIcf_Callbacks   0x200000      /* has Callbacks attribute hash         */
 #define DBIcf_AIADESTROY  0x400000      /* auto DBIcf_IADESTROY if pid changes  */
+#define DBIcf_RaiseWarn   0x800000      /* throw exception (croak) on warn      */
 /* NOTE: new flags may require clone() to be updated */
 
 #define DBIcf_INHERITMASK               /* what NOT to pass on to children */   \
