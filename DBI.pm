@@ -4681,6 +4681,8 @@ the rows directly as a list, rather than a reference to an array of rows.
 Note that if L</RaiseError> is not set then you can't tell the difference
 between returning no rows and an error. Using RaiseError is best practice.
 
+The C<selectall_array> method was added in DBI 1.635.
+
 =head3 C<selectall_hashref>
 
   $hash_ref = $dbh->selectall_hashref($statement, $key_field);
