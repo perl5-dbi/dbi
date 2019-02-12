@@ -55,23 +55,6 @@ static int use_xsbypass = 1; /* set in dbi_bootinit() */
 #endif
 #endif
 
-#ifndef CopFILEGV
-#  define CopFILEGV(cop) cop->cop_filegv
-#  define CopLINE(cop)   cop->cop_line
-#  define CopSTASH(cop)           cop->cop_stash
-#  define CopSTASHPV(cop)           (CopSTASH(cop) ? HvNAME(CopSTASH(cop)) : Nullch)
-#endif
-#ifndef PERL_GET_THX
-#define PERL_GET_THX ((void*)0)
-#endif
-#ifndef PerlProc_getpid
-#define PerlProc_getpid() getpid()
-extern Pid_t getpid (void);
-#endif
-#ifndef aTHXo_
-#define aTHXo_
-#endif
-
 #if (PERL_VERSION < 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION == 0))
 #define DBI_save_hv_fetch_ent
 #endif
@@ -82,13 +65,6 @@ extern Pid_t getpid (void);
  * This needs working around */
 #if defined(USE_ITHREADS) && (PERL_VERSION == 8) && (PERL_SUBVERSION < 9)
 #  define BROKEN_DUP_ANY_PTR
-#endif
-
-#ifndef warn_sv
-static void warn_sv(SV *sv) { dTHX; warn("%" SVf, SVfARG(sv)); }
-#endif
-#ifndef croak_sv
-static void croak_sv(SV *sv) { dTHX; sv_setsv(ERRSV, sv); croak(NULL); }
 #endif
 
 /* types of method name */
