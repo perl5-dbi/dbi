@@ -265,7 +265,8 @@ do(dbh, statement, params = Nullsv, ...)
 #ifdef dbd_db_do6
     /* items is a number of arguments passed to XSUB, supplied by xsubpp compiler */
     /* ax contains stack base offset used by ST() macro, supplied by xsubpp compiler */
-    retval = dbd_db_do6(dbh, imp_dbh, statement, params, items-3, ax+3);
+    I32 offset = (items >= 3) ? 3 : items;
+    retval = dbd_db_do6(dbh, imp_dbh, statement, params, items-offset, ax+offset);
 #else
     if (items > 3)
         croak_xs_usage(cv,  "dbh, statement, params = Nullsv");
