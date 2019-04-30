@@ -1598,6 +1598,7 @@ dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
     if (DBIc_is(imp_xxh, DBIcf_HandleError))    sv_catpv(flags,"HandleError ");
     if (DBIc_is(imp_xxh, DBIcf_RaiseError))     sv_catpv(flags,"RaiseError ");
     if (DBIc_is(imp_xxh, DBIcf_PrintError))     sv_catpv(flags,"PrintError ");
+    if (DBIc_is(imp_xxh, DBIcf_RaiseWarn))      sv_catpv(flags,"RaiseWarn ");
     if (DBIc_is(imp_xxh, DBIcf_PrintWarn))      sv_catpv(flags,"PrintWarn ");
     if (DBIc_is(imp_xxh, DBIcf_ShowErrorStatement))     sv_catpv(flags,"ShowErrorStatement ");
     if (DBIc_is(imp_xxh, DBIcf_AutoCommit))     sv_catpv(flags,"AutoCommit ");
@@ -2109,6 +2110,9 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "PrintError")) {
         DBIc_set(imp_xxh,DBIcf_PrintError, on);
     }
+    else if (strEQ(key, "RaiseWarn")) {
+        DBIc_set(imp_xxh,DBIcf_RaiseWarn, on);
+    }
     else if (strEQ(key, "PrintWarn")) {
         DBIc_set(imp_xxh,DBIcf_PrintWarn, on);
     }
@@ -2551,6 +2555,9 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
           case 'R':
             if (keylen==10 && strEQ(key, "RaiseError")) {
                 valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_RaiseError));
+            }
+            else if (keylen==9 && strEQ(key, "RaiseWarn")) {
+                valuesv = boolSV(DBIc_has(imp_xxh,DBIcf_RaiseWarn));
             }
             else if (keylen==12 && strEQ(key, "RowCacheSize")) {
                 valuesv = &PL_sv_undef;
@@ -3980,8 +3987,8 @@ XS(XS_DBI_dispatch)
         && (
                /* is an error and has RaiseError|PrintError|HandleError set     */
            (SvTRUE(err_sv) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
-               /* is a warn (not info) and has PrintWarn set            */
-        || (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_PrintWarn))
+               /* is a warn (not info) and has RaiseWarn|PrintWarn set          */
+        || (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_RaiseWarn|DBIcf_PrintWarn))
         )
     ) {
         SV *msg;
@@ -4042,7 +4049,7 @@ XS(XS_DBI_dispatch)
         }
 
         hook_svp = NULL;
-        if (    SvTRUE(err_sv)
+        if (   (SvTRUE(err_sv) || (is_warning && DBIc_has(imp_xxh, DBIcf_RaiseWarn)))
             &&  DBIc_has(imp_xxh, DBIcf_HandleError)
             && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleError",11,0))
             &&  hook_svp && SvOK(*hook_svp)
@@ -4093,9 +4100,11 @@ XS(XS_DBI_dispatch)
             dbi_profile(h, imp_xxh, statement_sv, imp_msv ? imp_msv : (SV*)cv,
                 profile_t1, dbi_time());
         }
-        if (is_warning) {
+        if (!hook_svp && is_warning) {
             if (DBIc_has(imp_xxh, DBIcf_PrintWarn))
                 warn_sv(msg);
+            if (DBIc_has(imp_xxh, DBIcf_RaiseWarn))
+                croak_sv(msg);
         }
         else if (!hook_svp && SvTRUE(err_sv)) {
             if (DBIc_has(imp_xxh, DBIcf_PrintError))

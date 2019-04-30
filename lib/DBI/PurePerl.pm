@@ -149,6 +149,7 @@ my %is_flag_attribute = map {$_ =>1 } qw(
 	PrintError
 	PrintWarn
 	RaiseError
+	RaiseWarn
 	ShowErrorStatement
 	Warn
 );
@@ -363,11 +364,11 @@ sub  _install_method {
 	&& ($call_depth <= 1 && !$h->{dbi_pp_parent}{dbi_pp_call_depth})
 	) {
 
-	    my($pe,$pw,$re,$he) = @{$h}{qw(PrintError PrintWarn RaiseError HandleError)};
+	    my($pe,$pw,$re,$rw,$he) = @{$h}{qw(PrintError PrintWarn RaiseError RaiseWarn HandleError)};
 	    my $msg;
 
 	    if ($err && ($pe || $re || $he)	# error
-	    or (!$err && length($err) && $pw)	# warning
+	    or (!$err && length($err) && ($pw || $rw))	# warning
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
 		    ? ($h->{'dbi_pp_last_method'}||$method_name) : $method_name;
@@ -388,6 +389,11 @@ sub  _install_method {
 		}
 		if ($err eq "0") { # is 'warning' (not info)
 		    carp $msg if $pw;
+		    my $do_croak = $rw;
+		    if ((my $subsub = $h->{'HandleError'}) && $do_croak) {
+			$do_croak = 0 if &$subsub($msg,$h,$ret[0]);
+		    }
+		    die $msg if $do_croak;
 		}
 		else {
 		    my $do_croak = 1;
@@ -498,7 +504,7 @@ sub _setup_handle {
     $h_inner->{"Kids"} = $h_inner->{"ActiveKids"} = 0;	# XXX not maintained
     if ($parent) {
 	foreach (qw(
-	    RaiseError PrintError PrintWarn HandleError HandleSetErr
+	    RaiseError PrintError RaiseWarn PrintWarn HandleError HandleSetErr
 	    Warn LongTruncOk ChopBlanks AutoCommit ReadOnly
 	    ShowErrorStatement FetchHashKeyName LongReadLen CompatMode
 	)) {

@@ -128,6 +128,7 @@ isa_ok($dbh, "DBI::db");
 
 $dbh->{RaiseError} = 1;
 $dbh->{PrintError} = 1;
+$dbh->{RaiseWarn}  = 0;
 $dbh->{PrintWarn}  = 1;
 
 # warning handler
@@ -218,6 +219,7 @@ is_deeply(\@handlewarn, [ 2, 1, 0 ], '... the @handlewarn array is (2, 1, 0)');
 
 $dbh->{RaiseError} = 0;
 $dbh->{PrintError} = 1;
+$dbh->{RaiseWarn}  = 1;
 
 # ----
 
@@ -334,6 +336,8 @@ SKIP: {
 
     $dbh->{examplep_set_err} = ""; # set information state
     cmp_ok($warn{warning}, '==', 0,      'no extra warning generated for set_err("") in STORE');
+
+    $dbh->{RaiseWarn} = 0;
 
     $dbh->{examplep_set_err} = "0"; # set warning state
     cmp_ok($warn{warning}, '==', 1,      'warning generated for set_err("0") in STORE');

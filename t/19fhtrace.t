@@ -156,7 +156,8 @@ package main;
 my $dbh = DBI->connect('dbi:ExampleP:dummy', '', '',
                            { PrintError => 0,
                              RaiseError => 1,
-                             PrintWarn => 1,
+                             PrintWarn => 0,
+                             RaiseWarn => 1,
                            });
 isa_ok( $dbh, 'DBI::db' );
 

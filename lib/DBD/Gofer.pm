@@ -32,7 +32,7 @@
         AutoInactiveDestroy
         PrintError PrintWarn
         Profile
-        RaiseError
+        RaiseError RaiseWarn
         RootClass
         ShowErrorStatement
         Taint TaintIn TaintOut
