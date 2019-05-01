@@ -6,6 +6,21 @@ DBI::Changes - List of significant changes to the DBI
 
 =cut
 
+=head2 Changes in DBI 1.643 - ...
+
+    Fix minor typo in documentation
+        thanks to Mohammad Anwar
+    Fix calling dbd_db_do6 API function
+        thanks to Pali
+    Fix documentationintroducing $dbh->selectall_array()
+        thanks to Pali
+    Update Devel::PPPort to version 3.43
+        thanks to Pali
+    Update Devel::PPPort to version 3.51
+        thanks to H.Merijn Brand.
+    Add new attribute RaiseWarn
+        thanks to Pali
+
 =head2 Changes in DBI 1.642 - 28th October 2018
 
     Fix '.' in @INC for proxy test under parallel load
