@@ -2280,6 +2280,15 @@ for example:
     print "@row\n";
   }
 
+For queries that are not executed many times at once, it is often cleaner
+to use the higher level select wrappers:
+
+  $row_hashref = $dbh->selectrow_hashref("SELECT foo, bar FROM table WHERE baz=?", undef, $baz);
+
+  $arrayref_of_row_hashrefs = $dbh->selectall_arrayref(
+    "SELECT foo, bar FROM table WHERE baz BETWEEN ? AND ?",
+    { Slice => {} }, $baz_min, $baz_max);
+
 The typical method call sequence for a I<non>-C<SELECT> statement is:
 
   prepare,
@@ -2297,10 +2306,13 @@ for example:
 	$sth->execute( $foo, $bar, $baz );
   }
 
-The C<do()> method can be used for non repeated I<non>-C<SELECT> statement
-(or with drivers that don't support placeholders):
+The C<do()> method is a wrapper of prepare and execute that can be simpler
+for non repeated I<non>-C<SELECT> statements (or with drivers that don't
+support placeholders):
 
   $rows_affected = $dbh->do("UPDATE your_table SET foo = foo + 1");
+
+  $rows_affected = $dbh->do("DELETE FROM table WHERE foo = ?", undef, $foo);
 
 To commit your changes to the database (when L</AutoCommit> is off):
 
