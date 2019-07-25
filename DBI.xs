@@ -5055,11 +5055,11 @@ connected(...)
 
 
 SV *
-preparse(dbh, statement, ps_accept, ps_return, foo=Nullch)
+preparse(dbh, statement, ps_return, ps_accept, foo=Nullch)
     SV *        dbh
     char *      statement
-    IV          ps_accept
     IV          ps_return
+    IV          ps_accept
     void        *foo
 
 
