@@ -1398,7 +1398,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     SV *dbih_imp_rv;
     SV *dbi_imp_data = Nullsv;
     SV **svp;
-    char imp_mem_name[300];
+    SV *imp_mem_name;
     HV  *imp_mem_stash;
     imp_xxh_t *imp;
     imp_xxh_t *parent_imp;
@@ -1425,10 +1425,9 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     if (mg_find(SvRV(h), DBI_MAGIC) != NULL)
         croak(errmsg, neatsvpv(orv,0), imp_class, "already a DBI (or ~magic) handle");
 
-    strcpy(imp_mem_name, imp_class);
-    strcat(imp_mem_name, "_mem");
-    if ( (imp_mem_stash = gv_stashpv(imp_mem_name, FALSE)) == NULL)
-        croak(errmsg, neatsvpv(orv,0), imp_mem_name, "unknown _mem package");
+    imp_mem_name = sv_2mortal(newSVpvf("%s_mem", imp_class));
+    if ( (imp_mem_stash = gv_stashsv(imp_mem_name, FALSE)) == NULL)
+        croak(errmsg, neatsvpv(orv,0), SvPVbyte_nolen(imp_mem_name), "unknown _mem package");
 
     if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
         dbi_imp_data = *svp;
