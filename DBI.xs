@@ -308,7 +308,7 @@ static void *
 malloc_using_sv(STRLEN len)
 {
     dTHX;
-    SV *sv = newSV(len);
+    SV *sv = newSV(len ? len : 1);
     void *p = SvPVX(sv);
     memzero(p, len);
     return p;
