@@ -22,7 +22,7 @@ SV      *dbd_take_imp_data _((SV *h, imp_xxh_t *imp_xxh, void *foo));
 AV	*dbd_dr_data_sources(SV *drh, imp_drh_t *imp_drh, SV *attrs);
 
 int      dbd_db_login6_sv _((SV *dbh, imp_dbh_t *imp_dbh, SV *dbname, SV *uid, SV *pwd, SV*attribs));
-int      dbd_db_login6 _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, char *pwd, SV*attribs));
+int      dbd_db_login6 _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, char *pwd, SV*attribs)); /* deprecated */
 int      dbd_db_login  _((SV *dbh, imp_dbh_t *imp_dbh, char *dbname, char *uid, char *pwd)); /* deprecated */
 /* Note: interface of dbd_db_do changed in v1.33 */
 /* Old prototype: dbd_db_do _((SV *sv, char *statement)); */
@@ -39,11 +39,11 @@ SV      *dbd_db_FETCH_attrib _((SV *dbh, imp_dbh_t *imp_dbh, SV *keysv));
 SV	*dbd_db_last_insert_id _((SV *dbh, imp_dbh_t *imp_dbh, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
 AV      *dbd_db_data_sources _((SV *dbh, imp_dbh_t *imp_dbh, SV *attr));
 
-int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs));
+int      dbd_st_prepare _((SV *sth, imp_sth_t *imp_sth, char *statement, SV *attribs)); /* deprecated */
 int      dbd_st_prepare_sv _((SV *sth, imp_sth_t *imp_sth, SV *statement, SV *attribs));
-int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth));
+int      dbd_st_rows    _((SV *sth, imp_sth_t *imp_sth)); /* deprecated */
 IV       dbd_st_rows_iv _((SV *sth, imp_sth_t *imp_sth));
-int      dbd_st_execute    _((SV *sth, imp_sth_t *imp_sth));
+int      dbd_st_execute    _((SV *sth, imp_sth_t *imp_sth)); /* deprecated */
 IV       dbd_st_execute_iv _((SV *sth, imp_sth_t *imp_sth));
 SV      *dbd_st_last_insert_id _((SV *sth, imp_sth_t *imp_sth, SV *catalog, SV *schema, SV *table, SV *field, SV *attr));
 AV      *dbd_st_fetch   _((SV *sth, imp_sth_t *imp_sth));
