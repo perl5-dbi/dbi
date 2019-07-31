@@ -5237,9 +5237,12 @@ bind_col(sth, col, ref, attribs=Nullsv)
     SV *        col
     SV *        ref
     SV *        attribs
+    PREINIT:
+    SV *ret;
     CODE:
     DBD_ATTRIBS_CHECK("bind_col", sth, attribs);
-    ST(0) = boolSV(dbih_sth_bind_col(sth, col, ref, attribs));
+    ret = boolSV(dbih_sth_bind_col(sth, col, ref, attribs));
+    ST(0) = ret;
     (void)cv;
 
 
@@ -5477,21 +5480,27 @@ void
 FETCH(h, keysv)
     SV *        h
     SV *        keysv
+    PREINIT:
+    SV *ret;
     CODE:
-    ST(0) = dbih_get_attr_k(h, keysv, 0);
+    ret = dbih_get_attr_k(h, keysv, 0);
+    ST(0) = ret;
     (void)cv;
 
 void
 DELETE(h, keysv)
     SV *        h
     SV *        keysv
+    PREINIT:
+    SV *ret;
     CODE:
     /* only private_* keys can be deleted, for others DELETE acts like FETCH */
     /* because the DBI internals rely on certain handle attributes existing  */
     if (strnEQ(SvPV_nolen(keysv),"private_",8))
-        ST(0) = hv_delete_ent((HV*)SvRV(h), keysv, 0, 0);
+        ret = hv_delete_ent((HV*)SvRV(h), keysv, 0, 0);
     else
-        ST(0) = dbih_get_attr_k(h, keysv, 0);
+        ret = dbih_get_attr_k(h, keysv, 0);
+    ST(0) = ret;
     (void)cv;
 
 
