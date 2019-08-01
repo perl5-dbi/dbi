@@ -4,7 +4,7 @@ $|=1;
 
 use strict;
 
-use Test::More tests => 53;
+use Test::More tests => 54;
 
 ## ----------------------------------------------------------------------------
 ## 02dbidrv.t - ...
@@ -19,6 +19,16 @@ use Test::More tests => 53;
 
 BEGIN {
     use_ok('DBI');
+}
+
+## DBI::_new_drh had an internal limit on a driver class name and crashed.
+SKIP: {
+    Test::More::skip "running DBI::PurePerl", 1 if $DBI::PurePerl;
+    eval {
+        DBI::_new_drh('DBD::Test::OverLong' . 'x' x 300,
+            { Name => 'Test', Version => 'Test', }, 42);
+    };
+    like($@, qr/unknown _mem package/, 'Overlong DBD class name is processed');
 }
 
 ## ----------------------------------------------------------------------------
