@@ -2887,8 +2887,12 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
         mg_get(profile); /* FETCH */
     if (!profile || !SvROK(profile)) {
         DBIc_set(imp_xxh, DBIcf_Profile, 0); /* disable */
-        if (SvOK(profile) && !PL_dirty)
-            warn("Profile attribute isn't a hash ref (%s,%ld)", neatsvpv(profile,0), (long)SvTYPE(profile));
+        if (!PL_dirty) {
+            if (!profile)
+                warn("Profile attribute does not exist");
+            else if (SvOK(profile))
+                warn("Profile attribute isn't a hash ref (%s,%ld)", neatsvpv(profile,0), (long)SvTYPE(profile));
+        }
         return &PL_sv_undef;
     }
 
