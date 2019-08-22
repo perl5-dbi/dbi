@@ -60,7 +60,7 @@ dbixs_revision(...)
 #ifdef dbd_discon_all
 
 # disconnect_all renamed and ALIAS'd to avoid length clash on VMS :-(
-void
+bool
 discon_all_(drh)
     SV *        drh
     ALIAS:
@@ -68,7 +68,9 @@ discon_all_(drh)
     CODE:
     D_imp_drh(drh);
     PERL_UNUSED_VAR(ix);
-    ST(0) = dbd_discon_all(drh, imp_drh) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_discon_all(drh, imp_drh);
+    OUTPUT:
+    RETVAL
 
 #endif /* dbd_discon_all */
 
@@ -102,7 +104,7 @@ data_sources(drh, attr = Nullsv)
 MODULE = DBD::~DRIVER~    PACKAGE = DBD::~DRIVER~::db
 
 
-void
+bool
 _login(dbh, dbname, username, password, attribs=Nullsv)
     SV *        dbh
     SV *        dbname
@@ -118,14 +120,16 @@ _login(dbh, dbname, username, password, attribs=Nullsv)
     char *p = (SvOK(password)) ? SvPV(password,lna) : (char*)"";
 #endif
 #ifdef dbd_db_login6_sv
-    ST(0) = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_login6_sv(dbh, imp_dbh, dbname, username, password, attribs);
 #elif defined(dbd_db_login6)
-    ST(0) = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_login6(dbh, imp_dbh, SvPV_nolen(dbname), u, p, attribs);
 #else
     PERL_UNUSED_ARG(attribs);
-    ST(0) = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_login( dbh, imp_dbh, SvPV_nolen(dbname), u, p);
 #endif
     }
+    OUTPUT:
+    RETVAL
 
 
 void
@@ -297,33 +301,38 @@ last_insert_id(dbh, catalog=&PL_sv_undef, schema=&PL_sv_undef, table=&PL_sv_unde
     CODE:
     {
     D_imp_dbh(dbh);
-    ST(0) = dbd_db_last_insert_id(dbh, imp_dbh, catalog, schema, table, field, attr);
+    SV *ret = dbd_db_last_insert_id(dbh, imp_dbh, catalog, schema, table, field, attr);
+    ST(0) = ret;
     }
 
 #endif
 
 
-void
+bool
 commit(dbh)
     SV *        dbh
     CODE:
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
         warn("commit ineffective with AutoCommit enabled");
-    ST(0) = dbd_db_commit(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_commit(dbh, imp_dbh);
+    OUTPUT:
+    RETVAL
 
 
-void
+bool
 rollback(dbh)
     SV *        dbh
     CODE:
     D_imp_dbh(dbh);
     if (DBIc_has(imp_dbh,DBIcf_AutoCommit) && DBIc_WARN(imp_dbh))
         warn("rollback ineffective with AutoCommit enabled");
-    ST(0) = dbd_db_rollback(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_rollback(dbh, imp_dbh);
+    OUTPUT:
+    RETVAL
 
 
-void
+bool
 disconnect(dbh)
     SV *        dbh
     CODE:
@@ -340,8 +349,10 @@ disconnect(dbh)
             SvPV(dbh,lna), (int)DBIc_ACTIVE_KIDS(imp_dbh), plural,
             "(either destroy statement handles or call finish on them before disconnecting)");
     }
-    ST(0) = dbd_db_disconnect(dbh, imp_dbh) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_db_disconnect(dbh, imp_dbh);
     DBIc_ACTIVE_off(imp_dbh);   /* ensure it's off, regardless */
+    OUTPUT:
+    RETVAL
 
 
 void
@@ -475,7 +486,7 @@ data_sources(dbh, attr = Nullsv)
 MODULE = DBD::~DRIVER~    PACKAGE = DBD::~DRIVER~::st
 
 
-void
+bool
 _prepare(sth, statement, attribs=Nullsv)
     SV *        sth
     SV *        statement
@@ -485,11 +496,13 @@ _prepare(sth, statement, attribs=Nullsv)
     D_imp_sth(sth);
     DBD_ATTRIBS_CHECK("_prepare", sth, attribs);
 #ifdef dbd_st_prepare_sv
-    ST(0) = dbd_st_prepare_sv(sth, imp_sth, statement, attribs) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_st_prepare_sv(sth, imp_sth, statement, attribs);
 #else
-    ST(0) = dbd_st_prepare(sth, imp_sth, SvPV_nolen(statement), attribs) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_st_prepare(sth, imp_sth, SvPV_nolen(statement), attribs);
 #endif
     }
+    OUTPUT:
+    RETVAL
 
 
 #ifdef dbd_st_rows
@@ -506,7 +519,7 @@ rows(sth)
 
 #ifdef dbd_st_bind_col
 
-void
+bool
 bind_col(sth, col, ref, attribs=Nullsv)
     SV *        sth
     SV *        col
@@ -531,20 +544,21 @@ bind_col(sth, col, ref, attribs=Nullsv)
         }
     }
     switch(dbd_st_bind_col(sth, imp_sth, col, ref, sql_type, attribs)) {
-    case 2:     ST(0) = &PL_sv_yes;        /* job done completely */
+    case 2:     RETVAL = TRUE;              /* job done completely */
                 break;
     case 1:     /* fallback to DBI default */
-                ST(0) = (DBIc_DBISTATE(imp_sth)->bind_col(sth, col, ref, attribs))
-                    ? &PL_sv_yes : &PL_sv_no;
+                RETVAL = DBIc_DBISTATE(imp_sth)->bind_col(sth, col, ref, attribs);
                 break;
-    default:    ST(0) = &PL_sv_no;         /* dbd_st_bind_col has called set_err */
+    default:    RETVAL = FALSE;             /* dbd_st_bind_col has called set_err */
                 break;
     }
     }
+    OUTPUT:
+    RETVAL
 
 #endif /* dbd_st_bind_col */
 
-void
+bool
 bind_param(sth, param, value, attribs=Nullsv)
     SV *        sth
     SV *        param
@@ -568,12 +582,13 @@ bind_param(sth, param, value, attribs=Nullsv)
             DBD_ATTRIB_GET_IV(attribs, "TYPE",4, svp, sql_type);
         }
     }
-    ST(0) = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, FALSE, 0)
-                ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, FALSE, 0);
     }
+    OUTPUT:
+    RETVAL
 
 
-void
+bool
 bind_param_inout(sth, param, value_ref, maxlen, attribs=Nullsv)
     SV *        sth
     SV *        param
@@ -603,9 +618,10 @@ bind_param_inout(sth, param, value_ref, maxlen, attribs=Nullsv)
             DBD_ATTRIB_GET_IV(attribs, "TYPE",4, svp, sql_type);
         }
     }
-    ST(0) = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, TRUE, maxlen)
-                ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_bind_ph(sth, imp_sth, param, value, sql_type, attribs, TRUE, maxlen);
     }
+    OUTPUT:
+    RETVAL
 
 
 void
@@ -641,7 +657,8 @@ execute_for_fetch(sth, fetch_tuple_sub, tuple_status = Nullsv)
     CODE:
     {
     D_imp_sth(sth);
-    ST(0) = dbd_st_execute_for_fetch(sth, imp_sth, fetch_tuple_sub, tuple_status);
+    SV *ret = dbd_st_execute_for_fetch(sth, imp_sth, fetch_tuple_sub, tuple_status);
+    ST(0) = ret;
     }
 
 #endif
@@ -660,7 +677,8 @@ last_insert_id(sth, catalog=&PL_sv_undef, schema=&PL_sv_undef, table=&PL_sv_unde
     CODE:
     {
     D_imp_sth(sth);
-    ST(0) = dbd_st_last_insert_id(sth, imp_sth, catalog, schema, table, field, attr);
+    SV *ret = dbd_st_last_insert_id(sth, imp_sth, catalog, schema, table, field, attr);
+    ST(0) = ret;
     }
 
 #endif
@@ -717,7 +735,7 @@ fetchall_arrayref(sth, slice=&PL_sv_undef, batch_row_count=&PL_sv_undef)
     }
 
 
-void
+bool
 finish(sth)
     SV *        sth
     CODE:
@@ -734,10 +752,12 @@ finish(sth)
         XSRETURN_YES;
     }
 #ifdef dbd_st_finish3
-    ST(0) = dbd_st_finish3(sth, imp_sth, 0) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_st_finish3(sth, imp_sth, 0);
 #else
-    ST(0) = dbd_st_finish(sth, imp_sth) ? &PL_sv_yes : &PL_sv_no;
+    RETVAL = dbd_st_finish(sth, imp_sth);
 #endif
+    OUTPUT:
+    RETVAL
 
 
 void
