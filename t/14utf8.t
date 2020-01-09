@@ -5,9 +5,6 @@ $|=1;
 use Test::More;
 use DBI;
 
-plan skip_all => "Requires perl 5.8"
-    unless $] >= 5.008;
-
 eval {
     require Storable;
     import Storable qw(dclone);

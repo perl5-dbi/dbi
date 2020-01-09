@@ -234,10 +234,6 @@ $dbh->trace(0);	# disable trace
     1 while unlink $tf;
     }
 
-SKIP: {
-	eval { require 5.008; };
-	skip "Layered I/O not available in Perl $^V", 13
-		if $@;
 ## ----------------------------------------------------------------------------
 # Then use layered filehandle
 #
@@ -299,8 +295,6 @@ $dbh->trace_msg("Next logline\n", 1);
 ok 1, "... logger: trace_msg after change trace output\n";
 
 close $fh;
-
-}
 
 1;
 
