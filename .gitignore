@@ -32,6 +32,7 @@ git-svn-modlist
 nytprof*
 pm_to_blib
 pod2htm*
+sandbox/
 t/zv[gpxn]*
 tmp/
 valgrind.log
