@@ -30,41 +30,45 @@ static int use_xsbypass = 1; /* set in dbi_bootinit() */
 #define DBI_MAGIC '~'
 
 /* HvMROMETA introduced in 5.9.5, but mro_meta_init not exported in 5.10.0 */
-#if (PERL_VERSION < 10)
-#  define MY_cache_gen(stash) 0
-#else
-#  if ((PERL_VERSION == 10) && (PERL_SUBVERSION == 0))
-#    define MY_cache_gen(stash) \
-        (HvAUX(stash)->xhv_mro_meta \
-        ? HvAUX(stash)->xhv_mro_meta->cache_gen \
-        : 0)
+#if (PERL_REVISION == 5)
+#  if (PERL_VERSION < 10)
+#    define MY_cache_gen(stash) 0
 #  else
-#    define MY_cache_gen(stash) HvMROMETA(stash)->cache_gen
+#    if ((PERL_VERSION == 10) && (PERL_SUBVERSION == 0))
+#      define MY_cache_gen(stash) \
+          (HvAUX(stash)->xhv_mro_meta \
+          ? HvAUX(stash)->xhv_mro_meta->cache_gen \
+          : 0)
+#    else
+#      define MY_cache_gen(stash) HvMROMETA(stash)->cache_gen
+#    endif
 #  endif
 #endif
 
 /* If the tests fail with errors about 'setlinebuf' then try    */
 /* deleting the lines in the block below except the setvbuf one */
 #ifndef PerlIO_setlinebuf
-#ifdef HAS_SETLINEBUF
-#define PerlIO_setlinebuf(f)        setlinebuf(f)
-#else
-#ifndef USE_PERLIO
-#define PerlIO_setlinebuf(f)        setvbuf(f, Nullch, _IOLBF, 0)
-#endif
-#endif
+# ifdef HAS_SETLINEBUF
+#  define PerlIO_setlinebuf(f)        setlinebuf(f)
+# else
+#  ifndef USE_PERLIO
+#   define PerlIO_setlinebuf(f)        setvbuf(f, Nullch, _IOLBF, 0)
+#  endif
+# endif
 #endif
 
-#if (PERL_VERSION < 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION == 0))
-#define DBI_save_hv_fetch_ent
-#endif
+#if (PERL_REVISION == 5)
+# if (PERL_VERSION < 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION == 0))
+#  define DBI_save_hv_fetch_ent
+# endif
 
 /* prior to 5.8.9: when a CV is duped, the mg dup method is called,
  * then *afterwards*, any_ptr is copied from the old CV to the new CV.
  * This wipes out anything which the dup method did to any_ptr.
  * This needs working around */
-#if defined(USE_ITHREADS) && (PERL_VERSION == 8) && (PERL_SUBVERSION < 9)
+# if defined(USE_ITHREADS) && (PERL_VERSION == 8) && (PERL_SUBVERSION < 9)
 #  define BROKEN_DUP_ANY_PTR
+# endif
 #endif
 
 /* types of method name */
@@ -236,8 +240,10 @@ static MGVTBL dbi_ima_vtbl = { 0, 0, 0, 0, dbi_ima_free,
 #else
                                     0
 #endif
-#if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION >= 9))
+#if (PERL_REVISION == 5)
+# if (PERL_VERSION > 8) || ((PERL_VERSION == 8) && (PERL_SUBVERSION >= 9))
                                     , 0
+# endif
 #endif
                                     };
 
@@ -2976,11 +2982,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                             /* just using SvPV_nolen(method) sometimes causes an error: */
                             /* "Can't coerce GLOB to string" so we use gv_efullname()   */
                             SV *tmpsv = sv_2mortal(newSVpv("",0));
-#if (PERL_VERSION < 6)
-                            gv_efullname(tmpsv, (GV*)method);
-#else
                             gv_efullname4(tmpsv, (GV*)method, "", TRUE);
-#endif
                             p = SvPV_nolen(tmpsv);
                             if (*p == '*') ++p; /* skip past leading '*' glob sigil */
                         }
@@ -5352,9 +5354,6 @@ fetchrow_hashref(sth, keyattrib=Nullch)
     }
     else {
         RETVAL = &PL_sv_undef;
-#if (PERL_VERSION < 4) || ((PERL_VERSION == 4) && (PERL_SUBVERSION <= 4))
-        RETVAL = newSV(0); /* mutable undef for 5.004_04 */
-#endif
     }
     SvREFCNT_dec(ka_rv);        /* since we created it          */
     OUTPUT:
