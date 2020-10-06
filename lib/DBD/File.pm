@@ -9,7 +9,7 @@
 #
 #  The original author is Jochen Wiedmann.
 #
-#  Copyright (C) 2009-2013 by H.Merijn Brand & Jens Rehsack
+#  Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
 #  Copyright (C) 2004 by Jeff Zucker
 #  Copyright (C) 1998 by Jochen Wiedmann
 #
@@ -1430,7 +1430,7 @@ The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
- Copyright (C) 2009-2013 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
  Copyright (C) 2004-2009 by Jeff Zucker
  Copyright (C) 1998-2004 by Jochen Wiedmann
 
