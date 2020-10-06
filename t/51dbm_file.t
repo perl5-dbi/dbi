@@ -15,6 +15,27 @@ use DBI;
 
 do "./t/lib.pl";
 
+{
+    # test issue reported in RT#99508
+    my @msg;
+    eval {
+	local $SIG{__DIE__} = sub { push @msg, @_ };
+	my $dbh = DBI->connect ("dbi:DBM:f_dir=./hopefully-doesnt-existst;sql_identifier_case=1;RaiseError=1");
+    };
+    like ("@msg", qr{.*hopefully-doesnt-existst.*}, "Cannot open from non-existing directory with attributes in DSN");
+
+    @msg = ();
+    eval {
+	local $SIG{__DIE__} = sub { push @msg, @_ };
+	my $dbh = DBI->connect ("dbi:DBM:", , undef, undef, {
+	    f_dir               => "./hopefully-doesnt-existst",
+	    sql_identifier_case => 1,
+	    RaiseError          => 1,
+	});
+    };
+    like ("@msg", qr{.*hopefully-doesnt-existst}, "Cannot open from non-existing directory with attributes in HASH");
+}
+
 my $dir = test_dir();
 
 my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
@@ -22,6 +43,8 @@ my $dbh = DBI->connect( 'dbi:DBM:', undef, undef, {
       sql_identifier_case => 1,      # SQL_IC_UPPER
     }
 );
+
+ok( $dbh, "Connect with driver attributes in hash" );
 
 ok( $dbh->do(q/drop table if exists FRED/), 'drop table' );
 
