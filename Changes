@@ -11,7 +11,7 @@ DBI::Changes - List of significant changes to the DBI
     Update Devel::PPPort,
         thanks to H.Merijn Brand
     Fix CVE-2014-10401 - f_dir might not exist in DBD::File connections
-	thenks to Jens Rehsack
+	thanks to Jens Rehsack & H.Merijn Brand
 
 =head2 Changes in DBI 1.643 - 31st January 2020
 

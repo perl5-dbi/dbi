@@ -1062,6 +1062,11 @@ directory) when the dbh attribute is set.
 
   f_dir => "/data/foo/csv",
 
+If C<f_dir> is set to a non-existing location, the connection will fail.
+See CVE-2014-10401 for reasoning. Because of this, folders to use cannot
+be created after the connection, but must exist before the connection is
+initiated.
+
 See L<KNOWN BUGS AND LIMITATIONS>.
 
 =head4 f_dir_search
