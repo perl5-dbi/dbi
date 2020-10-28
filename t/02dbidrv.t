@@ -35,7 +35,7 @@ SKIP: {
 ## create a Test Driver (DBD::Test)
 
 ## main Test Driver Package
-{   
+{
     package DBD::Test;
 
     use strict;
@@ -45,9 +45,9 @@ SKIP: {
 
     sub driver {
         return $drh if $drh;
-        
+
         Test::More::pass('... DBD::Test->driver called to getnew Driver handle');
-        
+
         my($class, $attr) = @_;
         $class = "${class}::dr";
         ($drh) = DBI::_new_drh($class, {
@@ -56,46 +56,46 @@ SKIP: {
                         },
                     77  # 'implementors data'
                     );
-            
+
         Test::More::ok($drh, "... new Driver handle ($drh) created successfully");
         Test::More::isa_ok($drh, 'DBI::dr');
-        
+
         return $drh;
     }
 }
 
 ## Test Driver
-{   
+{
     package DBD::Test::dr;
-    
+
     use strict;
     use warnings;
-    
+
     $DBD::Test::dr::imp_data_size = 0;
-    
+
     Test::More::cmp_ok($DBD::Test::dr::imp_data_size, '==', 0, '... check DBD::Test::dr::imp_data_size to avoid typo');
 
     sub DESTROY { undef }
 
     sub data_sources {
         my ($h) = @_;
-        
+
         Test::More::ok($h, '... Driver object passed to data_sources');
         Test::More::isa_ok($h, 'DBI::dr');
         Test::More::ok(!tied $h, '... Driver object is not tied');
-        
+
         return ("dbi:Test:foo", "dbi:Test:bar");
     }
 }
 
 ## Test db package
-{   
+{
     package DBD::Test::db;
-    
+
     use strict;
-    
+
     $DBD::Test::db::imp_data_size = 0;
-    
+
     Test::More::cmp_ok($DBD::Test::db::imp_data_size, '==', 0, '... check DBD::Test::db::imp_data_size to avoid typo');
 
     sub do {
@@ -106,35 +106,35 @@ SKIP: {
         Test::More::ok(!tied $h, '... Database object is not tied');
 
         my $drh_i = $h->{Driver};
-        
+
         Test::More::ok($drh_i, '... got Driver object from Database object with Driver attribute');
         Test::More::isa_ok($drh_i, "DBI::dr");
         Test::More::ok(!tied %{$drh_i}, '... Driver object is not tied');
 
         my $drh_o = $h->FETCH('Driver');
-        
+
         Test::More::ok($drh_o, '... got Driver object from Database object by FETCH-ing Driver attribute');
         Test::More::isa_ok($drh_o, "DBI::dr");
         SKIP: {
             Test::More::skip "running DBI::PurePerl", 1 if $DBI::PurePerl;
             Test::More::ok(tied %{$drh_o}, '... Driver object is not tied');
         }
-        
+
         # return this to make our test pass
         return 1;
     }
 
-    sub data_sources {  
+    sub data_sources {
         my ($dbh, $attr) = @_;
         my @ds = $dbh->SUPER::data_sources($attr);
-        
+
         Test::More::is_deeply((
                 \@ds,
                 [ 'dbi:Test:foo', 'dbi:Test:bar' ]
-                ), 
+                ),
             '... checking fetched datasources from Driver'
             );
-        
+
         push @ds, "dbi:Test:baz";
         return @ds;
     }
@@ -168,23 +168,23 @@ is_deeply((
 
 SKIP: {
     skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
-    
+
     cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids');
 }
 
 # create scope to test $dbh DESTROY behaviour
-do {                
+do {
 
     my $dbh = $drh->connect;
-    
+
     ok($dbh, '... got a database handle from calling $drh->connect');
     isa_ok($dbh, 'DBI::db');
 
     SKIP: {
         skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
-    
+
         cmp_ok($drh->{Kids}, '==', 1, '... this Driver does not yet have any Kids');
-    }  
+    }
 
     my @ds2 = $dbh->data_sources();
     is_deeply((
@@ -192,7 +192,7 @@ do {
         [ 'dbi:Test:foo', 'dbi:Test:bar', 'dbi:Test:baz' ]
         ), '... got correct datasources from $dbh->data_sources()'
     );
-    
+
     ok($dbh->do('dummy'), '... this will trigger more driver internal tests above in DBD::Test::db');
 
     $dbh->disconnect;
@@ -207,7 +207,7 @@ do {
 
 SKIP: {
     skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
-    
+
     cmp_ok($drh->{Kids}, '==', 0, '... this Driver does not yet have any Kids')
         or $drh->dump_handle("bad Kids",3);
 }
@@ -231,8 +231,8 @@ is($DBI::state, 'IM999', '... checking $DBI::state');
 
 SKIP: {
     skip "using DBI::PurePerl", 1 if $DBI::PurePerl;
-    eval { 
-        $DBI::rows = 1 
+    eval {
+        $DBI::rows = 1
     };
     like($@, qr/Can't modify/, '... trying to assign to $DBI::rows should throw an excpetion'); #'
 }
@@ -250,8 +250,8 @@ SKIP: {
     skip "using DBI::PurePerl", 5 if $DBI::PurePerl;
     my $can = $drh->can('FETCH');
 
-    ok($can, '... $drh can FETCH'); 
-    is(ref($can), "CODE", '... and it returned a proper CODE ref'); 
+    ok($can, '... $drh can FETCH');
+    is(ref($can), "CODE", '... and it returned a proper CODE ref');
 
     my $name = $can->($drh, "Name");
 
