@@ -112,8 +112,9 @@ sub connect
     #
     # Parsing on our own similar to parse_dsn to find attributes in 'dbname' parameter.
     if ($dbname) {
-	my @attrs = split /;/ => $dbname;
-	my $attr_hash = { map { split /\s*=>?\s*|\s*,\s*/, $_} @attrs };
+	my $attr_hash = {
+	    map { (m/^\s* (\S+) \s*(?: =>? | , )\s* (\S*) \s*$/x) }
+	    split m/;/ => $dbname };
 	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
 	    my $msg = "No such directory '$attr_hash->{f_dir}";
 	    $drh->set_err (2, $msg);
