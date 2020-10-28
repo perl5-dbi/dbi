@@ -18,21 +18,25 @@ do "./t/lib.pl";
 {
     # test issue reported in RT#99508
     my @msg;
-    eval {
-	local $SIG{__DIE__} = sub { push @msg, @_ };
-	my $dbh = DBI->connect ("dbi:DBM:f_dir=./hopefully-doesnt-existst;sql_identifier_case=1;RaiseError=1");
+    my $dbh = eval {
+	local $SIG{__WARN__} = sub { push @msg, @_ };
+	local $SIG{__DIE__}  = sub { push @msg, @_ };
+	DBI->connect ("dbi:DBM:f_dir=./hopefully-doesnt-existst;sql_identifier_case=1;RaiseError=1");
     };
+    is ($dbh, undef, "Connect failed");
     like ("@msg", qr{.*hopefully-doesnt-existst.*}, "Cannot open from non-existing directory with attributes in DSN");
 
     @msg = ();
-    eval {
-	local $SIG{__DIE__} = sub { push @msg, @_ };
-	my $dbh = DBI->connect ("dbi:DBM:", , undef, undef, {
+    $dbh = eval {
+	local $SIG{__WARN__} = sub { push @msg, @_ };
+	local $SIG{__DIE__}  = sub { push @msg, @_ };
+	DBI->connect ("dbi:DBM:", , undef, undef, {
 	    f_dir               => "./hopefully-doesnt-existst",
 	    sql_identifier_case => 1,
 	    RaiseError          => 1,
 	});
     };
+    is ($dbh, undef, "Connect failed");
     like ("@msg", qr{.*hopefully-doesnt-existst}, "Cannot open from non-existing directory with attributes in HASH");
 }
 
