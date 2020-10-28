@@ -9,7 +9,7 @@
 #
 #  The original author is Jochen Wiedmann.
 #
-#  Copyright (C) 2009-2013 by H.Merijn Brand & Jens Rehsack
+#  Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
 #  Copyright (C) 2004 by Jeff Zucker
 #  Copyright (C) 1998 by Jochen Wiedmann
 #
@@ -109,7 +109,11 @@ sub connect
     # We do not (yet) care about conflicting attributes here
     # my $dbh = DBI->connect ("dbi:CSV:f_dir=test", undef, undef, { f_dir => "text" });
     # will test here that both test and text should exist
-    if (my $attr_hash = (DBI->parse_dsn ($dbname))[3]) {
+    #
+    # Parsing on our own similar to parse_dsn to find attributes in 'dbname' parameter.
+    if ($dbname) {
+	my @attrs = split /;/ => $dbname;
+	my $attr_hash = { map { split /\s*=>?\s*|\s*,\s*/, $_} @attrs };
 	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
 	    my $msg = "No such directory '$attr_hash->{f_dir}";
 	    $drh->set_err (2, $msg);
@@ -120,7 +124,6 @@ sub connect
     if ($attr and defined $attr->{f_dir} && ! -d $attr->{f_dir}) {
 	my $msg = "No such directory '$attr->{f_dir}";
 	$drh->set_err (2, $msg);
-	$attr->{RaiseError} and croak $msg;
 	return;
 	}
 
@@ -1430,7 +1433,7 @@ The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
- Copyright (C) 2009-2013 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
  Copyright (C) 2004-2009 by Jeff Zucker
  Copyright (C) 1998-2004 by Jochen Wiedmann
 
