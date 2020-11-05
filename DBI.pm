@@ -173,11 +173,11 @@ related to the DBI can be found at L<https://metacpan.org/search?q=DBI>.
 
 use Scalar::Util ();
 use Carp();
-use DynaLoader ();
+use XSLoader ();
 use Exporter ();
 
 BEGIN {
-@ISA = qw(Exporter DynaLoader);
+@ISA = qw(Exporter);
 
 # Make some utility functions available if asked for
 @EXPORT    = ();		    # we export nothing by default
@@ -269,12 +269,12 @@ $DBI::stderr = 2_000_000_000; # a very round number below 2**31
 # then you haven't installed the DBI correctly. Read the README
 # then install it again.
 if ( $ENV{DBI_PUREPERL} ) {
-    eval { bootstrap DBI $XS_VERSION } if       $ENV{DBI_PUREPERL} == 1;
+    eval { XSLoader::load('DBI', $XS_VERSION) } if       $ENV{DBI_PUREPERL} == 1;
     require DBI::PurePerl  if $@ or $ENV{DBI_PUREPERL} >= 2;
     $DBI::PurePerl ||= 0; # just to silence "only used once" warnings
 }
 else {
-    bootstrap DBI $XS_VERSION;
+    XSLoader::load( 'DBI', $XS_VERSION);
 }
 
 $EXPORT_TAGS{preparse_flags} = [ grep { /^DBIpp_\w\w_/ } keys %{__PACKAGE__."::"} ];
