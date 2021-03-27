@@ -4558,7 +4558,7 @@ and your driver does not need them, then use C<undef> for each.
 There are several caveats to be aware of with this method if you want
 to use it for portable applications:
 
-B<*> For some drivers the value may only available immediately after
+B<*> For some drivers the value may only be available immediately after
 the insert statement has executed (e.g., mysql, Informix).
 
 B<*> For some drivers the $catalog, $schema, $table, and $field parameters
