@@ -2167,11 +2167,6 @@ You can also look for information at:
 L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=DBI>
 L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=SQL-Statement>
 
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/DBI>
-L<http://annocpan.org/dist/SQL-Statement>
-
 =item * CPAN Ratings
 
 L<http://cpanratings.perl.org/d/DBI>
