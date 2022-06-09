@@ -4707,7 +4707,7 @@ See L</fetchall_arrayref> method for more details.
   @ary = $dbh->selectall_array($statement, \%attr);
   @ary = $dbh->selectall_array($statement, \%attr, @bind_values);
 
-This is a convenience wrapper around L<selectall_arrayref> that returns
+This is a convenience wrapper around L</selectall_arrayref> that returns
 the rows directly as a list, rather than a reference to an array of rows.
 
 Note that if L</RaiseError> is not set then you can't tell the difference
