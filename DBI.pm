@@ -121,23 +121,22 @@ DBI IRC Channel: #dbi on irc.perl.org (L<irc://irc.perl.org/#dbi>)
 
 =head3 Online
 
-StackOverflow has a DBI tag L<http://stackoverflow.com/questions/tagged/dbi>
+StackOverflow has a DBI tag L<https://stackoverflow.com/questions/tagged/dbi>
 with over 800 questions.
 
-The DBI home page at L<http://dbi.perl.org/> and the DBI FAQ
-at L<http://faq.dbi-support.com/> may be worth a visit.
-They include links to other resources, but I<are rather out-dated>.
+The DBI home page at L<https://dbi.perl.org/> might be worth a visit.
+It includes links to other resources, but I<is rather out-dated>.
 
 =head3 Reporting a Bug
 
 If you think you've found a bug then please read
 "How to Report Bugs Effectively" by Simon Tatham:
-L<http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
+L<https://www.chiark.greenend.org.uk/~sgtatham/bugs.html>.
 
 If you think you've found a memory leak then read L</Memory Leaks>.
 
 Your problem is most likely related to the specific DBD driver module you're
-using. If that's the case then click on the 'Bugs' link on the L<http://metacpan.org>
+using. If that's the case then click on the 'Bugs' link on the L<https://metacpan.org>
 page for your driver. Only submit a bug report against the DBI itself if you're
 sure that your issue isn't related to the driver you're using.
 
