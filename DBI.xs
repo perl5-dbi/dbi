@@ -2940,7 +2940,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 PUTBACK;
                 SAVE_DEFSV; /* local($_) = $statement */
                 DEFSV_set(statement_sv);
-                items = call_sv(code_sv, G_ARRAY);
+                items = call_sv(code_sv, G_LIST);
                 SPAGAIN;
                 SP -= items ;
                 ax = (SP - PL_stack_base) + 1 ;
@@ -3600,7 +3600,7 @@ XS(XS_DBI_dispatch)
             PUSHs( ST(i) );
         }
         PUTBACK;
-        outitems = call_sv(code, G_ARRAY); /* call the callback code */
+        outitems = call_sv(code, G_LIST); /* call the callback code */
         MSPAGAIN;
 
         /* The callback code can undef $_ to indicate to skip dispatch */
@@ -3867,7 +3867,7 @@ XS(XS_DBI_dispatch)
             PerlIO_printf(logfp,"%s)", (items > 3) ? ", ..." : "");
         }
 
-        if (gimme & G_ARRAY)
+        if (gimme & G_LIST)
              PerlIO_printf(logfp,"= (");
         else PerlIO_printf(logfp,"=");
         for(i=0; i < outitems; ++i) {
@@ -3894,7 +3894,7 @@ XS(XS_DBI_dispatch)
                     PerlIO_printf(logfp, "%ldkeys", (long)HvKEYS(SvRV(s)));
             }
         }
-        if (gimme & G_ARRAY) {
+        if (gimme & G_LIST) {
             PerlIO_printf(logfp," ) [%d items]", outitems);
         }
         if (is_fetch && row_count) {
@@ -5374,7 +5374,7 @@ fetch(sth)
     PUSHMARK(sp);
     XPUSHs(sth);
     PUTBACK;
-    num_fields = call_method("fetchrow", G_ARRAY);      /* XXX change the name later */
+    num_fields = call_method("fetchrow", G_LIST);      /* XXX change the name later */
     SPAGAIN;
     if (num_fields == 0) {
         ST(0) = &PL_sv_undef;
