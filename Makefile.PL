@@ -102,8 +102,8 @@ my %opts = (
 $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 
 if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
-    if ($gccversion =~ m/ Clang \d/) {
-      warn "WARNING: This is not GCC, but $gccversion. Not checking compiler version.\n";
+    if ($gccversion =~ m/ clang ([0-9][-0-9.]*)/i) {
+      print "Your perl was compiled with Clang (version $1). As this is not GCC, version checking is skipped.\n";
       # https://clang.llvm.org/docs/DiagnosticsReference.html
       $opts{DEFINE} .= ' -W -Wall -Wpointer-arith -Wbad-function-cast';
       $opts{DEFINE} .= ' -Wno-comment -Wno-sign-compare -Wno-cast-qual';
