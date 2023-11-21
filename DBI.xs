@@ -3193,7 +3193,7 @@ XS(XS_DBI_dispatch)
     SV **tmp_svp;
     SV **hook_svp = 0;
     MAGIC *mg;
-    int gimme = GIMME;
+    I32 gimme = GIMME_V;
     I32 trace_flags = DBIS->debug;      /* local copy may change during dispatch */
     I32 trace_level = (trace_flags & DBIc_TRACE_LEVEL_MASK);
     int is_DESTROY;
@@ -4623,7 +4623,7 @@ _new_handle(class, parent, attr_ref, imp_datasv, imp_class)
     sv_2mortal(outer_ref);
     EXTEND(SP, 2);
     PUSHs(outer_ref);
-    if (GIMME != G_SCALAR) {
+    if (GIMME_V != G_SCALAR) {
         PUSHs(attr_ref);
     }
 
@@ -4660,7 +4660,7 @@ _handles(sv)
     (void)cv;
     EXTEND(SP, 2);
     PUSHs(oh);  /* returns outer handle then inner */
-    if (GIMME != G_SCALAR) {
+    if (GIMME_V != G_SCALAR) {
         PUSHs(ih);
     }
 
@@ -5024,7 +5024,7 @@ FETCH(sv)
                 meth, meth, HvNAME(imp_stash));
         }
         PUSHMARK(mark);  /* reset mark (implies one arg as we were called with one arg?) */
-        call_sv((SV*)GvCV(imp_gv), GIMME);
+        call_sv((SV*)GvCV(imp_gv), GIMME_V);
         SPAGAIN;
 #ifdef DBI_save_hv_fetch_ent
         PL_hv_fetch_ent_mh = save_mh;

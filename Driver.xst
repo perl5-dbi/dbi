@@ -231,13 +231,13 @@ selectrow_arrayref(...)
     /* --- fetchrow_arrayref --- */
     row_av = dbd_st_fetch(sth, imp_sth);
     if (!row_av) {
-        if (GIMME == G_SCALAR)
+        if (GIMME_V == G_SCALAR)
             PUSHs(&PL_sv_undef);
     }
     else if (is_selectrow_array) {
         int i;
         int num_fields = AvFILL(row_av)+1;
-        if (GIMME == G_SCALAR)
+        if (GIMME_V == G_SCALAR)
             num_fields = 1; /* return just first field */
         EXTEND(sp, num_fields);
         for(i=0; i < num_fields; ++i) {
