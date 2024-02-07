@@ -3593,6 +3593,13 @@ XS(XS_DBI_dispatch)
 # endif
         DEFSV_set(temp_defsv);
 
+        /* We probably localized a member of imp_xxh earlier (call_depth) so
+         * we need to keep a reference to its inner handle owner until the
+         * end of scope so that it can be restored if our callback swaps out
+         * the handle and tries to garbage collect it.
+         */
+        sv_2mortal(newRV_inc(h));
+
         EXTEND(SP, items+1);
         PUSHMARK(SP);
         PUSHs(orig_h);                  /* push outer handle, then others params */
@@ -3602,6 +3609,24 @@ XS(XS_DBI_dispatch)
         PUTBACK;
         outitems = call_sv(code, G_ARRAY); /* call the callback code */
         MSPAGAIN;
+
+        /* Callback may have swapped out the inner handle from underneath us.
+         * If so, we need to refresh our vars (h, mg, imp_xxh) before dispatch.
+         */
+        {
+            MAGIC *outer_magic = SvMAGIC(SvRV(orig_h));
+            if (outer_magic->mg_type != 'P')
+                outer_magic = mg_find(SvRV(orig_h), 'P');
+            if (outer_magic != mg) {
+                SV    *inner_handle = outer_magic->mg_obj;
+                MAGIC *inner_magic  = SvMAGIC(SvRV(inner_handle));
+                if (inner_magic->mg_type != DBI_MAGIC)
+                    inner_magic = mg_find(SvRV(inner_handle), DBI_MAGIC);
+                mg = outer_magic;
+                h  = ST(0) = inner_handle;
+                imp_xxh = (imp_xxh_t *)inner_magic->mg_ptr;
+            }
+        }
 
         /* The callback code can undef $_ to indicate to skip dispatch */
         skip_dispatch = !SvOK(DEFSV);
@@ -5136,7 +5161,7 @@ take_imp_data(h)
                 PUSHMARK(sp);
                 XPUSHs(*hp);
                 PUTBACK;
-                call_method("finish", G_VOID);
+                call_method("finish", G_VOID|G_DISCARD);
                 SPAGAIN;
                 PUTBACK;
                 sv_unmagic(SvRV(*hp), 'P'); /* untie */

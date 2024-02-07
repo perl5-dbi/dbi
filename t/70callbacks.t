@@ -232,6 +232,27 @@ my $stress_sth = $stress_dbh->prepare("select 1");
 $stress_sth->{Callbacks}{execute} = sub { return; };
 $stress_sth->execute(@params);
 
+# Test that a db handle can be swapped out for a newly-created
+# one from inside a callback with no ill effects.
+{
+    my $dbh = DBI->connect($dsn);
+    my $old = tied %$dbh;
+    my $cb  = sub {
+        my ($dbh) = @_;
+        my $new_dbh = DBI->connect($dsn);
+        $dbh->swap_inner_handle($new_dbh);
+        return;
+    };
+    $dbh->{Callbacks} = { ping => $cb };
+    no warnings qw/once redefine/;
+    local *DBD::ExampleP::db::ping = sub {
+        my ($new) = @_;
+        isnt $old, $new, 'inner handle replaced inside method';
+    };
+    $dbh->ping();
+    my $new = tied %$dbh;
+    isnt $old, $new, 'inner handle replaced after method';
+}
 
 done_testing();
 
