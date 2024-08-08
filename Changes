@@ -16,6 +16,8 @@ DBI::Changes - List of significant changes to the DBI
         thanks to Daniël van Eeden
     Upgrade GIMME to GIMME_V (
         thanks to Daniël van Eeden
+    Do not check with JSON::XS with perl-5.022 and later
+        thanks to H.Merijn Brand
 
 =head2 Changes in DBI 1.643 - 31st January 2020
 
