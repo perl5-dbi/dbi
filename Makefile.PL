@@ -115,7 +115,7 @@ if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
       }
     } else {
       warn "WARNING: Your GNU C $gccversion compiler is very old. Please upgrade it and rebuild perl.\n"
-          if $gccversion =~ m/^\D*(1|2\.[1-8])/;
+          if $gccversion =~ m/^\D*(1|2\.[1-8])\b/;
       print "Your perl was compiled with gcc (version $Config{gccversion}), okay.\n";
       $gccversion =~ s/[^\d\.]//g; # just a number please
       $opts{DEFINE} .= ' -W -Wall -Wpointer-arith -Wbad-function-cast';
