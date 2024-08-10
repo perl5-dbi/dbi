@@ -3605,10 +3605,8 @@ XS(XS_DBI_dispatch)
 
         /* The callback code can undef $_ to indicate to skip dispatch */
         skip_dispatch = !SvOK(DEFSV);
-        /* put $_ back now, but with an incremented ref count to compensate
-         * for the ref count decrement that will happen when we exit the scope.
-         */
-        DEFSV_set(SvREFCNT_inc(orig_defsv));
+        /* put $_ back now */
+        DEFSV_set(orig_defsv);
 
         if (trace_level)
             PerlIO_printf(DBILOGFP, "%c   }} %s callback %s returned%s\n",
