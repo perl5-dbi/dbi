@@ -22,6 +22,8 @@ DBI::Changes - List of significant changes to the DBI
         thanks to H.Merijn Brand (noted by XSven)
     Do not leak $_ after callback execution (rt#144526, PR#117)
 	thanks to Mauke
+    Switch from Dynaloader to XSLoader (PR#94)
+	thanks to Todd
 
 =head2 Changes in DBI 1.643 - 31st January 2020
 
