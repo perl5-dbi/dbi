@@ -232,6 +232,58 @@ my $stress_sth = $stress_dbh->prepare("select 1");
 $stress_sth->{Callbacks}{execute} = sub { return; };
 $stress_sth->execute(@params);
 
+{
+    package LeakDetect;
+
+    our $count = 0;
+
+    sub new {
+        my $class = shift;
+        $count++;
+        return bless {}, $class;
+    }
+
+    sub DESTROY {
+        $count--;
+    }
+}
+
+# ensure running a callback does not leak extant $_
+$dbh = DBI->connect('DBI:NullP:test');
+$dbh->{Callbacks}{ping} = sub {};
+
+# with plain assignment to $_
+$_ = LeakDetect->new;
+{
+    is $LeakDetect::count, 1, "[plain] live object count is 1 after new()";
+    my $obj = $_;
+    $dbh->ping;
+    is $_, $obj, '[plain] $_ still holds an object reference after the callback';
+}
+$_ = undef;
+is $_, undef, '[plain] $_ is undef at the end';
+is $LeakDetect::count, 0, "[plain] live object count is 0 after all object references are gone";
+
+# with localized $_
+{
+    local $_ = LeakDetect->new;
+    is $LeakDetect::count, 1, "[local] live object count is 1 after new()";
+    my $obj = $_;
+    $dbh->ping;
+    is $_, $obj, '[local] $_ still holds an object reference after the callback';
+}
+is $_, undef, '[local] $_ is undef at the end';
+is $LeakDetect::count, 0, "[local] live object count is 0 after all object references are gone";
+
+# with implicit localization of $_
+for (LeakDetect->new) {
+    is $LeakDetect::count, 1, "[foreach] live object count is 1 after new()";
+    my $obj = $_;
+    $dbh->ping;
+    is $_, $obj, '[foreach] $_ still holds an object reference after the callback';
+}
+is $_, undef, '[foreach] $_ is undef at the end';
+is $LeakDetect::count, 0, "[foreach] live object count is 0 after all object references are gone";
 
 done_testing();
 
