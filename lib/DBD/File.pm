@@ -1037,13 +1037,17 @@ C<< $sth->execute >>; undef for non-select statements.
 
 =head3 Unsupported DBI attributes and methods
 
-=head4 bind_param_inout
+=over 2
 
-=head4 CursorName
+=item bind_param_inout
 
-=head4 LongReadLen
+=item CursorName
 
-=head4 LongTruncOk
+=item LongReadLen
+
+=item LongTruncOk
+
+=back
 
 =head3 DBD::File specific attributes
 
@@ -1234,12 +1238,12 @@ releases on
 
   @ary = DBI->data_sources ($driver);
   @ary = DBI->data_sources ($driver, \%attr);
-  
+
   @ary = $dbh->data_sources ();
   @ary = $dbh->data_sources (\%attr);
 
   @names = $dbh->tables ($catalog, $schema, $table, $type);
-  
+
   $sth = $dbh->table_info ($catalog, $schema, $table, $type);
   $sth = $dbh->table_info ($catalog, $schema, $table, $type, \%attr);
 

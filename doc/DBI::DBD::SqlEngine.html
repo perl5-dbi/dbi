@@ -425,20 +425,20 @@ sub avail_tables
 
 <p>The <code>data_sources</code> method is called when the user invokes any of the following:</p>
 
-<pre><code> @ary = DBI-&gt;data_sources($driver);
- @ary = DBI-&gt;data_sources($driver, \%attr);
- 
- @ary = $dbh-&gt;data_sources();
- @ary = $dbh-&gt;data_sources(\%attr);</code></pre>
+<pre><code>@ary = DBI-&gt;data_sources($driver);
+@ary = DBI-&gt;data_sources($driver, \%attr);
+
+@ary = $dbh-&gt;data_sources();
+@ary = $dbh-&gt;data_sources(\%attr);</code></pre>
 
 <p>The <code>avail_tables</code> method is called when the user invokes any of the following:</p>
 
-<pre><code> @names = $dbh-&gt;tables( $catalog, $schema, $table, $type );
- 
- $sth = $dbh-&gt;table_info( $catalog, $schema, $table, $type );
- $sth = $dbh-&gt;table_info( $catalog, $schema, $table, $type, \%attr );
+<pre><code>@names = $dbh-&gt;tables( $catalog, $schema, $table, $type );
 
- $dbh-&gt;func( &quot;list_tables&quot; );</code></pre>
+$sth = $dbh-&gt;table_info( $catalog, $schema, $table, $type );
+$sth = $dbh-&gt;table_info( $catalog, $schema, $table, $type, \%attr );
+
+$dbh-&gt;func( &quot;list_tables&quot; );</code></pre>
 
 <p>Every time where an <code>\%attr</code> argument can be specified, this <code>\%attr</code> object&#39;s <code>sql_table_source</code> attribute is preferred over the <code>$dbh</code> attribute or the driver default, eg.</p>
 

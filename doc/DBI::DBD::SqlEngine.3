@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI::DBD::SqlEngine 3"
-.TH DBI::DBD::SqlEngine 3 2022-01-17 "perl v5.40.0" "User Contributed Perl Documentation"
+.TH DBI::DBD::SqlEngine 3 2024-08-12 "perl v5.40.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -506,7 +506,7 @@ following:
 .Vb 2
 \&  @ary = DBI\->data_sources($driver);
 \&  @ary = DBI\->data_sources($driver, \e%attr);
-\&  
+\&
 \&  @ary = $dbh\->data_sources();
 \&  @ary = $dbh\->data_sources(\e%attr);
 .Ve
@@ -516,7 +516,7 @@ following:
 .PP
 .Vb 1
 \&  @names = $dbh\->tables( $catalog, $schema, $table, $type );
-\&  
+\&
 \&  $sth = $dbh\->table_info( $catalog, $schema, $table, $type );
 \&  $sth = $dbh\->table_info( $catalog, $schema, $table, $type, \e%attr );
 \&

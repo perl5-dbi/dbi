@@ -26,6 +26,31 @@ my @pm = sort "DBI.pm",
 	(glob "lib/*/*/*.pm"),
 	(glob "lib/*/*/*/*.pm");
 
+eval { require Pod::Checker; };
+if ($@) {
+    warn "Cannot convert pod to markdown: $@\n";
+    }
+else {
+    my $fail = 0;
+    foreach my $pm (@pm) {
+	open my $eh, ">", \my $err;
+	my $ok = Pod::Checker->new ()->parse_from_file ($pm, $eh);
+	close $eh;
+	$err && $err =~ m/\S/ or next;
+	if ($pm eq "lib/DBI/ProfileData.pm") {
+	    # DBI::Profile has 7 warnings on empty previous paragraphs
+	    # as it uses =head2 for all possible invocation alternatives
+	    # Ignore these warnings if those are all
+	    my @err = grep m/ WARNING: / => split m/\n+/ => $err;
+	    @err == 7 && $err eq join "\n" => @err, "" and next;
+	    }
+	say $pm;
+	say $err;
+	$err =~ m/ ERROR:/ and $fail++;
+	}
+    $fail and die "POD has errors. Fix them first!\n";
+    }
+
 eval { require Pod::Markdown; };
 if ($@) {
     warn "Cannot convert pod to markdown: $@\n";

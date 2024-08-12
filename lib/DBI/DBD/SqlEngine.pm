@@ -2056,7 +2056,7 @@ following:
 
   @ary = DBI->data_sources($driver);
   @ary = DBI->data_sources($driver, \%attr);
-  
+
   @ary = $dbh->data_sources();
   @ary = $dbh->data_sources(\%attr);
 
@@ -2064,7 +2064,7 @@ The C<avail_tables> method is called when the user invokes any of the
 following:
 
   @names = $dbh->tables( $catalog, $schema, $table, $type );
-  
+
   $sth = $dbh->table_info( $catalog, $schema, $table, $type );
   $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
 
@@ -2093,7 +2093,7 @@ opened (file-)streams (eg. for DBD::CSV).
 
 Derived classes shall be restricted to similar functionality, too (eg.
 opening streams from an archive, transparently compress/uncompress
-log files before parsing them, 
+log files before parsing them,
 
   package DBI::DBD::SqlEngine::DataSource;
 

@@ -6690,6 +6690,10 @@ fields values for each row are unique.  If multiple rows are returned
 with the same values for the key fields then later rows overwrite
 earlier ones.
 
+=head3 C<more_results>
+
+... not yet documented ...
+
 =head3 C<finish>
 
   $rc  = $sth->finish;

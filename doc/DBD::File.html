@@ -28,14 +28,7 @@
               <li><a href="#NULLABLE">NULLABLE</a></li>
             </ul>
           </li>
-          <li><a href="#Unsupported-DBI-attributes-and-methods">Unsupported DBI attributes and methods</a>
-            <ul>
-              <li><a href="#bind_param_inout">bind_param_inout</a></li>
-              <li><a href="#CursorName">CursorName</a></li>
-              <li><a href="#LongReadLen">LongReadLen</a></li>
-              <li><a href="#LongTruncOk">LongTruncOk</a></li>
-            </ul>
-          </li>
+          <li><a href="#Unsupported-DBI-attributes-and-methods">Unsupported DBI attributes and methods</a></li>
           <li><a href="#DBD%3A%3AFile-specific-attributes">DBD::File specific attributes</a>
             <ul>
               <li><a href="#f_dir">f_dir</a></li>
@@ -144,13 +137,25 @@ Warn                   (Not used)</code></pre>
 
 <h3 id="Unsupported-DBI-attributes-and-methods">Unsupported DBI attributes and methods</h3>
 
-<h4 id="bind_param_inout">bind_param_inout</h4>
+<dl>
 
-<h4 id="CursorName">CursorName</h4>
+<dt id="bind_param_inout">bind_param_inout</dt>
+<dd>
 
-<h4 id="LongReadLen">LongReadLen</h4>
+</dd>
+<dt id="CursorName">CursorName</dt>
+<dd>
 
-<h4 id="LongTruncOk">LongTruncOk</h4>
+</dd>
+<dt id="LongReadLen">LongReadLen</dt>
+<dd>
+
+</dd>
+<dt id="LongTruncOk">LongTruncOk</dt>
+<dd>
+
+</dd>
+</dl>
 
 <h3 id="DBD::File-specific-attributes">DBD::File specific attributes</h3>
 
@@ -286,18 +291,18 @@ $dbh-&gt;{dbm_tables}{qux}{f_lockfile} = 0;</code></pre>
 
 <p><code>$dbh-&gt;{sql_table_source}</code> can be set to <i>DBD::File::TableSource::FileSystem</i> (and is the default setting of DBD::File). This provides usual behaviour of previous DBD::File releases on</p>
 
-<pre><code> @ary = DBI-&gt;data_sources ($driver);
- @ary = DBI-&gt;data_sources ($driver, \%attr);
- 
- @ary = $dbh-&gt;data_sources ();
- @ary = $dbh-&gt;data_sources (\%attr);
+<pre><code>@ary = DBI-&gt;data_sources ($driver);
+@ary = DBI-&gt;data_sources ($driver, \%attr);
 
- @names = $dbh-&gt;tables ($catalog, $schema, $table, $type);
- 
- $sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type);
- $sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type, \%attr);
+@ary = $dbh-&gt;data_sources ();
+@ary = $dbh-&gt;data_sources (\%attr);
 
- $dbh-&gt;func (&quot;list_tables&quot;);</code></pre>
+@names = $dbh-&gt;tables ($catalog, $schema, $table, $type);
+
+$sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type);
+$sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type, \%attr);
+
+$dbh-&gt;func (&quot;list_tables&quot;);</code></pre>
 
 <h4 id="sql_data_source">sql_data_source</h4>
 

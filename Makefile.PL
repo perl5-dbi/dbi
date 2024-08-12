@@ -362,6 +362,10 @@ checkkeywords:
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
             -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 
+.PHONY:	doc
+doc:
+	perl make-doc.pl
+
 checkpod:
 	$(RM_RF) blib
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \

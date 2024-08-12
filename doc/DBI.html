@@ -202,6 +202,7 @@
           <li><a href="#fetchrow_hashref">fetchrow_hashref</a></li>
           <li><a href="#fetchall_arrayref">fetchall_arrayref</a></li>
           <li><a href="#fetchall_hashref">fetchall_hashref</a></li>
+          <li><a href="#more_results">more_results</a></li>
           <li><a href="#finish">finish</a></li>
           <li><a href="#rows">rows</a></li>
           <li><a href="#bind_col">bind_col</a></li>
@@ -3386,6 +3387,10 @@ $hash_ref = $sth-&gt;fetchall_hashref( [ qw(foo bar) ] );
 print &quot;For foo 42 and bar 38, baz is $hash_ref-&gt;{42}-&gt;{38}-&gt;{baz}\n&quot;;</code></pre>
 
 <p>The fetchall_hashref() method is normally used only where the key fields values for each row are unique. If multiple rows are returned with the same values for the key fields then later rows overwrite earlier ones.</p>
+
+<h3 id="more_results"><code>more_results</code></h3>
+
+<p>... not yet documented ...</p>
 
 <h3 id="finish"><code>finish</code></h3>
 

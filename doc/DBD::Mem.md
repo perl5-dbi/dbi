@@ -15,8 +15,7 @@ DBD::Mem - a DBI driver for Mem & MLMem files
 and other variations on connect() as shown in the [DBI](https://metacpan.org/pod/DBI) docs and 
 <DBI::DBD::SqlEngine metadata|DBI::DBD::SqlEngine/Metadata>.
 
-Use standard DBI prepare, execute, fetch, placeholders, etc.,
-see ["QUICK START"](#quick-start) for an example.
+Use standard DBI prepare, execute, fetch, placeholders, etc.
 
 # DESCRIPTION
 

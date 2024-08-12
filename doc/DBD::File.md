@@ -67,13 +67,10 @@ affected table has been created in this session.  Valid after
 
 ### Unsupported DBI attributes and methods
 
-#### bind\_param\_inout
-
-#### CursorName
-
-#### LongReadLen
-
-#### LongTruncOk
+- bind\_param\_inout
+- CursorName
+- LongReadLen
+- LongTruncOk
 
 ### DBD::File specific attributes
 
@@ -255,12 +252,12 @@ releases on
 
     @ary = DBI->data_sources ($driver);
     @ary = DBI->data_sources ($driver, \%attr);
-    
+
     @ary = $dbh->data_sources ();
     @ary = $dbh->data_sources (\%attr);
 
     @names = $dbh->tables ($catalog, $schema, $table, $type);
-    
+
     $sth = $dbh->table_info ($catalog, $schema, $table, $type);
     $sth = $dbh->table_info ($catalog, $schema, $table, $type, \%attr);
 

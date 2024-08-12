@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBD::File 3"
-.TH DBD::File 3 2024-08-08 "perl v5.40.0" "User Contributed Perl Documentation"
+.TH DBD::File 3 2024-08-12 "perl v5.40.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -137,18 +137,16 @@ affected table has been created in this session.  Valid after
 .PP
 \fIUnsupported DBI attributes and methods\fR
 .IX Subsection "Unsupported DBI attributes and methods"
-.PP
-bind_param_inout
-.IX Subsection "bind_param_inout"
-.PP
-CursorName
-.IX Subsection "CursorName"
-.PP
-LongReadLen
-.IX Subsection "LongReadLen"
-.PP
-LongTruncOk
-.IX Subsection "LongTruncOk"
+.IP bind_param_inout 2
+.IX Item "bind_param_inout"
+.PD 0
+.IP CursorName 2
+.IX Item "CursorName"
+.IP LongReadLen 2
+.IX Item "LongReadLen"
+.IP LongTruncOk 2
+.IX Item "LongTruncOk"
+.PD
 .PP
 \fIDBD::File specific attributes\fR
 .IX Subsection "DBD::File specific attributes"
@@ -367,12 +365,12 @@ releases on
 .Vb 2
 \&  @ary = DBI\->data_sources ($driver);
 \&  @ary = DBI\->data_sources ($driver, \e%attr);
-\&  
+\&
 \&  @ary = $dbh\->data_sources ();
 \&  @ary = $dbh\->data_sources (\e%attr);
 \&
 \&  @names = $dbh\->tables ($catalog, $schema, $table, $type);
-\&  
+\&
 \&  $sth = $dbh\->table_info ($catalog, $schema, $table, $type);
 \&  $sth = $dbh\->table_info ($catalog, $schema, $table, $type, \e%attr);
 \&
