@@ -87,9 +87,9 @@ I<The synopsis above only lists the major methods and parameters.>
 
 =head3 General
 
-Before asking any questions, reread this document, consult the
-archives and read the DBI FAQ. The archives are listed
-at the end of this document and on the DBI home page L<http://dbi.perl.org/support/>
+Before asking any questions, reread this document, consult the archives and
+read the DBI FAQ. The archives are listed at the end of this document and on
+the DBI home page L<http://dbi.perl.org/support/>
 
 You might also like to read the Advanced DBI Tutorial at
 L<http://www.slideshare.net/Tim.Bunce/dbi-advanced-tutorial-2007>
