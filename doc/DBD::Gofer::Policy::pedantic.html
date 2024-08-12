@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Gofer::Policy::pedantic - The 'pedantic' policy for DBD::Gofer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Gofer::Policy::pedantic - The &#39;pedantic&#39; policy for DBD::Gofer</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>$dbh = DBI-&gt;connect(&quot;dbi:Gofer:transport=...;policy=pedantic&quot;, ...)</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>The <code>pedantic</code> policy tries to be as transparent as possible. To do this it makes round-trips to the server for almost every DBI method call.</p>
+
+<p>This is the best policy to use when first testing existing code with Gofer. Once it&#39;s working well you should consider moving to the <code>classic</code> policy or defining your own policy class.</p>
+
+<p>Temporary docs: See the source code for list of policies and their defaults.</p>
+
+<p>In a future version the policies and their defaults will be defined in the pod and parsed out at load-time.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tim Bunce, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a></p>
+
+<h1 id="LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</h1>
+
+<p>Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p>This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. See <a>perlartistic</a>.</p>
+
+
+</body>
+
+</html>

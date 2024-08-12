@@ -1,0 +1,238 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Multiplex - A multiplexing driver for the DBI.</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#COMPATIBILITY">COMPATIBILITY</a></li>
+  <li><a href="#CONNECTING-TO-THE-DATASOURCES">CONNECTING TO THE DATASOURCES</a></li>
+  <li><a href="#SPECIFIC-ATTRIBUTES">SPECIFIC ATTRIBUTES</a></li>
+  <li><a href="#USAGE-EXAMPLE">USAGE EXAMPLE</a></li>
+  <li><a href="#LIMITATIONS-AND-BUGS">LIMITATIONS AND BUGS</a></li>
+  <li><a href="#AUTHORS-AND-COPYRIGHT">AUTHORS AND COPYRIGHT</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Multiplex - A multiplexing driver for the DBI.</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>use strict;
+
+use DBI;
+
+my ($dsn1, $dsn2, $dsn3, $dsn4, %attr);
+
+# Define four databases, in this case, four Postgres databases.
+
+$dsn1 = &#39;dbi:Pg:dbname=aaa;host=10.0.0.1;mx_id=db-aaa-1&#39;;
+$dsn2 = &#39;dbi:Pg:dbname=bbb;host=10.0.0.2;mx_id=db-bbb-2&#39;;
+$dsn3 = &#39;dbi:Pg:dbname=ccc;host=10.0.0.3;mx_id=db-ccc-3&#39;;
+$dsn4 = &#39;dbi:Pg:dbname=ddd;host=10.0.0.4;mx_id=db-ddd-4&#39;;
+
+# Define a callback error handler.
+
+sub MyErrorProcedure {
+       my ($dsn, $mx_id, $error_number, $error_string, $h) = @_;
+       open TFH, &quot;&gt;&gt;/tmp/dbi_mx$mx_id.txt&quot;;
+       print TFH localtime().&quot;: $error_number\t$error_string\n&quot;;
+       close TFH;
+       return 1;
+}
+
+# Define the pool of datasources.
+
+%attr = (
+       &#39;mx_dsns&#39; =&gt; [$dsn1, $dsn2, $dsn3, $dsn4],
+       &#39;mx_master_id&#39; =&gt; &#39;db-aaa-1&#39;,
+       &#39;mx_connect_mode&#39; =&gt; &#39;ignore_errors&#39;,
+       &#39;mx_exit_mode&#39; =&gt; &#39;first_success&#39;,
+       &#39;mx_error_proc&#39; =&gt; \&amp;MyErrorProcedure,
+);
+
+# Connect to all four datasources.
+
+$dbh = DBI-&gt;connect(&quot;dbi:Multiplex:&quot;, &#39;username&#39;, &#39;password&#39;, \%attr);
+
+# See the DBI module documentation for full details.</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>DBD::Multiplex is a Perl module which works with the DBI allowing you to work with multiple datasources using a single DBI handle.</p>
+
+<p>Basically, DBD::Multiplex database and statement handles are parents that contain multiple child handles, one for each datasource. Method calls on the parent handle trigger corresponding method calls on each of the children.</p>
+
+<p>One use of this module is to mirror the contents of one datasource using a set of alternate datasources. For that scenario it can write to all datasources, but read from only from one datasource.</p>
+
+<p>Alternatively, where a database already supports replication, DBD::Multiplex can be used to direct writes to the master and spread the selects across multiple slaves.</p>
+
+<p>Another use for DBD::Multiplex is to simplify monitoring and management of a large number of databases, especially when combined with DBI::Shell.</p>
+
+<h1 id="COMPATIBILITY">COMPATIBILITY</h1>
+
+<p>A goal of this module is to be compatible with DBD::Proxy / DBI::ProxyServer. Currently, the &#39;mx_error_proc&#39; feature generates errors regarding the storage of CODE references within the Storable module used by RPC::PlClient which in turn is used by DBD::Proxy. Yet it works.</p>
+
+<h1 id="CONNECTING-TO-THE-DATASOURCES">CONNECTING TO THE DATASOURCES</h1>
+
+<p>Multiple datasources are specified in the either the DSN parameter of the DBI-&gt;connect() function (separated by the &#39;|&#39; character), or in the &#39;mx_dsns&#39; key/value pair (as an array reference) of the \%attr hash parameter.</p>
+
+<h1 id="SPECIFIC-ATTRIBUTES">SPECIFIC ATTRIBUTES</h1>
+
+<p>The following specific attributes can be set when connecting:</p>
+
+<dl>
+
+<dt id="mx_dsns"><b>mx_dsns</b></dt>
+<dd>
+
+<p>An array reference of DSN strings.</p>
+
+</dd>
+<dt id="mx_master_id"><b>mx_master_id</b></dt>
+<dd>
+
+<p>Specifies which mx_id will be used as the master server for a master/slave one-way replication scheme.</p>
+
+</dd>
+<dt id="mx_connect_mode"><b>mx_connect_mode</b></dt>
+<dd>
+
+<p>Options available or under consideration:</p>
+
+<p><b>report_errors</b></p>
+
+<p>A failed connection to any of the data sources will generate a DBI error. This is the default.</p>
+
+<p><b>ignore_errors</b></p>
+
+<p>Failed connections are ignored, forgotten, and therefore, unused.</p>
+
+</dd>
+<dt id="mx_exit_mode"><b>mx_exit_mode</b></dt>
+<dd>
+
+<p>Options available or under consideration:</p>
+
+<p><b>first_error</b></p>
+
+<p>Execute the requested method against each child handle, stopping after the first error, and returning the all of the results. This is the default.</p>
+
+<p><b>first_success</b></p>
+
+<p>Execute the requested method against each child handle, stopping after the first successful result, and returning only the successful result. Most appropriate when reading from a set of mirrored datasources.</p>
+
+<p><b>last_result</b></p>
+
+<p>Execute the requested method against each child handle, not stopping after any errors, and returning all of the results.</p>
+
+<p><b>last_result_most_common</b></p>
+
+<p>Execute the requested method against each child handle, not stopping after the errors, and returning the most common result (eg three-way-voting etc). Not yet implemented.</p>
+
+</dd>
+<dt id="mx_shuffle"><b>mx_shuffle</b></dt>
+<dd>
+
+<p>Shuffles the list of child handles each time it&#39;s about to be used. Typically combined with an <code>mx_exit_mode</code> of &#39;<code>first_success</code>&#39;.</p>
+
+</dd>
+<dt id="mx_shuffle_connect"><b>mx_shuffle_connect</b></dt>
+<dd>
+
+<p>Like <code>mx_shuffle</code> above but only applies to connect().</p>
+
+</dd>
+<dt id="mx_error_proc"><b>mx_error_proc</b></dt>
+<dd>
+
+<p>A reference to a subroutine which will be executed whenever a DBI method generates an error when working with a specific datasource. It will be passed the DSN and &#39;mx_id&#39; of the datasource, and the $DBI::err and $DBI::errstr.</p>
+
+<p>Define your own subroutine and pass a reference to it. A simple subroutine that just prints the dsn, mx_id, and error details to STDERR can be selected by setting mx_error_proc to the string &#39;DEFAULT&#39;.</p>
+
+</dd>
+</dl>
+
+<p>In some cases, the exit mode will depend on the method being called. For example, this module will always execute $dbh-&gt;disconnect() calls against each child handle.</p>
+
+<p>In others, the default will be used, unless the user of the DBI specified the &#39;mx_exit_mode&#39; when connecting, or later changed the &#39;mx_exit_mode&#39; attribute of a database or statement handle.</p>
+
+<h1 id="USAGE-EXAMPLE">USAGE EXAMPLE</h1>
+
+<p>Here&#39;s an example of using DBD::Multiplex with MySQL&#39;s replication scheme.</p>
+
+<p>MySQL supports one-way replication, which means we run a server as the master server and others as slaves which catch up any changes made on the master. Any READ operations then may be distributed among them (master and slave(s)), whereas any WRITE operation must <i>only</i> be directed toward the master. Any changes happened on slave(s) will never get synchronized to other servers. More detailed instructions on how to arrange such setup can be found at:</p>
+
+<p>http://www.mysql.com/documentation/mysql/bychapter/manual_Replication.html</p>
+
+<p>Now say we have two servers, one at 10.0.0.1 as a master, and one at 10.0.0.9 as a slave. The DSN for each server may be written like this:</p>
+
+<pre><code>my @dsns = qw{
+       dbi:mysql:database=test;host=10.0.0.1;mx_id=masterdb
+       dbi:mysql:database=test;host=10.0.0.9;mx_id=slavedb
+};</code></pre>
+
+<p>Here we choose easy-to-remember <code>mx_id</code>s: masterdb and slavedb. You are free to choose alternative names, for example: mst and slv. Then we create the DSN for DBD::Multiplex by joining them, using the pipe character as separator:</p>
+
+<pre><code>my $dsn = &#39;dbi:Multiplex:&#39; . join(&#39;|&#39;, @dsns);
+my $user = &#39;username&#39;;
+my $pass = &#39;password&#39;;</code></pre>
+
+<p>As a more paranoid practice, configure the &#39;user&#39;s permissions to allow only SELECTs on the slaves.</p>
+
+<p>Next, we define the attributes which will affect DBD::Multiplex behaviour:</p>
+
+<pre><code>my %attr = (
+       &#39;mx_master_id&#39; =&gt; &#39;masterdb&#39;,
+       &#39;mx_exit_mode&#39; =&gt; &#39;first_success&#39;,
+       &#39;mx_shuffle&#39;    =&gt; 1,
+);</code></pre>
+
+<p>These attributes are required for MySQL replication support:</p>
+
+<p>We set <code>mx_shuffle</code> true which will make DBD::Multiplex shuffle the DSN list order prior to connect, and shuffle the</p>
+
+<p>The <code>mx_master_id</code> attribute specifies which <code>mx_id</code> will be recognized as the master. In our example, this is set to &#39;masterdb&#39;. This attribute will ensure that every WRITE operation will be executed only on the master server. Finally, we call DBI-&gt;connect():</p>
+
+<pre><code>$dbh = DBI-&gt;connect($dsn, $user, $pass, \%attr) or die $DBI::errstr;</code></pre>
+
+<h1 id="LIMITATIONS-AND-BUGS">LIMITATIONS AND BUGS</h1>
+
+<p>A HandleError sub is only invoked on the multiplex handle, not the child handles and can&#39;t alter the return value.</p>
+
+<p>The Name attribute may change in content in future versions.</p>
+
+<p>The AutoCommit attribute doesn&#39;t appear to be affected by the begin_work method. That&#39;s one symptom of the next item:</p>
+
+<p>Attributes may not behave as expected because the DBI intercepts attribute FETCH calls and returns the value, if there is one, from DBD::Multiplex&#39;s attribute cache and doesn&#39;t give DBD::Multiplex a change to multiplex the FETCH. That&#39;s fixed from DBI 1.36.</p>
+
+<h1 id="AUTHORS-AND-COPYRIGHT">AUTHORS AND COPYRIGHT</h1>
+
+<p>Copyright (c) 1999,2000,2003, Tim Bunce &amp; Thomas Kishel</p>
+
+<p>While I defer to Tim Bunce regarding the majority of this module, feel free to contact me for more information:</p>
+
+<pre><code>Thomas Kishel
+Larson Texts, Inc.
+1760 Norcross Road
+Erie, PA 16510
+tkishel@tdlc.com
+814-461-8900</code></pre>
+
+<p>You may distribute under the terms of either the GNU General Public License or the Artistic License, as specified in the Perl README file.</p>
+
+
+</body>
+
+</html>

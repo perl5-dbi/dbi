@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBI::Gofer::Serializer::Storable - Gofer serialization using Storable</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBI::Gofer::Serializer::Storable - Gofer serialization using Storable</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>$serializer = DBI::Gofer::Serializer::Storable-&gt;new();
+
+$string = $serializer-&gt;serialize( $data );
+($string, $deserializer_class) = $serializer-&gt;serialize( $data );
+
+$data = $serializer-&gt;deserialize( $string );</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Uses Storable::nfreeze() to serialize and Storable::thaw() to deserialize.</p>
+
+<p>The serialize() method sets local $Storable::forgive_me = 1; so it doesn&#39;t croak if it encounters any data types that can&#39;t be serialized, such as code refs.</p>
+
+<p>See also <a>DBI::Gofer::Serializer::Base</a>.</p>
+
+
+</body>
+
+</html>

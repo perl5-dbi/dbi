@@ -1,0 +1,517 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBI::ProxyServer - a server for the DBD::Proxy driver</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+  <li><a href="#SHUTDOWN">SHUTDOWN</a></li>
+  <li><a href="#CONFIGURATION-FILE">CONFIGURATION FILE</a></li>
+  <li><a href="#Proxyserver-Configuration-file-bigger-example">Proxyserver Configuration file (bigger example)</a>
+    <ul>
+      <li><a href="#Testing-the-connection-from-a-remote-machine">Testing the connection from a remote machine</a></li>
+      <li><a href="#Testing-the-connection-with-a-perl-script">Testing the connection with a perl-script</a></li>
+      <li><a href="#How-the-configuration-works">How the configuration works</a></li>
+      <li><a href="#Problems">Problems</a></li>
+    </ul>
+  </li>
+  <li><a href="#SECURITY-WARNING">SECURITY WARNING</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBI::ProxyServer - a server for the DBD::Proxy driver</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>use DBI::ProxyServer;
+DBI::ProxyServer::main(@ARGV);</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>DBI::Proxy Server is a module for implementing a proxy for the DBI proxy driver, DBD::Proxy. It allows access to databases over the network if the DBMS does not offer networked operations. But the proxy server might be useful for you, even if you have a DBMS with integrated network functionality: It can be used as a DBI proxy in a firewalled environment.</p>
+
+<p>DBI::ProxyServer runs as a daemon on the machine with the DBMS or on the firewall. The client connects to the agent using the DBI driver DBD::Proxy, thus in the exactly same way than using DBD::mysql, DBD::mSQL or any other DBI driver.</p>
+
+<p>The agent is implemented as a RPC::PlServer application. Thus you have access to all the possibilities of this module, in particular encryption and a similar configuration file. DBI::ProxyServer adds the possibility of query restrictions: You can define a set of queries that a client may execute and restrict access to those. (Requires a DBI driver that supports parameter binding.) See <a href="#CONFIGURATION-FILE">&quot;CONFIGURATION FILE&quot;</a>.</p>
+
+<p>The provided driver script, <a>dbiproxy</a>, may either be used as it is or used as the basis for a local version modified to meet your needs.</p>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<p>When calling the DBI::ProxyServer::main() function, you supply an array of options. These options are parsed by the Getopt::Long module. The ProxyServer inherits all of RPC::PlServer&#39;s and hence Net::Daemon&#39;s options and option handling, in particular the ability to read options from either the command line or a config file. See <a>RPC::PlServer</a>. See <a>Net::Daemon</a>. Available options include</p>
+
+<dl>
+
+<dt id="chroot---chroot-dir"><i>chroot</i> (<b>--chroot=dir</b>)</dt>
+<dd>
+
+<p>(UNIX only) After doing a bind(), change root directory to the given directory by doing a chroot(). This is useful for security, but it restricts the environment a lot. For example, you need to load DBI drivers in the config file or you have to create hard links to Unix sockets, if your drivers are using them. For example, with MySQL, a config file might contain the following lines:</p>
+
+<pre><code>my $rootdir = &#39;/var/dbiproxy&#39;;
+my $unixsockdir = &#39;/tmp&#39;;
+my $unixsockfile = &#39;mysql.sock&#39;;
+foreach $dir ($rootdir, &quot;$rootdir$unixsockdir&quot;) {
+    mkdir 0755, $dir;
+}
+link(&quot;$unixsockdir/$unixsockfile&quot;,
+     &quot;$rootdir$unixsockdir/$unixsockfile&quot;);
+require DBD::mysql;
+
+{
+    &#39;chroot&#39; =&gt; $rootdir,
+    ...
+}</code></pre>
+
+<p>If you don&#39;t know chroot(), think of an FTP server where you can see a certain directory tree only after logging in. See also the --group and --user options.</p>
+
+</dd>
+<dt id="clients"><i>clients</i></dt>
+<dd>
+
+<p>An array ref with a list of clients. Clients are hash refs, the attributes <i>accept</i> (0 for denying access and 1 for permitting) and <i>mask</i>, a Perl regular expression for the clients IP number or its host name.</p>
+
+</dd>
+<dt id="configfile---configfile-file"><i>configfile</i> (<b>--configfile=file</b>)</dt>
+<dd>
+
+<p>Config files are assumed to return a single hash ref that overrides the arguments of the new method. However, command line arguments in turn take precedence over the config file. See the <a href="#CONFIGURATION-FILE">&quot;CONFIGURATION FILE&quot;</a> section below for details on the config file.</p>
+
+</dd>
+<dt id="debug---debug"><i>debug</i> (<b>--debug</b>)</dt>
+<dd>
+
+<p>Turn debugging mode on. Mainly this asserts that logging messages of level &quot;debug&quot; are created.</p>
+
+</dd>
+<dt id="facility---facility-mode"><i>facility</i> (<b>--facility=mode</b>)</dt>
+<dd>
+
+<p>(UNIX only) Facility to use for <a>Sys::Syslog</a>. The default is <b>daemon</b>.</p>
+
+</dd>
+<dt id="group---group-gid"><i>group</i> (<b>--group=gid</b>)</dt>
+<dd>
+
+<p>After doing a bind(), change the real and effective GID to the given. This is useful, if you want your server to bind to a privileged port (&lt;1024), but don&#39;t want the server to execute as root. See also the --user option.</p>
+
+<p>GID&#39;s can be passed as group names or numeric values.</p>
+
+</dd>
+<dt id="localaddr---localaddr-ip"><i>localaddr</i> (<b>--localaddr=ip</b>)</dt>
+<dd>
+
+<p>By default a daemon is listening to any IP number that a machine has. This attribute allows one to restrict the server to the given IP number.</p>
+
+</dd>
+<dt id="localport---localport-port"><i>localport</i> (<b>--localport=port</b>)</dt>
+<dd>
+
+<p>This attribute sets the port on which the daemon is listening. It must be given somehow, as there&#39;s no default.</p>
+
+</dd>
+<dt id="logfile---logfile-file"><i>logfile</i> (<b>--logfile=file</b>)</dt>
+<dd>
+
+<p>Be default logging messages will be written to the syslog (Unix) or to the event log (Windows NT). On other operating systems you need to specify a log file. The special value &quot;STDERR&quot; forces logging to stderr. See <a>Net::Daemon::Log</a> for details.</p>
+
+</dd>
+<dt id="mode---mode-modename"><i>mode</i> (<b>--mode=modename</b>)</dt>
+<dd>
+
+<p>The server can run in three different modes, depending on the environment.</p>
+
+<p>If you are running Perl 5.005 and did compile it for threads, then the server will create a new thread for each connection. The thread will execute the server&#39;s Run() method and then terminate. This mode is the default, you can force it with &quot;--mode=threads&quot;.</p>
+
+<p>If threads are not available, but you have a working fork(), then the server will behave similar by creating a new process for each connection. This mode will be used automatically in the absence of threads or if you use the &quot;--mode=fork&quot; option.</p>
+
+<p>Finally there&#39;s a single-connection mode: If the server has accepted a connection, he will enter the Run() method. No other connections are accepted until the Run() method returns (if the client disconnects). This operation mode is useful if you have neither threads nor fork(), for example on the Macintosh. For debugging purposes you can force this mode with &quot;--mode=single&quot;.</p>
+
+</dd>
+<dt id="pidfile---pidfile-file"><i>pidfile</i> (<b>--pidfile=file</b>)</dt>
+<dd>
+
+<p>(UNIX only) If this option is present, a PID file will be created at the given location. Default is to not create a pidfile.</p>
+
+</dd>
+<dt id="user---user-uid"><i>user</i> (<b>--user=uid</b>)</dt>
+<dd>
+
+<p>After doing a bind(), change the real and effective UID to the given. This is useful, if you want your server to bind to a privileged port (&lt;1024), but don&#39;t want the server to execute as root. See also the --group and the --chroot options.</p>
+
+<p>UID&#39;s can be passed as group names or numeric values.</p>
+
+</dd>
+<dt id="version---version"><i>version</i> (<b>--version</b>)</dt>
+<dd>
+
+<p>Suppresses startup of the server; instead the version string will be printed and the program exits immediately.</p>
+
+</dd>
+</dl>
+
+<h1 id="SHUTDOWN">SHUTDOWN</h1>
+
+<p>DBI::ProxyServer is built on <a>RPC::PlServer</a> which is, in turn, built on <a>Net::Daemon</a>.</p>
+
+<p>You should refer to <a>Net::Daemon</a> for how to shutdown the server, except that you can&#39;t because it&#39;s not currently documented there (as of v0.43). The bottom-line is that it seems that there&#39;s no support for graceful shutdown.</p>
+
+<h1 id="CONFIGURATION-FILE">CONFIGURATION FILE</h1>
+
+<p>The configuration file is just that of <i>RPC::PlServer</i> or <i>Net::Daemon</i> with some additional attributes in the client list.</p>
+
+<p>The config file is a Perl script. At the top of the file you may include arbitrary Perl source, for example load drivers at the start (useful to enhance performance), prepare a chroot environment and so on.</p>
+
+<p>The important thing is that you finally return a hash ref of option name/value pairs. The possible options are listed above.</p>
+
+<p>All possibilities of Net::Daemon and RPC::PlServer apply, in particular</p>
+
+<dl>
+
+<dt id="Host-and-or-User-dependent-access-control">Host and/or User dependent access control</dt>
+<dd>
+
+</dd>
+<dt id="Host-and-or-User-dependent-encryption">Host and/or User dependent encryption</dt>
+<dd>
+
+</dd>
+<dt id="Changing-UID-and-or-GID-after-binding-to-the-port">Changing UID and/or GID after binding to the port</dt>
+<dd>
+
+</dd>
+<dt id="Running-in-a-chroot-environment">Running in a chroot() environment</dt>
+<dd>
+
+</dd>
+</dl>
+
+<p>Additionally the server offers you query restrictions. Suggest the following client list:</p>
+
+<pre><code>&#39;clients&#39; =&gt; [
+    { &#39;mask&#39; =&gt; &#39;^admin\.company\.com$&#39;,
+      &#39;accept&#39; =&gt; 1,
+      &#39;users&#39; =&gt; [ &#39;root&#39;, &#39;wwwrun&#39; ],
+    },
+    {
+      &#39;mask&#39; =&gt; &#39;^admin\.company\.com$&#39;,
+      &#39;accept&#39; =&gt; 1,
+      &#39;users&#39; =&gt; [ &#39;root&#39;, &#39;wwwrun&#39; ],
+      &#39;sql&#39; =&gt; {
+           &#39;select&#39; =&gt; &#39;SELECT * FROM foo&#39;,
+           &#39;insert&#39; =&gt; &#39;INSERT INTO foo VALUES (?, ?, ?)&#39;
+           }
+    }</code></pre>
+
+<p>then only the users root and wwwrun may connect from admin.company.com, executing arbitrary queries, but only wwwrun may connect from other hosts and is restricted to</p>
+
+<pre><code>$sth-&gt;prepare(&quot;select&quot;);</code></pre>
+
+<p>or</p>
+
+<pre><code>$sth-&gt;prepare(&quot;insert&quot;);</code></pre>
+
+<p>which in fact are &quot;SELECT * FROM foo&quot; or &quot;INSERT INTO foo VALUES (?, ?, ?)&quot;.</p>
+
+<h1 id="Proxyserver-Configuration-file-bigger-example">Proxyserver Configuration file (bigger example)</h1>
+
+<p>This section tells you how to restrict a DBI-Proxy: Not every user from every workstation shall be able to execute every query.</p>
+
+<p>There is a perl program &quot;dbiproxy&quot; which runs on a machine which is able to connect to all the databases we wish to reach. All Perl-DBD-drivers must be installed on this machine. You can also reach databases for which drivers are not available on the machine where you run the program querying the database, e.g. ask MS-Access-database from Linux.</p>
+
+<p>Create a configuration file &quot;proxy_oracle.cfg&quot; at the dbproxy-server:</p>
+
+<pre><code>{
+    # This shall run in a shell or a DOS-window 
+    # facility =&gt; &#39;daemon&#39;,
+    pidfile =&gt; &#39;your_dbiproxy.pid&#39;,
+    logfile =&gt; 1,
+    debug =&gt; 0,
+    mode =&gt; &#39;single&#39;,
+    localport =&gt; &#39;12400&#39;,
+
+    # Access control, the first match in this list wins!
+    # So the order is important
+    clients =&gt; [
+            # hint to organize:
+            # the most specialized rules for single machines/users are 1st
+            # then the denying rules
+            # then the rules about whole networks
+
+            # rule: internal_webserver
+            # desc: to get statistical information
+            {
+                    # this IP-address only is meant
+                    mask =&gt; &#39;^10\.95\.81\.243$&#39;,
+                    # accept (not defer) connections like this
+                    accept =&gt; 1,
+                    # only users from this list 
+                    # are allowed to log on
+                    users =&gt; [ &#39;informationdesk&#39; ],
+                    # only this statistical query is allowed
+                    # to get results for a web-query
+                    sql =&gt; {
+                            alive =&gt; &#39;select count(*) from dual&#39;,
+                            statistic_area =&gt; &#39;select count(*) from e01admin.e01e203 where geb_bezei like ?&#39;,
+                    }
+            },
+
+            # rule: internal_bad_guy_1
+            {
+                    mask =&gt; &#39;^10\.95\.81\.1$&#39;,
+                    accept =&gt; 0,
+            },
+
+            # rule: employee_workplace
+            # desc: get detailed information
+            {
+                    # any IP-address is meant here
+                    mask =&gt; &#39;^10\.95\.81\.(\d+)$&#39;,
+                    # accept (not defer) connections like this
+                    accept =&gt; 1,
+                    # only users from this list 
+                    # are allowed to log on
+                    users =&gt; [ &#39;informationdesk&#39;, &#39;lippmann&#39; ],
+                    # all these queries are allowed:
+                    sql =&gt; {
+                            search_city =&gt; &#39;select ort_nr, plz, ort from e01admin.e01e200 where plz like ?&#39;,
+                            search_area =&gt; &#39;select gebiettyp, geb_bezei from e01admin.e01e203 where geb_bezei like ? or geb_bezei like ?&#39;,
+                    }
+            },
+
+            # rule: internal_bad_guy_2 
+            # This does NOT work, because rule &quot;employee_workplace&quot; hits
+            # with its ip-address-mask of the whole network
+            {
+                    # don&#39;t accept connection from this ip-address
+                    mask =&gt; &#39;^10\.95\.81\.5$&#39;,
+                    accept =&gt; 0,
+            }
+    ]
+}</code></pre>
+
+<p>Start the proxyserver like this:</p>
+
+<pre><code>rem well-set Oracle_home needed for Oracle
+set ORACLE_HOME=d:\oracle\ora81
+dbiproxy --configfile proxy_oracle.cfg</code></pre>
+
+<h2 id="Testing-the-connection-from-a-remote-machine">Testing the connection from a remote machine</h2>
+
+<p>Call a program &quot;dbish&quot; from your commandline. I take the machine from rule &quot;internal_webserver&quot;</p>
+
+<pre><code>dbish &quot;dbi:Proxy:hostname=oracle.zdf;port=12400;dsn=dbi:Oracle:e01&quot; informationdesk xxx</code></pre>
+
+<p>There will be a shell-prompt:</p>
+
+<pre><code>informationdesk@dbi...&gt; alive
+
+Current statement buffer (enter &#39;/&#39;...):
+alive
+
+informationdesk@dbi...&gt; /
+COUNT(*)
+&#39;1&#39;
+[1 rows of 1 fields returned]</code></pre>
+
+<h2 id="Testing-the-connection-with-a-perl-script">Testing the connection with a perl-script</h2>
+
+<p>Create a perl-script like this:</p>
+
+<pre><code># file: oratest.pl
+# call me like this: perl oratest.pl user password
+
+use strict;
+use DBI;
+
+my $user = shift || die &quot;Usage: $0 user password&quot;;
+my $pass = shift || die &quot;Usage: $0 user password&quot;;
+my $config = {
+        dsn_at_proxy =&gt; &quot;dbi:Oracle:e01&quot;,
+        proxy =&gt; &quot;hostname=oechsle.zdf;port=12400&quot;,
+};
+my $dsn = sprintf &quot;dbi:Proxy:%s;dsn=%s&quot;,
+        $config-&gt;{proxy},
+        $config-&gt;{dsn_at_proxy};
+
+my $dbh = DBI-&gt;connect( $dsn, $user, $pass )
+        || die &quot;connect did not work: $DBI::errstr&quot;;
+
+my $sql = &quot;search_city&quot;;
+printf &quot;%s\n%s\n%s\n&quot;, &quot;=&quot;x40, $sql, &quot;=&quot;x40;
+my $cur = $dbh-&gt;prepare($sql);
+$cur-&gt;bind_param(1,&#39;905%&#39;);
+&amp;show_result ($cur);
+
+my $sql = &quot;search_area&quot;;
+printf &quot;%s\n%s\n%s\n&quot;, &quot;=&quot;x40, $sql, &quot;=&quot;x40;
+my $cur = $dbh-&gt;prepare($sql);
+$cur-&gt;bind_param(1,&#39;Pfarr%&#39;);
+$cur-&gt;bind_param(2,&#39;Bronnamberg%&#39;);
+&amp;show_result ($cur);
+
+my $sql = &quot;statistic_area&quot;;
+printf &quot;%s\n%s\n%s\n&quot;, &quot;=&quot;x40, $sql, &quot;=&quot;x40;
+my $cur = $dbh-&gt;prepare($sql);
+$cur-&gt;bind_param(1,&#39;Pfarr%&#39;);
+&amp;show_result ($cur);
+
+$dbh-&gt;disconnect;
+exit;
+
+
+sub show_result {
+        my $cur = shift;
+        unless ($cur-&gt;execute()) {
+                print &quot;Could not execute\n&quot;; 
+                return; 
+        }
+
+        my $rownum = 0;
+        while (my @row = $cur-&gt;fetchrow_array()) {
+                printf &quot;Row is: %s\n&quot;, join(&quot;, &quot;,@row);
+                if ($rownum++ &gt; 5) {
+                        print &quot;... and so on\n&quot;;
+                        last;
+                }       
+        }
+        $cur-&gt;finish;
+}</code></pre>
+
+<p>The result</p>
+
+<pre><code>C:\&gt;perl oratest.pl informationdesk xxx
+========================================
+search_city
+========================================
+Row is: 3322, 9050, Chemnitz
+Row is: 3678, 9051, Chemnitz
+Row is: 10447, 9051, Chemnitz
+Row is: 12128, 9051, Chemnitz
+Row is: 10954, 90513, Zirndorf
+Row is: 5808, 90513, Zirndorf
+Row is: 5715, 90513, Zirndorf
+... and so on
+========================================
+search_area
+========================================
+Row is: 101, Bronnamberg
+Row is: 400, Pfarramt Zirndorf
+Row is: 400, Pfarramt Rosstal
+Row is: 400, Pfarramt Oberasbach
+Row is: 401, Pfarramt Zirndorf
+Row is: 401, Pfarramt Rosstal
+========================================
+statistic_area
+========================================
+DBD::Proxy::st execute failed: Server returned error: Failed to execute method CallMethod: Unknown SQL query: statistic_area at E:/Perl/site/lib/DBI/ProxyServer.pm line 258.
+Could not execute</code></pre>
+
+<h2 id="How-the-configuration-works">How the configuration works</h2>
+
+<p>The most important section to control access to your dbi-proxy is &quot;client=&gt;&quot; in the file &quot;proxy_oracle.cfg&quot;:</p>
+
+<p>Controlling which person at which machine is allowed to access</p>
+
+<ul>
+
+<li><p>&quot;mask&quot; is a perl regular expression against the plain ip-address of the machine which wishes to connect _or_ the reverse-lookup from a nameserver.</p>
+
+</li>
+<li><p>&quot;accept&quot; tells the dbiproxy-server whether ip-adresse like in &quot;mask&quot; are allowed to connect or not (0/1)</p>
+
+</li>
+<li><p>&quot;users&quot; is a reference to a list of usernames which must be matched, this is NOT a regular expression.</p>
+
+</li>
+</ul>
+
+<p>Controlling which SQL-statements are allowed</p>
+
+<p>You can put every SQL-statement you like in simply omitting &quot;sql =&gt; ...&quot;, but the more important thing is to restrict the connection so that only allowed queries are possible.</p>
+
+<p>If you include an sql-section in your config-file like this:</p>
+
+<pre><code>sql =&gt; {
+        alive =&gt; &#39;select count(*) from dual&#39;,
+        statistic_area =&gt; &#39;select count(*) from e01admin.e01e203 where geb_bezei like ?&#39;,
+}</code></pre>
+
+<p>The user is allowed to put two queries against the dbi-proxy. The queries are _not_ &quot;select count(*)...&quot;, the queries are &quot;alive&quot; and &quot;statistic_area&quot;! These keywords are replaced by the real query. So you can run a query for &quot;alive&quot;:</p>
+
+<pre><code>my $sql = &quot;alive&quot;;
+my $cur = $dbh-&gt;prepare($sql);
+...</code></pre>
+
+<p>The flexibility is that you can put parameters in the where-part of the query so the query are not static. Simply replace a value in the where-part of the query through a question mark and bind it as a parameter to the query.</p>
+
+<pre><code>my $sql = &quot;statistic_area&quot;;
+my $cur = $dbh-&gt;prepare($sql);
+$cur-&gt;bind_param(1,&#39;905%&#39;);
+# A second parameter would be called like this:
+# $cur-&gt;bind_param(2,&#39;98%&#39;);</code></pre>
+
+<p>The result is this query:</p>
+
+<pre><code>select count(*) from e01admin.e01e203 
+where geb_bezei like &#39;905%&#39;</code></pre>
+
+<p>Don&#39;t try to put parameters into the sql-query like this:</p>
+
+<pre><code># Does not work like you think.
+# Only the first word of the query is parsed,
+# so it&#39;s changed to &quot;statistic_area&quot;, the rest is omitted.
+# You _have_ to work with $cur-&gt;bind_param.
+my $sql = &quot;statistic_area 905%&quot;;
+my $cur = $dbh-&gt;prepare($sql);
+...</code></pre>
+
+<h2 id="Problems">Problems</h2>
+
+<ul>
+
+<li><p>I don&#39;t know how to restrict users to special databases.</p>
+
+</li>
+<li><p>I don&#39;t know how to pass query-parameters via dbish</p>
+
+</li>
+</ul>
+
+<h1 id="SECURITY-WARNING">SECURITY WARNING</h1>
+
+<p><a>RPC::PlServer</a> used underneath is not secure due to serializing and deserializing data with <a>Storable</a> module. Use the proxy driver only in trusted environment.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<pre><code>Copyright (c) 1997    Jochen Wiedmann
+                      Am Eisteich 9
+                      72555 Metzingen
+                      Germany
+
+                      Email: joe@ispsoft.de
+                      Phone: +49 7123 14881</code></pre>
+
+<p>The DBI::ProxyServer module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. In particular permission is granted to Tim Bunce for distributing this as a part of the DBI.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>dbiproxy</a>, <a>DBD::Proxy</a>, <a>DBI</a>, <a>RPC::PlServer</a>, <a>RPC::PlClient</a>, <a>Net::Daemon</a>, <a>Net::Daemon::Log</a>, <a>Sys::Syslog</a>, <a>Win32::EventLog</a>, <a>syslog</a></p>
+
+
+</body>
+
+</html>

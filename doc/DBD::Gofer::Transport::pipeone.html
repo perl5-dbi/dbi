@@ -1,0 +1,65 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Gofer::Transport::pipeone - DBD::Gofer client transport for testing</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Gofer::Transport::pipeone - DBD::Gofer client transport for testing</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>$original_dsn = &quot;...&quot;;
+DBI-&gt;connect(&quot;dbi:Gofer:transport=pipeone;dsn=$original_dsn&quot;,...)</code></pre>
+
+<p>or, enable by setting the DBI_AUTOPROXY environment variable:</p>
+
+<pre><code>export DBI_AUTOPROXY=&quot;dbi:Gofer:transport=pipeone&quot;</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Connect via DBD::Gofer and execute each request by starting executing a subprocess.</p>
+
+<p>This is, as you might imagine, spectacularly inefficient!</p>
+
+<p>It&#39;s only intended for testing. Specifically it demonstrates that the server side is completely stateless.</p>
+
+<p>It also provides a base class for the much more useful <a>DBD::Gofer::Transport::stream</a> transport.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tim Bunce, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a></p>
+
+<h1 id="LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</h1>
+
+<p>Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p>This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. See <a>perlartistic</a>.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBD::Gofer::Transport::Base</a></p>
+
+<p><a>DBD::Gofer</a></p>
+
+
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Gofer::Transport::corostream - Async DBD::Gofer stream transport using Coro and AnyEvent</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#KNOWN-ISSUES-AND-LIMITATIONS">KNOWN ISSUES AND LIMITATIONS</a></li>
+  <li><a href="#STATUS">STATUS</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+  <li><a href="#APPENDIX">APPENDIX</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Gofer::Transport::corostream - Async DBD::Gofer stream transport using Coro and AnyEvent</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>DBI_AUTOPROXY=&quot;dbi:Gofer:transport=corostream&quot; perl some-perl-script-using-dbi.pl</code></pre>
+
+<p>or</p>
+
+<pre><code>$dsn = ...; # the DSN for the driver and database you want to use
+$dbh = DBI-&gt;connect(&quot;dbi:Gofer:transport=corostream;dsn=$dsn&quot;, ...);</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>The <i>BIG WIN</i> from using <a>Coro</a> is that it enables the use of existing DBI frameworks like <a>DBIx::Class</a>.</p>
+
+<h1 id="KNOWN-ISSUES-AND-LIMITATIONS">KNOWN ISSUES AND LIMITATIONS</h1>
+
+<pre><code>- Uses Coro::Select so alters CORE::select globally
+  Parent class probably needs refactoring to enable a more encapsulated approach.
+
+- Doesn&#39;t prevent multiple concurrent requests
+  Probably just needs a per-connection semaphore
+
+- Coro has many caveats. Caveat emptor.</code></pre>
+
+<h1 id="STATUS">STATUS</h1>
+
+<p>THIS IS CURRENTLY JUST A PROOF-OF-CONCEPT IMPLEMENTATION FOR EXPERIMENTATION.</p>
+
+<p>Please note that I have no plans to develop this code further myself. I&#39;d very much welcome contributions. Interested? Let me know!</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tim Bunce, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a></p>
+
+<h1 id="LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</h1>
+
+<p>Copyright (c) 2010, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p>This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. See <a>perlartistic</a>.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBD::Gofer::Transport::stream</a></p>
+
+<p><a>DBD::Gofer</a></p>
+
+<h1 id="APPENDIX">APPENDIX</h1>
+
+<p>Example code:</p>
+
+<pre><code>#!perl
+
+use strict;
+use warnings;
+use Time::HiRes qw(time);
+
+BEGIN { $ENV{PERL_ANYEVENT_STRICT} = 1; $ENV{PERL_ANYEVENT_VERBOSE} = 1; }
+
+use AnyEvent;
+
+BEGIN { $ENV{DBI_TRACE} = 0; $ENV{DBI_GOFER_TRACE} = 0; $ENV{DBD_GOFER_TRACE} = 0; };
+
+use DBI;
+
+$ENV{DBI_AUTOPROXY} = &#39;dbi:Gofer:transport=corostream&#39;;
+
+my $ticker = AnyEvent-&gt;timer( after =&gt; 0, interval =&gt; 0.1, cb =&gt; sub {
+    warn sprintf &quot;-tick- %.2f\n&quot;, time
+} );
+
+warn &quot;connecting...\n&quot;;
+my $dbh = DBI-&gt;connect(&quot;dbi:NullP:&quot;);
+warn &quot;...connected\n&quot;;
+
+for (1..3) {
+    warn &quot;entering DBI...\n&quot;;
+    $dbh-&gt;do(&quot;sleep 0.3&quot;); # pseudo-sql understood by the DBD::NullP driver
+    warn &quot;...returned\n&quot;;
+}
+
+warn &quot;done.&quot;;</code></pre>
+
+<p>Example output:</p>
+
+<pre><code>$ perl corogofer.pl
+connecting...
+-tick- 1293631437.14
+-tick- 1293631437.14
+...connected
+entering DBI...
+-tick- 1293631437.25
+-tick- 1293631437.35
+-tick- 1293631437.45
+-tick- 1293631437.55
+...returned
+entering DBI...
+-tick- 1293631437.66
+-tick- 1293631437.76
+-tick- 1293631437.86
+...returned
+entering DBI...
+-tick- 1293631437.96
+-tick- 1293631438.06
+-tick- 1293631438.16
+...returned
+done. at corogofer.pl line 39.</code></pre>
+
+<p>You can see that the timer callback is firing while the code &#39;waits&#39; inside the do() method for the response from the database. Normally that would block.</p>
+
+
+</body>
+
+</html>

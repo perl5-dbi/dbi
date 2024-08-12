@@ -1,0 +1,90 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Mem - a DBI driver for Mem &amp; MLMem files</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Metadata">Metadata</a></li>
+    </ul>
+  </li>
+  <li><a href="#GETTING-HELP-MAKING-SUGGESTIONS-AND-REPORTING-BUGS">GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS</a></li>
+  <li><a href="#AUTHOR-AND-COPYRIGHT">AUTHOR AND COPYRIGHT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Mem - a DBI driver for Mem &amp; MLMem files</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>use DBI;
+$dbh = DBI-&gt;connect(&#39;dbi:Mem:&#39;, undef, undef, {});
+$dbh = DBI-&gt;connect(&#39;dbi:Mem:&#39;, undef, undef, {RaiseError =&gt; 1});
+
+# or
+$dbh = DBI-&gt;connect(&#39;dbi:Mem:&#39;);
+$dbh = DBI-&gt;connect(&#39;DBI:Mem(RaiseError=1):&#39;);</code></pre>
+
+<p>and other variations on connect() as shown in the <a>DBI</a> docs and &lt;DBI::DBD::SqlEngine metadata|DBI::DBD::SqlEngine/Metadata&gt;.</p>
+
+<p>Use standard DBI prepare, execute, fetch, placeholders, etc., see <a href="#QUICK-START">&quot;QUICK START&quot;</a> for an example.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>DBD::Mem is a database management system that works right out of the box. If you have a standard installation of Perl and DBI you can begin creating, accessing, and modifying simple database tables without any further modules. You can add other modules (e.g., SQL::Statement) for improved functionality.</p>
+
+<p>DBD::Mem doesn&#39;t store any data persistently - all data has the lifetime of the instantiated <code>$dbh</code>. The main reason to use DBD::Mem is to use extended features of <a>SQL::Statement</a> where temporary tables are required. One can use DBD::Mem to simulate <code>VIEWS</code> or sub-queries.</p>
+
+<p>Bundling <code>DBD::Mem</code> with <a>DBI</a> will allow us further compatibility checks of <a>DBI::DBD::SqlEngine</a> beyond the capabilities of <a>DBD::File</a> and <a>DBD::DBM</a>. This will ensure DBI provided basis for drivers like <a>DBD::AnyData2</a> or <a>DBD::Amazon</a> are better prepared and tested for not-file based backends.</p>
+
+<h2 id="Metadata">Metadata</h2>
+
+<p>There&#39;re no new meta data introduced by <code>DBD::Mem</code>. See <a>&quot;Metadata&quot; in DBI::DBD::SqlEngine</a> for full description.</p>
+
+<h1 id="GETTING-HELP-MAKING-SUGGESTIONS-AND-REPORTING-BUGS">GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS</h1>
+
+<p>If you need help installing or using DBD::Mem, please write to the DBI users mailing list at <a href="mailto:dbi-users@perl.org">mailto:dbi-users@perl.org</a> or to the comp.lang.perl.modules newsgroup on usenet. I cannot always answer every question quickly but there are many on the mailing list or in the newsgroup who can.</p>
+
+<p>DBD developers for DBD&#39;s which rely on DBI::DBD::SqlEngine or DBD::Mem or use one of them as an example are suggested to join the DBI developers mailing list at <a href="mailto:dbi-dev@perl.org">mailto:dbi-dev@perl.org</a> and strongly encouraged to join our IRC channel at <a href="irc://irc.perl.org/dbi">irc://irc.perl.org/dbi</a>.</p>
+
+<p>If you have suggestions, ideas for improvements, or bugs to report, please report a bug as described in DBI. Do not mail any of the authors directly, you might not get an answer.</p>
+
+<p>When reporting bugs, please send the output of <code>$dbh-&gt;mem_versions($table)</code> for a table that exhibits the bug and as small a sample as you can make of the code that produces the bug. And of course, patches are welcome, too :-).</p>
+
+<p>If you need enhancements quickly, you can get commercial support as described at <a href="http://dbi.perl.org/support/">http://dbi.perl.org/support/</a> or you can contact Jens Rehsack at rehsack@cpan.org for commercial support.</p>
+
+<h1 id="AUTHOR-AND-COPYRIGHT">AUTHOR AND COPYRIGHT</h1>
+
+<p>This module is written by Jens Rehsack &lt; rehsack AT cpan.org &gt;.</p>
+
+<pre><code>Copyright (c) 2016- by Jens Rehsack, all rights reserved.</code></pre>
+
+<p>You may freely distribute and/or modify this module under the terms of either the GNU General Public License (GPL) or the Artistic License, as specified in the Perl README file.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBI</a> for the Database interface of the Perl Programming Language.</p>
+
+<p><a>SQL::Statement</a> and <a>DBI::SQL::Nano</a> for the available SQL engines.</p>
+
+<p><a>SQL::Statement::RAM</a> where the implementation is shamelessly stolen from to allow DBI bundled Pure-Perl drivers increase the test coverage.</p>
+
+<p><a>DBD::SQLite</a> using <code>dbname=:memory:</code> for an incredible fast in-memory database engine.</p>
+
+
+</body>
+
+</html>

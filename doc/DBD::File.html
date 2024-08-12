@@ -1,0 +1,498 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::File - Base class for writing file based DBI drivers</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Metadata">Metadata</a>
+        <ul>
+          <li><a href="#The-following-DBI-attributes-are-handled-by-DBD%3A%3AFile">The following DBI attributes are handled by DBD::File:</a>
+            <ul>
+              <li><a href="#AutoCommit">AutoCommit</a></li>
+              <li><a href="#ChopBlanks">ChopBlanks</a></li>
+              <li><a href="#NUM_OF_FIELDS">NUM_OF_FIELDS</a></li>
+              <li><a href="#NUM_OF_PARAMS">NUM_OF_PARAMS</a></li>
+              <li><a href="#NAME1">NAME</a></li>
+              <li><a href="#NULLABLE">NULLABLE</a></li>
+            </ul>
+          </li>
+          <li><a href="#Unsupported-DBI-attributes-and-methods">Unsupported DBI attributes and methods</a>
+            <ul>
+              <li><a href="#bind_param_inout">bind_param_inout</a></li>
+              <li><a href="#CursorName">CursorName</a></li>
+              <li><a href="#LongReadLen">LongReadLen</a></li>
+              <li><a href="#LongTruncOk">LongTruncOk</a></li>
+            </ul>
+          </li>
+          <li><a href="#DBD%3A%3AFile-specific-attributes">DBD::File specific attributes</a>
+            <ul>
+              <li><a href="#f_dir">f_dir</a></li>
+              <li><a href="#f_dir_search">f_dir_search</a></li>
+              <li><a href="#f_ext">f_ext</a></li>
+              <li><a href="#f_schema">f_schema</a></li>
+              <li><a href="#f_lock">f_lock</a></li>
+              <li><a href="#f_lockfile">f_lockfile</a></li>
+              <li><a href="#f_encoding">f_encoding</a></li>
+              <li><a href="#f_meta">f_meta</a></li>
+            </ul>
+          </li>
+          <li><a href="#New-opportunities-for-attributes-from-DBI%3A%3ADBD%3A%3ASqlEngine">New opportunities for attributes from DBI::DBD::SqlEngine</a>
+            <ul>
+              <li><a href="#sql_table_source">sql_table_source</a></li>
+              <li><a href="#sql_data_source">sql_data_source</a></li>
+            </ul>
+          </li>
+          <li><a href="#Internally-private-attributes-to-deal-with-SQL-backends">Internally private attributes to deal with SQL backends</a>
+            <ul>
+              <li><a href="#sql_nano_version">sql_nano_version</a></li>
+              <li><a href="#sql_statement_version">sql_statement_version</a></li>
+              <li><a href="#sql_handler">sql_handler</a></li>
+              <li><a href="#sql_ram_tables">sql_ram_tables</a></li>
+              <li><a href="#sql_flags">sql_flags</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><a href="#Driver-private-methods">Driver private methods</a>
+        <ul>
+          <li><a href="#Default-DBI-methods">Default DBI methods</a>
+            <ul>
+              <li><a href="#data_sources">data_sources</a></li>
+            </ul>
+          </li>
+          <li><a href="#Additional-methods">Additional methods</a>
+            <ul>
+              <li><a href="#f_versions">f_versions</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#KNOWN-BUGS-AND-LIMITATIONS">KNOWN BUGS AND LIMITATIONS</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#COPYRIGHT-AND-LICENSE">COPYRIGHT AND LICENSE</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::File - Base class for writing file based DBI drivers</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>This module is a base class for writing other <a>DBD</a>s. It is not intended to function as a DBD itself (though it is possible). If you want to access flat files, use <a>DBD::AnyData</a>, or <a>DBD::CSV</a> (both of which are subclasses of DBD::File).</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>The DBD::File module is not a true <a>DBI</a> driver, but an abstract base class for deriving concrete DBI drivers from it. The implication is, that these drivers work with plain files, for example CSV files or INI files. The module is based on the <a>SQL::Statement</a> module, a simple SQL engine.</p>
+
+<p>See <a>DBI</a> for details on DBI, <a>SQL::Statement</a> for details on SQL::Statement and <a>DBD::CSV</a>, <a>DBD::DBM</a> or <a>DBD::AnyData</a> for example drivers.</p>
+
+<h2 id="Metadata">Metadata</h2>
+
+<p>The following attributes are handled by DBI itself and not by DBD::File, thus they all work as expected:</p>
+
+<pre><code>Active
+ActiveKids
+CachedKids
+CompatMode             (Not used)
+InactiveDestroy
+AutoInactiveDestroy
+Kids
+PrintError
+RaiseError
+Warn                   (Not used)</code></pre>
+
+<h3 id="The-following-DBI-attributes-are-handled-by-DBD::File">The following DBI attributes are handled by DBD::File:</h3>
+
+<h4 id="AutoCommit">AutoCommit</h4>
+
+<p>Always on.</p>
+
+<h4 id="ChopBlanks">ChopBlanks</h4>
+
+<p>Works.</p>
+
+<h4 id="NUM_OF_FIELDS">NUM_OF_FIELDS</h4>
+
+<p>Valid after <code>$sth-&gt;execute</code>.</p>
+
+<h4 id="NUM_OF_PARAMS">NUM_OF_PARAMS</h4>
+
+<p>Valid after <code>$sth-&gt;prepare</code>.</p>
+
+<h4 id="NAME1">NAME</h4>
+
+<p>Valid after <code>$sth-&gt;execute</code>; undef for Non-Select statements.</p>
+
+<h4 id="NULLABLE">NULLABLE</h4>
+
+<p>Not really working, always returns an array ref of ones, except the affected table has been created in this session. Valid after <code>$sth-&gt;execute</code>; undef for non-select statements.</p>
+
+<h3 id="Unsupported-DBI-attributes-and-methods">Unsupported DBI attributes and methods</h3>
+
+<h4 id="bind_param_inout">bind_param_inout</h4>
+
+<h4 id="CursorName">CursorName</h4>
+
+<h4 id="LongReadLen">LongReadLen</h4>
+
+<h4 id="LongTruncOk">LongTruncOk</h4>
+
+<h3 id="DBD::File-specific-attributes">DBD::File specific attributes</h3>
+
+<p>In addition to the DBI attributes, you can use the following dbh attributes:</p>
+
+<h4 id="f_dir">f_dir</h4>
+
+<p>This attribute is used for setting the directory where the files are opened and it defaults to the current directory (<i>.</i>). Usually you set it on the dbh but it may be overridden per table (see <a>f_meta</a>).</p>
+
+<p>When the value for <code>f_dir</code> is a relative path, it is converted into the appropriate absolute path name (based on the current working directory) when the dbh attribute is set.</p>
+
+<pre><code>f_dir =&gt; &quot;/data/foo/csv&quot;,</code></pre>
+
+<p>If <code>f_dir</code> is set to a non-existing location, the connection will fail. See CVE-2014-10401 for reasoning. Because of this, folders to use cannot be created after the connection, but must exist before the connection is initiated.</p>
+
+<p>See <a href="#KNOWN-BUGS-AND-LIMITATIONS">&quot;KNOWN BUGS AND LIMITATIONS&quot;</a>.</p>
+
+<h4 id="f_dir_search">f_dir_search</h4>
+
+<p>This optional attribute can be set to pass a list of folders to also find existing tables. It will <b>not</b> be used to create new files.</p>
+
+<pre><code>f_dir_search =&gt; [ &quot;/data/bar/csv&quot;, &quot;/dump/blargh/data&quot; ],</code></pre>
+
+<h4 id="f_ext">f_ext</h4>
+
+<p>This attribute is used for setting the file extension. The format is:</p>
+
+<pre><code>extension{/flag}</code></pre>
+
+<p>where the /flag is optional and the extension is case-insensitive. <code>f_ext</code> allows you to specify an extension which:</p>
+
+<pre><code>f_ext =&gt; &quot;.csv/r&quot;,</code></pre>
+
+<ul>
+
+<li><p>makes DBD::File prefer <i>table.extension</i> over <i>table</i>.</p>
+
+</li>
+<li><p>makes the table name the filename minus the extension.</p>
+
+</li>
+</ul>
+
+<pre><code>DBI:CSV:f_dir=data;f_ext=.csv</code></pre>
+
+<p>In the above example and when <code>f_dir</code> contains both <i>table.csv</i> and <i>table</i>, DBD::File will open <i>table.csv</i> and the table will be named &quot;table&quot;. If <i>table.csv</i> does not exist but <i>table</i> does that file is opened and the table is also called &quot;table&quot;.</p>
+
+<p>If <code>f_ext</code> is not specified and <i>table.csv</i> exists it will be opened and the table will be called &quot;table.csv&quot; which is probably not what you want.</p>
+
+<p>NOTE: even though extensions are case-insensitive, table names are not.</p>
+
+<pre><code>DBI:CSV:f_dir=data;f_ext=.csv/r</code></pre>
+
+<p>The <code>r</code> flag means the file extension is required and any filename that does not match the extension is ignored.</p>
+
+<p>Usually you set it on the dbh but it may be overridden per table (see <a>f_meta</a>).</p>
+
+<h4 id="f_schema">f_schema</h4>
+
+<p>This will set the schema name and defaults to the owner of the directory in which the table file resides. You can set <code>f_schema</code> to <code>undef</code>.</p>
+
+<pre><code>my $dbh = DBI-&gt;connect (&quot;dbi:CSV:&quot;, &quot;&quot;, &quot;&quot;, {
+    f_schema =&gt; undef,
+    f_dir    =&gt; &quot;data&quot;,
+    f_ext    =&gt; &quot;.csv/r&quot;,
+    }) or die $DBI::errstr;</code></pre>
+
+<p>By setting the schema you affect the results from the tables call:</p>
+
+<pre><code>my @tables = $dbh-&gt;tables ();
+
+# no f_schema
+&quot;merijn&quot;.foo
+&quot;merijn&quot;.bar
+
+# f_schema =&gt; &quot;dbi&quot;
+&quot;dbi&quot;.foo
+&quot;dbi&quot;.bar
+
+# f_schema =&gt; undef
+foo
+bar</code></pre>
+
+<p>Defining <code>f_schema</code> to the empty string is equal to setting it to <code>undef</code> so the DSN can be <code>&quot;dbi:CSV:f_schema=;f_dir=.&quot;</code>.</p>
+
+<h4 id="f_lock">f_lock</h4>
+
+<p>The <code>f_lock</code> attribute is used to set the locking mode on the opened table files. Note that not all platforms support locking. By default, tables are opened with a shared lock for reading, and with an exclusive lock for writing. The supported modes are:</p>
+
+<pre><code>0: No locking at all.
+
+1: Shared locks will be used.
+
+2: Exclusive locks will be used.</code></pre>
+
+<p>But see <a href="#KNOWN-BUGS-AND-LIMITATIONS">KNOWN BUGS</a> below.</p>
+
+<h4 id="f_lockfile">f_lockfile</h4>
+
+<p>If you wish to use a lockfile extension other than <code>.lck</code>, simply specify the <code>f_lockfile</code> attribute:</p>
+
+<pre><code>$dbh = DBI-&gt;connect (&quot;dbi:DBM:f_lockfile=.foo&quot;);
+$dbh-&gt;{f_lockfile} = &quot;.foo&quot;;
+$dbh-&gt;{dbm_tables}{qux}{f_lockfile} = &quot;.foo&quot;;</code></pre>
+
+<p>If you wish to disable locking, set the <code>f_lockfile</code> to <code>0</code>.</p>
+
+<pre><code>$dbh = DBI-&gt;connect (&quot;dbi:DBM:f_lockfile=0&quot;);
+$dbh-&gt;{f_lockfile} = 0;
+$dbh-&gt;{dbm_tables}{qux}{f_lockfile} = 0;</code></pre>
+
+<h4 id="f_encoding">f_encoding</h4>
+
+<p>With this attribute, you can set the encoding in which the file is opened. This is implemented using <code>binmode $fh, &quot;:encoding(&lt;f_encoding&gt;)&quot;</code>.</p>
+
+<h4 id="f_meta">f_meta</h4>
+
+<p>Private data area aliasing <a>&quot;sql_meta&quot; in DBI::DBD::SqlEngine</a> which contains information about the tables this module handles. Table meta data might not be available until the table has been accessed for the first time e.g., by issuing a select on it however it is possible to pre-initialize attributes for each table you use.</p>
+
+<p>DBD::File recognizes the (public) attributes <code>f_ext</code>, <code>f_dir</code>, <code>f_file</code>, <code>f_encoding</code>, <code>f_lock</code>, <code>f_lockfile</code>, <code>f_schema</code>, in addition to the attributes <a>&quot;sql_meta&quot; in DBI::DBD::SqlEngine</a> already supports. Be very careful when modifying attributes you do not know, the consequence might be a destroyed or corrupted table.</p>
+
+<p><code>f_file</code> is an attribute applicable to table meta data only and you will not find a corresponding attribute in the dbh. Whilst it may be reasonable to have several tables with the same column names, it is not for the same file name. If you need access to the same file using different table names, use <code>SQL::Statement</code> as the SQL engine and the <code>AS</code> keyword:</p>
+
+<pre><code>SELECT * FROM tbl AS t1, tbl AS t2 WHERE t1.id = t2.id</code></pre>
+
+<p><code>f_file</code> can be an absolute path name or a relative path name but if it is relative, it is interpreted as being relative to the <code>f_dir</code> attribute of the table meta data. When <code>f_file</code> is set DBD::File will use <code>f_file</code> as specified and will not attempt to work out an alternative for <code>f_file</code> using the <code>table name</code> and <code>f_ext</code> attribute.</p>
+
+<p>While <code>f_meta</code> is a private and readonly attribute (which means, you cannot modify it&#39;s values), derived drivers might provide restricted write access through another attribute. Well known accessors are <code>csv_tables</code> for <a>DBD::CSV</a>, <code>ad_tables</code> for <a>DBD::AnyData</a> and <code>dbm_tables</code> for <a>DBD::DBM</a>.</p>
+
+<h3 id="New-opportunities-for-attributes-from-DBI::DBD::SqlEngine">New opportunities for attributes from DBI::DBD::SqlEngine</h3>
+
+<h4 id="sql_table_source">sql_table_source</h4>
+
+<p><code>$dbh-&gt;{sql_table_source}</code> can be set to <i>DBD::File::TableSource::FileSystem</i> (and is the default setting of DBD::File). This provides usual behaviour of previous DBD::File releases on</p>
+
+<pre><code> @ary = DBI-&gt;data_sources ($driver);
+ @ary = DBI-&gt;data_sources ($driver, \%attr);
+ 
+ @ary = $dbh-&gt;data_sources ();
+ @ary = $dbh-&gt;data_sources (\%attr);
+
+ @names = $dbh-&gt;tables ($catalog, $schema, $table, $type);
+ 
+ $sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type);
+ $sth = $dbh-&gt;table_info ($catalog, $schema, $table, $type, \%attr);
+
+ $dbh-&gt;func (&quot;list_tables&quot;);</code></pre>
+
+<h4 id="sql_data_source">sql_data_source</h4>
+
+<p><code>$dbh-&gt;{sql_data_source}</code> can be set to either <i>DBD::File::DataSource::File</i>, which is default and provides the well known behavior of DBD::File releases prior to 0.41, or <i>DBD::File::DataSource::Stream</i>, which reuses already opened file-handle for operations.</p>
+
+<h3 id="Internally-private-attributes-to-deal-with-SQL-backends">Internally private attributes to deal with SQL backends</h3>
+
+<p>Do not modify any of these private attributes unless you understand the implications of doing so. The behavior of DBD::File and derived DBDs might be unpredictable when one or more of those attributes are modified.</p>
+
+<h4 id="sql_nano_version">sql_nano_version</h4>
+
+<p>Contains the version of loaded DBI::SQL::Nano.</p>
+
+<h4 id="sql_statement_version">sql_statement_version</h4>
+
+<p>Contains the version of loaded SQL::Statement.</p>
+
+<h4 id="sql_handler">sql_handler</h4>
+
+<p>Contains either the text &#39;SQL::Statement&#39; or &#39;DBI::SQL::Nano&#39;.</p>
+
+<h4 id="sql_ram_tables">sql_ram_tables</h4>
+
+<p>Contains optionally temporary tables.</p>
+
+<h4 id="sql_flags">sql_flags</h4>
+
+<p>Contains optional flags to instantiate the SQL::Parser parsing engine when SQL::Statement is used as SQL engine. See <a>SQL::Parser</a> for valid flags.</p>
+
+<h2 id="Driver-private-methods">Driver private methods</h2>
+
+<h3 id="Default-DBI-methods">Default DBI methods</h3>
+
+<h4 id="data_sources">data_sources</h4>
+
+<p>The <code>data_sources</code> method returns a list of subdirectories of the current directory in the form &quot;dbi:CSV:f_dir=$dirname&quot;.</p>
+
+<p>If you want to read the subdirectories of another directory, use</p>
+
+<pre><code>my ($drh)  = DBI-&gt;install_driver (&quot;CSV&quot;);
+my (@list) = $drh-&gt;data_sources (f_dir =&gt; &quot;/usr/local/csv_data&quot;);</code></pre>
+
+<h3 id="Additional-methods">Additional methods</h3>
+
+<p>The following methods are only available via their documented name when DBD::File is used directly. Because this is only reasonable for testing purposes, the real names must be used instead. Those names can be computed by replacing the <code>f_</code> in the method name with the driver prefix.</p>
+
+<h4 id="f_versions">f_versions</h4>
+
+<p>Signature:</p>
+
+<pre><code>sub f_versions (;$)
+{
+  my ($table_name) = @_;
+  $table_name ||= &quot;.&quot;;
+  ...
+  }</code></pre>
+
+<p>Returns the versions of the driver, including the DBI version, the Perl version, DBI::PurePerl version (if DBI::PurePerl is active) and the version of the SQL engine in use.</p>
+
+<pre><code>my $dbh = DBI-&gt;connect (&quot;dbi:File:&quot;);
+my $f_versions = $dbh-&gt;func (&quot;f_versions&quot;);
+print &quot;$f_versions\n&quot;;
+__END__
+# DBD::File              0.41 using IO::File (1.16)
+#   DBI::DBD::SqlEngine  0.05 using SQL::Statement 1.406
+# DBI                    1.623
+# OS                     darwin (12.2.1)
+# Perl                   5.017006 (darwin-thread-multi-ld-2level)</code></pre>
+
+<p>Called in list context, f_versions will return an array containing each line as single entry.</p>
+
+<p>Some drivers might use the optional (table name) argument and modify version information related to the table (e.g. DBD::DBM provides storage backend information for the requested table, when it has a table name).</p>
+
+<h1 id="KNOWN-BUGS-AND-LIMITATIONS">KNOWN BUGS AND LIMITATIONS</h1>
+
+<ul>
+
+<li><p>This module uses flock () internally but flock is not available on all platforms. On MacOS and Windows 95 there is no locking at all (perhaps not so important on MacOS and Windows 95, as there is only a single user).</p>
+
+</li>
+<li><p>The module stores details about the handled tables in a private area of the driver handle (<code>$drh</code>). This data area is not shared between different driver instances, so several <code>DBI-&gt;connect ()</code> calls will cause different table instances and private data areas.</p>
+
+<p>This data area is filled for the first time when a table is accessed, either via an SQL statement or via <code>table_info</code> and is not destroyed until the table is dropped or the driver handle is released. Manual destruction is possible via <a>f_clear_meta</a>.</p>
+
+<p>The following attributes are preserved in the data area and will evaluated instead of driver globals:</p>
+
+<dl>
+
+<dt id="f_ext1">f_ext</dt>
+<dd>
+
+</dd>
+<dt id="f_dir1">f_dir</dt>
+<dd>
+
+</dd>
+<dt id="f_dir_search1">f_dir_search</dt>
+<dd>
+
+</dd>
+<dt id="f_lock1">f_lock</dt>
+<dd>
+
+</dd>
+<dt id="f_lockfile1">f_lockfile</dt>
+<dd>
+
+</dd>
+<dt id="f_encoding1">f_encoding</dt>
+<dd>
+
+</dd>
+<dt id="f_schema1">f_schema</dt>
+<dd>
+
+</dd>
+<dt id="col_names">col_names</dt>
+<dd>
+
+</dd>
+<dt id="sql_identifier_case">sql_identifier_case</dt>
+<dd>
+
+</dd>
+</dl>
+
+<p>The following attributes are preserved in the data area only and cannot be set globally.</p>
+
+<dl>
+
+<dt id="f_file">f_file</dt>
+<dd>
+
+</dd>
+</dl>
+
+<p>The following attributes are preserved in the data area only and are computed when initializing the data area:</p>
+
+<dl>
+
+<dt id="f_fqfn">f_fqfn</dt>
+<dd>
+
+</dd>
+<dt id="f_fqbn">f_fqbn</dt>
+<dd>
+
+</dd>
+<dt id="f_fqln">f_fqln</dt>
+<dd>
+
+</dd>
+<dt id="table_name">table_name</dt>
+<dd>
+
+</dd>
+</dl>
+
+<p>For DBD::CSV tables this means, once opened &quot;foo.csv&quot; as table named &quot;foo&quot;, another table named &quot;foo&quot; accessing the file &quot;foo.txt&quot; cannot be opened. Accessing &quot;foo&quot; will always access the file &quot;foo.csv&quot; in memorized <code>f_dir</code>, locking <code>f_lockfile</code> via memorized <code>f_lock</code>.</p>
+
+<p>You can use <a>f_clear_meta</a> or the <code>f_file</code> attribute for a specific table to work around this.</p>
+
+</li>
+<li><p>When used with SQL::Statement and temporary tables e.g.,</p>
+
+<pre><code>CREATE TEMP TABLE ...</code></pre>
+
+<p>the table data processing bypasses DBD::File::Table. No file system calls will be made and there are no clashes with existing (file based) tables with the same name. Temporary tables are chosen over file tables, but they will not covered by <code>table_info</code>.</p>
+
+</li>
+</ul>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>This module is currently maintained by</p>
+
+<p>H.Merijn Brand &lt; h.m.brand at xs4all.nl &gt; and Jens Rehsack &lt; rehsack at googlemail.com &gt;</p>
+
+<p>The original author is Jochen Wiedmann.</p>
+
+<h1 id="COPYRIGHT-AND-LICENSE">COPYRIGHT AND LICENSE</h1>
+
+<pre><code>Copyright (C) 2009-2020 by H.Merijn Brand &amp; Jens Rehsack
+Copyright (C) 2004-2009 by Jeff Zucker
+Copyright (C) 1998-2004 by Jochen Wiedmann</code></pre>
+
+<p>All rights reserved.</p>
+
+<p>You may freely distribute and/or modify this module under the terms of either the GNU General Public License (GPL) or the Artistic License, as specified in the Perl README file.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBI</a>, <a>DBD::DBM</a>, <a>DBD::CSV</a>, <a>Text::CSV</a>, <a>Text::CSV_XS</a>, <a>SQL::Statement</a>, and <a>DBI::SQL::Nano</a></p>
+
+
+</body>
+
+</html>

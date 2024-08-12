@@ -1,0 +1,94 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Gofer::Transport::stream - DBD::Gofer transport for stdio streaming</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PERSISTENCE">PERSISTENCE</a></li>
+  <li><a href="#TO-DO">TO DO</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Gofer::Transport::stream - DBD::Gofer transport for stdio streaming</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>DBI-&gt;connect(&#39;dbi:Gofer:transport=stream;url=ssh:username@host.example.com;dsn=dbi:...&#39;,...)</code></pre>
+
+<p>or, enable by setting the DBI_AUTOPROXY environment variable:</p>
+
+<pre><code>export DBI_AUTOPROXY=&#39;dbi:Gofer:transport=stream;url=ssh:username@host.example.com&#39;</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Without the <code>url=</code> parameter it launches a subprocess as</p>
+
+<pre><code>perl -MDBI::Gofer::Transport::stream -e run_stdio_hex</code></pre>
+
+<p>and feeds requests into it and reads responses from it. But that&#39;s not very useful.</p>
+
+<p>With a <code>url=ssh:username@host.example.com</code> parameter it uses ssh to launch the subprocess on a remote system. That&#39;s much more useful!</p>
+
+<p>It gives you secure remote access to DBI databases on any system you can login to. Using ssh also gives you optional compression and many other features (see the ssh manual for how to configure that and many other options via ~/.ssh/config file).</p>
+
+<p>The actual command invoked is something like:</p>
+
+<pre><code>ssh -xq ssh:username@host.example.com bash -c $setup $run</code></pre>
+
+<p>where $run is the command shown above, and $command is</p>
+
+<pre><code>. .bash_profile 2&gt;/dev/null || . .bash_login 2&gt;/dev/null || . .profile 2&gt;/dev/null; exec &quot;$@&quot;</code></pre>
+
+<p>which is trying (in a limited and fairly unportable way) to setup the environment (PATH, PERL5LIB etc) as it would be if you had logged in to that system.</p>
+
+<p>The &quot;<code>perl</code>&quot; used in the command will default to the value of $^X when not using ssh. On most systems that&#39;s the full path to the perl that&#39;s currently executing.</p>
+
+<h1 id="PERSISTENCE">PERSISTENCE</h1>
+
+<p>Currently gofer stream connections persist (remain connected) after all database handles have been disconnected. This makes later connections in the same process very fast.</p>
+
+<p>Currently up to 5 different gofer stream connections (based on url) can persist. If more than 5 are in the cache when a new connection is made then the cache is cleared before adding the new connection. Simple but effective.</p>
+
+<h1 id="TO-DO">TO DO</h1>
+
+<p>Document go_perl attribute</p>
+
+<p>Automatically reconnect (within reason) if there&#39;s a transport error.</p>
+
+<p>Decide on default for persistent connection - on or off? limits? ttl?</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tim Bunce, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a></p>
+
+<h1 id="LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</h1>
+
+<p>Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p>This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. See <a>perlartistic</a>.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBD::Gofer::Transport::Base</a></p>
+
+<p><a>DBD::Gofer</a></p>
+
+
+</body>
+
+</html>

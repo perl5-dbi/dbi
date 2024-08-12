@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBI::DBD::Metadata - Generate the code and data for some DBI metadata methods</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#Generating-a-GetInfo-package-for-a-driver">Generating a GetInfo package for a driver</a></li>
+  <li><a href="#Generating-a-TypeInfo-package-for-a-driver">Generating a TypeInfo package for a driver</a></li>
+  <li><a href="#AUTHORS">AUTHORS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBI::DBD::Metadata - Generate the code and data for some DBI metadata methods</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>The idea is to extract metadata information from a good quality ODBC driver and use it to generate code and data to use in your own DBI driver for the same database.</p>
+
+<p>To generate code to support the get_info method:</p>
+
+<pre><code>perl -MDBI::DBD::Metadata -e &quot;write_getinfo_pm(&#39;dbi:ODBC:dsn-name&#39;,&#39;user&#39;,&#39;pass&#39;,&#39;Driver&#39;)&quot;
+
+perl -MDBI::DBD::Metadata -e write_getinfo_pm dbi:ODBC:foo_db username password Driver</code></pre>
+
+<p>To generate code to support the type_info method:</p>
+
+<pre><code>perl -MDBI::DBD::Metadata -e &quot;write_typeinfo_pm(&#39;dbi:ODBC:dsn-name&#39;,&#39;user&#39;,&#39;pass&#39;,&#39;Driver&#39;)&quot;
+
+perl -MDBI::DBD::Metadata -e write_typeinfo_pm dbi:ODBC:dsn-name user pass Driver</code></pre>
+
+<p>Where <code>dbi:ODBC:dsn-name</code> is the connection to use to extract the data, and <code>Driver</code> is the name of the driver you want the code generated for (the driver name gets embedded into the output in numerous places).</p>
+
+<h1 id="Generating-a-GetInfo-package-for-a-driver">Generating a GetInfo package for a driver</h1>
+
+<p>The <code>write_getinfo_pm</code> in the DBI::DBD::Metadata module generates a DBD::Driver::GetInfo package on standard output.</p>
+
+<p>This method generates a DBD::Driver::GetInfo package from the data source you specified in the parameter list or in the environment variable DBI_DSN. DBD::Driver::GetInfo should help a DBD author implement the DBI get_info() method. Because you are just creating this package, it is very unlikely that DBD::Driver already provides a good implementation for get_info(). Thus you will probably connect via DBD::ODBC.</p>
+
+<p>Once you are sure that it is producing reasonably sane data, you should typically redirect the standard output to lib/DBD/Driver/GetInfo.pm, and then hand edit the result. Do not forget to update your Makefile.PL and MANIFEST to include this as an extra PM file that should be installed.</p>
+
+<p>If you connect via DBD::ODBC, you should use version 0.38 or greater;</p>
+
+<p>Please take a critical look at the data returned! ODBC drivers vary dramatically in their quality.</p>
+
+<p>The generator assumes that most values are static and places these values directly in the %info hash. A few examples show the use of CODE references and the implementation via subroutines. It is very likely that you will have to write additional subroutines for values depending on the session state or server version, e.g. SQL_DBMS_VER.</p>
+
+<p>A possible implementation of DBD::Driver::db::get_info() may look like:</p>
+
+<pre><code>sub get_info {
+  my($dbh, $info_type) = @_;
+  require DBD::Driver::GetInfo;
+  my $v = $DBD::Driver::GetInfo::info{int($info_type)};
+  $v = $v-&gt;($dbh) if ref $v eq &#39;CODE&#39;;
+  return $v;
+}</code></pre>
+
+<p>Please replace Driver (or &quot;&lt;foo&gt;&quot;) with the name of your driver. Note that this stub function is generated for you by write_getinfo_pm function, but you must manually transfer the code to Driver.pm.</p>
+
+<h1 id="Generating-a-TypeInfo-package-for-a-driver">Generating a TypeInfo package for a driver</h1>
+
+<p>The <code>write_typeinfo_pm</code> function in the DBI::DBD::Metadata module generates on standard output the data needed for a driver&#39;s type_info_all method. It also provides default implementations of the type_info_all method for inclusion in the driver&#39;s main implementation file.</p>
+
+<p>The driver parameter is the name of the driver for which the methods will be generated; for the sake of examples, this will be &quot;Driver&quot;. Typically, the dsn parameter will be of the form &quot;dbi:ODBC:odbc_dsn&quot;, where the odbc_dsn is a DSN for one of the driver&#39;s databases. The user and pass parameters are the other optional connection parameters that will be provided to the DBI connect method.</p>
+
+<p>Once you are sure that it is producing reasonably sane data, you should typically redirect the standard output to lib/DBD/Driver/TypeInfo.pm, and then hand edit the result if necessary. Do not forget to update your Makefile.PL and MANIFEST to include this as an extra PM file that should be installed.</p>
+
+<p>Please take a critical look at the data returned! ODBC drivers vary dramatically in their quality.</p>
+
+<p>The generator assumes that all the values are static and places these values directly in the %info hash.</p>
+
+<p>A possible implementation of DBD::Driver::type_info_all() may look like:</p>
+
+<pre><code>sub type_info_all {
+  my ($dbh) = @_;
+  require DBD::Driver::TypeInfo;
+  return [ @$DBD::Driver::TypeInfo::type_info_all ];
+}</code></pre>
+
+<p>Please replace Driver (or &quot;&lt;foo&gt;&quot;) with the name of your driver. Note that this stub function is generated for you by the write_typeinfo_pm function, but you must manually transfer the code to Driver.pm.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Jonathan Leffler &lt;jleffler@us.ibm.com&gt; (previously &lt;jleffler@informix.com&gt;), Jochen Wiedmann &lt;joe@ispsoft.de&gt;, Steffen Goeldner &lt;sgoeldner@cpan.org&gt;, and Tim Bunce &lt;dbi-users@perl.org&gt;.</p>
+
+
+</body>
+
+</html>

@@ -1,0 +1,251 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Proxy - A proxy driver for the DBI</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#CONNECTING-TO-THE-DATABASE">CONNECTING TO THE DATABASE</a></li>
+  <li><a href="#KNOWN-ISSUES">KNOWN ISSUES</a>
+    <ul>
+      <li><a href="#Unproxied-method-calls">Unproxied method calls</a></li>
+      <li><a href="#Complex-handle-attributes">Complex handle attributes</a></li>
+    </ul>
+  </li>
+  <li><a href="#SECURITY-WARNING">SECURITY WARNING</a></li>
+  <li><a href="#AUTHOR-AND-COPYRIGHT">AUTHOR AND COPYRIGHT</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Proxy - A proxy driver for the DBI</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>use DBI;
+
+$dbh = DBI-&gt;connect(&quot;dbi:Proxy:hostname=$host;port=$port;dsn=$db&quot;,
+                    $user, $passwd);
+
+# See the DBI module documentation for full details</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>DBD::Proxy is a Perl module for connecting to a database via a remote DBI driver. See <a>DBD::Gofer</a> for an alternative with different trade-offs.</p>
+
+<p>This is of course not needed for DBI drivers which already support connecting to a remote database, but there are engines which don&#39;t offer network connectivity.</p>
+
+<p>Another application is offering database access through a firewall, as the driver offers query based restrictions. For example you can restrict queries to exactly those that are used in a given CGI application.</p>
+
+<p>Speaking of CGI, another application is (or rather, will be) to reduce the database connect/disconnect overhead from CGI scripts by using proxying the connect_cached method. The proxy server will hold the database connections open in a cache. The CGI script then trades the database connect/disconnect overhead for the DBD::Proxy connect/disconnect overhead which is typically much less.</p>
+
+<h1 id="CONNECTING-TO-THE-DATABASE">CONNECTING TO THE DATABASE</h1>
+
+<p>Before connecting to a remote database, you must ensure, that a Proxy server is running on the remote machine. There&#39;s no default port, so you have to ask your system administrator for the port number. See <a>DBI::ProxyServer</a> for details.</p>
+
+<p>Say, your Proxy server is running on machine &quot;alpha&quot;, port 3334, and you&#39;d like to connect to an ODBC database called &quot;mydb&quot; as user &quot;joe&quot; with password &quot;hello&quot;. When using DBD::ODBC directly, you&#39;d do a</p>
+
+<pre><code>$dbh = DBI-&gt;connect(&quot;DBI:ODBC:mydb&quot;, &quot;joe&quot;, &quot;hello&quot;);</code></pre>
+
+<p>With DBD::Proxy this becomes</p>
+
+<pre><code>$dsn = &quot;DBI:Proxy:hostname=alpha;port=3334;dsn=DBI:ODBC:mydb&quot;;
+$dbh = DBI-&gt;connect($dsn, &quot;joe&quot;, &quot;hello&quot;);</code></pre>
+
+<p>You see, this is mainly the same. The DBD::Proxy module will create a connection to the Proxy server on &quot;alpha&quot; which in turn will connect to the ODBC database.</p>
+
+<p>Refer to the <a>DBI</a> documentation on the <code>connect</code> method for a way to automatically use DBD::Proxy without having to change your code.</p>
+
+<p>DBD::Proxy&#39;s DSN string has the format</p>
+
+<pre><code>$dsn = &quot;DBI:Proxy:key1=val1; ... ;keyN=valN;dsn=valDSN&quot;;</code></pre>
+
+<p>In other words, it is a collection of key/value pairs. The following keys are recognized:</p>
+
+<dl>
+
+<dt id="hostname">hostname</dt>
+<dd>
+
+</dd>
+<dt id="port">port</dt>
+<dd>
+
+<p>Hostname and port of the Proxy server; these keys must be present, no defaults. Example:</p>
+
+<pre><code>hostname=alpha;port=3334</code></pre>
+
+</dd>
+<dt id="dsn">dsn</dt>
+<dd>
+
+<p>The value of this attribute will be used as a dsn name by the Proxy server. Thus it must have the format <code>DBI:driver:...</code>, in particular it will contain colons. The <i>dsn</i> value may contain semicolons, hence this key *must* be the last and it&#39;s value will be the complete remaining part of the dsn. Example:</p>
+
+<pre><code>dsn=DBI:ODBC:mydb</code></pre>
+
+</dd>
+<dt id="cipher">cipher</dt>
+<dd>
+
+</dd>
+<dt id="key">key</dt>
+<dd>
+
+</dd>
+<dt id="usercipher">usercipher</dt>
+<dd>
+
+</dd>
+<dt id="userkey">userkey</dt>
+<dd>
+
+<p>By using these fields you can enable encryption. If you set, for example,</p>
+
+<pre><code>cipher=$class;key=$key</code></pre>
+
+<p>(note the semicolon) then DBD::Proxy will create a new cipher object by executing</p>
+
+<pre><code>$cipherRef = $class-&gt;new(pack(&quot;H*&quot;, $key));</code></pre>
+
+<p>and pass this object to the RPC::PlClient module when creating a client. See <a>RPC::PlClient</a>. Example:</p>
+
+<pre><code>cipher=IDEA;key=97cd2375efa329aceef2098babdc9721</code></pre>
+
+<p>The usercipher/userkey attributes allow you to use two phase encryption: The cipher/key encryption will be used in the login and authorisation phase. Once the client is authorised, he will change to usercipher/userkey encryption. Thus the cipher/key pair is a <b>host</b> based secret, typically less secure than the usercipher/userkey secret and readable by anyone. The usercipher/userkey secret is <b>your</b> private secret.</p>
+
+<p>Of course encryption requires an appropriately configured server. See <a>&quot;CONFIGURATION FILE&quot; in DBD::ProxyServer</a>.</p>
+
+</dd>
+<dt id="debug">debug</dt>
+<dd>
+
+<p>Turn on debugging mode</p>
+
+</dd>
+<dt id="stderr">stderr</dt>
+<dd>
+
+<p>This attribute will set the corresponding attribute of the RPC::PlClient object, thus logging will not use syslog(), but redirected to stderr. This is the default under Windows.</p>
+
+<pre><code>stderr=1</code></pre>
+
+</dd>
+<dt id="logfile">logfile</dt>
+<dd>
+
+<p>Similar to the stderr attribute, but output will be redirected to the given file.</p>
+
+<pre><code>logfile=/dev/null</code></pre>
+
+</dd>
+<dt id="RowCacheSize">RowCacheSize</dt>
+<dd>
+
+<p>The DBD::Proxy driver supports this attribute (which is DBI standard, as of DBI 1.02). It&#39;s used to reduce network round-trips by fetching multiple rows in one go. The current default value is 20, but this may change.</p>
+
+</dd>
+<dt id="proxy_no_finish">proxy_no_finish</dt>
+<dd>
+
+<p>This attribute can be used to reduce network traffic: If the application is calling $sth-&gt;finish() then the proxy tells the server to finish the remote statement handle. Of course this slows down things quite a lot, but is perfectly good for reducing memory usage with persistent connections.</p>
+
+<p>However, if you set the <i>proxy_no_finish</i> attribute to a TRUE value, either in the database handle or in the statement handle, then finish() calls will be suppressed. This is what you want, for example, in small and fast CGI applications.</p>
+
+</dd>
+<dt id="proxy_quote">proxy_quote</dt>
+<dd>
+
+<p>This attribute can be used to reduce network traffic: By default calls to $dbh-&gt;quote() are passed to the remote driver. Of course this slows down things quite a lot, but is the safest default behaviour.</p>
+
+<p>However, if you set the <i>proxy_quote</i> attribute to the value &#39;<code>local</code>&#39; either in the database handle or in the statement handle, and the call to quote has only one parameter, then the local default DBI quote method will be used (which will be faster but may be wrong).</p>
+
+</dd>
+</dl>
+
+<h1 id="KNOWN-ISSUES">KNOWN ISSUES</h1>
+
+<h2 id="Unproxied-method-calls">Unproxied method calls</h2>
+
+<p>If a method isn&#39;t being proxied, try declaring a stub sub in the appropriate package (DBD::Proxy::db for a dbh method, and DBD::Proxy::st for an sth method). For example:</p>
+
+<pre><code>sub DBD::Proxy::db::selectall_arrayref;</code></pre>
+
+<p>That will enable selectall_arrayref to be proxied.</p>
+
+<p>Currently many methods aren&#39;t explicitly proxied and so you get the DBI&#39;s default methods executed on the client.</p>
+
+<p>Some of those methods, like selectall_arrayref, may then call other methods that are proxied (selectall_arrayref calls fetchall_arrayref which calls fetch which is proxied). So things may appear to work but operate more slowly than the could.</p>
+
+<p>This may all change in a later version.</p>
+
+<h2 id="Complex-handle-attributes">Complex handle attributes</h2>
+
+<p>Sometimes handles are having complex attributes like hash refs or array refs and not simple strings or integers. For example, with DBD::CSV, you would like to write something like</p>
+
+<pre><code>$dbh-&gt;{&quot;csv_tables&quot;}-&gt;{&quot;passwd&quot;} =
+      { &quot;sep_char&quot; =&gt; &quot;:&quot;, &quot;eol&quot; =&gt; &quot;\n&quot;;</code></pre>
+
+<p>The above example would advice the CSV driver to assume the file &quot;passwd&quot; to be in the format of the /etc/passwd file: Colons as separators and a line feed without carriage return as line terminator.</p>
+
+<p>Surprisingly this example doesn&#39;t work with the proxy driver. To understand the reasons, you should consider the following: The Perl compiler is executing the above example in two steps:</p>
+
+<ol>
+
+<li><p>The first step is fetching the value of the key &quot;csv_tables&quot; in the handle $dbh. The value returned is complex, a hash ref.</p>
+
+</li>
+<li><p>The second step is storing some value (the right hand side of the assignment) as the key &quot;passwd&quot; in the hash ref from step 1.</p>
+
+</li>
+</ol>
+
+<p>This becomes a little bit clearer, if we rewrite the above code:</p>
+
+<pre><code>$tables = $dbh-&gt;{&quot;csv_tables&quot;};
+$tables-&gt;{&quot;passwd&quot;} = { &quot;sep_char&quot; =&gt; &quot;:&quot;, &quot;eol&quot; =&gt; &quot;\n&quot;;</code></pre>
+
+<p>While the examples work fine without the proxy, the fail due to a subtle difference in step 1: By DBI magic, the hash ref $dbh-&gt;{&#39;csv_tables&#39;} is returned from the server to the client. The client creates a local copy. This local copy is the result of step 1. In other words, step 2 modifies a local copy of the hash ref, but not the server&#39;s hash ref.</p>
+
+<p>The workaround is storing the modified local copy back to the server:</p>
+
+<pre><code>$tables = $dbh-&gt;{&quot;csv_tables&quot;};
+$tables-&gt;{&quot;passwd&quot;} = { &quot;sep_char&quot; =&gt; &quot;:&quot;, &quot;eol&quot; =&gt; &quot;\n&quot;;
+$dbh-&gt;{&quot;csv_tables&quot;} = $tables;</code></pre>
+
+<h1 id="SECURITY-WARNING">SECURITY WARNING</h1>
+
+<p><a>RPC::PlClient</a> used underneath is not secure due to serializing and deserializing data with <a>Storable</a> module. Use the proxy driver only in trusted environment.</p>
+
+<h1 id="AUTHOR-AND-COPYRIGHT">AUTHOR AND COPYRIGHT</h1>
+
+<p>This module is Copyright (c) 1997, 1998</p>
+
+<pre><code>Jochen Wiedmann
+Am Eisteich 9
+72555 Metzingen
+Germany
+
+Email: joe@ispsoft.de
+Phone: +49 7123 14887</code></pre>
+
+<p>The DBD::Proxy module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. In particular permission is granted to Tim Bunce for distributing this as a part of the DBI.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><a>DBI</a>, <a>RPC::PlClient</a>, <a>Storable</a></p>
+
+
+</body>
+
+</html>

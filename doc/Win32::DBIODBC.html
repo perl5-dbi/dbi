@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Win32::DBIODBC - Win32::ODBC emulation layer for the DBI</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#TO-DO">TO DO</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Win32::DBIODBC - Win32::ODBC emulation layer for the DBI</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>use Win32::DBIODBC;     # instead of use Win32::ODBC</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This is a <i>very</i> basic <i>very</i> alpha quality Win32::ODBC emulation for the DBI. To use it just replace</p>
+
+<pre><code>use Win32::ODBC;</code></pre>
+
+<p>in your scripts with</p>
+
+<pre><code>use Win32::DBIODBC;</code></pre>
+
+<p>or, while experimenting, you can pre-load this module without changing your scripts by doing</p>
+
+<pre><code>perl -MWin32::DBIODBC your_script_name</code></pre>
+
+<h1 id="TO-DO">TO DO</h1>
+
+<p>Error handling is virtually non-existent.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tom Horen &lt;tho@melexis.com&gt;</p>
+
+
+</body>
+
+</html>

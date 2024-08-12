@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>DBD::Gofer::Policy::Base - Base class for DBD::Gofer policies</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:hmbrand@cpan.org" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#POLICY-CLASSES">POLICY CLASSES</a></li>
+  <li><a href="#POLICY-ITEMS">POLICY ITEMS</a></li>
+  <li><a href="#POLICY-CUSTOMIZATION">POLICY CUSTOMIZATION</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>DBD::Gofer::Policy::Base - Base class for DBD::Gofer policies</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>$dbh = DBI-&gt;connect(&quot;dbi:Gofer:transport=...;policy=...&quot;, ...)</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>DBD::Gofer can be configured via a &#39;policy&#39; mechanism that allows you to fine-tune the number of round-trips to the Gofer server. The policies are grouped into classes (which may be subclassed) and referenced by the name of the class.</p>
+
+<p>The <a>DBD::Gofer::Policy::Base</a> class is the base class for all the policy classes and describes all the individual policy items.</p>
+
+<p>The Base policy is not used directly. You should use a policy class derived from it.</p>
+
+<h1 id="POLICY-CLASSES">POLICY CLASSES</h1>
+
+<p>Three policy classes are supplied with DBD::Gofer:</p>
+
+<p><a>DBD::Gofer::Policy::pedantic</a> is most &#39;transparent&#39; but slowest because it makes more round-trips to the Gofer server.</p>
+
+<p><a>DBD::Gofer::Policy::classic</a> is a reasonable compromise - it&#39;s the default policy.</p>
+
+<p><a>DBD::Gofer::Policy::rush</a> is fastest, but may require code changes in your applications.</p>
+
+<p>Generally the default <code>classic</code> policy is fine. When first testing an existing application with Gofer it is a good idea to start with the <code>pedantic</code> policy first and then switch to <code>classic</code> or a custom policy, for final testing.</p>
+
+<h1 id="POLICY-ITEMS">POLICY ITEMS</h1>
+
+<p>These are temporary docs: See the source code for list of policies and their defaults.</p>
+
+<p>In a future version the policies and their defaults will be defined in the pod and parsed out at load-time.</p>
+
+<p>See the source code to this module for more details.</p>
+
+<h1 id="POLICY-CUSTOMIZATION">POLICY CUSTOMIZATION</h1>
+
+<p>XXX This area of DBD::Gofer is subject to change.</p>
+
+<p>There are three ways to customize policies:</p>
+
+<p>Policy classes are designed to influence the overall behaviour of DBD::Gofer with existing, unaltered programs, so they work in a reasonably optimal way without requiring code changes. You can implement new policy classes as subclasses of existing policies.</p>
+
+<p>In many cases individual policy items can be overridden on a case-by-case basis within your application code. You do this by passing a corresponding <code>&lt;go_&lt;policy_name</code>&gt;&gt; attribute into DBI methods by your application code. This let&#39;s you fine-tune the behaviour for special cases.</p>
+
+<p>The policy items are implemented as methods. In many cases the methods are passed parameters relating to the DBD::Gofer code being executed. This means the policy can implement dynamic behaviour that varies depending on the particular circumstances, such as the particular statement being executed.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Tim Bunce, <a href="http://www.tim.bunce.name">http://www.tim.bunce.name</a></p>
+
+<h1 id="LICENCE-AND-COPYRIGHT">LICENCE AND COPYRIGHT</h1>
+
+<p>Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.</p>
+
+<p>This module is free software; you can redistribute it and/or modify it under the same terms as Perl itself. See <a>perlartistic</a>.</p>
+
+
+</body>
+
+</html>
