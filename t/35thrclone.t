@@ -17,6 +17,12 @@ BEGIN {
     die $use_threads_err if $use_threads_err; # need threads
 }
 
+BEGIN {
+    if ($] >= 5.010000 && $] < 5.010001) {
+	plan skip_all => "Threading bug in perl 5.10.0 fixed in 5.10.1";
+    }
+}
+
 my $threads = 4;
 plan tests => 4 + 4 * $threads;
 
