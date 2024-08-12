@@ -4474,7 +4474,7 @@ BOOT:
     dbi_bootinit(NULL);
     /* make this sub into a fake XS so it can bee seen by DBD::* modules;
      * never actually call it as an XS sub, or it will crash and burn! */
-    (void) newXS("DBI::_dbi_state_lval", (XSUBADDR_t)_dbi_state_lval, __FILE__);
+    (void) newXS("DBI::_dbi_state_lval", (XSUBADDR_t)(void (*) (void))_dbi_state_lval, __FILE__);
 
 
 I32
