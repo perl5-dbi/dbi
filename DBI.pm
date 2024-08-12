@@ -7472,8 +7472,9 @@ Using DBI with perl threads is not yet recommended for production
 environments. For more information see
 L<http://www.perlmonks.org/index.pl?node_id=288022>
 
-Note: There is a bug in perl 5.8.2 when configured with threads
-and debugging enabled (bug #24463) which causes a DBI test to fail.
+Note: There is a bug in perl 5.8.2 when configured with threads and
+debugging enabled (bug #24463) which would cause some DBI tests to fail.
+These tests have been disabled for perl-5.8.2 and below.
 
 =head2 Signal Handling and Canceling Operations
 
