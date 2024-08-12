@@ -8298,7 +8298,7 @@ Perl by Larry Wall and the C<perl5-porters>.
 
 =head1 COPYRIGHT
 
-The DBI module is Copyright (c) 1994-2012 Tim Bunce. Ireland.
+The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland.
 All rights reserved.
 
 You may distribute under the terms of either the GNU General Public

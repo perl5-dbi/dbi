@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- * Copyright (c) 1994-2010  Tim Bunce  Ireland
+ * Copyright (c) 1994-2024  Tim Bunce  Ireland
  *
  * See COPYRIGHT section in DBI.pm for usage and distribution rights.
  */
