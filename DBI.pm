@@ -1,7 +1,7 @@
 # $Id$
 # vim: ts=8:sw=4:et
 #
-# Copyright (c) 1994-2012  Tim Bunce  Ireland
+# Copyright (c) 1994-2024  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.
 #
@@ -5868,7 +5868,7 @@ will generate a warning and return undef.
 
 Why would you want to do this? You don't, forget I even mentioned it.
 Unless, that is, you're implementing something advanced like a
-multi-threaded connection pool. See L<DBI::Pool>.
+multi-threaded connection pool like C<DBI::Pool>.
 
 The returned $imp_data can be passed as a C<dbi_imp_data> attribute
 to a later connect() call, even in a separate thread in the same
