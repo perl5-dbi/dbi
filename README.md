@@ -1,6 +1,6 @@
 # DBI - The Perl Database Interface.
 
-[![Build Status](https://secure.travis-ci.org/perl5-dbi/dbi.png)](http://travis-ci.org/perl5-dbi/dbi/)
+[![Build Status](https://github.com/perl5-dbi/dbi/workflows/Test/badge.svg)](https://github.com/perl5-dbi/dbi/actions)
 
 See [COPYRIGHT](https://metacpan.org/module/DBI#COPYRIGHT)
 section in DBI.pm for usage and distribution rights.

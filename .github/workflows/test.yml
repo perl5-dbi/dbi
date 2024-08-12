@@ -1,0 +1,47 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+
+        perl: [
+          '5.8',
+          '5.10', '5.12', '5.14', '5.16', '5.18',
+          '5.20', '5.22', '5.24', '5.26', '5.28',
+          '5.30', '5.32', '5.34', '5.36', '5.38',
+          '5.40',
+        ]
+
+        threads: [ false, true ]
+
+    runs-on: ${{ matrix.os }}
+
+    name: ${{ matrix.perl }}${{ matrix.threads && '-threads' || '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          multi-thread: ${{ matrix.threads }}
+          perl-version: ${{ matrix.perl }}
+
+      - run: perl -V
+
+      # TODO It would be nice if we had a cpanfile.
+      - run: cpanm --notest --skip-satisfied Test::Simple~0.90
+
+      - run: perl Makefile.PL
+
+      - run: make test
