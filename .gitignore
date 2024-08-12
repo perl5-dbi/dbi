@@ -9,7 +9,6 @@
 *.tbz
 *.tgz
 *~
-.releaserc
 .*.swp
 DBI-*
 DBI.def

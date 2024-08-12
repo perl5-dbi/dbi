@@ -1,0 +1,18 @@
+cpan_user HMBRAND
+automated_testing 1
+skip_kwalitee 1
+skip_manifest 1
+skip_prereqs 1
+skip_changes 1
+skip_dist 1
+ignore_untracked 1
+allow_glob_in_perls 1
+perls /pro/bin/perl\
+:/usr/local/bin/perl\
+:/usr/bin/perl\
+:/media/Tux/perls/bin/perl5.8.[123456789] \
+:/media/Tux/perls/bin/perl5.[1234][02468].*\
+:/media/Tux/perls/bin/perl5.41.*\
+:/media/Tux/perls/bin/tperl5.8.[123456789] \
+:/media/Tux/perls/bin/tperl5.[1234][02468].*\
+:/media/Tux/perls/bin/tperl5.41.*
