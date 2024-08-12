@@ -254,7 +254,7 @@ $dbh->{Callbacks}{ping} = sub {};
 
 # with plain assignment to $_
 $_ = LeakDetect->new;
-{
+if ($] >= 5.008002) {
     is $LeakDetect::count, 1, "[plain] live object count is 1 after new()";
     my $obj = $_;
     $dbh->ping;
@@ -265,7 +265,7 @@ is $_, undef, '[plain] $_ is undef at the end';
 is $LeakDetect::count, 0, "[plain] live object count is 0 after all object references are gone";
 
 # with localized $_
-{
+if ($] >= 5.008002) {
     local $_ = LeakDetect->new;
     is $LeakDetect::count, 1, "[local] live object count is 1 after new()";
     my $obj = $_;
@@ -279,6 +279,7 @@ is $LeakDetect::count, 0, "[local] live object count is 0 after all object refer
 for (LeakDetect->new) {
     is $LeakDetect::count, 1, "[foreach] live object count is 1 after new()";
     my $obj = $_;
+    $] >= 5.008002 or next;
     $dbh->ping;
     is $_, $obj, '[foreach] $_ still holds an object reference after the callback';
 }
