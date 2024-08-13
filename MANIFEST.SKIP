@@ -14,8 +14,12 @@
 ^dbi.tiddlyspot.com.html
 ^err/
 ^err_
+^_Inline/
+^ppport.h$
 ^t/zz_\w+_pp.t$
 ^t/pod-cm.t
+^t-mock/
 ^devel/
 ^Old/
 ^test_output_*/
+^used_by

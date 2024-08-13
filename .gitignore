@@ -3,8 +3,11 @@
 *.gcda
 *.gcno
 *.gcov
+*.log
 *.o
 *.old
+*.prev
+*.prt
 *.tar.gz
 *.tbz
 *.tgz
@@ -28,11 +31,13 @@ dll.base
 dll.exp
 git-dpull
 git-svn-modlist
+_Inline/
 nytprof*
 pm_to_blib
 pod2htm*
 sandbox/
 t/zv[gpxn]*
+used-by-t/
 tmp/
 valgrind.log
 test_output_*/
