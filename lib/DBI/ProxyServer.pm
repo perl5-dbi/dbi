@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 #	$Header: /home/timbo/dbi/lib/DBI/RCS/ProxyServer.pm,v 11.9 2003/05/14 11:08:17 timbo Exp $
 # -*- perl -*-
 #

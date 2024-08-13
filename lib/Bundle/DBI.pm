@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # -*- perl -*-
 
 package Bundle::DBI;

@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # -*- perl -*-
 #
 #   DBD::File - A base class for implementing DBI drivers that

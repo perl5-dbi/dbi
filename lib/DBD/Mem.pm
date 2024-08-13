@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # -*- perl -*-
 #
 #   DBD::Mem - A DBI driver for in-memory tables

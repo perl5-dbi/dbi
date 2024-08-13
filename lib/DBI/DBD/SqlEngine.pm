@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # -*- perl -*-
 #
 #   DBI::DBD::SqlEngine - A base class for implementing DBI drivers that

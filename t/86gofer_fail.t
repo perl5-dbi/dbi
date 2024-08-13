@@ -1,4 +1,5 @@
-#!perl -w                                         # -*- perl -*-
+#!/usr/bin/perl
+# -*- perl -*-
 # vim:sw=4:ts=8
 $|=1;
 
