@@ -15,9 +15,10 @@ use Test::More;
 
 # weaken itself is buggy on 5.8.1 (magic killbackrefs panic
 #  triggered by threads, fixed in 5.8.2, but 5.8.2 has other
-#  issues fixed in 5.8.3
-if ($has_threads && $] < 5.008003) {
-    plan skip_all => "Test are documented to fail in threaded perl < 5.8.3";
+#  issues that should have been fixed in 5.8.3, but 5.8.4 ..
+#  5.8.6 still fail where 5.8.7 PASSes
+if ($has_threads && $] < 5.008007) {
+    plan skip_all => "Test will fail in threaded perl <= 5.8.6";
 }
 
 use strict;
