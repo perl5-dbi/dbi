@@ -2,9 +2,9 @@
 ^Makefile$
 ~$
 ^\.aspell\.local\.pws$
-^\.travis\.yml
 ^\.appveyor\.yml
 ^\.git
+^\.github
 ^\.gdbinit
 ^\.DS_Store
 \.html$
