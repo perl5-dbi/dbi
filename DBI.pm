@@ -1132,10 +1132,6 @@ sub data_string_diff {
 		if !defined $b;
     }
 
-    require utf8;
-    # hack to cater for perl 5.6
-    *utf8::is_utf8 = sub { (DBI::neat(shift)=~/^"/) } unless defined &utf8::is_utf8;
-
     my @a_chars = (utf8::is_utf8($a)) ? unpack("U*", $a) : unpack("C*", $a);
     my @b_chars = (utf8::is_utf8($b)) ? unpack("U*", $b) : unpack("C*", $b);
     my $i = 0;
@@ -1165,11 +1161,6 @@ sub data_string_diff {
 sub data_string_desc {	# describe a data string
     my ($a) = @_;
     require bytes;
-    require utf8;
-
-    # hacks to cater for perl 5.6
-    *utf8::is_utf8 = sub { (DBI::neat(shift)=~/^"/) } unless defined &utf8::is_utf8;
-    *utf8::valid   = sub {                        1 } unless defined &utf8::valid;
 
     # Give sufficient info to help diagnose at least these kinds of situations:
     # - valid UTF8 byte sequence but UTF8 flag not set
