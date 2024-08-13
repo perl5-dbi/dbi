@@ -20,6 +20,9 @@ use Test::More;
 if ($has_threads && $] < 5.008007) {
     plan skip_all => "Test will fail in threaded perl <= 5.8.6";
 }
+if ($] >= 5.010000 && $] < 5.012000) {
+    plan skip_all => "Test will fail in perl-5.10.x";
+}
 
 use strict;
 

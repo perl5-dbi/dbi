@@ -7481,6 +7481,8 @@ Note: There is a bug in perl 5.8.2 when configured with threads and
 debugging enabled (bug #24463) which would cause some DBI tests to fail.
 These tests have been disabled for perl-5.8.2 and below.
 
+Tests for inner method cache are disabled for perl-5.10.x
+
 =head2 Signal Handling and Canceling Operations
 
 [The following only applies to systems with unix-like signal handling.
