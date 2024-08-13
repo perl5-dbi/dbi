@@ -1,7 +1,8 @@
-#!perl -w
+#!/usr/bin/perl
 $|=1;
 
 use strict;
+use warnings;
 use File::Path;
 use File::Spec;
 use Cwd;

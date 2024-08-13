@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#!/usr/bin/perl
 
 # This script checks which style of WHERE clause(s) will support both
 # null and non-null values.  Refer to the NULL Values sub-section
@@ -34,6 +34,7 @@
 # any pre-existing table so named.
 
 use strict;
+use warnings;
 use DBI;
 
 # The array represents the values that will be stored in the char column of our table.

@@ -1,5 +1,7 @@
-#!perl -w
+#!/usr/bin/perl
+
 use strict;
+use warnings;
 
 my $dbixs_rev_file = "dbixs_rev.h";
 

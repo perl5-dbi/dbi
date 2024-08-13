@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 package DBI;
 
 use warnings;

@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 #
 # Copyright Martin J. Evans
 #

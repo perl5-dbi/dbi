@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl
 
 # $Id$
 #
@@ -27,6 +27,7 @@ use DBI::DBD;	# simple test to make sure it's okay
 use Config;
 use Getopt::Long;
 use strict;
+use warnings;
 
 our $has_devel_leak = eval {
     local $^W = 0; # silence "Use of uninitialized value $DynaLoader::args[0] in subroutine entry";

@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # -*- perl -*-
 my $file = $ARGV[0] || 'dbilogstrip';
 

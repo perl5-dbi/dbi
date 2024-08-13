@@ -1,4 +1,5 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
+
     use strict;
     use warnings;
     use DBI;

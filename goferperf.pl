@@ -1,4 +1,4 @@
-#!perl -w
+#!/usr/bin/perl
 # vim:sw=4:ts=8
 $|=1;
 
