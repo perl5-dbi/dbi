@@ -2,6 +2,7 @@
     package DBD::ExampleP;
 
     use strict;
+    use warnings;
     use Symbol;
 
     use DBI qw(:sql_types);

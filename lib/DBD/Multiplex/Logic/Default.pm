@@ -1,6 +1,7 @@
 package DBD::Multiplex::Logic::Default;
 
 use strict;
+use warnings;
 no strict 'refs';
 
 sub mx_pick_handles {

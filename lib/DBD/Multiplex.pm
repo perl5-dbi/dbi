@@ -19,6 +19,7 @@
 # some file-scoped lexicals:
 
 use strict;
+use warnings;
 
 my %parent_only_attr = (
     # mx needs to manage errors from children

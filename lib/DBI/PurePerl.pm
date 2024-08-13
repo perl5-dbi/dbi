@@ -17,6 +17,7 @@ package		# hide from PAUSE
 ########################################################################
 
 use strict;
+use warnings;
 use Carp;
 require Symbol;
 
@@ -305,7 +306,7 @@ sub  _install_method {
 
     push @pre_call_frag, q{
         if (($DBI::dbi_debug & 0xF) >= 2) {
-	    local $^W;
+	    no warnings;
 	    my $args = join " ", map { DBI::neat($_) } ($h, @_);
 	    printf $DBI::tfh "    > $method_name in $imp ($args) [$@]\n";
 	}
@@ -496,7 +497,7 @@ sub _setup_handle {
     my($h, $imp_class, $parent, $imp_data) = @_;
     my $h_inner = tied(%$h) || $h;
     if (($DBI::dbi_debug & 0xF) >= 4) {
-	local $^W;
+	no warnings;
 	print $DBI::tfh "      _setup_handle(@_)\n";
     }
     $h_inner->{"imp_data"} = $imp_data;
@@ -864,7 +865,7 @@ sub FETCH {
             Carp::carp( sprintf "Can't determine Type for %s",$h );
         }
 	if (!$is_valid_attribute{$key} and $key =~ m/^[A-Z]/) {
-	    local $^W; # hide undef warnings
+	    no warnings; # hide undef warnings
 	    Carp::carp( sprintf "Can't get %s->{%s}: unrecognised attribute (@{[ %$h ]})",$h,$key )
 	}
     }

@@ -53,6 +53,7 @@ use Win32::ODBC;
 @ISA = qw(Win32::ODBC);
 
 use strict;
+use warnings;
 
 $DBI::dbi_debug = $ENV{PERL_DBI_DEBUG} || 0;
 carp "Loaded (W32ODBC) DBI.pm ${'DBI::VERSION'} (debug $DBI::dbi_debug)"

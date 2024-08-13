@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 {
     package DBD::Sponge;
 
@@ -176,7 +177,7 @@ use strict;
 	    my $NUM_OF_PARAMS = $sth->{NUM_OF_PARAMS};
 	    return $sth->set_err($DBI::stderr, @$row." values bound (@$row) but $NUM_OF_PARAMS expected")
 		if @$row != $NUM_OF_PARAMS;
-	    { local $^W; $sth->trace_msg("inserting (@$row)\n"); }
+	    { no warnings; $sth->trace_msg("inserting (@$row)\n"); }
 	    push @{ $sth->{rows} }, $row;
 	}
 	else {	# mark select sth as Active

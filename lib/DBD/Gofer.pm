@@ -2,6 +2,7 @@
     package DBD::Gofer;
 
     use strict;
+    use warnings;
 
     require DBI;
     require DBI::Gofer::Request;
@@ -506,7 +507,7 @@
             if $DBD::Gofer::xxh_local_store_attrib_if_same_value{$attrib}
             && do { # values are the same
                 my $crnt = $dbh->FETCH($attrib);
-                local $^W;
+                no warnings;
                 (defined($value) ^ defined($crnt))
                     ? 0 # definedness differs
                     : $value eq $crnt;

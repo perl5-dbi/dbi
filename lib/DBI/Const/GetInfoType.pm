@@ -10,6 +10,7 @@
 package DBI::Const::GetInfoType;
 
 use strict;
+use warnings;
 
 use Exporter ();
 

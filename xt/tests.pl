@@ -30,7 +30,7 @@ use strict;
 use warnings;
 
 our $has_devel_leak = eval {
-    local $^W = 0; # silence "Use of uninitialized value $DynaLoader::args[0] in subroutine entry";
+    no warnings; # silence "Use of uninitialized value $DynaLoader::args[0] in subroutine entry";
     require Devel::Leak;
 };
 

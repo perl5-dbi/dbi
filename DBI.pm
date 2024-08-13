@@ -289,6 +289,7 @@ for (qw(trace_msg set_err parse_trace_flag parse_trace_flags)) {
 }
 
 use strict;
+use warnings;
 
 DBI->trace(split /=/, $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
@@ -602,7 +603,7 @@ sub connect {
     $dsn ||= $ENV{DBI_DSN} || $ENV{DBI_DBNAME} || '' unless $old_driver;
 
     if ($DBI::dbi_debug) {
-	local $^W = 0;
+	no warnings;
 	pop @_ if $connect_meth ne 'connect';
 	my @args = @_; $args[2] = '****'; # hide password
 	DBI->trace_msg("    -> $class->$connect_meth(".join(", ",@args).")\n");
@@ -1487,7 +1488,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	my ($dsn, $user, $auth, $attr) = @_;
 
 	my $cache = $drh->{CachedKids} ||= {};
-	my $key = do { local $^W;
+	my $key = do { no warnings;
 	    join "!\001", $dsn, $user, $auth, DBI::_concat_hash_sorted($attr, "=\001", ",\001", 0, 0)
 	};
 	my $dbh = $cache->{$key};
@@ -1716,7 +1717,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	# active children. The XS template code does this. Drivers not using
 	# the template must handle clearing the cache themselves.
 	my $cache = $dbh->{CachedKids} ||= {};
-	my $key = do { local $^W;
+	my $key = do { no warnings;
 	    join "!\001", $statement, DBI::_concat_hash_sorted($attr, "=\001", ",\001", 0, 0)
 	};
 	my $sth = $cache->{$key};

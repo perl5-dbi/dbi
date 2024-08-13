@@ -12,11 +12,12 @@
 ^blib/
 ^DBI-\d
 ^dbi.tiddlyspot.com.html
+^doc/
 ^err/
 ^err_
 ^_Inline/
 ^ppport.h$
-^t/zz_\w+_pp.t$
+^t/z
 ^t/pod-cm.t
 ^t-mock/
 ^devel/

@@ -8,6 +8,7 @@
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
 use strict;
+use warnings;
 package DBI::Const::GetInfo::ODBC;
 
 our (%InfoTypes,%ReturnTypes,%ReturnValues,);

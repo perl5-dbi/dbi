@@ -8,6 +8,7 @@ package DBI::Gofer::Response;
 #   License or the Artistic License, as specified in the Perl README file.
 
 use strict;
+use warnings;
 
 use Carp;
 use DBI qw(neat neat_list);

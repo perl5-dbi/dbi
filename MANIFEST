@@ -120,5 +120,4 @@ t/91_store_warning.t
 t/lib.pl		Utility functions for test scripts
 t/pod.t
 t/pod-coverage.t
-test.pl			Assorted informal tests, including tests for memory leaks
 typemap

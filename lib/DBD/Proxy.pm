@@ -21,6 +21,7 @@
 #
 
 use strict;
+use warnings;
 use Carp;
 
 require DBI;
@@ -34,7 +35,7 @@ use RPC::PlClient 0.2000; # XXX change to 0.2017 once it's released
 	    my $self = shift;
 	    if ($self->{debug}) {
 		my ($rpcmeth, $obj, $method, @args) = @_;
-		local $^W; # silence undefs
+		no warnings; # silence undefs
 		Carp::carp("Server $rpcmeth $method(@args)");
 	    }
 	    return $self->SUPER::Call(@_);
