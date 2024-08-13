@@ -7943,7 +7943,7 @@ following logger module:
         $self->{_buf} .= shift;
     #
     # DBI feeds us pieces at a time, so accumulate a complete line
-    # before outputing
+    # before outputting
     #
         print $fh "At ", scalar localtime(), ':', $self->{_buf}, "\n" and
         $self->{_buf} = ''

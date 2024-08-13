@@ -140,7 +140,7 @@ subclasses of existing policies.
 In many cases individual policy items can be overridden on a case-by-case basis
 within your application code. You do this by passing a corresponding
 C<<go_<policy_name>>> attribute into DBI methods by your application code.
-This let's you fine-tune the behaviour for special cases.
+This lets you fine-tune the behaviour for special cases.
 
 The policy items are implemented as methods. In many cases the methods are
 passed parameters relating to the DBD::Gofer code being executed. This means
