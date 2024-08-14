@@ -31,5 +31,5 @@ on "build" => sub {
     };
 
 on "test" => sub {
-    requires   "Test::More";
+    requires   "Test::More"           => "0.90";    # For done_testing()
     };

@@ -39,8 +39,7 @@ jobs:
 
       - run: perl -V
 
-      # TODO It would be nice if we had a cpanfile.
-      - run: cpanm --notest --skip-satisfied Test::Simple~0.90
+      - run: cpanm --installdeps --notest --skip-satisfied .
 
       - run: perl Makefile.PL
 
