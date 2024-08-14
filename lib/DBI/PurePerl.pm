@@ -21,13 +21,6 @@ use warnings;
 use Carp;
 require Symbol;
 
-require utf8;
-*utf8::is_utf8 = sub { # hack for perl 5.6
-    require bytes;
-    return unless defined $_[0];
-    return !(length($_[0]) == bytes::length($_[0]))
-} unless defined &utf8::is_utf8;
-
 $DBI::PurePerl = $ENV{DBI_PUREPERL} || 1;
 $DBI::PurePerl::VERSION = "2.014286";
 

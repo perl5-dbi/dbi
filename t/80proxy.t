@@ -2,7 +2,6 @@
 # -*- perl -*-
 # vim:sw=4:ts=8
 
-require 5.004;
 use strict;
 use warnings;
 
