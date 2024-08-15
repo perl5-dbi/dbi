@@ -46,45 +46,34 @@ C<foo_> is assumed.
 
     use strict;
     use warnings;
-    use vars qw(@ISA $VERSION);
     use base qw(DBD::File);
 
     use DBI ();
 
-    $VERSION = "0.001";
+    our $VERSION = "0.001";
 
     package DBD::Foo::dr;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBD::File::dr);
-    $imp_data_size = 0;
+    our @ISA = qw(DBD::File::dr);
+    our $imp_data_size = 0;
 
     package DBD::Foo::db;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBD::File::db);
-    $imp_data_size = 0;
+    our @ISA = qw(DBD::File::db);
+    our $imp_data_size = 0;
 
     package DBD::Foo::st;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBD::File::st);
-    $imp_data_size = 0;
+    our @ISA = qw(DBD::File::st);
+    our $imp_data_size = 0;
 
     package DBD::Foo::Statement;
 
-    use vars qw(@ISA);
-
-    @ISA = qw(DBD::File::Statement);
+    our @ISA = qw(DBD::File::Statement);
 
     package DBD::Foo::Table;
 
-    use vars qw(@ISA);
-
-    @ISA = qw(DBD::File::Table);
+    our @ISA = qw(DBD::File::Table);
 
     1;
 

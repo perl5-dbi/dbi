@@ -31,7 +31,7 @@ DBI->require_version(1.0201);
 use RPC::PlClient 0.2000; # XXX change to 0.2017 once it's released
 
 {	package DBD::Proxy::RPC::PlClient;
-    	@DBD::Proxy::RPC::PlClient::ISA = qw(RPC::PlClient);
+	our @ISA = qw(RPC::PlClient);
 	sub Call {
 	    my $self = shift;
 	    if ($self->{debug}) {
@@ -46,13 +46,11 @@ use RPC::PlClient 0.2000; # XXX change to 0.2017 once it's released
 
 package DBD::Proxy;
 
-use vars qw($VERSION $drh %ATTR);
+our $VERSION = "0.2004";
 
-$VERSION = "0.2004";
+our $drh = undef;		# holds driver handle once initialised
 
-$drh = undef;		# holds driver handle once initialised
-
-%ATTR = (	# common to db & st, see also %ATTR in DBD::Proxy::db & ::st
+our %ATTR = (	# common to db & st, see also %ATTR in DBD::Proxy::db & ::st
     'Warn'	=> 'local',
     'Active'	=> 'local',
     'Kids'	=> 'local',
@@ -93,7 +91,7 @@ sub proxy_set_err {
 
 package DBD::Proxy::dr; # ====== DRIVER ======
 
-$DBD::Proxy::dr::imp_data_size = 0;
+our $imp_data_size = 0;
 
 sub connect ($$;$$) {
     my($drh, $dsn, $user, $auth, $attr)= @_;
@@ -219,7 +217,7 @@ sub DESTROY { undef }
 
 package DBD::Proxy::db; # ====== DATABASE ======
 
-$DBD::Proxy::db::imp_data_size = 0;
+our $imp_data_size = 0;
 
 # XXX probably many more methods need to be added here
 # in order to trigger our AUTOLOAD to redirect them to the server.
@@ -234,7 +232,7 @@ sub commit;
 sub rollback;
 sub ping;
 
-use vars qw(%ATTR $AUTOLOAD);
+our $AUTOLOAD;
 
 # inherited: STORE / FETCH against this class.
 # local:     STORE / FETCH against parent class.
@@ -243,7 +241,7 @@ use vars qw(%ATTR $AUTOLOAD);
 #
 # Note: Attribute names starting with 'proxy_' always treated as 'inherited'.
 #
-%ATTR = (	# see also %ATTR in DBD::Proxy::st
+our %ATTR = (	# see also %ATTR in DBD::Proxy::st
     %DBD::Proxy::ATTR,
     RowCacheSize => 'inherited',
     #AutoCommit => 'cached',
@@ -480,9 +478,7 @@ sub type_info_all {
 
 package DBD::Proxy::st; # ====== STATEMENT ======
 
-$DBD::Proxy::st::imp_data_size = 0;
-
-use vars qw(%ATTR);
+our $imp_data_size = 0;
 
 # inherited:  STORE to current object. FETCH from current if exists, else call up
 #              to the (proxy) database object.
@@ -493,7 +489,7 @@ use vars qw(%ATTR);
 #
 # Note: Attribute names starting with 'proxy_' always treated as 'inherited'.
 #
-%ATTR = (	# see also %ATTR in DBD::Proxy::db
+our %ATTR = (	# see also %ATTR in DBD::Proxy::db
     %DBD::Proxy::ATTR,
     'Database' => 'local',
     'RowsInCache' => 'local',

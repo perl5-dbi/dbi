@@ -114,7 +114,7 @@ interface:
 
   # invokes
   package DBD::DBM::dr;
-  @DBD::DBM::dr::ISA = qw(DBI::DBD::SqlEngine::dr);
+  our @ISA = qw(DBI::DBD::SqlEngine::dr);
 
   sub connect ($$;$$$)
   {
@@ -224,9 +224,9 @@ it is enough to do the basic initialization:
 
   package DBD:XXX::dr;
 
-  @DBD::XXX::dr::ISA = qw (DBI::DBD::SqlEngine::dr);
-  $DBD::XXX::dr::imp_data_size     = 0;
-  $DBD::XXX::dr::data_sources_attr = undef;
+  our @ISA = qw (DBI::DBD::SqlEngine::dr);
+  our $imp_data_size     = 0;
+  our $data_sources_attr = undef;
   $DBD::XXX::ATTRIBUTION = "DBD::XXX $DBD::XXX::VERSION by Hans Mustermann";
 
 =head3 Methods provided by C<< DBI::DBD::SqlEngine::dr >>:
@@ -249,7 +249,7 @@ C<init_default_attributes>. Modern drivers understand that and do early
 stage setup here after calling
 
   package DBD::Foo::db;
-  our @DBD::Foo::db::ISA = qw(DBI::DBD::SqlEngine::db);
+  our @ISA = qw(DBI::DBD::SqlEngine::db);
   
   sub init_default_attributes
   {

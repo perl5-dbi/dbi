@@ -16,7 +16,7 @@ use Storable qw(dclone);
 my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
 
 use DBI;
-use vars qw( @mldbm_types @dbm_types );
+my ( @mldbm_types, @dbm_types );
 
 BEGIN {
 

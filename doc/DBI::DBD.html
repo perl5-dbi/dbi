@@ -621,9 +621,8 @@ Jonathan Leffler E&lt;lt&gt;F&lt;jleffler@informix.com&gt;E&lt;gt&gt;.
 <pre><code>package DBD::File;
 
 use strict;
-use vars qw($VERSION $drh);
 
-$VERSION = &quot;1.23.00&quot;  # Version number of DBD::File</code></pre>
+our $VERSION = &quot;1.23.00&quot;  # Version number of DBD::File</code></pre>
 
 <p>This is where the version number of your driver is specified, and is where <i>Makefile.PL</i> looks for this information. Please ensure that any other modules added with your driver are also version stamped so that CPAN does not get confused.</p>
 
@@ -631,15 +630,15 @@ $VERSION = &quot;1.23.00&quot;  # Version number of DBD::File</code></pre>
 
 <p>For Subversion you could use:</p>
 
-<pre><code>$VERSION = &quot;12.012346&quot;;</code></pre>
+<pre><code>our $VERSION = &quot;12.012346&quot;;</code></pre>
 
 <p>(use lots of leading zeros on the second portion so if you move the code to a shared repository like svn.perl.org the much larger revision numbers won&#39;t cause a problem, at least not for a few years). For RCS or CVS you can use:</p>
 
-<pre><code>$VERSION = &quot;11.22&quot;;</code></pre>
+<pre><code>our $VERSION = &quot;11.22&quot;;</code></pre>
 
 <p>which pads out the fractional part with leading zeros so all is well (so long as you don&#39;t go past x.99)</p>
 
-<pre><code>$drh = undef;         # holds driver handle once initialized</code></pre>
+<pre><code>our $drh = undef;         # holds driver handle once initialized</code></pre>
 
 <p>This is where the driver handle will be stored, once created. Note that you may assume there is only one handle for your driver.</p>
 

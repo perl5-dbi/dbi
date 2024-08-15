@@ -659,9 +659,8 @@ The header
 \&  package DBD::File;
 \&
 \&  use strict;
-\&  use vars qw($VERSION $drh);
 \&
-\&  $VERSION = "1.23.00"  # Version number of DBD::File
+\&  our $VERSION = "1.23.00"  # Version number of DBD::File
 .Ve
 .PP
 This is where the version number of your driver is specified, and is
@@ -678,7 +677,7 @@ very common).
 For Subversion you could use:
 .PP
 .Vb 1
-\&  $VERSION = "12.012346";
+\&  our $VERSION = "12.012346";
 .Ve
 .PP
 (use lots of leading zeros on the second portion so if you move the code to a
@@ -686,14 +685,14 @@ shared repository like svn.perl.org the much larger revision numbers won\*(Aqt
 cause a problem, at least not for a few years).  For RCS or CVS you can use:
 .PP
 .Vb 1
-\&  $VERSION = "11.22";
+\&  our $VERSION = "11.22";
 .Ve
 .PP
 which pads out the fractional part with leading zeros so all is well
 (so long as you don\*(Aqt go past x.99)
 .PP
 .Vb 1
-\&  $drh = undef;         # holds driver handle once initialized
+\&  our $drh = undef;         # holds driver handle once initialized
 .Ve
 .PP
 This is where the driver handle will be stored, once created.

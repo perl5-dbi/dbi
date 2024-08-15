@@ -573,9 +573,8 @@ or really specific to the **DBD::File** package.
     package DBD::File;
 
     use strict;
-    use vars qw($VERSION $drh);
 
-    $VERSION = "1.23.00"  # Version number of DBD::File
+    our $VERSION = "1.23.00"  # Version number of DBD::File
 
 This is where the version number of your driver is specified, and is
 where `Makefile.PL` looks for this information. Please ensure that any
@@ -590,18 +589,18 @@ very common).
 
 For Subversion you could use:
 
-    $VERSION = "12.012346";
+    our $VERSION = "12.012346";
 
 (use lots of leading zeros on the second portion so if you move the code to a
 shared repository like svn.perl.org the much larger revision numbers won't
 cause a problem, at least not for a few years).  For RCS or CVS you can use:
 
-    $VERSION = "11.22";
+    our $VERSION = "11.22";
 
 which pads out the fractional part with leading zeros so all is well
 (so long as you don't go past x.99)
 
-    $drh = undef;         # holds driver handle once initialized
+    our $drh = undef;         # holds driver handle once initialized
 
 This is where the driver handle will be stored, once created.
 Note that you may assume there is only one handle for your driver.

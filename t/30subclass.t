@@ -18,14 +18,14 @@ my %my_methods;
 # This whole mechanism is new and experimental - it may change!
 
 package MyDBI;
-@MyDBI::ISA = qw(DBI);
+our @ISA = qw(DBI);
 
 # the MyDBI::dr::connect method is NOT called!
 # you can either override MyDBI::connect()
 # or use MyDBI::db::connected()
 
 package MyDBI::db;
-@MyDBI::db::ISA = qw(DBI::db);
+our @ISA = qw(DBI::db);
 
 sub prepare {
     my($dbh, @args) = @_;
@@ -37,7 +37,7 @@ sub prepare {
 
 
 package MyDBI::st;
-@MyDBI::st::ISA = qw(DBI::st);
+our @ISA = qw(DBI::st);
 
 sub fetch {
     my($sth, @args) = @_;

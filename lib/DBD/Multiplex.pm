@@ -61,11 +61,10 @@ package DBD::Multiplex;
 use DBI ();
 
 use strict;
-use vars qw($VERSION $drh);
 
-$VERSION = "2.014123";
+our $VERSION = "2.014123";
 
-$drh = undef;	# Holds driver handle once it has been initialized.
+our $drh = undef;	# Holds driver handle once it has been initialized.
 
 #########################################
 # The driver handle constructor.

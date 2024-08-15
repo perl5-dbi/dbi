@@ -46,45 +46,34 @@ For this guide, a prefix of C<foo_> is assumed.
 
     use strict;
     use warnings;
-    use vars qw($VERSION);
     use base qw(DBI::DBD::SqlEngine);
 
     use DBI ();
 
-    $VERSION = "0.001";
+    our $VERSION = "0.001";
 
     package DBD::Foo::dr;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBI::DBD::SqlEngine::dr);
-    $imp_data_size = 0;
+    our @ISA = qw(DBI::DBD::SqlEngine::dr);
+    our $imp_data_size = 0;
 
     package DBD::Foo::db;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBI::DBD::SqlEngine::db);
-    $imp_data_size = 0;
+    our @ISA = qw(DBI::DBD::SqlEngine::db);
+    our $imp_data_size = 0;
 
     package DBD::Foo::st;
 
-    use vars qw(@ISA $imp_data_size);
-
-    @ISA = qw(DBI::DBD::SqlEngine::st);
-    $imp_data_size = 0;
+    our @ISA = qw(DBI::DBD::SqlEngine::st);
+    our $imp_data_size = 0;
 
     package DBD::Foo::Statement;
 
-    use vars qw(@ISA);
-
-    @ISA = qw(DBI::DBD::SqlEngine::Statement);
+    our @ISA = qw(DBI::DBD::SqlEngine::Statement);
 
     package DBD::Foo::Table;
 
-    use vars qw(@ISA);
-
-    @ISA = qw(DBI::DBD::SqlEngine::Table);
+    our @ISA = qw(DBI::DBD::SqlEngine::Table);
 
     1;
 
