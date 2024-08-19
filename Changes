@@ -24,6 +24,8 @@ DBI::Changes - List of significant changes to the DBI
 	thanks to Mauke
     Switch from Dynaloader to XSLoader (PR#94)
 	thanks to Todd
+    Merge Pull Requests, resolve RT tickjets, & resolve GH issues
+	thanks to many! Please check gitlog
 
 =head2 Changes in DBI 1.643 - 31st January 2020
 

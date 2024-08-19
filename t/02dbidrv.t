@@ -26,7 +26,7 @@ SKIP: {
     Test::More::skip "running DBI::PurePerl", 1 if $DBI::PurePerl;
     eval {
         DBI::_new_drh('DBD::Test::OverLong' . 'x' x 300,
-            { Name => 'Test', Version => 'Test', }, 42);
+            { Name => 'Test', Version => 'Test', _NO_DESTRUCT_WARN => 1}, 42);
     };
     like($@, qr/unknown _mem package/, 'Overlong DBD class name is processed');
 }
