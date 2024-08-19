@@ -18,14 +18,14 @@ DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine
 
     package DBD::myDriver::dr;
 
-    @ISA = qw(DBI::DBD::SqlEngine::dr);
+    our @ISA = qw(DBI::DBD::SqlEngine::dr);
 
     sub data_sources { ... }
     ...
 
     package DBD::myDriver::db;
 
-    @ISA = qw(DBI::DBD::SqlEngine::db);
+    our @ISA = qw(DBI::DBD::SqlEngine::db);
 
     sub init_valid_attributes { ... }
     sub init_default_attributes { ... }
@@ -37,20 +37,20 @@ DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine
 
     package DBD::myDriver::st;
 
-    @ISA = qw(DBI::DBD::SqlEngine::st);
+    our @ISA = qw(DBI::DBD::SqlEngine::st);
 
     sub FETCH { ... }
     sub STORE { ... }
 
     package DBD::myDriver::Statement;
 
-    @ISA = qw(DBI::DBD::SqlEngine::Statement);
+    our @ISA = qw(DBI::DBD::SqlEngine::Statement);
 
     sub open_table { ... }
 
     package DBD::myDriver::Table;
 
-    @ISA = qw(DBI::DBD::SqlEngine::Table);
+    our @ISA = qw(DBI::DBD::SqlEngine::Table);
 
     sub new { ... }
 

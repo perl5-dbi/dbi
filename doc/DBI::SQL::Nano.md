@@ -140,8 +140,7 @@ the table object, as well as SQL::Statement expects.
 
     package Your::Table;
 
-    use vars qw(@ISA);
-    @ISA = qw(DBI::SQL::Nano::Table);
+    our @ISA = qw(DBI::SQL::Nano::Table);
 
     sub drop ($$)        { ... }
     sub fetch_row ($$$)  { ... }

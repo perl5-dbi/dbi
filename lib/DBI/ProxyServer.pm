@@ -41,10 +41,8 @@ package DBI::ProxyServer;
 #
 ############################################################################
 
-use vars qw($VERSION @ISA);
-
-$VERSION = "0.3005";
-@ISA = qw(RPC::PlServer DBI);
+our $VERSION = "0.3005";
+our @ISA = qw(RPC::PlServer DBI);
 
 
 # Most of the options below are set to default values, we note them here
@@ -246,12 +244,12 @@ sub main {
 
 package DBI::ProxyServer::dr;
 
-@DBI::ProxyServer::dr::ISA = qw(DBI::dr);
+our @ISA = qw(DBI::dr);
 
 
 package DBI::ProxyServer::db;
 
-@DBI::ProxyServer::db::ISA = qw(DBI::db);
+our @ISA = qw(DBI::db);
 
 sub prepare {
     my($dbh, $statement, $attr, $params, $proto_ver) = @_;
@@ -316,7 +314,7 @@ sub table_info {
 
 package DBI::ProxyServer::st;
 
-@DBI::ProxyServer::st::ISA = qw(DBI::st);
+our @ISA = qw(DBI::st);
 
 sub execute {
     my $sth = shift; my $params = shift; my $proto_ver = shift;

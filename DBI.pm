@@ -10,8 +10,12 @@ package DBI;
 
 require 5.008_001;
 
+use strict;
+use warnings;
+
+our ($XS_VERSION, $VERSION);
 BEGIN {
-our $XS_VERSION = our $VERSION = "1.644"; # ==> ALSO update the version in the pod text below!
+$XS_VERSION = $VERSION = "1.644"; # ==> ALSO update the version in the pod text below!
 $VERSION = eval $VERSION;
 }
 
@@ -175,6 +179,7 @@ use Carp();
 use XSLoader ();
 use Exporter ();
 
+our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 BEGIN {
 @ISA = qw(Exporter);
 
@@ -276,7 +281,7 @@ else {
     XSLoader::load( 'DBI', $XS_VERSION);
 }
 
-$EXPORT_TAGS{preparse_flags} = [ grep { /^DBIpp_\w\w_/ } keys %{__PACKAGE__."::"} ];
+$EXPORT_TAGS{preparse_flags} = [ grep { /^DBIpp_\w\w_/ } keys %DBI:: ];
 
 Exporter::export_ok_tags(keys %EXPORT_TAGS);
 
@@ -287,9 +292,6 @@ for (qw(trace_msg set_err parse_trace_flag parse_trace_flags)) {
   no strict;
   *$_ = \&{"DBD::_::common::$_"};
 }
-
-use strict;
-use warnings;
 
 DBI->trace(split /=/, $ENV{DBI_TRACE}, 2) if $ENV{DBI_TRACE};
 
@@ -1451,7 +1453,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 {   package		# hide from PAUSE
 	DBD::_::dr;	# ====== DRIVER ======
-    @DBD::_::dr::ISA = qw(DBD::_::common);
+    our @ISA = qw(DBD::_::common);
     use strict;
 
     sub default_user {
@@ -1516,7 +1518,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 {   package		# hide from PAUSE
 	DBD::_::db;	# ====== DATABASE ======
-    @DBD::_::db::ISA = qw(DBD::_::common);
+    our @ISA = qw(DBD::_::common);
     use strict;
 
     sub clone {
@@ -1838,7 +1840,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
 {   package		# hide from PAUSE
 	DBD::_::st;	# ====== STATEMENT ======
-    @DBD::_::st::ISA = qw(DBD::_::common);
+    our @ISA = qw(DBD::_::common);
     use strict;
 
     sub bind_param { Carp::croak("Can't bind_param, not implement by driver") }
@@ -7697,12 +7699,10 @@ can be found in F<t/subclass.t> in the DBI distribution.
   use strict;
 
   use DBI;
-  use vars qw(@ISA);
-  @ISA = qw(DBI);
+  our @ISA = qw(DBI);
 
   package MySubDBI::db;
-  use vars qw(@ISA);
-  @ISA = qw(DBI::db);
+  our @ISA = qw(DBI::db);
 
   sub prepare {
     my ($dbh, @args) = @_;
@@ -7713,8 +7713,7 @@ can be found in F<t/subclass.t> in the DBI distribution.
   }
 
   package MySubDBI::st;
-  use vars qw(@ISA);
-  @ISA = qw(DBI::st);
+  our @ISA = qw(DBI::st);
 
   sub fetch {
     my ($sth, @args) = @_;

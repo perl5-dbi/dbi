@@ -34,11 +34,10 @@ use warnings;
 
 use base qw( DBI::DBD::SqlEngine );
 use Carp;
-use vars qw( @ISA $VERSION $drh );
 
-$VERSION = "0.44";
+our $VERSION = "0.44";
 
-$drh = undef;		# holds driver handle(s) once initialized
+our $drh = undef;		# holds driver handle(s) once initialized
 
 sub driver ($;$)
 {
@@ -84,12 +83,10 @@ package DBD::File::dr;
 use strict;
 use warnings;
 
-use vars qw( @ISA $imp_data_size );
-
 use Carp;
 
-@DBD::File::dr::ISA           = qw( DBI::DBD::SqlEngine::dr );
-$DBD::File::dr::imp_data_size = 0;
+our @ISA           = qw( DBI::DBD::SqlEngine::dr );
+our $imp_data_size = 0;
 
 sub dsn_quote
 {
@@ -148,15 +145,13 @@ package DBD::File::db;
 use strict;
 use warnings;
 
-use vars qw( @ISA $imp_data_size );
-
 use Carp;
 require File::Spec;
 require Cwd;
 use Scalar::Util qw( refaddr ); # in CORE since 5.7.3
 
-@DBD::File::db::ISA           = qw( DBI::DBD::SqlEngine::db );
-$DBD::File::db::imp_data_size = 0;
+our @ISA           = qw( DBI::DBD::SqlEngine::db );
+our $imp_data_size = 0;
 
 sub data_sources
 {
@@ -302,10 +297,8 @@ package DBD::File::st;
 use strict;
 use warnings;
 
-use vars qw( @ISA $imp_data_size );
-
-@DBD::File::st::ISA           = qw( DBI::DBD::SqlEngine::st );
-$DBD::File::st::imp_data_size = 0;
+our @ISA           = qw( DBI::DBD::SqlEngine::st );
+our $imp_data_size = 0;
 
 my %supported_attrs = (
     TYPE      => 1,
@@ -397,7 +390,7 @@ use warnings;
 
 use IO::Dir;
 
-@DBD::File::TableSource::FileSystem::ISA = "DBI::DBD::SqlEngine::TableSource";
+our @ISA = "DBI::DBD::SqlEngine::TableSource";
 
 sub data_sources
 {
@@ -488,7 +481,7 @@ use warnings;
 
 use Carp;
 
-@DBD::File::DataSource::Stream::ISA = "DBI::DBD::SqlEngine::DataSource";
+our @ISA = "DBI::DBD::SqlEngine::DataSource";
 
 # We may have a working flock () built-in but that doesn't mean that locking
 # will work on NFS (flock () may hang hard)
@@ -577,7 +570,7 @@ package DBD::File::DataSource::File;
 use strict;
 use warnings;
 
-@DBD::File::DataSource::File::ISA = "DBD::File::DataSource::Stream";
+our @ISA = "DBD::File::DataSource::Stream";
 
 use Carp;
 
@@ -770,7 +763,7 @@ package DBD::File::Statement;
 use strict;
 use warnings;
 
-@DBD::File::Statement::ISA = qw( DBI::DBD::SqlEngine::Statement );
+our @ISA = qw( DBI::DBD::SqlEngine::Statement );
 
 # ====== SQL::TABLE ============================================================
 
@@ -786,7 +779,7 @@ require File::Spec;
 require Cwd;
 require Scalar::Util;
 
-@DBD::File::Table::ISA = qw( DBI::DBD::SqlEngine::Table );
+our @ISA = qw( DBI::DBD::SqlEngine::Table );
 
 # ====== UTILITIES ============================================================
 

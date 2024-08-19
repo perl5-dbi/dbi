@@ -20,7 +20,7 @@ package DBI::SQL::Nano;
 #######################
 use strict;
 use warnings;
-use vars qw( $VERSION $versions );
+our ( $VERSION, $versions );
 
 use Carp qw(croak);
 
@@ -951,8 +951,7 @@ the table object, as well as SQL::Statement expects.
 
   package Your::Table;
 
-  use vars qw(@ISA);
-  @ISA = qw(DBI::SQL::Nano::Table);
+  our @ISA = qw(DBI::SQL::Nano::Table);
 
   sub drop ($$)        { ... }
   sub fetch_row ($$$)  { ... }
@@ -1011,4 +1010,3 @@ either the GNU General Public License (GPL) or the Artistic License,
 as specified in the Perl README file.
 
 =cut
-

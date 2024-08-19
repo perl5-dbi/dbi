@@ -14,10 +14,8 @@ use warnings;
 
 use Exporter ();
 
-use vars qw(@ISA @EXPORT @EXPORT_OK %GetInfoReturnTypes %GetInfoReturnValues);
-
-@ISA = qw(Exporter);
-@EXPORT = qw(%GetInfoReturnTypes %GetInfoReturnValues);
+our @ISA = qw(Exporter);
+our @EXPORT = qw(%GetInfoReturnTypes %GetInfoReturnValues);
 
 my
 $VERSION = "2.008697";
@@ -41,13 +39,13 @@ use DBI::Const::GetInfoType;
 use DBI::Const::GetInfo::ANSI ();
 use DBI::Const::GetInfo::ODBC ();
 
-%GetInfoReturnTypes =
+our %GetInfoReturnTypes =
 (
   %DBI::Const::GetInfo::ANSI::ReturnTypes
 , %DBI::Const::GetInfo::ODBC::ReturnTypes
 );
 
-%GetInfoReturnValues = ();
+our %GetInfoReturnValues = ();
 {
   my $A = \%DBI::Const::GetInfo::ANSI::ReturnValues;
   my $O = \%DBI::Const::GetInfo::ODBC::ReturnValues;

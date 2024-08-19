@@ -14,10 +14,8 @@ use warnings;
 
 use Exporter ();
 
-use vars qw(@ISA @EXPORT @EXPORT_OK %GetInfoType);
-
-@ISA = qw(Exporter);
-@EXPORT = qw(%GetInfoType);
+our @ISA = qw(Exporter);
+our @EXPORT = qw(%GetInfoType);
 
 my
 $VERSION = "2.008697";
@@ -45,7 +43,7 @@ written here is guaranteed.
 use DBI::Const::GetInfo::ANSI ();	# liable to change
 use DBI::Const::GetInfo::ODBC ();	# liable to change
 
-%GetInfoType =
+our %GetInfoType =
 (
   %DBI::Const::GetInfo::ANSI::InfoTypes	# liable to change
 , %DBI::Const::GetInfo::ODBC::InfoTypes	# liable to change

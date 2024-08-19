@@ -2,11 +2,11 @@ package DBI::DBD;
 # vim:ts=8:sw=4
 use strict;
 use warnings;
-use vars qw($VERSION);	# set $VERSION early so we don't confuse PAUSE/CPAN etc
 
+# set $VERSION early so we don't confuse PAUSE/CPAN etc
 # don't use Revision here because that's not in svn:keywords so that the
 # examples that use it below won't be messed up
-$VERSION = "12.015129";
+our $VERSION = "12.015129";
 
 # $Id: DBD.pm 15128 2012-02-04 20:51:39Z Tim $
 #
@@ -679,9 +679,8 @@ or really specific to the B<DBD::File> package.
   package DBD::File;
 
   use strict;
-  use vars qw($VERSION $drh);
 
-  $VERSION = "1.23.00"  # Version number of DBD::File
+  our $VERSION = "1.23.00"  # Version number of DBD::File
 
 This is where the version number of your driver is specified, and is
 where F<Makefile.PL> looks for this information. Please ensure that any
@@ -696,18 +695,18 @@ very common).
 
 For Subversion you could use:
 
-  $VERSION = "12.012346";
+  our $VERSION = "12.012346";
 
 (use lots of leading zeros on the second portion so if you move the code to a
 shared repository like svn.perl.org the much larger revision numbers won't
 cause a problem, at least not for a few years).  For RCS or CVS you can use:
 
-  $VERSION = "11.22";
+  our $VERSION = "11.22";
 
 which pads out the fractional part with leading zeros so all is well
 (so long as you don't go past x.99)
 
-  $drh = undef;         # holds driver handle once initialized
+  our $drh = undef;         # holds driver handle once initialized
 
 This is where the driver handle will be stored, once created.
 Note that you may assume there is only one handle for your driver.
@@ -3266,10 +3265,6 @@ use Carp;
 use Cwd;
 use File::Spec;
 use strict;
-use vars qw(
-    @ISA @EXPORT
-    $is_dbi
-);
 
 BEGIN {
     if ($^O eq 'VMS') {
@@ -3284,15 +3279,16 @@ BEGIN {
     }
 }
 
-@ISA = qw(Exporter);
+our @ISA = qw(Exporter);
 
-@EXPORT = qw(
+our @EXPORT = qw(
     dbd_dbi_dir
     dbd_dbi_arch_dir
     dbd_edit_mm_attribs
     dbd_postamble
 );
 
+our $is_dbi;
 BEGIN {
     $is_dbi = (-r 'DBI.pm' && -r 'DBI.xs' && -r 'DBIXS.h');
     require DBI unless $is_dbi;

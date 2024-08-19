@@ -5607,12 +5607,10 @@ can be found in `t/subclass.t` in the DBI distribution.
     use strict;
 
     use DBI;
-    use vars qw(@ISA);
-    @ISA = qw(DBI);
+    our @ISA = qw(DBI);
 
     package MySubDBI::db;
-    use vars qw(@ISA);
-    @ISA = qw(DBI::db);
+    our @ISA = qw(DBI::db);
 
     sub prepare {
       my ($dbh, @args) = @_;
@@ -5623,8 +5621,7 @@ can be found in `t/subclass.t` in the DBI distribution.
     }
 
     package MySubDBI::st;
-    use vars qw(@ISA);
-    @ISA = qw(DBI::st);
+    our @ISA = qw(DBI::st);
 
     sub fetch {
       my ($sth, @args) = @_;
