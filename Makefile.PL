@@ -366,6 +366,10 @@ checkkeywords:
 .PHONY:	doc
 doc:
 	perl make-doc.pl
+dbipport:
+	perl sandbox/genPPPort_h.pl
+ppport:		dbipport.h
+	perl dbipport.h --compat-version=5.8.0 DBI.xs
 
 checkpod:
 	$(RM_RF) blib
