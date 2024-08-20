@@ -771,7 +771,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
                 neatsvpv(method,0)
             );
         PUSHMARK(SP);
-        XPUSHs(sv_2mortal(newRV_inc((SV*)DBIc_MY_H(imp_xxh))));
+        mXPUSHs(newRV_inc((SV*)DBIc_MY_H(imp_xxh)));
         XPUSHs(err);
         XPUSHs(errstr);
         XPUSHs(state);
@@ -2158,7 +2158,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
             }
             else {
                 PUSHMARK(SP);
-                XPUSHs(sv_2mortal(newSVpv(profile_class,0)));
+                mXPUSHs(newSVpv(profile_class, 0));
                 XPUSHs(valuesv);
                 PUTBACK;
                 returns = call_method("_auto_new", G_SCALAR);
@@ -2938,7 +2938,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 EXTEND(SP, 4);
                 PUSHMARK(SP);
                 PUSHs(h);   /* push inner handle, then others params */
-                PUSHs( sv_2mortal(newSVpv(method_pv,0)));
+                mPUSHs(newSVpv(method_pv, 0));
                 PUTBACK;
                 SAVE_DEFSV; /* local($_) = $statement */
                 DEFSV_set(statement_sv);
@@ -3719,7 +3719,7 @@ XS(XS_DBI_dispatch)
             imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), "func", FALSE);
             if (imp_msv) {
                 /* driver does have func method so undo the earlier 'func' stack changes */
-                PUSHs(sv_2mortal(newSVpv(meth_name,0)));
+                mPUSHs(newSVpv(meth_name, 0));
                 PUTBACK;
                 ++items;
                 meth_name = "func";
@@ -3925,7 +3925,7 @@ XS(XS_DBI_dispatch)
                 /* and may mess up the error handling below for the commit/rollback     */
                 PUSHMARK(SP);
                 XPUSHs(h);
-                XPUSHs(sv_2mortal(newSVpv("AutoCommit",0)));
+                mXPUSHs(newSVpv("AutoCommit", 0));
                 XPUSHs(&PL_sv_yes);
                 PUTBACK;
                 call_method("STORE", G_VOID);
@@ -4082,7 +4082,7 @@ XS(XS_DBI_dispatch)
                 );
             PUSHMARK(SP);
             XPUSHs(msg);
-            XPUSHs(sv_2mortal(newRV_inc((SV*)DBIc_MY_H(imp_xxh))));
+            mXPUSHs(newRV_inc((SV*)DBIc_MY_H(imp_xxh)));
             XPUSHs( result );
             PUTBACK;
             items = call_sv(*hook_svp, G_SCALAR);
@@ -5576,8 +5576,7 @@ set_err(h, err, errstr=&PL_sv_no, state=&PL_sv_undef, method=&PL_sv_undef, resul
         }
         else
             (void)SvOK_off(*sem_svp);
-        EXTEND(SP, 1);
-        PUSHs( result ? result : &PL_sv_undef );
+        XPUSHs( result ? result : &PL_sv_undef );
     }
     /* We don't check RaiseError and call die here because that must be */
     /* done by returning through dispatch and letting the DBI handle it */
