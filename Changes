@@ -10,7 +10,7 @@ DBI::Changes - List of significant changes to the DBI
 
     Update Devel::PPPort,
         thanks to H.Merijn Brand
-    Fix CVE-2014-10401 - f_dir might not exist in DBD::File connections
+    Fix CVE-2014-10401 and CVE-2014-10402 - f_dir might not exist in DBD::File connections
 	thanks to Jens Rehsack & H.Merijn Brand
     Do not check gccversion on clang
         thanks to Daniël van Eeden
