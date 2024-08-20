@@ -2151,7 +2151,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
             dSP;
             I32 returns;
             TAINT_NOT; /* the require is presumed innocent till proven guilty */
-            perl_require_pv("DBI/Profile.pm");
+            require_pv("DBI/Profile.pm");
             if (SvTRUE(ERRSV)) {
                 warn("Can't load %s: %s", profile_class, SvPV_nolen(ERRSV));
                 valuesv = &PL_sv_undef;
@@ -2173,7 +2173,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         if (on && !sv_isobject(valuesv)) {
             /* not blessed already - so default to DBI::Profile */
             HV *stash;
-            perl_require_pv(profile_class);
+            require_pv(profile_class);
             stash = gv_stashpv(profile_class, GV_ADDWARN);
             sv_bless(valuesv, stash);
         }
