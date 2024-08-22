@@ -15,7 +15,7 @@ use warnings;
 
 our ($XS_VERSION, $VERSION);
 BEGIN {
-$VERSION = "1.643_01"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.643_02"; # ==> ALSO update the version in the pod text below!
 $XS_VERSION = $VERSION;
 $VERSION =~ tr/_//d;
 }
