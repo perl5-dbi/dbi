@@ -39,8 +39,7 @@ our $VERSION = "0.44";
 
 our $drh = undef;		# holds driver handle(s) once initialized
 
-sub driver ($;$)
-{
+sub driver ($;$) {
     my ($class, $attr) = @_;
 
     # Drivers typically use a singleton object for the $drh
@@ -71,8 +70,7 @@ sub driver ($;$)
     return $drh->{$class};
     } # driver
 
-sub CLONE
-{
+sub CLONE {
     undef $drh;
     } # CLONE
 
@@ -88,8 +86,7 @@ use Carp;
 our @ISA           = qw( DBI::DBD::SqlEngine::dr );
 our $imp_data_size = 0;
 
-sub dsn_quote
-{
+sub dsn_quote {
     my $str = shift;
     ref     $str and return "";
     defined $str or  return "";
@@ -100,8 +97,7 @@ sub dsn_quote
 # XXX rewrite using TableConfig ...
 sub default_table_source { "DBD::File::TableSource::FileSystem" }
 
-sub connect
-{
+sub connect {
     my ($drh, $dbname, $user, $auth, $attr) = @_;
 
     # We do not (yet) care about conflicting attributes here
@@ -113,28 +109,37 @@ sub connect
 	my $attr_hash = {
 	    map { (m/^\s* (\S+) \s*(?: =>? | , )\s* (\S*) \s*$/x) }
 	    split m/;/ => $dbname };
-	if (defined $attr_hash->{f_dir} && ! -d $attr_hash->{f_dir}) {
-	    my $msg = "No such directory '$attr_hash->{f_dir}";
-	    $drh->set_err (2, $msg);
-	    $attr_hash->{RaiseError} and croak $msg;
-	    return;
+	if (defined $attr_hash->{f_dir}) {
+	    my $f_dir = $attr_hash->{f_dir};
+	    # DSN escapes the : in Windows' path, which is not accepted by -d
+	    #   D\\:\\\\Test\\\\DBI-01\\\\test_output_12345
+	    # ->  D:\\\\Test\\\\DBI-01\\\\test_output_12345
+	    $^O eq "MSWin32" and $f_dir =~ s{^([a-zA-Z])\\+:}{$1:};
+	    unless (-d $f_dir) {
+		my $msg = "No such directory '$attr_hash->{f_dir}";
+		$drh->set_err (2, $msg);
+		$attr_hash->{RaiseError} and croak $msg;
+		return;
+		}
 	    }
 	}
-    if ($attr and defined $attr->{f_dir} && ! -d $attr->{f_dir}) {
-	my $msg = "No such directory '$attr->{f_dir}";
-	$drh->set_err (2, $msg);
-	return;
+    if ($attr and defined $attr->{f_dir}) {
+	my $f_dir = $attr->{f_dir};
+	$^O eq "MSWin32" and $f_dir =~ s{^([a-zA-Z])\\+:}{$1:};
+	unless (-d $f_dir) {
+	    my $msg = "No such directory '$attr->{f_dir}";
+	    $drh->set_err (2, $msg);
+	    return;
+	    }
 	}
 
     return $drh->SUPER::connect ($dbname, $user, $auth, $attr);
     } # connect
 
-sub disconnect_all
-{
+sub disconnect_all {
     } # disconnect_all
 
-sub DESTROY
-{
+sub DESTROY {
     undef;
     } # DESTROY
 
@@ -153,8 +158,7 @@ use Scalar::Util qw( refaddr ); # in CORE since 5.7.3
 our @ISA           = qw( DBI::DBD::SqlEngine::db );
 our $imp_data_size = 0;
 
-sub data_sources
-{
+sub data_sources {
     my ($dbh, $attr, @other) = @_;
     ref ($attr) eq "HASH" or $attr = {};
     exists $attr->{f_dir}        or $attr->{f_dir}        = $dbh->{f_dir};
@@ -162,16 +166,14 @@ sub data_sources
     return $dbh->SUPER::data_sources ($attr, @other);
     } # data_source
 
-sub set_versions
-{
+sub set_versions {
     my $dbh = shift;
     $dbh->{f_version} = $DBD::File::VERSION;
 
     return $dbh->SUPER::set_versions ();
     } # set_versions
 
-sub init_valid_attributes
-{
+sub init_valid_attributes {
     my $dbh = shift;
 
     $dbh->{f_valid_attrs} = {
@@ -195,8 +197,7 @@ sub init_valid_attributes
     return $dbh->SUPER::init_valid_attributes ();
     } # init_valid_attributes
 
-sub init_default_attributes
-{
+sub init_default_attributes {
     my ($dbh, $phase) = @_;
 
     # must be done first, because setting flags implicitly calls $dbdname::db->STORE
@@ -232,8 +233,7 @@ sub init_default_attributes
     return $dbh;
     } # init_default_attributes
 
-sub validate_FETCH_attr
-{
+sub validate_FETCH_attr {
     my ($dbh, $attrib) = @_;
 
     $attrib eq "f_meta" and $dbh->{sql_engine_in_gofer} and $attrib = "sql_meta";
@@ -241,8 +241,7 @@ sub validate_FETCH_attr
     return $dbh->SUPER::validate_FETCH_attr ($attrib);
     } # validate_FETCH_attr
 
-sub validate_STORE_attr
-{
+sub validate_STORE_attr {
     my ($dbh, $attrib, $value) = @_;
 
     if ($attrib eq "f_dir" && defined $value) {
@@ -262,8 +261,7 @@ sub validate_STORE_attr
     return $dbh->SUPER::validate_STORE_attr ($attrib, $value);
     } # validate_STORE_attr
 
-sub get_f_versions
-{
+sub get_f_versions {
     my ($dbh, $table) = @_;
 
     my $class = $dbh->{ImplementorClass};
@@ -306,8 +304,7 @@ my %supported_attrs = (
     NULLABLE  => 1,
     );
 
-sub FETCH
-{
+sub FETCH {
     my ($sth, $attr) = @_;
 
     if ($supported_attrs{$attr}) {
@@ -392,8 +389,7 @@ use IO::Dir;
 
 our @ISA = "DBI::DBD::SqlEngine::TableSource";
 
-sub data_sources
-{
+sub data_sources {
     my ($class, $drh, $attr) = @_;
     my $dir = $attr && exists $attr->{f_dir}
 	? $attr->{f_dir}
@@ -432,8 +428,7 @@ sub data_sources
     return @dsns;
     } # data_sources
 
-sub avail_tables
-{
+sub avail_tables {
     my ($self, $dbh) = @_;
 
     my $dir = $dbh->{f_dir};
@@ -494,8 +489,7 @@ my $locking = eval {
     1;
     };
 
-sub complete_table_name
-{
+sub complete_table_name {
     my ($self, $meta, $file, $respect_case) = @_;
 
     my $tbl = $file;
@@ -515,8 +509,7 @@ sub complete_table_name
     return $tbl;
     } # complete_table_name
 
-sub apply_encoding
-{
+sub apply_encoding {
     my ($self, $meta, $fn) = @_;
     defined $fn or $fn = "file handle " . fileno ($meta->{fh});
     if (my $enc = $meta->{f_encoding}) {
@@ -528,8 +521,7 @@ sub apply_encoding
 	}
     } # apply_encoding
 
-sub open_data
-{
+sub open_data {
     my ($self, $meta, $attrs, $flags) = @_;
 
     $flags->{dropMode} and croak "Can't drop a table in stream";
@@ -576,8 +568,7 @@ use Carp;
 
 my $fn_any_ext_regex = qr/\.[^.]*/;
 
-sub complete_table_name
-{
+sub complete_table_name {
     my ($self, $meta, $file, $respect_case, $file_is_table) = @_;
 
     $file eq "." || $file eq ".."	and return; # XXX would break a possible DBD::Dir
@@ -694,8 +685,7 @@ sub complete_table_name
     return $tbl;
     } # complete_table_name
 
-sub open_data
-{
+sub open_data {
     my ($self, $meta, $attrs, $flags) = @_;
 
     defined $meta->{f_fqfn} && $meta->{f_fqfn} ne "" or croak "No filename given";
@@ -827,15 +817,13 @@ else {
 # The functions file2table, init_table_meta, default_table_meta and
 # get_table_meta are using $self arguments for polymorphism only. The
 # must not rely on an instantiated DBD::File::Table
-sub file2table
-{
+sub file2table {
     my ($self, $meta, $file, $file_is_table, $respect_case) = @_;
 
     return $meta->{sql_data_source}->complete_table_name ($meta, $file, $respect_case, $file_is_table);
     } # file2table
 
-sub bootstrap_table_meta
-{
+sub bootstrap_table_meta {
     my ($self, $dbh, $meta, $table, @other) = @_;
 
     $self->SUPER::bootstrap_table_meta ($dbh, $meta, $table, @other);
@@ -857,8 +845,7 @@ sub bootstrap_table_meta
 				 : "DBD::File::DataSource::File";
     } # bootstrap_table_meta
 
-sub get_table_meta ($$$$;$)
-{
+sub get_table_meta ($$$$;$) {
     my ($self, $dbh, $table, $file_is_table, $respect_case) = @_;
 
     my $meta = $self->SUPER::get_table_meta ($dbh, $table, $respect_case, $file_is_table);
@@ -885,15 +872,13 @@ __PACKAGE__->register_compat_map (\%compat_map);
 # ====== DBD::File <= 0.40 compat stuff ========================================
 
 # compat to 0.38 .. 0.40 API
-sub open_file
-{
+sub open_file {
     my ($className, $meta, $attrs, $flags) = @_;
 
     return $className->SUPER::open_data ($meta, $attrs, $flags);
     } # open_file
 
-sub open_data
-{
+sub open_data {
     my ($className, $meta, $attrs, $flags) = @_;
 
     # compat to 0.38 .. 0.40 API
@@ -906,8 +891,7 @@ sub open_data
 
 # ====== SQL::Eval API =========================================================
 
-sub drop ($)
-{
+sub drop ($) {
     my ($self, $data) = @_;
     my $meta = $self->{meta};
     # We have to close the file before unlinking it: Some OS'es will
@@ -922,8 +906,7 @@ sub drop ($)
     return 1;
     } # drop
 
-sub seek ($$$$)
-{
+sub seek ($$$$) {
     my ($self, $data, $pos, $whence) = @_;
     my $meta = $self->{meta};
     if ($whence == 0 && $pos == 0) {
@@ -937,8 +920,7 @@ sub seek ($$$$)
 	croak "Error while seeking in " . $meta->{f_fqfn} . ": $!";
     } # seek
 
-sub truncate ($$)
-{
+sub truncate ($$) {
     my ($self, $data) = @_;
     my $meta = $self->{meta};
     $meta->{fh}->truncate ($meta->{fh}->tell ()) or
@@ -946,8 +928,7 @@ sub truncate ($$)
     return 1;
     } # truncate
 
-sub DESTROY
-{
+sub DESTROY {
     my $self = shift;
     my $meta = $self->{meta};
     $meta->{fh} and $meta->{fh}->close ();
