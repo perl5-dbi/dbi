@@ -199,7 +199,7 @@ typedef struct dbi_ima_st {
     (SvOK(state)        /* SQLSTATE is implemented by driver   */        \
         ? (strEQ(SvPV_nolen(state),"00000") ? &PL_sv_no : sv_mortalcopy(state))\
         : (SvTRUE(DBIc_ERR(imp_xxh))                                     \
-            ? sv_2mortal(newSVpv("S1000",5)) /* General error   */       \
+            ? sv_2mortal(newSVpvs("S1000")) /* General error    */       \
             : &PL_sv_no)                /* Success ("00000")    */       \
     )
 
@@ -424,7 +424,7 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
 
         keys = _sort_hash_keys(hash, num_sort, &total_len);
         if (!keys)
-            return newSVpv("", 0);
+            return newSVpvs("");
 
         if (!kv_sep_len)
             kv_sep_len = strlen(kv_sep);
@@ -445,7 +445,7 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
 
             if (!hash_svp) {    /* should never happen */
                 warn("No hash entry with key '%s'", keys[i]);
-                sv_catpvn(return_sv, "???", 3);
+                sv_catpvs(return_sv, "???");
                 continue;
             }
 
@@ -456,11 +456,11 @@ _join_hash_sorted(HV *hash, char *kv_sep, STRLEN kv_sep_len, char *pair_sep, STR
                 if (SvOK(*hash_svp)) {
                      STRLEN hv_val_len;
                      char *hv_val = SvPV(*hash_svp, hv_val_len);
-                     sv_catpvn(return_sv, "'", 1);
+                     sv_catpvs(return_sv, "'");
                      sv_catpvn(return_sv, hv_val, hv_val_len);
-                     sv_catpvn(return_sv, "'", 1);
+                     sv_catpvs(return_sv, "'");
                 }
-                else sv_catpvn(return_sv, "undef", 5);
+                else sv_catpvs(return_sv, "undef");
             }
 
             if (i < hv_len-1)
@@ -611,14 +611,14 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
     if (SvMAGICAL(sv)) {
         if (DBIS_TRACE_LEVEL >= 5) {    /* add magic details to help debugging  */
             MAGIC* mg;
-            infosv = sv_2mortal(newSVpv(" (magic-",0));
-            if (SvSMAGICAL(sv)) sv_catpvn(infosv,"s",1);
-            if (SvGMAGICAL(sv)) sv_catpvn(infosv,"g",1);
-            if (SvRMAGICAL(sv)) sv_catpvn(infosv,"r",1);
-            sv_catpvn(infosv,":",1);
+            infosv = sv_2mortal(newSVpvs(" (magic-"));
+            if (SvSMAGICAL(sv)) sv_catpvs(infosv, "s");
+            if (SvGMAGICAL(sv)) sv_catpvs(infosv, "g");
+            if (SvRMAGICAL(sv)) sv_catpvs(infosv, "r");
+            sv_catpvs(infosv, ":");
             for (mg = SvMAGIC(sv); mg; mg = mg->mg_moremagic)
                 sv_catpvn(infosv, &mg->mg_type, 1);
-            sv_catpvn(infosv, ")", 1);
+            sv_catpvs(infosv, ")");
         }
         if (SvGMAGICAL(sv) && !PL_dirty)
             mg_get(sv);         /* trigger magic to FETCH the value     */
@@ -688,7 +688,7 @@ neatsvpv(SV *sv, STRLEN maxlen) /* return a tidy ascii value, for debugging only
         SvGROW(nsv, (1+maxlen+1+1));
         sv_setpvn(nsv, quote, 1);
         sv_catpvn(nsv, v, maxlen-3);    /* account for three dots */
-        sv_catpvn(nsv, "...", 3);
+        sv_catpvs(nsv, "...");
     } else {
         SvGROW(nsv, (1+len+1+1));
         sv_setpvn(nsv, quote, 1);
@@ -717,9 +717,9 @@ copy_statement_to_parent(pTHX_ SV *h, imp_xxh_t *imp_xxh)
         return;
     parent = DBIc_PARENT_H(imp_xxh);
     if (parent && SvROK(parent)) {
-        SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
+        SV *tmp_sv = *hv_fetchs((HV*)SvRV(h), "Statement", 1);
         if (SvOK(tmp_sv))
-            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
+            (void)hv_stores((HV*)SvRV(parent), "Statement", SvREFCNT_inc(tmp_sv));
     }
 }
 
@@ -753,7 +753,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     int err_changed = 0;
 
     if (    DBIc_has(imp_xxh, DBIcf_HandleSetErr)
-        && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetErr",12,0))
+        && (hook_svp = hv_fetchs((HV*)SvRV(h), "HandleSetErr", 0))
         &&  hook_svp
         &&  ((void)(SvGMAGICAL(*hook_svp) && mg_get(*hook_svp)), SvOK(*hook_svp))
     ) {
@@ -770,7 +770,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
                 neatsvpv(method,0)
             );
         PUSHMARK(SP);
-        XPUSHs(sv_2mortal(newRV_inc((SV*)DBIc_MY_H(imp_xxh))));
+        mXPUSHs(newRV_inc((SV*)DBIc_MY_H(imp_xxh)));
         XPUSHs(err);
         XPUSHs(errstr);
         XPUSHs(state);
@@ -812,7 +812,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         if (SvTRUE(h_state) && SvTRUE(state) && strNE(SvPV_nolen(h_state), SvPV_nolen(state)))
             sv_catpvf(h_errstr, " [state was %s now %s]", SvPV_nolen(h_state), SvPV_nolen(state));
         if (strNE(SvPV_nolen(h_errstr), SvPV_nolen(errstr))) {
-            sv_catpvn(h_errstr, "\n", 1);
+            sv_catpvs(h_errstr, "\n");
             sv_catsv(h_errstr, errstr);
         }
     }
@@ -1106,7 +1106,7 @@ dbih_inner(pTHX_ SV *orv, const char *what)
     if (!SvMAGICAL(ohv)) {
         if (!what)
             return NULL;
-        if (!hv_fetch(ohv,"_NO_DESTRUCT_WARN",17,0))
+        if (!hv_fetchs(ohv, "_NO_DESTRUCT_WARN", 0))
 	    sv_dump(orv);
         croak("%s handle %s is not a DBI handle (has no magic)",
                 what, neatsvpv(orv,0));
@@ -1436,7 +1436,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     if ( (imp_mem_stash = gv_stashsv(imp_mem_name, FALSE)) == NULL)
         croak(errmsg, neatsvpv(orv,0), SvPVbyte_nolen(imp_mem_name), "unknown _mem package");
 
-    if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
+    if ((svp = hv_fetchs((HV*)SvRV(h), "dbi_imp_data", 0))) {
         dbi_imp_data = *svp;
         if (SvGMAGICAL(dbi_imp_data))  /* call FETCH via magic */
             mg_get(dbi_imp_data);
@@ -1477,13 +1477,13 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
             /* setup Callbacks from parents' ChildCallbacks */
             if (DBIc_has(parent_imp, DBIcf_Callbacks)
-            && (tmp_svp = hv_fetch((HV*)SvRV(parent), "Callbacks", 9, 0))
+            && (tmp_svp = hv_fetchs((HV*)SvRV(parent), "Callbacks", 0))
             && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
-            && (tmp_svp = hv_fetch((HV*)SvRV(*tmp_svp), "ChildCallbacks", 14, 0))
+            && (tmp_svp = hv_fetchs((HV*)SvRV(*tmp_svp), "ChildCallbacks", 0))
             && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
             ) {
                 /* XXX mirrors behaviour of dbih_set_attr_k() of Callbacks */
-                (void)hv_store((HV*)SvRV(h), "Callbacks", 9, newRV_inc(SvRV(*tmp_svp)), 0);
+                (void)hv_stores((HV*)SvRV(h), "Callbacks", newRV_inc(SvRV(*tmp_svp)));
                 DBIc_set(imp, DBIcf_Callbacks, 1);
             }
 
@@ -1492,7 +1492,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
             if (1) {
                 AV *av;
                 /* add weakref to new (outer) handle into parents ChildHandles array */
-                tmp_svp = hv_fetch((HV*)SvRV(parent), "ChildHandles", 12, 1);
+                tmp_svp = hv_fetchs((HV*)SvRV(parent), "ChildHandles", 1);
                 if (!SvROK(*tmp_svp)) {
                     SV *ChildHandles_rvav = newRV_noinc((SV*)newAV());
                     sv_setsv(*tmp_svp, ChildHandles_rvav);
@@ -1521,16 +1521,16 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
         switch (DBIc_TYPE(imp)) {
         case DBIt_DB:
             /* cache _inner_ handle, but also see quick_FETCH */
-            (void)hv_store((HV*)SvRV(h), "Driver", 6, newRV_inc(SvRV(parent)), 0);
-            (void)hv_fetch((HV*)SvRV(h), "Statement", 9, 1); /* store writable undef */
+            (void)hv_stores((HV*)SvRV(h), "Driver", newRV_inc(SvRV(parent)));
+            (void)hv_fetchs((HV*)SvRV(h), "Statement", 1); /* store writable undef */
             break;
         case DBIt_ST:
             DBIc_NUM_FIELDS((imp_sth_t*)imp) = -1;
             /* cache _inner_ handle, but also see quick_FETCH */
-            (void)hv_store((HV*)SvRV(h), "Database", 8, newRV_inc(SvRV(parent)), 0);
+            (void)hv_stores((HV*)SvRV(h), "Database", newRV_inc(SvRV(parent)));
             /* copy (alias) Statement from the sth up into the dbh      */
-            tmp_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
-            (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(*tmp_svp), 0);
+            tmp_svp = hv_fetchs((HV*)SvRV(h), "Statement", 1);
+            (void)hv_stores((HV*)SvRV(parent), "Statement", SvREFCNT_inc(*tmp_svp));
             break;
         }
     }
@@ -1585,7 +1585,7 @@ static int
 dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
 {
     dMY_CXT;
-    SV *flags = sv_2mortal(newSVpv("",0));
+    SV *flags = sv_2mortal(newSVpvs(""));
     SV *inner;
     static const char pad[] = "      ";
     if (!msg)
@@ -1637,7 +1637,7 @@ dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
     if (!inner || !SvROK(inner))
         return 1;
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "CachedKids", 10, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "CachedKids", 0);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             PerlIO_printf(DBILOGFP,"%s CachedKids %d\n", pad, (int)HvKEYS(hv));
@@ -1653,12 +1653,12 @@ dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
         }
     }
     else if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "Name", 4, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "Name", 0);
         if (svp && SvOK(*svp))
             PerlIO_printf(DBILOGFP,"%s Name %s\n", pad, neatsvpv(*svp,0));
     }
     else if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "Statement", 9, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "Statement", 0);
         if (svp && SvOK(*svp))
             PerlIO_printf(DBILOGFP,"%s Statement %s\n", pad, neatsvpv(*svp,0));
     }
@@ -1833,7 +1833,7 @@ dbih_get_fbav(imp_sth_t *imp_sth)
                     "0", 0, "Number of row fields inconsistent with NUM_OF_FIELDS (driver bug)", "", "_get_fbav");
             /*
             DBIc_NUM_FIELDS(imp_sth) = i;
-            hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+            hv_deletes((HV*)SvRV(sth), "NUM_OF_FIELDS", G_DISCARD);
             */
         }
         /* don't let SvUTF8 flag persist from one row to the next   */
@@ -2150,14 +2150,14 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
             dSP;
             I32 returns;
             TAINT_NOT; /* the require is presumed innocent till proven guilty */
-            perl_require_pv("DBI/Profile.pm");
+            require_pv("DBI/Profile.pm");
             if (SvTRUE(ERRSV)) {
                 warn("Can't load %s: %s", profile_class, SvPV_nolen(ERRSV));
                 valuesv = &PL_sv_undef;
             }
             else {
                 PUSHMARK(SP);
-                XPUSHs(sv_2mortal(newSVpv(profile_class,0)));
+                mXPUSHs(newSVpv(profile_class, 0));
                 XPUSHs(valuesv);
                 PUTBACK;
                 returns = call_method("_auto_new", G_SCALAR);
@@ -2172,7 +2172,7 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         if (on && !sv_isobject(valuesv)) {
             /* not blessed already - so default to DBI::Profile */
             HV *stash;
-            perl_require_pv(profile_class);
+            require_pv(profile_class);
             stash = gv_stashpv(profile_class, GV_ADDWARN);
             sv_bless(valuesv, stash);
         }
@@ -2351,7 +2351,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                 valuesv = &PL_sv_undef;
 
                 /* fetch from tied outer handle to trigger FETCH magic */
-                svp = hv_fetch((HV*)DBIc_MY_H(imp_sth), "NAME",4, FALSE);
+                svp = hv_fetchs((HV*)DBIc_MY_H(imp_sth), "NAME", FALSE);
                 sv = (svp) ? *svp : &PL_sv_undef;
                 if (SvGMAGICAL(sv))     /* call FETCH via magic */
                     mg_get(sv);
@@ -2751,14 +2751,14 @@ log_where(SV *buf, int append, char *prefix, char *suffix, int show_line, int sh
     dTHX;
     dTHR;
     if (!buf)
-        buf = sv_2mortal(newSVpv("",0));
+        buf = sv_2mortal(newSVpvs(""));
     else if (!append)
         sv_setpv(buf,"");
     if (CopLINE(PL_curcop)) {
         COP *cop;
         dbi_caller_string(buf, PL_curcop, prefix, show_line, show_path);
         if (show_caller && (cop = dbi_caller_cop())) {
-            SV *via = sv_2mortal(newSVpv("",0));
+            SV *via = sv_2mortal(newSVpvs(""));
             dbi_caller_string(via, cop, prefix, show_line, show_path);
             sv_catpvf(buf, " via %s", SvPV_nolen(via));
         }
@@ -2775,7 +2775,7 @@ static void
 clear_cached_kids(pTHX_ SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_level)
 {
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(h), "CachedKids", 10, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(h), "CachedKids", 0);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             if (HvKEYS(hv)) {
@@ -2889,7 +2889,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 
     h_hv = (HV*)SvRV(dbih_inner(aTHX_ h, "dbi_profile"));
 
-    profile = *hv_fetch(h_hv, "Profile", 7, 1);
+    profile = *hv_fetchs(h_hv, "Profile", 1);
     if (profile && SvMAGICAL(profile))
         mg_get(profile); /* FETCH */
     if (!profile || !SvROK(profile)) {
@@ -2906,7 +2906,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     /* statement_sv: undef = use $h->{Statement}, "" (&sv_no) = use empty string */
 
     if (!SvOK(statement_sv)) {
-        SV **psv = hv_fetch(h_hv, "Statement", 9, 0);
+        SV **psv = hv_fetchs(h_hv, "Statement", 0);
         statement_sv = (psv && SvOK(*psv)) ? *psv : &PL_sv_no;
     }
     statement_pv = SvPV_nolen(statement_sv);
@@ -2917,7 +2917,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 
     dest_node = _profile_next_node(profile, "Data");
 
-    tmp = *hv_fetch((HV*)SvRV(profile), "Path", 4, 1);
+    tmp = *hv_fetchs((HV*)SvRV(profile), "Path", 1);
     if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVAV) {
         int len;
         av = (AV*)SvRV(tmp);
@@ -2937,7 +2937,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                 EXTEND(SP, 4);
                 PUSHMARK(SP);
                 PUSHs(h);   /* push inner handle, then others params */
-                PUSHs( sv_2mortal(newSVpv(method_pv,0)));
+                mPUSHs(newSVpv(method_pv, 0));
                 PUTBACK;
                 SAVE_DEFSV; /* local($_) = $statement */
                 DEFSV_set(statement_sv);
@@ -2982,7 +2982,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                         else if (isGV(method)) {
                             /* just using SvPV_nolen(method) sometimes causes an error: */
                             /* "Can't coerce GLOB to string" so we use gv_efullname()   */
-                            SV *tmpsv = sv_2mortal(newSVpv("",0));
+                            SV *tmpsv = sv_2mortal(newSVpvs(""));
                             gv_efullname4(tmpsv, (GV*)method, "", TRUE);
                             p = SvPV_nolen(tmpsv);
                             if (*p == '*') ++p; /* skip past leading '*' glob sigil */
@@ -3414,7 +3414,7 @@ XS(XS_DBI_dispatch)
                 keep_error = TRUE;
             if (ima_flags & IMA_CLEAR_STMT) {
                 /* don't use SvOK_off: dbh's Statement may be ref to sth's */
-                (void)hv_store((HV*)SvRV(h), "Statement", 9, &PL_sv_undef, 0);
+                (void)hv_stores((HV*)SvRV(h), "Statement", &PL_sv_undef);
             }
             if (ima_flags & IMA_CLEAR_CACHED_KIDS)
                 clear_cached_kids(aTHX_ h, imp_xxh, meth_name, trace_flags);
@@ -3463,7 +3463,7 @@ XS(XS_DBI_dispatch)
     if (is_DESTROY) {
 
         /* force destruction of any outstanding children */
-        if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+        if ((tmp_svp = hv_fetchs((HV*)SvRV(h), "ChildHandles", FALSE)) && SvROK(*tmp_svp)) {
             AV *av = (AV*)SvRV(*tmp_svp);
             I32 kidslots;
             PerlIO *logfp = DBILOGFP;
@@ -3555,7 +3555,7 @@ XS(XS_DBI_dispatch)
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
-        && (tmp_svp = hv_fetch((HV*)SvRV(h), "Callbacks", 9, 0))
+        && (tmp_svp = hv_fetchs((HV*)SvRV(h), "Callbacks", 0))
         && (   (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), meth_name, strlen(meth_name), 0))
               /* the "*" fallback callback only applies to non-nested calls
                * and also doesn't apply to the 'set_err' or DESTROY methods.
@@ -3565,7 +3565,7 @@ XS(XS_DBI_dispatch)
                */
           || (!is_nested_call && !PL_dirty && meth_type != methtype_set_err &&
                meth_type != methtype_DESTROY &&
-               (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0))
+               (hook_svp = hv_fetchs((HV*)SvRV(*tmp_svp), "*", 0))
              )
         )
         && SvROK(*hook_svp)
@@ -3718,7 +3718,7 @@ XS(XS_DBI_dispatch)
             imp_msv = (SV*)gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), "func", FALSE);
             if (imp_msv) {
                 /* driver does have func method so undo the earlier 'func' stack changes */
-                PUSHs(sv_2mortal(newSVpv(meth_name,0)));
+                mPUSHs(newSVpv(meth_name, 0));
                 PUTBACK;
                 ++items;
                 meth_name = "func";
@@ -3924,7 +3924,7 @@ XS(XS_DBI_dispatch)
                 /* and may mess up the error handling below for the commit/rollback     */
                 PUSHMARK(SP);
                 XPUSHs(h);
-                XPUSHs(sv_2mortal(newSVpv("AutoCommit",0)));
+                mXPUSHs(newSVpvs("AutoCommit"));
                 XPUSHs(&PL_sv_yes);
                 PUTBACK;
                 call_method("STORE", G_VOID);
@@ -4002,7 +4002,7 @@ XS(XS_DBI_dispatch)
         char intro[200];
 
         if (meth_type == methtype_set_err) {
-            SV **sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, GV_ADDWARN);
+            SV **sem_svp = hv_fetchs((HV*)SvRV(h), "dbi_set_err_method", GV_ADDWARN);
             if (SvOK(*sem_svp))
                 err_meth_name = SvPV_nolen(*sem_svp);
         }
@@ -4020,7 +4020,7 @@ XS(XS_DBI_dispatch)
         if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
             && !is_unrelated_to_Statement
             && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima_flags & IMA_SHOW_ERR_STMT)
-            && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
+            && (statement_svp = hv_fetchs((HV*)SvRV(h), "Statement", 0))
             &&  statement_svp && SvOK(*statement_svp)
         ) {
             SV **svp = 0;
@@ -4030,7 +4030,7 @@ XS(XS_DBI_dispatch)
             /* fetch from tied outer handle to trigger FETCH magic  */
             /* could add DBIcf_ShowErrorParams (default to on?)         */
             if (!(ima_flags & IMA_HIDE_ERR_PARAMVALUES)) {
-                svp = hv_fetch((HV*)DBIc_MY_H(imp_xxh),"ParamValues",11,FALSE);
+                svp = hv_fetchs((HV*)DBIc_MY_H(imp_xxh), "ParamValues", FALSE);
                 if (svp && SvMAGICAL(*svp))
                     mg_get(*svp); /* XXX may recurse, may croak. could use eval */
             }
@@ -4055,7 +4055,7 @@ XS(XS_DBI_dispatch)
         hook_svp = NULL;
         if (   (SvTRUE(err_sv) || (is_warning && DBIc_has(imp_xxh, DBIcf_RaiseWarn)))
             &&  DBIc_has(imp_xxh, DBIcf_HandleError)
-            && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleError",11,0))
+            && (hook_svp = hv_fetchs((HV*)SvRV(h), "HandleError", 0))
             &&  hook_svp && SvOK(*hook_svp)
         ) {
             dSP;
@@ -4081,7 +4081,7 @@ XS(XS_DBI_dispatch)
                 );
             PUSHMARK(SP);
             XPUSHs(msg);
-            XPUSHs(sv_2mortal(newRV_inc((SV*)DBIc_MY_H(imp_xxh))));
+            mXPUSHs(newRV_inc((SV*)DBIc_MY_H(imp_xxh)));
             XPUSHs( result );
             PUTBACK;
             items = call_sv(*hook_svp, G_SCALAR);
@@ -4604,7 +4604,7 @@ _new_handle(class, parent, attr_ref, imp_datasv, imp_class)
         PERL_UNUSED_VAR(cv);
     }
 
-    (void)hv_store((HV*)SvRV(attr_ref), "ImplementorClass", 16, SvREFCNT_inc(imp_class), 0);
+    (void)hv_stores((HV*)SvRV(attr_ref), "ImplementorClass", SvREFCNT_inc(imp_class));
 
     /* make attr into inner handle by blessing it into class */
     sv_bless(attr_ref, class_stash);
@@ -4710,7 +4710,7 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     {
     dMY_CXT;
     /* install another method name/interface for the DBI dispatcher     */
-    SV *trace_msg = (DBIS_TRACE_LEVEL >= 10) ? sv_2mortal(newSVpv("",0)) : Nullsv;
+    SV *trace_msg = (DBIS_TRACE_LEVEL >= 10) ? sv_2mortal(newSVpvs("")) : Nullsv;
     CV *cv;
     SV **svp;
     dbi_ima_t *ima;
@@ -5125,7 +5125,7 @@ take_imp_data(h)
      * destroyed they may need to interact with the 'zombie' parent dbh.
      * So we do our best to neautralize them (finish & rebless)
      */
-    if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+    if ((tmp_svp = hv_fetchs((HV*)SvRV(h), "ChildHandles", FALSE)) && SvROK(*tmp_svp)) {
         AV *av = (AV*)SvRV(*tmp_svp);
         HV *zombie_stash = gv_stashpv("DBI::zombie", GV_ADDWARN);
         I32 kidslots;
@@ -5569,14 +5569,13 @@ set_err(h, err, errstr=&PL_sv_no, state=&PL_sv_undef, method=&PL_sv_undef, resul
     }
     else {
         /* store provided method name so handler code can find it */
-        sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, 1);
+        sem_svp = hv_fetchs((HV*)SvRV(h), "dbi_set_err_method", 1);
         if (SvOK(method)) {
             sv_setpv(*sem_svp, SvPV_nolen(method));
         }
         else
             (void)SvOK_off(*sem_svp);
-        EXTEND(SP, 1);
-        PUSHs( result ? result : &PL_sv_undef );
+        XPUSHs( result ? result : &PL_sv_undef );
     }
     /* We don't check RaiseError and call die here because that must be */
     /* done by returning through dispatch and letting the DBI handle it */
