@@ -66,7 +66,7 @@
 
 <p>Policy classes are designed to influence the overall behaviour of DBD::Gofer with existing, unaltered programs, so they work in a reasonably optimal way without requiring code changes. You can implement new policy classes as subclasses of existing policies.</p>
 
-<p>In many cases individual policy items can be overridden on a case-by-case basis within your application code. You do this by passing a corresponding <code>&lt;go_&lt;policy_name</code>&gt;&gt; attribute into DBI methods by your application code. This let&#39;s you fine-tune the behaviour for special cases.</p>
+<p>In many cases individual policy items can be overridden on a case-by-case basis within your application code. You do this by passing a corresponding <code>&lt;go_&lt;policy_name</code>&gt;&gt; attribute into DBI methods by your application code. This lets you fine-tune the behaviour for special cases.</p>
 
 <p>The policy items are implemented as methods. In many cases the methods are passed parameters relating to the DBD::Gofer code being executed. This means the policy can implement dynamic behaviour that varies depending on the particular circumstances, such as the particular statement being executed.</p>
 

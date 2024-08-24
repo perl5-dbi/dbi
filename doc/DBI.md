@@ -126,7 +126,7 @@ sure that your issue isn't related to the driver you're using.
 
 ## NOTES
 
-This is the DBI specification that corresponds to DBI version 1.642
+This is the DBI specification that corresponds to DBI version 1.644
 (see [DBI::Changes](https://metacpan.org/pod/DBI%3A%3AChanges) for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -5389,6 +5389,8 @@ Note: There is a bug in perl 5.8.2 when configured with threads and
 debugging enabled (bug #24463) which would cause some DBI tests to fail.
 These tests have been disabled for perl-5.8.2 and below.
 
+Tests for inner method cache are disabled for perl-5.10.x
+
 ## Signal Handling and Canceling Operations
 
 \[The following only applies to systems with unix-like signal handling.
@@ -5836,7 +5838,7 @@ following logger module:
         $self->{_buf} .= shift;
     #
     # DBI feeds us pieces at a time, so accumulate a complete line
-    # before outputing
+    # before outputting
     #
         print $fh "At ", scalar localtime(), ':', $self->{_buf}, "\n" and
         $self->{_buf} = ''

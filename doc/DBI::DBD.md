@@ -321,7 +321,7 @@ files.
 Now an example, I use the word `Driver` wherever you should insert
 your driver's name:
 
-    #!/usr/bin/perl
+    # -*- perl -*-
 
     use ExtUtils::MakeMaker;
 

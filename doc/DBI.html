@@ -417,7 +417,7 @@ $rc  = $dbh-&gt;disconnect;</code></pre>
 
 <h2 id="NOTES">NOTES</h2>
 
-<p>This is the DBI specification that corresponds to DBI version 1.642 (see <a>DBI::Changes</a> for details).</p>
+<p>This is the DBI specification that corresponds to DBI version 1.644 (see <a>DBI::Changes</a> for details).</p>
 
 <p>The DBI is evolving at a steady pace, so it&#39;s good to check that you have the latest copy.</p>
 
@@ -3916,6 +3916,8 @@ $dbh-&gt;disconnect;</code></pre>
 
 <p>Note: There is a bug in perl 5.8.2 when configured with threads and debugging enabled (bug #24463) which would cause some DBI tests to fail. These tests have been disabled for perl-5.8.2 and below.</p>
 
+<p>Tests for inner method cache are disabled for perl-5.10.x</p>
+
 <h2 id="Signal-Handling-and-Canceling-Operations">Signal Handling and Canceling Operations</h2>
 
 <p>[The following only applies to systems with unix-like signal handling. I&#39;d welcome additions for other systems, especially Windows.]</p>
@@ -4214,7 +4216,7 @@ sub log
     $self-&gt;{_buf} .= shift;
 #
 # DBI feeds us pieces at a time, so accumulate a complete line
-# before outputing
+# before outputting
 #
     print $fh &quot;At &quot;, scalar localtime(), &#39;:&#39;, $self-&gt;{_buf}, &quot;\n&quot; and
     $self-&gt;{_buf} = &#39;&#39;
