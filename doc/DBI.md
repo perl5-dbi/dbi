@@ -6181,11 +6181,11 @@ Security, especially the "SQL Injection" attack:
 
 ## FAQ
 
-See [http://faq.dbi-support.com/](http://faq.dbi-support.com/)
+See [http://dbi.perl.org/support/](http://dbi.perl.org/support/)
 
 # AUTHORS
 
-DBI by Tim Bunce, [http://www.tim.bunce.name](http://www.tim.bunce.name)
+DBI by Tim Bunce (1994-2024), The DBI developer group (2024..)
 
 This pod text by Tim Bunce, J. Douglas Dunlop, Jonathan Leffler and others.
 Perl by Larry Wall and the `perl5-porters`.
@@ -6193,7 +6193,7 @@ Perl by Larry Wall and the `perl5-porters`.
 # COPYRIGHT
 
 The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland.
-All rights reserved.
+The DBI developer group (2024-2024) All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
 License or the Artistic License, as specified in the Perl 5.10.0 README file.
@@ -6248,8 +6248,7 @@ A couple of specific DBI features have been sponsored by enlightened companies:
 
 The development of the swap\_inner\_handle() method was sponsored by BizRate.com ([http://BizRate.com](http://BizRate.com))
 
-The development of DBD::Gofer and related modules was sponsored by
-Shopzilla.com ([http://Shopzilla.com](http://Shopzilla.com)), where I currently work.
+The development of DBD::Gofer and related modules was sponsored by Shopzilla.com ([https::connexity.com](https://metacpan.org/pod/https%3A%3Aconnexity.com)).
 
 # CONTRIBUTING
 

@@ -3,7 +3,7 @@
 use 5.040000;
 use warnings;
 
-our $VERSION = "0.01 - 20240812";
+our $VERSION = "0.02 - 20240825";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
@@ -62,8 +62,12 @@ else {
 	open my $ph, "<:bytes", $pm;
 	open my $mh, ">:bytes", \my $m;
 	my $p = Pod::Markdown->new ();
-	$p->output_fh  ($mh);
-	$p->parse_file ($ph);
+	my @w;
+	{   local $SIG{__WARN__} = sub { push @w => $_ };
+	    $p->output_fh  ($mh);
+	    $p->parse_file ($ph);
+	    }
+	warn $_ for grep { length and ! m/^Wide character in print/ } @w;
 	close $ph;
 	close $mh;
 

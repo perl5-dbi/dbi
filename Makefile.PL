@@ -347,8 +347,9 @@ dbixs_rev.h: DBIXS.h Driver_xst.h dbipport.h dbivport.h dbixs_rev.pl
 DBI.c: Perl$(OBJ_EXT)
 
 # make Changes file available as installed pod docs "perldoc DBI::Changes"
-inst_libdbi = ' . File::Spec->catdir($self->{INST_LIB}, 'DBI') . '
-changes_pm = '  . File::Spec->catfile($self->{INST_LIB}, 'DBI', 'Changes.pm') . '
+inst_libdbi = ' . File::Spec->catdir  ($self->{INST_LIB}, 'DBI') . '
+changes_pm1 = ' . File::Spec->catfile ('lib', 'DBI', 'Changes.pm') . '
+changes_pm2 = ' . File::Spec->catfile ($self->{INST_LIB}, 'DBI', 'Changes.pm') . '
 '.q{
 
 config :: $(changes_pm)
@@ -357,7 +358,8 @@ config :: $(changes_pm)
 $(changes_pm): Changes
 	$(MKPATH) $(inst_libdbi)
 	$(RM_F) $(changes_pm)
-	$(CP) Changes $(changes_pm)
+	perl changes2pm.pl
+	$(CP) $(changes_pm1) $(changes_pm2)
 
 ptest:  all
 	prove --blib --jobs 8 --shuffle
@@ -380,6 +382,9 @@ dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
 	perl dbipport.h --compat-version=5.8.0 DBI.xs
+
+lib/DBI/Changes.pm:	Changes
+	perl changes2pm.pl
 
 checkpod:
 	$(RM_RF) blib

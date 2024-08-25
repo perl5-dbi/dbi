@@ -45,6 +45,7 @@ lib/DBD/Mem.pm                  A pure-perl in-memory driver using DBI::DBD::Sql
 lib/DBD/NullP.pm		An empty example Driver module
 lib/DBD/Proxy.pm		Proxy driver
 lib/DBD/Sponge.pm		A driver for fake cursors (precached data)
+lib/DBI/Changes.pm
 lib/DBI/Const/GetInfo/ANSI.pm	GetInfo data based on ANSI standard
 lib/DBI/Const/GetInfo/ODBC.pm	GetInfo data based on ODBC standard
 lib/DBI/Const/GetInfoReturn.pm	GetInfo return values plus tools based on standards

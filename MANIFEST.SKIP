@@ -21,6 +21,7 @@
 \.[co]$
 ^appveyor\.yml
 ^blib/
+^changes2pm\.pl
 ^DBI-\d
 ^dbi.tiddlyspot.com.html
 ^dbilogstrip$
