@@ -8,6 +8,7 @@ INSTALL
 LICENSE
 MANIFEST
 Makefile.PL			The Makefile generator
+cpanfile
 Perl.xs				Test harness (currently) for Driver.xst
 README.md
 dbd_xsh.h			Prototypes for standard Driver.xst interface
@@ -22,6 +23,7 @@ dbixs_rev.pl			Utility to write dbixs_rev.h
 ex/perl_dbi_nulls_test.pl	A test script for forms of IS NULL qualification in SQL
 ex/profile.pl                   A test script for DBI::Profile
 ex/corogofer.pl                 A test script for DBD::Gofer::Transport::corostream
+ex/unicode_test.pl
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
@@ -118,6 +120,4 @@ t/87gofer_cache.t
 t/90sql_type_cast.t
 t/91_store_warning.t
 t/lib.pl		Utility functions for test scripts
-t/pod.t
-t/pod-coverage.t
 typemap
