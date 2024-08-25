@@ -1,6 +1,7 @@
 1.645 - 2024-08-25 TBD
 
     * Move developer tests to xt/
+    * Make Changes match CPAN::Changes::Spec and rgen DBI::Changes from that
 
 1.644 - 2024-08-23, Tim Bunce
 
