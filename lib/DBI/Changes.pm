@@ -20,6 +20,14 @@ DBI::Changes - List of significant changes to the DBI
 
 Move developer tests to xt/
 
+=item *
+
+Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
+
+=item *
+
+Fixes for modern gcc i.c.w. recent perl (Daniël)
+
 =back
 
 =head2 Changes in DBI 1.644 - 23 Aug 2024

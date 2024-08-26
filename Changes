@@ -1,7 +1,8 @@
 1.645 - 2024-08-25 TBD
 
     * Move developer tests to xt/
-    * Make Changes match CPAN::Changes::Spec and rgen DBI::Changes from that
+    * Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
+    * Fixes for modern gcc i.c.w. recent perl (Daniël)
 
 1.644 - 2024-08-23, Tim Bunce
 

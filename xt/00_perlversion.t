@@ -20,15 +20,24 @@ my @pm = sort "DBI.pm",
 	(glob "lib/*/*/*/*.pm");
 
 my %f5xx = (
-    "5.008.1"  => [ @pm, glob ("t/*"), glob ("xt/*.t"), glob ("*.PL") ],
-    "5.010.0" => [],
-    "5.012.0" => [],
-    "5.014.0" => [],
-    "5.016.0" => [],
+    "5.008.1" => { map { $_ => 1 } @pm, glob ("t/*"), glob ("xt/*.t"), glob ("*.PL") },
+    "5.010.0" => {},
+    "5.012.0" => {},
+    "5.014.0" => { map { $_ => 1 } "xt/20_kwalitee.t" },
+    "5.016.0" => {},
     );
 
-foreach my $v (sort keys %f5xx) {
-    my @f = @{$f5xx{$v}} or next;
+my @v = sort keys %f5xx;
+foreach my $v (reverse @v) {
+    foreach my $f (sort keys %{$f5xx{$v}}) {
+	foreach my $x (grep { $_ lt $v } @v) {
+	    delete $f5xx{$x}{$f}
+	    }
+	}
+    }
+
+foreach my $v (@v) {
+    my @f = sort keys %{$f5xx{$v}} or next;
     subtest ($v => sub { all_minimum_version_ok ($v, { paths => [ @f ]}); });
     }
 

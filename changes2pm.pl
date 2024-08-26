@@ -3,7 +3,7 @@
 use 5.014002;
 use warnings;
 
-our $VERSION = "0.01 - 20240825";
+our $VERSION = "0.02 - 20240826";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
@@ -69,10 +69,12 @@ foreach my $c (@chg) {
     say $ph "";
     shift @c while @c && $c[ 0] !~ m/\S/;
     pop   @c while @c && $c[-1] !~ m/\S/;
-    if ($c[0] =~ s/^\s*\K(\*|\x{2022})\s*//) {
-	my @i = [ pop @c ];
+    if ($c[0] =~ s/^(\s*)(\*|\x{2022})\s*//) {
+	my $ws = $1;
+	s/^$ws// for @c;
+	my @i = [ shift @c ];
 	while (@c) {
-	    if ($c[0] =~ s/^\s*\K(\*|\x{2022})\s*//) {
+	    if ($c[0] =~ s/^(\*|\x{2022})\s*//) {
 		push @i => [ shift @c ]
 		}
 	    else {
