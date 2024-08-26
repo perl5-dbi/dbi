@@ -6,7 +6,10 @@ use Test::More;
 
 BEGIN { $ENV{AUTHOR_TESTING} = 1; }
 eval "use Test::Kwalitee qw( kwalitee_ok );";
-plan skip_all => "1..0 # Test::Kwalitee required for this test\n" if $@;
+if ($@) {
+    diag $@ =~ s{\s+at\s+\S+\s+line\s+\d.*\z}{}rs;
+    plan skip_all => "1..0 # Test::Kwalitee required for this test\n";
+    }
 
 kwalitee_ok (qw(
     -has_meta_yml
