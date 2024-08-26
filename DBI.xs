@@ -1106,7 +1106,7 @@ dbih_inner(pTHX_ SV *orv, const char *what)
     if (!SvMAGICAL(ohv)) {
         if (!what)
             return NULL;
-        if (!hv_fetch(ohv,"_NO_DESTRUCT_WARN",17,0))
+        if (!hv_fetch((HV*)ohv,"_NO_DESTRUCT_WARN",17,0))
 	    sv_dump(orv);
         croak("%s handle %s is not a DBI handle (has no magic)",
                 what, neatsvpv(orv,0));
