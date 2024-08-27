@@ -247,7 +247,7 @@ static MGVTBL dbi_ima_vtbl = { 0, 0, 0, 0, dbi_ima_free,
 #endif
                                     };
 
-static int dbi_ima_free(pTHX_ SV* sv, MAGIC* mg)
+static int dbi_ima_free(pTHX_ SV* sv, PERL_UNUSED_DECL MAGIC* mg)
 {
     dbi_ima_t *ima = (dbi_ima_t *)(CvXSUBANY((CV*)sv).any_ptr);
 #ifdef BROKEN_DUP_ANY_PTR
@@ -1947,7 +1947,7 @@ quote_type(int sql_type, int p, int s, int *t, void *v)
  */
 
 int
-sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, void *v)
+sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, PERL_UNUSED_DECL void *v)
 {
     int cast_ok = 0;
     int grok_flags;
