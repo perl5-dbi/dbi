@@ -44,7 +44,7 @@ by Eric Raymond:
 Much useful information and online archives of the mailing lists can be
 found at http://dbi.perl.org/
 
-See also http://metacpan.org/
+See also http://metacpan.org/pod/DBI
 
 
 # IF YOU HAVE PROBLEMS:
