@@ -62,7 +62,7 @@ dbdxst_bind_params(SV *sth, imp_sth_t *imp_sth, I32 items, I32 ax)
     ) {
 	char errmsg[99];
         /* clear any previous ParamValues before error is generated */
-        SV **svp = hv_fetch((HV*)DBIc_MY_H(imp_sth),"ParamValues",11,FALSE);
+        SV **svp = hv_fetchs((HV*)DBIc_MY_H(imp_sth),"ParamValues",FALSE);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             hv_clear(hv);
