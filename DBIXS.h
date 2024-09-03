@@ -36,6 +36,7 @@
 
 /* Perl backwards compatibility definitions */
 #define NEED_sv_2pv_flags
+#define NEED_croak_xs_usage
 #include "dbipport.h"
 
 /* DBI SQL_* type definitions */

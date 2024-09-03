@@ -28,6 +28,14 @@ Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
 
 Fixes for modern gcc i.c.w. recent perl (Daniël)
 
+=item *
+
+Small code & doc cleanups for recent perl
+
+=item *
+
+See TODO in `perldoc DBI` to see where you can help with documentation!
+
 =back
 
 =head2 Changes in DBI 1.644 - 23 Aug 2024
