@@ -2,12 +2,12 @@ requires   "XSLoader";
 
 recommends "Encode"                   => "3.21";
 
-suggests   "Clone"                    => "0.34";
+suggests   "Clone"                    => "0.47";
 suggests   "DB_File"                  => "0";
 suggests   "MLDBM"                    => "0";
 suggests   "Net::Daemon"              => "0";
-suggests   "RPC::PlServer"            => "0.2001";
-suggests   "SQL::Statement"           => "1.402";
+suggests   "RPC::PlServer"            => "0.2020";
+suggests   "SQL::Statement"           => "1.414";
 
 conflicts  "DBD::Amazon"              => "0.10";
 conflicts  "DBD::AnyData"             => "0.110";
@@ -32,4 +32,6 @@ on "build" => sub {
 
 on "test" => sub {
     requires   "Test::More"           => "0.90";    # For done_testing()
+
+    recommends "Test::More"           => "1.302199";
     };

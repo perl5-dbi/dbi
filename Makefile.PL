@@ -48,6 +48,12 @@ if (($ENV{LANG}||"") =~ m/utf-?8/i) {
     sleep 1;
     }
 
+if ($^O eq "MSWin32" && $] < 5.012 && $File::Spec::VERSION < 3.31) {
+    warn "Windows requires File::Spec-3.31, which is CORE as of perl-5.11.3\n";
+    warn "As this is just perl-$] with File::Spec-$File::Spec::VERSION\n";
+    exit 1;
+    }
+
 my %opts = (
     NAME                      => "DBI",
     AUTHOR                    => 'DBI team (dbi-users@perl.org)',
@@ -67,18 +73,13 @@ my %opts = (
 	    IRC               => "irc://irc.perl.org/#dbi",
 	    },
 	suggests              => {
-	    "RPC::PlServer"   => 0.2001,
+	    "RPC::PlServer"   => 0.2020,
 	    "Net::Daemon"     => 0,
-	    "SQL::Statement"  => 1.402,
-	    "Clone"           => 0.34,
+	    "SQL::Statement"  => 1.414,
+	    "Clone"           => 0.47,
 	    "MLDBM"           => 0,
 	    "DB_File"         => 0,
 	    },
-	},
-    PREREQ_PM                 => {
-	$^O eq "MSWin32"
-	    ? ("File::Spec"   => 3.31)
-	    : (),
 	},
     CONFLICTS                 => {
 	"SQL::Statement"      => "1.33",
@@ -102,6 +103,9 @@ my %opts = (
 	DIST_DEFAULT          => "clean distcheck disttest tardist",
 	PREOP                 => '$(MAKE) -f Makefile.old distdir',
 	COMPRESS              => "gzip -v9", SUFFIX => "gz",
+	},
+    macro                     => {
+	TARFLAGS              => "--format=ustar -c -v -f",
 	},
     );
 $opts{CAPI} = "TRUE" if $Config{archname} =~ /-object\b/i;
