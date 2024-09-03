@@ -8472,6 +8472,209 @@ See also the L<SQL::Statement> module, SQL parser and engine.
 
 =back
 
+=head1 TODO
+
+=head2 Documentation
+
+These entries are still to be written:
+
+=over 2
+
+
+=item DBIf_TRACE_CON
+
+=item DBIf_TRACE_DBD
+
+=item DBIf_TRACE_ENC
+
+=item DBIf_TRACE_SQL
+
+=item DBIf_TRACE_TXN
+
+=item DBIpp_cm_XX
+
+=item DBIpp_cm_br
+
+=item DBIpp_cm_cs
+
+=item DBIpp_cm_dd
+
+=item DBIpp_cm_dw
+
+=item DBIpp_cm_hs
+
+=item DBIpp_ph_XX
+
+=item DBIpp_ph_cn
+
+=item DBIpp_ph_cs
+
+=item DBIpp_ph_qm
+
+=item DBIpp_ph_sp
+
+=item DBIpp_st_XX
+
+=item DBIpp_st_bs
+
+=item DBIpp_st_qq
+
+=item SQL_ALL_TYPES
+
+=item SQL_ARRAY
+
+=item SQL_ARRAY_LOCATOR
+
+=item SQL_BIGINT
+
+=item SQL_BINARY
+
+=item SQL_BIT
+
+=item SQL_BLOB
+
+=item SQL_BLOB_LOCATOR
+
+=item SQL_BOOLEAN
+
+=item SQL_CHAR
+
+=item SQL_CLOB
+
+=item SQL_CLOB_LOCATOR
+
+=item SQL_CURSOR_DYNAMIC
+
+=item SQL_CURSOR_FORWARD_ONLY
+
+=item SQL_CURSOR_KEYSET_DRIVEN
+
+=item SQL_CURSOR_STATIC
+
+=item SQL_CURSOR_TYPE_DEFAULT
+
+=item SQL_DATE
+
+=item SQL_DATETIME
+
+=item SQL_DECIMAL
+
+=item SQL_DOUBLE
+
+=item SQL_FLOAT
+
+=item SQL_GUID
+
+=item SQL_INTEGER
+
+=item SQL_INTERVAL
+
+=item SQL_INTERVAL_DAY
+
+=item SQL_INTERVAL_DAY_TO_HOUR
+
+=item SQL_INTERVAL_DAY_TO_MINUTE
+
+=item SQL_INTERVAL_DAY_TO_SECOND
+
+=item SQL_INTERVAL_HOUR
+
+=item SQL_INTERVAL_HOUR_TO_MINUTE
+
+=item SQL_INTERVAL_HOUR_TO_SECOND
+
+=item SQL_INTERVAL_MINUTE
+
+=item SQL_INTERVAL_MINUTE_TO_SECOND
+
+=item SQL_INTERVAL_MONTH
+
+=item SQL_INTERVAL_SECOND
+
+=item SQL_INTERVAL_YEAR
+
+=item SQL_INTERVAL_YEAR_TO_MONTH
+
+=item SQL_LONGVARBINARY
+
+=item SQL_LONGVARCHAR
+
+=item SQL_MULTISET
+
+=item SQL_MULTISET_LOCATOR
+
+=item SQL_NUMERIC
+
+=item SQL_REAL
+
+=item SQL_REF
+
+=item SQL_ROW
+
+=item SQL_SMALLINT
+
+=item SQL_TIME
+
+=item SQL_TIMESTAMP
+
+=item SQL_TINYINT
+
+=item SQL_TYPE_DATE
+
+=item SQL_TYPE_TIME
+
+=item SQL_TYPE_TIMESTAMP
+
+=item SQL_TYPE_TIMESTAMP_WITH_TIMEZONE
+
+=item SQL_TYPE_TIME_WITH_TIMEZONE
+
+=item SQL_UDT
+
+=item SQL_UDT_LOCATOR
+
+=item SQL_UNKNOWN_TYPE
+
+=item SQL_VARBINARY
+
+=item SQL_VARCHAR
+
+=item SQL_WCHAR
+
+=item SQL_WLONGVARCHAR
+
+=item SQL_WVARCHAR
+
+=item connect_test_perf
+
+=item constant
+
+=item dbi_profile
+
+=item dbi_profile_merge
+
+=item dbi_profile_merge_nodes
+
+=item dbi_time
+
+=item disconnect_all
+
+=item driver_prefix
+
+=item dump_dbd_registry
+
+=item dump_handle
+
+=item init_rootclass
+
+=item install_driver
+
+=item installed_methods
+
+=item setup_driver
+
+=back
+
 =cut
 
 #  LocalWords:  DBI

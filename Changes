@@ -1,10 +1,12 @@
-1.645 - 2024-08-25 TBD
+1.645 - 2024-09-03, H.Merijn Brand
 
     * Move developer tests to xt/
     * Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
     * Fixes for modern gcc i.c.w. recent perl (Daniël)
+    * Small code & doc cleanups for recent perl
+    * See TODO in `perldoc DBI` to see where you can help with documentation!
 
-1.644 - 2024-08-23, Tim Bunce
+1.644 - 2024-08-23, DBI-Team
 
     Update Devel::PPPort,
         thanks to H.Merijn Brand
