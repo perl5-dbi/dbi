@@ -3,7 +3,7 @@
 use 5.040000;
 use warnings;
 
-our $VERSION = "0.02 - 20240825";
+our $VERSION = "0.03 - 20240904";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
@@ -21,11 +21,14 @@ GetOptions (
     "v|verbose:1"	=> \(my $opt_v = 0),
     ) or usage (1);
 
+-d "doc" or mkdir "doc", 0775;
+
 my @pm = sort "DBI.pm",
 	(glob "lib/*/*.pm"),
 	(glob "lib/*/*/*.pm"),
 	(glob "lib/*/*/*/*.pm");
 
+my %enc;
 eval { require Pod::Checker; };
 if ($@) {
     warn "Cannot convert pod to markdown: $@\n";
@@ -34,8 +37,10 @@ else {
     my $fail = 0;
     foreach my $pm (@pm) {
 	open my $eh, ">", \my $err;
-	my $ok = Pod::Checker->new ()->parse_from_file ($pm, $eh);
+	my $pc = Pod::Checker->new ();
+	my $ok = $pc->parse_from_file ($pm, $eh);
 	close $eh;
+	$enc{$pm} = $pc->{encoding};
 	$err && $err =~ m/\S/ or next;
 	if ($pm eq "lib/DBI/ProfileData.pm") {
 	    # DBI::Profile has 7 warnings on empty previous paragraphs
@@ -59,17 +64,13 @@ else {
     foreach my $pm (@pm) {
 	my $md = $pm =~ s{^lib/}{}r =~ s{/}{::}gr =~ s{\.pm$}{.md}r =~ s{^}{doc/}r;
 	printf STDERR "%-43s <- %s\n", $md, $pm if $opt_v;
-	open my $ph, "<:bytes", $pm;
-	open my $mh, ">:bytes", \my $m;
+	my $enc = $enc{$pm} ? "encoding($enc{$pm})" : "bytes";
+	say "$pm ($enc)" if $opt_v > 1;
+	open my $ph, "<:$enc", $pm;
 	my $p = Pod::Markdown->new ();
-	my @w;
-	{   local $SIG{__WARN__} = sub { push @w => $_ };
-	    $p->output_fh  ($mh);
-	    $p->parse_file ($ph);
-	    }
-	warn $_ for grep { length and ! m/^Wide character in print/ } @w;
+	$p->output_string (\my $m);
+	$p->parse_file ($ph);
 	close $ph;
-	close $mh;
 
 	$m && $m =~ m/\S/ or next;
 	if (open my $old, "<:encoding(utf-8)", $md) {
@@ -106,6 +107,7 @@ else {
 	print $oh $h;
 	close $oh;
 	}
+    unlink "pod2htmd.tmp";
     }
 
 eval { require Pod::Man; };

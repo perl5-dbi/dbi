@@ -1,3 +1,6 @@
+1.646 - 2024-09-19, H.Merijn Brand
+    * Remove "experimental" tag from statistics_info () (issue#134)
+
 1.645 - 2024-09-03, H.Merijn Brand
 
     * Move developer tests to xt/

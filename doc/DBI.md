@@ -126,7 +126,7 @@ sure that your issue isn't related to the driver you're using.
 
 ## NOTES
 
-This is the DBI specification that corresponds to DBI version 1.644
+This is the DBI specification that corresponds to DBI version 1.646
 (see [DBI::Changes](https://metacpan.org/pod/DBI%3A%3AChanges) for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -3388,8 +3388,6 @@ may be undefined if the driver doesn't have access to the information.
 See also ["Catalog Methods"](#catalog-methods) and ["Standards Reference Information"](#standards-reference-information).
 
 ### `statistics_info`
-
-**Warning:** This method is experimental and may change.
 
     $sth = $dbh->statistics_info( $catalog, $schema, $table, $unique_only, $quick );
 

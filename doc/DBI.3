@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI 3"
-.TH DBI 3 2024-09-03 "perl v5.40.0" "User Contributed Perl Documentation"
+.TH DBI 3 2024-09-19 "perl v5.40.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -190,7 +190,7 @@ page for your driver. Only submit a bug report against the DBI itself if you\*(A
 sure that your issue isn\*(Aqt related to the driver you\*(Aqre using.
 .SS NOTES
 .IX Subsection "NOTES"
-This is the DBI specification that corresponds to DBI version 1.644
+This is the DBI specification that corresponds to DBI version 1.646
 (see DBI::Changes for details).
 .PP
 The DBI is evolving at a steady pace, so it\*(Aqs good to check that
@@ -3837,8 +3837,6 @@ See also "Catalog Methods" and "Standards Reference Information".
 .PP
 \fR\f(CI\*(C`statistics_info\*(C'\fR\fI\fR
 .IX Subsection "statistics_info"
-.PP
-\&\fBWarning:\fR This method is experimental and may change.
 .PP
 .Vb 1
 \&  $sth = $dbh\->statistics_info( $catalog, $schema, $table, $unique_only, $quick );

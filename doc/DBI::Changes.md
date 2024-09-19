@@ -6,7 +6,9 @@ DBI::Changes - List of significant changes to the DBI
 
 - Move developer tests to xt/
 - Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
-- Fixes for modern gcc i.c.w. recent perl (DaniÃ«l)
+- Fixes for modern gcc i.c.w. recent perl (Daniël)
+- Small code & doc cleanups for recent perl
+- See TODO in \`perldoc DBI\` to see where you can help with documentation!
 
 ## Changes in DBI 1.644 - 23 Aug 2024
 
@@ -15,9 +17,9 @@ DBI::Changes - List of significant changes to the DBI
     Fix CVE-2014-10401 and CVE-2014-10402 - f_dir might not exist in DBD::File connections
         thanks to Jens Rehsack & H.Merijn Brand
     Do not check gccversion on clang
-        thanks to DaniÃ«l van Eeden
+        thanks to Daniël van Eeden
     Upgrade GIMME to GIMME_V
-        thanks to DaniÃ«l van Eeden
+        thanks to Daniël van Eeden
     Do not check with JSON::XS with perl-5.022 and later
         thanks to H.Merijn Brand
     Makefile.PL allows gcc-10 and up now
@@ -39,11 +41,11 @@ DBI::Changes - List of significant changes to the DBI
     Fix potentially calling newSV(0) in malloc_using_sv()
         thanks to Pali
     Fix order of XS preparse() ps_accept and ps_return argument names
-        thanks to Petr PÃ­saÅ
+        thanks to Petr Písař
     Fix a potential NULL profile dereference in dbi_profile()
-        thanks to Petr PÃ­saÅ
+        thanks to Petr Písař
     Fix a buffer overflow on an overlong DBD class name
-        thanks to Petr PÃ­saÅ
+        thanks to Petr Písař
 
     Remove remnants of support for perl <= v5.8.0
         thanks to Pali and H.Merijn Brand
@@ -233,7 +235,7 @@ which was made possible by the generosity of many sponsors:
     Changed $sth->{TYPE} to be NUMERIC in DBD::File drivers as per the
         DBI docs. Note TYPE_NAME is now also available. [H.Merijn Brand]
     Fixed compilation error on bleadperl due DEFSV no longer being an lvalue
-        [Dagfinn Ilmari MannsÃ¥ker]
+        [Dagfinn Ilmari Mannsåker]
 
     Added docs for escaping placeholders using a backslash.
     Added docs for get_info(9000) indicating ability to escape placeholders.
@@ -323,7 +325,7 @@ There was no DBI 1.629 release.
     Change DBI's docs to refer to git not svn [H.Merijn Brand]
     Clarify bind_col TYPE attribute is sticky [Martin J. Evans]
     Fixed reference to $sth in selectall_arrayref docs RT#84873
-    Spelling fixes [Ville SkyttÃ¤]
+    Spelling fixes [Ville Skyttä]
     Changed $VERSIONs to hardcoded strings [H.Merijn Brand]
 
 ## Changes in DBI 1.627 - 16 May 2013
@@ -425,9 +427,9 @@ There was no DBI 1.629 release.
     Optimized driver access to handle data thanks to Dave Mitchell.
       Dave's work on these optimizations was sponsored by Booking.com.
     Optimized fetchall_arrayref with hash slice thanks
-      to Dagfinn Ilmari MannsÃ¥ker. RT#76520
+      to Dagfinn Ilmari Mannsåker. RT#76520
     Allow renaming columns in fetchall_arrayref hash slices
-      thanks to Dagfinn Ilmari MannsÃ¥ker. RT#76572
+      thanks to Dagfinn Ilmari Mannsåker. RT#76572
     Reserved snmp_ and tree_ for DBD::SNMP and DBD::TreeData
 
 ## Changes in DBI 1.618 (svn rev 15170) - 25 Feb 2012
@@ -475,7 +477,7 @@ There was no DBI 1.629 release.
     Added some more fetchall_arrayref(..., $maxrows) tests (Tim Bunce)
     Clarified docs for fetchall_arrayref called on an inactive handle.
     Clarified docs for clone method (Tim Bunce)
-    Added note to DBI::Profile about async queries (Marcel GrÃ¼nauer).
+    Added note to DBI::Profile about async queries (Marcel Grünauer).
     Reserved spatialite_ as a driver prefix for DBD::Spatialite
     Reserved mo_ as a driver prefix for DBD::MO
     Updated link to the SQL Reunion 95 docs, RT69577 (Ash Daminato)
@@ -1106,7 +1108,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 
     Fixed DBI::ProxyServer to not create pid files by default.
       References: Ubuntu Security Notice USN-70-1, CAN-2005-0077
-      Thanks to Javier FernÃ¡ndez-Sanguino PeÃ±a from the
+      Thanks to Javier Fernández-Sanguino Peña from the
       Debian Security Audit Project, and Jonathan Leffler.
     Fixed some tests to work with older Test::More versions.
     Fixed setting $DBI::err/errstr in DBI::PurePerl.
