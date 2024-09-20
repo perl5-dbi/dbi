@@ -420,8 +420,8 @@ DESTROY(dbh)
                 && (!PL_dirty || DBIc_DBISTATE(imp_dbh)->debug >= 3)
                 ) {
                     warn("Issuing rollback() due to DESTROY without explicit disconnect() of %s handle %s",
-                        SvPV_nolen(*hv_fetch((HV*)SvRV(dbh), "ImplementorClass", 16, 1)),
-                        SvPV_nolen(*hv_fetch((HV*)SvRV(dbh), "Name", 4, 1))
+                        SvPV_nolen(*hv_fetchs((HV*)SvRV(dbh), "ImplementorClass", 1)),
+                        SvPV_nolen(*hv_fetchs((HV*)SvRV(dbh), "Name", 1))
                     );
                 }
                 dbd_db_rollback(dbh, imp_dbh);                  /* ROLLBACK! */

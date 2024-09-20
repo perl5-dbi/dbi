@@ -717,7 +717,7 @@ copy_statement_to_parent(pTHX_ SV *h, imp_xxh_t *imp_xxh)
         return;
     parent = DBIc_PARENT_H(imp_xxh);
     if (parent && SvROK(parent)) {
-        SV *tmp_sv = *hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
+        SV *tmp_sv = *hv_fetchs((HV*)SvRV(h), "Statement", 1);
         if (SvOK(tmp_sv))
             (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(tmp_sv), 0);
     }
@@ -753,7 +753,7 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
     int err_changed = 0;
 
     if (    DBIc_has(imp_xxh, DBIcf_HandleSetErr)
-        && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleSetErr",12,0))
+        && (hook_svp = hv_fetchs((HV*)SvRV(h),"HandleSetErr",0))
         &&  hook_svp
         &&  ((void)(SvGMAGICAL(*hook_svp) && mg_get(*hook_svp)), SvOK(*hook_svp))
     ) {
@@ -1106,7 +1106,7 @@ dbih_inner(pTHX_ SV *orv, const char *what)
     if (!SvMAGICAL(ohv)) {
         if (!what)
             return NULL;
-        if (!hv_fetch((HV*)ohv,"_NO_DESTRUCT_WARN",17,0))
+        if (!hv_fetchs((HV*)ohv,"_NO_DESTRUCT_WARN",0))
 	    sv_dump(orv);
         croak("%s handle %s is not a DBI handle (has no magic)",
                 what, neatsvpv(orv,0));
@@ -1436,7 +1436,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
     if ( (imp_mem_stash = gv_stashsv(imp_mem_name, FALSE)) == NULL)
         croak(errmsg, neatsvpv(orv,0), SvPVbyte_nolen(imp_mem_name), "unknown _mem package");
 
-    if ((svp = hv_fetch((HV*)SvRV(h), "dbi_imp_data", 12, 0))) {
+    if ((svp = hv_fetchs((HV*)SvRV(h), "dbi_imp_data", 0))) {
         dbi_imp_data = *svp;
         if (SvGMAGICAL(dbi_imp_data))  /* call FETCH via magic */
             mg_get(dbi_imp_data);
@@ -1477,9 +1477,9 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
 
             /* setup Callbacks from parents' ChildCallbacks */
             if (DBIc_has(parent_imp, DBIcf_Callbacks)
-            && (tmp_svp = hv_fetch((HV*)SvRV(parent), "Callbacks", 9, 0))
+            && (tmp_svp = hv_fetchs((HV*)SvRV(parent), "Callbacks", 0))
             && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
-            && (tmp_svp = hv_fetch((HV*)SvRV(*tmp_svp), "ChildCallbacks", 14, 0))
+            && (tmp_svp = hv_fetchs((HV*)SvRV(*tmp_svp), "ChildCallbacks", 0))
             && SvROK(*tmp_svp) && SvTYPE(SvRV(*tmp_svp)) == SVt_PVHV
             ) {
                 /* XXX mirrors behaviour of dbih_set_attr_k() of Callbacks */
@@ -1492,7 +1492,7 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
             if (1) {
                 AV *av;
                 /* add weakref to new (outer) handle into parents ChildHandles array */
-                tmp_svp = hv_fetch((HV*)SvRV(parent), "ChildHandles", 12, 1);
+                tmp_svp = hv_fetchs((HV*)SvRV(parent), "ChildHandles", 1);
                 if (!SvROK(*tmp_svp)) {
                     SV *ChildHandles_rvav = newRV_noinc((SV*)newAV());
                     sv_setsv(*tmp_svp, ChildHandles_rvav);
@@ -1522,14 +1522,14 @@ dbih_setup_handle(pTHX_ SV *orv, char *imp_class, SV *parent, SV *imp_datasv)
         case DBIt_DB:
             /* cache _inner_ handle, but also see quick_FETCH */
             (void)hv_store((HV*)SvRV(h), "Driver", 6, newRV_inc(SvRV(parent)), 0);
-            (void)hv_fetch((HV*)SvRV(h), "Statement", 9, 1); /* store writable undef */
+            (void)hv_fetchs((HV*)SvRV(h), "Statement", 1); /* store writable undef */
             break;
         case DBIt_ST:
             DBIc_NUM_FIELDS((imp_sth_t*)imp) = -1;
             /* cache _inner_ handle, but also see quick_FETCH */
             (void)hv_store((HV*)SvRV(h), "Database", 8, newRV_inc(SvRV(parent)), 0);
             /* copy (alias) Statement from the sth up into the dbh      */
-            tmp_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 1);
+            tmp_svp = hv_fetchs((HV*)SvRV(h), "Statement", 1);
             (void)hv_store((HV*)SvRV(parent), "Statement", 9, SvREFCNT_inc(*tmp_svp), 0);
             break;
         }
@@ -1637,7 +1637,7 @@ dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
     if (!inner || !SvROK(inner))
         return 1;
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "CachedKids", 10, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "CachedKids", 0);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             PerlIO_printf(DBILOGFP,"%s CachedKids %d\n", pad, (int)HvKEYS(hv));
@@ -1653,12 +1653,12 @@ dbih_dumpcom(pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level)
         }
     }
     else if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "Name", 4, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "Name", 0);
         if (svp && SvOK(*svp))
             PerlIO_printf(DBILOGFP,"%s Name %s\n", pad, neatsvpv(*svp,0));
     }
     else if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
-        SV **svp = hv_fetch((HV*)SvRV(inner), "Statement", 9, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(inner), "Statement", 0);
         if (svp && SvOK(*svp))
             PerlIO_printf(DBILOGFP,"%s Statement %s\n", pad, neatsvpv(*svp,0));
     }
@@ -2351,7 +2351,7 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
                 valuesv = &PL_sv_undef;
 
                 /* fetch from tied outer handle to trigger FETCH magic */
-                svp = hv_fetch((HV*)DBIc_MY_H(imp_sth), "NAME",4, FALSE);
+                svp = hv_fetchs((HV*)DBIc_MY_H(imp_sth), "NAME", FALSE);
                 sv = (svp) ? *svp : &PL_sv_undef;
                 if (SvGMAGICAL(sv))     /* call FETCH via magic */
                     mg_get(sv);
@@ -2775,7 +2775,7 @@ static void
 clear_cached_kids(pTHX_ SV *h, imp_xxh_t *imp_xxh, const char *meth_name, int trace_level)
 {
     if (DBIc_TYPE(imp_xxh) <= DBIt_DB) {
-        SV **svp = hv_fetch((HV*)SvRV(h), "CachedKids", 10, 0);
+        SV **svp = hv_fetchs((HV*)SvRV(h), "CachedKids", 0);
         if (svp && SvROK(*svp) && SvTYPE(SvRV(*svp)) == SVt_PVHV) {
             HV *hv = (HV*)SvRV(*svp);
             if (HvKEYS(hv)) {
@@ -2889,7 +2889,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 
     h_hv = (HV*)SvRV(dbih_inner(aTHX_ h, "dbi_profile"));
 
-    profile = *hv_fetch(h_hv, "Profile", 7, 1);
+    profile = *hv_fetchs(h_hv, "Profile", 1);
     if (profile && SvMAGICAL(profile))
         mg_get(profile); /* FETCH */
     if (!profile || !SvROK(profile)) {
@@ -2906,7 +2906,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
     /* statement_sv: undef = use $h->{Statement}, "" (&sv_no) = use empty string */
 
     if (!SvOK(statement_sv)) {
-        SV **psv = hv_fetch(h_hv, "Statement", 9, 0);
+        SV **psv = hv_fetchs(h_hv, "Statement", 0);
         statement_sv = (psv && SvOK(*psv)) ? *psv : &PL_sv_no;
     }
     statement_pv = SvPV_nolen(statement_sv);
@@ -2917,7 +2917,7 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
 
     dest_node = _profile_next_node(profile, "Data");
 
-    tmp = *hv_fetch((HV*)SvRV(profile), "Path", 4, 1);
+    tmp = *hv_fetchs((HV*)SvRV(profile), "Path", 1);
     if (SvROK(tmp) && SvTYPE(SvRV(tmp))==SVt_PVAV) {
         int len;
         av = (AV*)SvRV(tmp);
@@ -3463,7 +3463,7 @@ XS(XS_DBI_dispatch)
     if (is_DESTROY) {
 
         /* force destruction of any outstanding children */
-        if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+        if ((tmp_svp = hv_fetchs((HV*)SvRV(h), "ChildHandles", FALSE)) && SvROK(*tmp_svp)) {
             AV *av = (AV*)SvRV(*tmp_svp);
             I32 kidslots;
             PerlIO *logfp = DBILOGFP;
@@ -3555,7 +3555,7 @@ XS(XS_DBI_dispatch)
     }
 
     if (DBIc_has(imp_xxh,DBIcf_Callbacks)
-        && (tmp_svp = hv_fetch((HV*)SvRV(h), "Callbacks", 9, 0))
+        && (tmp_svp = hv_fetchs((HV*)SvRV(h), "Callbacks", 0))
         && (   (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), meth_name, strlen(meth_name), 0))
               /* the "*" fallback callback only applies to non-nested calls
                * and also doesn't apply to the 'set_err' or DESTROY methods.
@@ -3565,7 +3565,7 @@ XS(XS_DBI_dispatch)
                */
           || (!is_nested_call && !PL_dirty && meth_type != methtype_set_err &&
                meth_type != methtype_DESTROY &&
-               (hook_svp = hv_fetch((HV*)SvRV(*tmp_svp), "*", 1, 0))
+               (hook_svp = hv_fetchs((HV*)SvRV(*tmp_svp), "*", 0))
              )
         )
         && SvROK(*hook_svp)
@@ -4002,7 +4002,7 @@ XS(XS_DBI_dispatch)
         char intro[200];
 
         if (meth_type == methtype_set_err) {
-            SV **sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, GV_ADDWARN);
+            SV **sem_svp = hv_fetchs((HV*)SvRV(h), "dbi_set_err_method", GV_ADDWARN);
             if (SvOK(*sem_svp))
                 err_meth_name = SvPV_nolen(*sem_svp);
         }
@@ -4020,7 +4020,7 @@ XS(XS_DBI_dispatch)
         if (    DBIc_has(imp_xxh, DBIcf_ShowErrorStatement)
             && !is_unrelated_to_Statement
             && (DBIc_TYPE(imp_xxh) == DBIt_ST || ima_flags & IMA_SHOW_ERR_STMT)
-            && (statement_svp = hv_fetch((HV*)SvRV(h), "Statement", 9, 0))
+            && (statement_svp = hv_fetchs((HV*)SvRV(h), "Statement", 0))
             &&  statement_svp && SvOK(*statement_svp)
         ) {
             SV **svp = 0;
@@ -4030,7 +4030,7 @@ XS(XS_DBI_dispatch)
             /* fetch from tied outer handle to trigger FETCH magic  */
             /* could add DBIcf_ShowErrorParams (default to on?)         */
             if (!(ima_flags & IMA_HIDE_ERR_PARAMVALUES)) {
-                svp = hv_fetch((HV*)DBIc_MY_H(imp_xxh),"ParamValues",11,FALSE);
+                svp = hv_fetchs((HV*)DBIc_MY_H(imp_xxh),"ParamValues",FALSE);
                 if (svp && SvMAGICAL(*svp))
                     mg_get(*svp); /* XXX may recurse, may croak. could use eval */
             }
@@ -4055,7 +4055,7 @@ XS(XS_DBI_dispatch)
         hook_svp = NULL;
         if (   (SvTRUE(err_sv) || (is_warning && DBIc_has(imp_xxh, DBIcf_RaiseWarn)))
             &&  DBIc_has(imp_xxh, DBIcf_HandleError)
-            && (hook_svp = hv_fetch((HV*)SvRV(h),"HandleError",11,0))
+            && (hook_svp = hv_fetchs((HV*)SvRV(h),"HandleError",0))
             &&  hook_svp && SvOK(*hook_svp)
         ) {
             dSP;
@@ -5125,7 +5125,7 @@ take_imp_data(h)
      * destroyed they may need to interact with the 'zombie' parent dbh.
      * So we do our best to neautralize them (finish & rebless)
      */
-    if ((tmp_svp = hv_fetch((HV*)SvRV(h), "ChildHandles", 12, FALSE)) && SvROK(*tmp_svp)) {
+    if ((tmp_svp = hv_fetchs((HV*)SvRV(h), "ChildHandles", FALSE)) && SvROK(*tmp_svp)) {
         AV *av = (AV*)SvRV(*tmp_svp);
         HV *zombie_stash = gv_stashpv("DBI::zombie", GV_ADDWARN);
         I32 kidslots;
@@ -5569,7 +5569,7 @@ set_err(h, err, errstr=&PL_sv_no, state=&PL_sv_undef, method=&PL_sv_undef, resul
     }
     else {
         /* store provided method name so handler code can find it */
-        sem_svp = hv_fetch((HV*)SvRV(h), "dbi_set_err_method", 18, 1);
+        sem_svp = hv_fetchs((HV*)SvRV(h), "dbi_set_err_method", 1);
         if (SvOK(method)) {
             sv_setpv(*sem_svp, SvPV_nolen(method));
         }
