@@ -1486,7 +1486,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    join "!\001", $dsn, $user, $auth, DBI::_concat_hash_sorted($attr, "=\001", ",\001", 0, 0)
 	};
 	my $dbh = $cache->{$key};
-        $drh->trace_msg(sprintf("    connect_cached: key '$key', cached dbh $dbh\n", DBI::neat($key), DBI::neat($dbh)))
+        $drh->trace_msg(sprintf("    connect_cached: key '%s', cached dbh %s\n", DBI::neat($key), DBI::neat($dbh)))
             if (($DBI::dbi_debug & 0xF) >= 4);
 
         my $cb = $attr->{Callbacks}; # take care not to autovivify
