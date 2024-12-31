@@ -2,9 +2,10 @@
 
 DBI::Changes - List of significant changes to the DBI
 
-## Changes in DBI 1.646 - 19 Sep 2024
+## Changes in DBI 1.646 - 31 Dec 2024
 
 - Remove "experimental" tag from statistics\_info () (issue#134)
+- RT tickets moved to github issues (rwfranks++)
 
 ## Changes in DBI 1.645 - 03 Sep 2024
 
