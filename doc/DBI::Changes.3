@@ -58,13 +58,17 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI::Changes 3"
-.TH DBI::Changes 3 2024-09-03 "perl v5.40.0" "User Contributed Perl Documentation"
+.TH DBI::Changes 3 2024-12-31 "perl v5.40.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
 .nh
 .SH NAME
 DBI::Changes \- List of significant changes to the DBI
+.SS "Changes in DBI 1.646 \- 19 Sep 2024"
+.IX Subsection "Changes in DBI 1.646 - 19 Sep 2024"
+.IP \(bu 2
+Remove "experimental" tag from statistics_info () (issue#134)
 .SS "Changes in DBI 1.645 \- 03 Sep 2024"
 .IX Subsection "Changes in DBI 1.645 - 03 Sep 2024"
 .IP \(bu 2
@@ -830,9 +834,8 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
 \&    thanks to Greg Sabino Mullane.
 \&  Fixed a few harmless compiler warnings on cygwin.
 .Ve
-.PP
-1.603, 2008\-03\-22, Tim Bunce
-.PP
+.SS "Changes in DBI 1.603 \- 22 Mar 2008"
+.IX Subsection "Changes in DBI 1.603 - 22 Mar 2008"
 .Vb 5
 \&  Fixed pure\-perl fetchall_arrayref with $max_rows argument
 \&    to not error when fetching after all rows already fetched.

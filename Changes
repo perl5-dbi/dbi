@@ -1,5 +1,6 @@
-1.646 - 2024-09-19, H.Merijn Brand
+1.646 - 2024-12-31, H.Merijn Brand
     * Remove "experimental" tag from statistics_info () (issue#134)
+    * RT tickets moved to github issues (rwfranks++)
 
 1.645 - 2024-09-03, H.Merijn Brand
 
@@ -725,7 +726,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
     thanks to Greg Sabino Mullane.
   Fixed a few harmless compiler warnings on cygwin.
 
-1.603, 2008-03-22, Tim Bunce
+1.603 - 2008-03-22, Tim Bunce
 
   Fixed pure-perl fetchall_arrayref with $max_rows argument
     to not error when fetching after all rows already fetched.

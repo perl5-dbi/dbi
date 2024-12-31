@@ -67,6 +67,7 @@ my %opts = (
     META_MERGE                => {
 	resources             => {
 	    repository        => "https://github.com/perl5-dbi/dbi",
+	    bugtracker        => "https://github.com/perl5-dbi/dbi/issues",
 	    MailingList       => 'mailto:dbi-dev@perl.org',
 	    license           => "http://dev.perl.org/licenses/",
 	    homepage          => "http://dbi.perl.org/",

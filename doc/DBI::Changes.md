@@ -2,6 +2,10 @@
 
 DBI::Changes - List of significant changes to the DBI
 
+## Changes in DBI 1.646 - 19 Sep 2024
+
+- Remove "experimental" tag from statistics\_info () (issue#134)
+
 ## Changes in DBI 1.645 - 03 Sep 2024
 
 - Move developer tests to xt/
@@ -726,7 +730,7 @@ Jens Rehsack, Martin J. Evans, and H.Merijn Brand for all their contributions.
       thanks to Greg Sabino Mullane.
     Fixed a few harmless compiler warnings on cygwin.
 
-1.603, 2008-03-22, Tim Bunce
+## Changes in DBI 1.603 - 22 Mar 2008
 
     Fixed pure-perl fetchall_arrayref with $max_rows argument
       to not error when fetching after all rows already fetched.
