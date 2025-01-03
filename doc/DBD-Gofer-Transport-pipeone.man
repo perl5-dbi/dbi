@@ -1,0 +1,41 @@
+DBD::Go...pipeone(3)  User Contributed Perl Documentation DBD::Go...pipeone(3)
+
+NAME
+       DBD::Gofer::Transport::pipeone - DBD::Gofer client transport for
+       testing
+
+SYNOPSIS
+         $original_dsn = "...";
+         DBI->connect("dbi:Gofer:transport=pipeone;dsn=$original_dsn",...)
+
+       or, enable by setting the DBI_AUTOPROXY environment variable:
+
+         export DBI_AUTOPROXY="dbi:Gofer:transport=pipeone"
+
+DESCRIPTION
+       Connect via DBD::Gofer and execute each request by starting executing a
+       subprocess.
+
+       This is, as you might imagine, spectacularly inefficient!
+
+       It's only intended for testing. Specifically it demonstrates that the
+       server side is completely stateless.
+
+       It also provides a base class for the much more useful
+       DBD::Gofer::Transport::stream transport.
+
+AUTHOR
+       Tim Bunce, <http://www.tim.bunce.name>
+
+LICENCE AND COPYRIGHT
+       Copyright (c) 2007, Tim Bunce, Ireland. All rights reserved.
+
+       This module is free software; you can redistribute it and/or modify it
+       under the same terms as Perl itself. See perlartistic.
+
+SEE ALSO
+       DBD::Gofer::Transport::Base
+
+       DBD::Gofer
+
+perl v5.40.0                      2013-06-03              DBD::Go...pipeone(3)

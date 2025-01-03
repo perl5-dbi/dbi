@@ -1,0 +1,38 @@
+Bundle::DBI(3)        User Contributed Perl Documentation       Bundle::DBI(3)
+
+NAME
+       Bundle::DBI - A bundle to install DBI and required modules.
+
+SYNOPSIS
+         perl -MCPAN -e 'install Bundle::DBI'
+
+CONTENTS
+       DBI - for to get to know thyself
+
+       DBI::Shell 11.91 - the DBI command line shell
+
+       Storable 2.06 - for DBD::Proxy, DBI::ProxyServer, DBD::Forward
+
+       Net::Daemon 0.37 - for DBD::Proxy and DBI::ProxyServer
+
+       RPC::PlServer 0.2016 - for DBD::Proxy and DBI::ProxyServer
+
+       DBD::Multiplex 1.19 - treat multiple db handles as one
+
+DESCRIPTION
+       This bundle includes all the modules used by the Perl Database
+       Interface (DBI) module, created by Tim Bunce.
+
+       A Bundle is a module that simply defines a collection of other modules.
+       It is used by the CPAN module to automate the fetching, building and
+       installing of modules from the CPAN ftp archive sites.
+
+       This bundle does not deal with the various database drivers (e.g.
+       DBD::Informix, DBD::Oracle etc), most of which require software from
+       sources other than CPAN. You'll need to fetch and build those drivers
+       yourself.
+
+AUTHORS
+       Jonathan Leffler, Jochen Wiedmann and Tim Bunce.
+
+perl v5.40.0                      2024-08-13                    Bundle::DBI(3)

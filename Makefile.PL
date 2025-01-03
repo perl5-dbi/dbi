@@ -382,7 +382,7 @@ checkkeywords:
 
 .PHONY:	doc
 doc:
-	perl make-doc.pl
+	perl doc/make-doc.pl
 dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h

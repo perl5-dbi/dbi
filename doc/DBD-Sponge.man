@@ -1,0 +1,70 @@
+DBD::Sponge(3)        User Contributed Perl Documentation       DBD::Sponge(3)
+
+NAME
+       DBD::Sponge - Create a DBI statement handle from Perl data
+
+SYNOPSIS
+         my $sponge = DBI->connect("dbi:Sponge:","","",{ RaiseError => 1 });
+         my $sth = $sponge->prepare($statement, {
+                 rows => $data,
+                 NAME => $names,
+                 %attr
+             }
+         );
+
+DESCRIPTION
+       DBD::Sponge is useful for making a Perl data structure accessible
+       through a standard DBI statement handle. This may be useful to DBD
+       module authors who need to transform data in this way.
+
+METHODS
+   connect()
+         my $sponge = DBI->connect("dbi:Sponge:","","",{ RaiseError => 1 });
+
+       Here's a sample syntax for creating a database handle for the Sponge
+       driver.  No username and password are needed.
+
+   prepare()
+         my $sth = $sponge->prepare($statement, {
+                 rows => $data,
+                 NAME => $names,
+                 %attr
+             }
+         );
+
+       •   The $statement here is an arbitrary statement or name you want to
+           provide as identity of your data. If you're using DBI::Profile it
+           will appear in the profile data.
+
+           Generally it's expected that you are preparing a statement handle
+           as if a "select" statement happened.
+
+       •   $data is a reference to the data you are providing, given as an
+           array of arrays.
+
+       •   $names is a reference an array of column names for the $data you
+           are providing.  The number and order should match the number and
+           ordering of the $data columns.
+
+       •   %attr is a hash of other standard DBI attributes that you might
+           pass to a prepare statement.
+
+           Currently only NAME, TYPE, and PRECISION are supported.
+
+BUGS
+       Using this module to prepare INSERT-like statements is not currently
+       documented.
+
+AUTHOR AND COPYRIGHT
+       This module is Copyright (c) 2003 Tim Bunce
+
+       Documentation initially written by Mark Stosberg
+
+       The DBD::Sponge module is free software; you can redistribute it and/or
+       modify it under the same terms as Perl itself. In particular permission
+       is granted to Tim Bunce for distributing this as a part of the DBI.
+
+SEE ALSO
+       DBI
+
+perl v5.40.0                      2024-08-13                    DBD::Sponge(3)
