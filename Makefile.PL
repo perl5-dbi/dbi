@@ -357,14 +357,14 @@ changes_pm1 = ' . File::Spec->catfile ('lib', 'DBI', 'Changes.pm') . '
 changes_pm2 = ' . File::Spec->catfile ($self->{INST_LIB}, 'DBI', 'Changes.pm') . '
 '.q{
 
-config :: $(changes_pm)
+config :: $(changes_pm1)
 	$(NOECHO) $(NOOP)
 
-$(changes_pm): Changes
+$(changes_pm2) $(changes_pm1): Changes
 	$(MKPATH) $(inst_libdbi)
-	$(RM_F) $(changes_pm)
+	$(RM_F) $(changes_pm1) $(changes_pm2)
 	perl changes2pm.pl
-	$(CP) $(changes_pm1) $(changes_pm2)
+	$(CP)   $(changes_pm1) $(changes_pm2)
 
 ptest:  all
 	prove --blib --jobs 8 --shuffle
@@ -387,9 +387,6 @@ dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
 	perl dbipport.h --compat-version=5.8.0 DBI.xs
-
-lib/DBI/Changes.pm:	Changes
-	perl changes2pm.pl
 
 checkpod:
 	$(RM_RF) blib
