@@ -3,8 +3,8 @@
 #
 # $Id$
 #
+#  Copyright (c) 2024-2025  DBI Team
 #  Copyright (c) 1994-2024  Tim Bunce  Ireland
-#  Copyright (c) 2024-2024  DBI team
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 

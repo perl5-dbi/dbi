@@ -1,6 +1,7 @@
 # $Id$
 # vim: ts=8:sw=4:et
 #
+# Copyright (c) 2024-2025  DBI Team
 # Copyright (c) 1994-2024  Tim Bunce  Ireland
 #
 # See COPYRIGHT section in pod text below for usage and distribution rights.

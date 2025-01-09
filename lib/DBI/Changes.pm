@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.646 - 31 Dec 2024
+=head2 Changes in DBI 1.646 - 09 Jan 2025
 
 =over 2
 
@@ -23,6 +23,10 @@ Remove "experimental" tag from statistics_info () (issue#134)
 =item *
 
 RT tickets moved to github issues (rwfranks++)
+
+=item *
+
+Fix install issue (issue #168)
 
 =back
 
