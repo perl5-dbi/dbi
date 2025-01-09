@@ -3,7 +3,7 @@
 use 5.038002;
 use warnings;
 
-our $VERSION = "0.02 - 20250103";
+our $VERSION = "0.03 - 20250106";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
@@ -12,6 +12,7 @@ sub usage {
     exit $err;
     } # usage
 
+use Pod::Text;
 use File::Find;
 use List::Util   qw( first          );
 use Encode       qw( encode decode  );
@@ -26,7 +27,7 @@ GetOptions (
 -d "doc" or mkdir "doc", 0775;
 
 my @pm;	# Do *NOT* scan t/
-find (sub { m/\.pm$/ and push @pm => $File::Find::name }, "lib");
+-d "lib" and find (sub { m/\.pm$/ and push @pm => $File::Find::name }, "lib");
 @pm or @pm = sort glob "*.pm";
 if (@pm == 0 and open my $fh, "<", "Makefile.PL") {
     my @mpl = <$fh>;
@@ -41,6 +42,7 @@ if (@pm == 0 and open my $fh, "<", "Makefile.PL") {
 	}
     }
 
+push @pm => @ARGV;
 @pm = sort grep { ! -l $_ } @pm;
 @pm or die "No documentation source files found\n";
 
@@ -49,13 +51,41 @@ if ($opt_v) {
     say " $_" for @pm;
     }
 
+sub dext {
+    my ($pm, $ext) = @_;
+    my $fn = $pm =~ s{^lib/}{}r
+		 =~ s{^(?:App|scripts|examples)/}{}r
+		 =~ s{/}{-}gr
+		 =~ s{(?:\.pm)?$}{.$ext}r	# examples, scripts
+		 =~ s{^(?=CSV_XS\.)}{Text-}r
+		 =~ s{^(?=Peek\.)}  {Data-}r
+		 =~ s{^(?=Read\.)}  {Spreadsheet-}r
+		 =~ s{^(SpeedTest)} {\L$1}ri
+		 =~ s{^}{doc/}r;
+    $fn;
+    } # dext
+
 my %enc;
+my %pod;
+{   # Check if file had pod at all
+    foreach my $pm (@pm) {
+	open my $fh, ">", \$pod{$pm};
+	Pod::Text->new->parse_from_file ($pm, $fh);
+	close $fh;
+	}
+    }
+
 eval { require Pod::Checker; };
 if ($@) {
     warn "Cannot convert pod to markdown: $@\n";
     }
 else {
     my $fail = 0;
+    my %ignore_empty = (
+	"lib/DBI/ProfileData.pm"	=> 7,
+	"Peek.pm"			=> 4,
+	"Read.pm"			=> 5,
+	);
     foreach my $pm (@pm) {
 	open my $eh, ">", \my $err;
 	my $pc = Pod::Checker->new ();
@@ -63,12 +93,14 @@ else {
 	close $eh;
 	$enc{$pm} = $pc->{encoding};
 	$err && $err =~ m/\S/ or next;
-	if ($pm eq "lib/DBI/ProfileData.pm") {
-	    # DBI::Profile has 7 warnings on empty previous paragraphs
-	    # as it uses =head2 for all possible invocation alternatives
-	    # Ignore these warnings if those are all
-	    my @err = grep m/ WARNING: / => split m/\n+/ => $err;
-	    @err == 7 && $err eq join "\n" => @err, "" and next;
+	# Ignore warnings here on empty previous paragraphs as it
+	# uses =head2 for all possible invocation alternatives
+	if (my $ni = $ignore_empty{$pm}) {
+	    my $pat = qr{ WARNING: empty section };
+	    my @err = split m/\n+/ => $err;
+	    my @wrn = grep m/$pat/ => @err;
+	    @wrn == $ni and $err = join "\n" => grep !m/$pat/ => @err;
+	    $err =~ m/\S/ or next;
 	    }
 	say $pm;
 	say $err;
@@ -83,10 +115,9 @@ if ($@) {
     }
 else {
     foreach my $pm (@pm) {
-	my $md = $pm =~ s{^lib/(?:App/)?}{}r =~ s{/}{-}gr =~ s{\.pm$}{.md}r =~ s{^}{doc/}r;
-	printf STDERR "%-43s <- %s\n", $md, $pm if $opt_v;
+	my $md = dext ($pm, "md");
 	my $enc = $enc{$pm} ? "encoding($enc{$pm})" : "bytes";
-	say "$pm ($enc)" if $opt_v > 1;
+	printf STDERR "%-43s <- %s (%s)\n", $md, $pm, $enc if $opt_v;
 	open my $ph, "<:$enc", $pm;
 	my $p = Pod::Markdown->new ();
 	$p->output_string (\my $m);
@@ -111,8 +142,9 @@ if ($@) {
     }
 else {
     foreach my $pm (@pm) {
-	my $html = $pm =~ s{^lib/(?:App/)?}{}r =~ s{/}{-}gr =~ s{\.pm$}{.html}r =~ s{^}{doc/}r;
-	printf STDERR "%-43s <- %s\n", $html, $pm if $opt_v;
+	$pod{$pm} or next; # Skip HTML for files without pod
+	my $html = dext ($pm, "html");
+	printf STDERR "%-43s <- %s (%s)\n", $html, $pm, $enc{$pm} // "-" if $opt_v;
 	my $tf = "x_$$.html";
 	unlink $tf if -e $tf;
 	Pod::Html::pod2html ("--infile=$pm", "--outfile=$tf", "--quiet");
@@ -142,7 +174,7 @@ else {
 	      split m/:+/ => $ENV{PATH};
     $opt_v and say $nrf;
     foreach my $pm (@pm) {
-	my $man = $pm =~ s{^lib/(?:App/)?}{}r =~ s{/}{-}gr =~ s{\.pm$}{.3}r =~ s{^}{doc/}r;
+	my $man = dext ($pm, "3");
 	printf STDERR "%-43s <- %s\n", $man, $pm if $opt_v;
 	open my $fh, ">", \my $p;
 	Pod::Man->new (section => 3)->parse_from_file ($pm, $fh);
@@ -171,6 +203,7 @@ else {
 		       |\x{201d}|\xe2\x80\x9d	)}{"}grx	# "
 		=~ s{(?:\x{2212}|\xe2\x88\x92
 		       |\x{2010}|\xe2\x80\x90	)}{-}grx	# -
+		=~ s{(?:\x{2022}|\xe2\x80\xa2	)}{*}grx	# BULLET
 		=~ s{(?:\e\[|\x9b)[0-9;]*m}	  {}grx);	# colors
 	    }
 
@@ -181,7 +214,8 @@ else {
 	    }
 	$opt_v and say "Writing $mfn (", length $p, ")";
 	open  $oh, ">:encoding(utf-8)", $mfn or die "$mfn: $!\n";
-	print $oh $p;
+	# nroff / troff / grotty cause double-encoding
+	print $oh encode ("iso-8859-1", decode ("utf-8", $p));
 	close $oh;
 	}
     }
