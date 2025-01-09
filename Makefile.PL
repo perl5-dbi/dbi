@@ -380,7 +380,8 @@ checkkeywords:
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
             -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 
-.PHONY:	doc
+.PHONY:	doc change changes
+changes:	$(changes_pm1)
 doc:
 	perl doc/make-doc.pl
 dbipport:
