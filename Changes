@@ -1,6 +1,7 @@
-1.646 - 2025-01-09, H.Merijn Brand
+1.646 - 2025-01-11, H.Merijn Brand
     * Remove "experimental" tag from statistics_info () (issue#134)
     * RT tickets moved to github issues (rwfranks++)
+      - All RT tickets now marked as resolved with reference to GitHub issue
     * Fix install issue (issue #168)
 
 1.645 - 2024-09-03, H.Merijn Brand
