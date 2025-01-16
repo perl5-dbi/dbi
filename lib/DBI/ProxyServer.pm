@@ -189,7 +189,7 @@ sub AcceptUser {
     local $ENV{DBI_AUTOPROXY} = ''; # :-)
     $self->{'dbh'} = eval {
         DBI::ProxyServer->connect($dsn, $user, $password,
-				  { 'PrintError' => 0, 
+				  { 'PrintError' => 0,
 				    'Warn' => 0,
 				    'RaiseError' => 1,
 				    'HandleError' => sub {
@@ -325,7 +325,7 @@ sub execute {
 	    if (!ref($param)) {
 		$sth->bind_param($i, $param);
 	    }
-	    else {	
+	    else {
 		if (!ref(@$param[0])) {#It's not a reference
 		    $sth->bind_param($i, @$param);
 		}
@@ -602,14 +602,14 @@ every workstation shall be able to execute every query.
 
 There is a perl program "dbiproxy" which runs on a machine which is able
 to connect to all the databases we wish to reach. All Perl-DBD-drivers must
-be installed on this machine. You can also reach databases for which drivers 
-are not available on the machine where you run the program querying the 
+be installed on this machine. You can also reach databases for which drivers
+are not available on the machine where you run the program querying the
 database, e.g. ask MS-Access-database from Linux.
 
 Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 
     {
-	# This shall run in a shell or a DOS-window 
+	# This shall run in a shell or a DOS-window
 	# facility => 'daemon',
 	pidfile => 'your_dbiproxy.pid',
 	logfile => 1,
@@ -632,7 +632,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 			mask => '^10\.95\.81\.243$',
 			# accept (not defer) connections like this
 			accept => 1,
-			# only users from this list 
+			# only users from this list
 			# are allowed to log on
 			users => [ 'informationdesk' ],
 			# only this statistical query is allowed
@@ -656,7 +656,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 			mask => '^10\.95\.81\.(\d+)$',
 			# accept (not defer) connections like this
 			accept => 1,
-			# only users from this list 
+			# only users from this list
 			# are allowed to log on
 			users => [ 'informationdesk', 'lippmann' ],
 			# all these queries are allowed:
@@ -666,7 +666,7 @@ Create a configuration file "proxy_oracle.cfg" at the dbproxy-server:
 			}
 		},
 
-		# rule: internal_bad_guy_2 
+		# rule: internal_bad_guy_2
 		# This does NOT work, because rule "employee_workplace" hits
 		# with its ip-address-mask of the whole network
 		{
@@ -752,8 +752,8 @@ Create a perl-script like this:
 	sub show_result {
 		my $cur = shift;
 		unless ($cur->execute()) {
-			print "Could not execute\n"; 
-			return; 
+			print "Could not execute\n";
+			return;
 		}
 
 		my $rownum = 0;
@@ -762,7 +762,7 @@ Create a perl-script like this:
 			if ($rownum++ > 5) {
 				print "... and so on\n";
 				last;
-			}	
+			}
 		}
 		$cur->finish;
 	}
@@ -831,7 +831,7 @@ The user is allowed to put two queries against the dbi-proxy. The queries are _n
 	my $cur = $dbh->prepare($sql);
 	...
 
-The flexibility is that you can put parameters in the where-part of the query so the query are not static. Simply replace a value in the where-part of the query through a question mark and bind it as a parameter to the query. 
+The flexibility is that you can put parameters in the where-part of the query so the query are not static. Simply replace a value in the where-part of the query through a question mark and bind it as a parameter to the query.
 
 	my $sql = "statistic_area";
 	my $cur = $dbh->prepare($sql);
@@ -841,7 +841,7 @@ The flexibility is that you can put parameters in the where-part of the query so
 
 The result is this query:
 
-	select count(*) from e01admin.e01e203 
+	select count(*) from e01admin.e01e203
 	where geb_bezei like '905%'
 
 Don't try to put parameters into the sql-query like this:

@@ -12,7 +12,7 @@ DBD::Mem - a DBI driver for Mem & MLMem files
     $dbh = DBI->connect('dbi:Mem:');
     $dbh = DBI->connect('DBI:Mem(RaiseError=1):');
 
-and other variations on connect() as shown in the [DBI](https://metacpan.org/pod/DBI) docs and 
+and other variations on connect() as shown in the [DBI](https://metacpan.org/pod/DBI) docs and
 <DBI::DBD::SqlEngine metadata|DBI::DBD::SqlEngine/Metadata>.
 
 Use standard DBI prepare, execute, fetch, placeholders, etc.

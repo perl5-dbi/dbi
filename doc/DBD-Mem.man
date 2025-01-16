@@ -84,4 +84,4 @@ SEE ALSO
        DBD::SQLite using "dbname=:memory:" for an incredible fast in-memory
        database engine.
 
-perl v5.40.0                      2024-08-19                       DBD::Mem(3)
+perl v5.40.0                      2025-01-16                       DBD::Mem(3)

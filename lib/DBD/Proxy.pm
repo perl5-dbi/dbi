@@ -182,7 +182,7 @@ sub connect ($$;$$) {
     my $req_proto_ver;
     if ( exists $attr{proxy_lazy_prepare} ) {
       $req_proto_ver = ($attr{proxy_lazy_prepare} == 0) ? 2 : 1;
-      return DBD::Proxy::proxy_set_err($drh, 
+      return DBD::Proxy::proxy_set_err($drh,
                  "DBI::ProxyServer does not support synchronous statement preparation.")
 	if $max_proto_ver < $req_proto_ver;
     }
@@ -313,7 +313,7 @@ sub disconnect ($) {
 	eval { $rdbh->disconnect() } ;
         DBD::Proxy::proxy_set_err($dbh, $@) if $@;
     }
-    
+
     # Close TCP connect to remote
     # XXX possibly best left till DESTROY? Add a config attribute to choose?
     #$dbh->{proxy_client}->Disconnect(); # Disconnect method requires newer PlRPC module
@@ -390,10 +390,10 @@ sub prepare ($$;$) {
       return DBD::Proxy::proxy_set_err($sth, $@) if $@;
       return DBD::Proxy::proxy_set_err($sth, "Constructor didn't return a handle: $rsth")
 	unless ($rsth =~ /^((?:\w+|\:\:)+)=(\w+)/);
-    
+
       my $client = $dbh->{'proxy_client'};
       $rsth = RPC::PlClient::Object->new($1, $client, $rsth);
-      
+
       $sth->{'proxy_sth'} = $rsth;
       # If statement is a positioned update we do not want any readahead.
       $sth->{'RowCacheSize'} = 1 if $stmt =~ /\bfor\s+update\b/i;
@@ -442,10 +442,10 @@ sub table_info {
         'Statement' => "SHOW TABLES",
 	'proxy_params' => [],
 	'proxy_data' => \@rows,
-	'proxy_attr_cache' => { 
-		'NUM_OF_PARAMS' => 0, 
-		'NUM_OF_FIELDS' => $numFields, 
-		'NAME' => $names, 
+	'proxy_attr_cache' => {
+		'NUM_OF_PARAMS' => 0,
+		'NUM_OF_FIELDS' => $numFields,
+		'NAME' => $names,
 		'TYPE' => $types,
 		'cache_filled' => 1
 		},
@@ -524,10 +524,10 @@ sub execute ($@) {
     if ( $proto_ver > 1 ) {
       ($numRows, @outData) = eval { $rsth->execute($params, $proto_ver) };
       return DBD::Proxy::proxy_set_err($sth, $@) if $@;
-      
+
       # Attributes passed back only on the first execute() of a statement.
       unless ($sth->{proxy_attr_cache}->{cache_filled}) {
-	my ($numFields, $numParams, $names, $types) = splice(@outData, 0, 4); 
+	my ($numFields, $numParams, $names, $types) = splice(@outData, 0, 4);
 	$sth->{'proxy_attr_cache'} = {
 				      'NUM_OF_FIELDS' => $numFields,
 				      'NUM_OF_PARAMS' => $numParams,
@@ -547,7 +547,7 @@ sub execute ($@) {
       }
       else {
 	my $rdbh = $dbh->{'proxy_dbh'};
-	
+
 	# Legacy prepare is actually prepare + first execute on the server.
         ($rsth, @outData) =
 	  eval { $rdbh->prepare($sth->{'Statement'},
@@ -555,7 +555,7 @@ sub execute ($@) {
 	return DBD::Proxy::proxy_set_err($sth, $@) if $@;
 	return DBD::Proxy::proxy_set_err($sth, "Constructor didn't return a handle: $rsth")
 	  unless ($rsth =~ /^((?:\w+|\:\:)+)=(\w+)/);
-	
+
 	my $client = $dbh->{'proxy_client'};
 	$rsth = RPC::PlClient::Object->new($1, $client, $rsth);
 

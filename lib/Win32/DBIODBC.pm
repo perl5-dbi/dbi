@@ -29,10 +29,9 @@ sub new
 	else	{$temp_connect_line.="PWD=;";};
 	$connect_line=$temp_connect_line;
 # -[R]-
-	
+
 	my $self= {};
-		
-	
+
 	$_=$connect_line;
  	/^(DSN=)(.*)(;UID=)(.*)(;PWD=)(.*)(;)$/;
 
@@ -41,23 +40,20 @@ sub new
  	$self->{ODBC_DSN}=$2;
  	$self->{ODBC_UID}=$4;
  	$self->{ODBC_PWD}=$6;
-	
-	
-	#---- DBI CONNECTION VARIABLES	
+
+	#---- DBI CONNECTION VARIABLES
 	$self->{DBI_DBNAME}=$self->{ODBC_DSN};
 	$self->{DBI_USER}=$self->{ODBC_UID};
 	$self->{DBI_PASSWORD}=$self->{ODBC_PWD};
 	$self->{DBI_DBD}='ODBC';
-        	
+
 	#---- DBI CONNECTION
 	$self->{'DBI_DBH'}=DBI->connect($self->{'DBI_DBNAME'},
 			$self->{'DBI_USER'},$self->{'DBI_PASSWORD'},$self->{'DBI_DBD'});
 
-	warn "Error($DBI::err) : $DBI::errstr\n" if ! $self->{'DBI_DBH'}; 
+	warn "Error($DBI::err) : $DBI::errstr\n" if ! $self->{'DBI_DBH'};
 
-        
-	#---- RETURN 
-	
+	#---- RETURN
 	bless $self;
 }
 
@@ -69,24 +65,24 @@ sub Sql
  	my $SQL_statment=shift;
 
  #	print " SQL : $SQL_statment \n";
-	
+
 	$self->{'DBI_SQL_STATMENT'}=$SQL_statment;
-	
+
 	my $dbh=$self->{'DBI_DBH'};
 
  #	print " DBH : $dbh \n";
-	
+
 	my $sth=$dbh->prepare("$SQL_statment");
-	
+
  #	print " STH : $sth \n";
-	
+
 	$self->{'DBI_STH'}=$sth;
-	
+
 	if ($sth)
 	{
 		$sth->execute();
 	}
-	
+
 	#--- GET ERROR MESSAGES
 	$self->{DBI_ERR}=$DBI::err;
 	$self->{DBI_ERRSTR}=$DBI::errstr;
@@ -101,13 +97,13 @@ sub Sql
  	return ($self->{'DBI_ERR'})?1:undef;
 # -[R]-
 }
- 
+
 
 #EMU --- $db->FetchRow())
 sub FetchRow
-{ 
+{
  	my $self= shift;
- 	
+
  	my $sth=$self->{'DBI_STH'};
  	if ($sth)
 	{
@@ -119,10 +115,10 @@ sub FetchRow
 			#-- the row of result is not nul
 			#-- return something nothing will be return else
 			return 1;
-	 	} 	
+	 	}
 	}
 	return undef;
-} 
+}
 
 # [R] provide compatibility with Win32::ODBC's Data() method.
 sub Data
@@ -137,12 +133,12 @@ sub Data
 	return (wantarray())?@array:join('', @array);
 };
 # -[R]-
- 
+
 #EMU --- %record = $db->DataHash;
 sub DataHash
-{ 
+{
  	my $self= shift;
- 	 	
+
  	my $p_name=$self->{'DBI_NAME'};
  	my $p_row=$self->{'DBI_ROW'};
 
@@ -179,23 +175,22 @@ sub DataHash
 # -[R]-
 
  	#--- Return Hash
- 	return %DataHash; 	
-} 
+ 	return %DataHash;
+}
 
 
 #EMU --- $db->Error()
 sub Error
-{ 
+{
  	my $self= shift;
- 	 	
+
  	if ($self->{'DBI_ERR'} ne '')
  	{
 		#--- Return error message
 		$self->{'DBI_ERRSTR'};
  	}
 
- 	#-- else good no error message 	
- 	
+ 	#-- else good no error message
 }
 
 # [R] provide compatibility with Win32::ODBC's Close() method.
