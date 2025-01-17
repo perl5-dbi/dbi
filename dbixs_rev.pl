@@ -5,49 +5,26 @@ use warnings;
 
 my $dbixs_rev_file = "dbixs_rev.h";
 
-my $is_make_dist;
-my $svnversion;
-
-if (is_dbi_svn_dir(".")) {
-    $svnversion = `svnversion -n`;
-}
-elsif (is_dbi_svn_dir("..")) {
-    # presumably we're in a subdirectory because the user is doing a 'make dist'
-    $svnversion = `svnversion -n ..`;
-    $is_make_dist = 1;
-}
-else {
-    # presumably we're being run by an end-user because their file timestamps
-    # got messed up
-    print "Skipping regeneration of $dbixs_rev_file\n";
-    utime(time(), time(), $dbixs_rev_file); # update modification time
+sub skip_update {
+    my $reason = shift;
+    print "Skipping regeneration of $dbixs_rev_file: ", $reason, "\n";
+    utime (time (), time (), $dbixs_rev_file); # update modification time
     exit 0;
-}
+    } # skip_update
 
-my @warn;
-die "Neither current directory nor parent directory are an svn working copy\n"
-    unless $svnversion and $svnversion =~ m/^\d+/;
-push @warn, "Mixed revision working copy ($svnversion:$1)"
-    if $svnversion =~ s/:(\d+)//;
-push @warn, "Code modified since last checkin"
-    if $svnversion =~ s/[MS]+$//;
-warn "$dbixs_rev_file warning: $_\n" for @warn;
-die "$0 failed\n" if $is_make_dist && @warn;
+-d ".git" or skip_update ("No git env");
 
-write_header($dbixs_rev_file, DBIXS_REVISION => $svnversion, \@warn);
+my @n = eval { qx{git log --pretty=oneline} };
+@n or skip_update ("Git log was empty");
 
-sub write_header {
-    my ($file, $macro, $version, $comments_ref) = @_;
-    open my $fh, ">$file" or die "Can't open $file: $!\n";
-    unshift @$comments_ref, scalar localtime(time);
-    print $fh "/* $_ */\n" for @$comments_ref;
-    print $fh "#define $macro $version\n";
-    close $fh or die "Error closing $file: $!\n";
-    print "Wrote $macro $version to $file\n";
-}
+open my $fh, ">$dbixs_rev_file" or die "Can't open $dbixs_rev_file: $!\n";
+print $fh "/* ", scalar localtime, " */\n";
 
-sub is_dbi_svn_dir {
-    my ($dir) = @_;
-    return (-d "$dir/.svn" && -f "$dir/MANIFEST.SKIP");
-}
+chomp (my @st = qx{git status -s --show-stash});
+print $fh "/* $_ */\n" for grep { !m/\b$dbixs_rev_file\b/ } @st;
 
+my $def = "DBIXS_REVISION";
+my $rev = scalar @n;
+print $fh "#define $def $rev\n";
+close $fh or die "Error closing $dbixs_rev_file: $!\n";
+print "Wrote $def $rev to $dbixs_rev_file\n";
