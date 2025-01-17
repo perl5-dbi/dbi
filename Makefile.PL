@@ -381,19 +381,19 @@ checkkeywords:
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
             -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 
-.PHONY:	doc change changes
+.PHONY:	doc change changes spellcheck checkpod
 changes:	$(changes_pm1)
 doc:
-	perl doc/make-doc.pl
+	perl doc/make-doc.pl --pod
 dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
 	perl dbipport.h --compat-version=5.8.0 DBI.xs
 
-checkpod:
-	$(RM_RF) blib
-	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
-            -exec podchecker {} \; 2>&1 | grep -v 'pod syntax OK'
+tgzdist:	changes doc dist
+
+spellcheck checkpod:	doc
+	pod-spell-check -i -a doc/*.pod
 };
 
     return $xst;

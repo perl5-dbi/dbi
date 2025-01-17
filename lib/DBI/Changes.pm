@@ -12,6 +12,20 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.647 - 17 Jan 2025
+
+=over 2
+
+=item *
+
+Spellcheck
+
+=item *
+
+Fix Makefile rules for Changes
+
+=back
+
 =head2 Changes in DBI 1.646 - 11 Jan 2025
 
 =over 2
