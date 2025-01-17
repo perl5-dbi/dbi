@@ -2,6 +2,7 @@
     * Spellcheck
     * Fix Makefile rules for Changes (Windows case issue)
     * Another example to bind columns (issue#159)
+    * Fix fetchall_arrayref for undefined NAME (issue#156)
 
 1.646 - 2025-01-11, H.Merijn Brand
     * Remove "experimental" tag from statistics_info () (issue#134)

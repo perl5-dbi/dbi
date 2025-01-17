@@ -28,6 +28,10 @@ Fix Makefile rules for Changes (Windows case issue)
 
 Another example to bind columns (issue#159)
 
+=item *
+
+Fix fetchall_arrayref for undefined NAME (issue#156)
+
 =back
 
 =head2 Changes in DBI 1.646 - 11 Jan 2025
