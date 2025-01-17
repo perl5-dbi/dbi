@@ -3,7 +3,7 @@
 use 5.014002;
 use warnings;
 
-our $VERSION = "0.02 - 20240826";
+our $VERSION = "0.03 - 20250117";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
@@ -22,7 +22,7 @@ GetOptions (
     ) or usage (1);
 
 open my $ph, ">:encoding(utf-8)", "lib/DBI/Changes.pm";
-open my $ch, "<:encoding(utf-8)", "Changes";
+open my $ch, "<:encoding(utf-8)", "ChangeLog";
 
 my @m = qw( - Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
 my @chg;

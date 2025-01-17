@@ -26,7 +26,7 @@ my $os = $^O;
 my $osvers = $Config{osvers};
 $osvers =~ s/^\s*(\d+\.\d+).*/$1/;  # drop sub-sub-version: 2.5.1 -> 2.5
 my $ext_pl = $^O eq "VMS" ? ".pl" : "";
-my $is_developer = ((-d ".svn" || -d ".git") && -f "MANIFEST.SKIP");
+my $is_developer = (-d ".git" && -f "MANIFEST.SKIP");
 
 $::opt_v = 0;
 $::opt_thread = $Config{useithreads};	# thread if we can, use "-nothread" to disable
@@ -278,8 +278,8 @@ EOT
     } # postamble
 
 sub libscan {
-    my($self, $path) = @_;
-    ($path =~ /\~$|\B\.(svn|git)\b/) ? undef : $path;
+    my ($self, $path) = @_;
+    ($path =~ /\~$|\B\.git\b/) ? undef : $path;
     } # libscan
 
 sub const_cccmd {
@@ -360,7 +360,7 @@ changes_pm2 = ' . File::Spec->catfile ($self->{INST_LIB}, 'DBI', 'Changes.pm') .
 config :: $(changes_pm1)
 	$(NOECHO) $(NOOP)
 
-$(changes_pm1): Changes
+$(changes_pm1): ChangeLog
 	$(MKPATH) $(inst_libdbi)
 	$(RM_F) $(changes_pm1) $(changes_pm2)
 	perl changes2pm.pl
@@ -369,17 +369,6 @@ $(changes_pm2): $(changes_pm1)
 
 ptest:  all
 	prove --blib --jobs 8 --shuffle
-
-faq:
-	: checkin any local changes not already checked in before overwriting
-	svn commit --message "dbi.tiddlyspot.com FAQ update" dbi.tiddlyspot.com.html
-	wget --ignore-length --output-document=dbi.tiddlyspot.com.html --timestamping http://dbi.tiddlyspot.com/download
-	svn commit --message "dbi.tiddlyspot.com FAQ update" dbi.tiddlyspot.com.html
-
-checkkeywords:
-	$(RM_RF) blib
-	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
-            -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 
 .PHONY:	doc change changes spellcheck checkpod newdist
 changes:	$(changes_pm1)

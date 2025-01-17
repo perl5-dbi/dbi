@@ -1,4 +1,4 @@
-Changes				History of significant changes to the DBI
+ChangeLog			History of significant changes to the DBI
 DBI.pm				The Database Interface Module Perl code
 DBI.xs				The Database Interface Module XS code
 DBIXS.h				The DBI XS public interface for Drivers (DBD::...)
