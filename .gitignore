@@ -41,3 +41,4 @@ used-by-t/
 tmp/
 valgrind.log
 test_output_*/
+doc/*.pod

@@ -360,10 +360,11 @@ changes_pm2 = ' . File::Spec->catfile ($self->{INST_LIB}, 'DBI', 'Changes.pm') .
 config :: $(changes_pm1)
 	$(NOECHO) $(NOOP)
 
-$(changes_pm2) $(changes_pm1): Changes
+$(changes_pm1): Changes
 	$(MKPATH) $(inst_libdbi)
 	$(RM_F) $(changes_pm1) $(changes_pm2)
 	perl changes2pm.pl
+$(changes_pm2): $(changes_pm1)
 	$(CP)   $(changes_pm1) $(changes_pm2)
 
 ptest:  all

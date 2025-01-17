@@ -32,21 +32,21 @@ METHODS
              }
          );
 
-       •   The $statement here is an arbitrary statement or name you want to
+       *   The $statement here is an arbitrary statement or name you want to
            provide as identity of your data. If you're using DBI::Profile it
            will appear in the profile data.
 
            Generally it's expected that you are preparing a statement handle
            as if a "select" statement happened.
 
-       •   $data is a reference to the data you are providing, given as an
+       *   $data is a reference to the data you are providing, given as an
            array of arrays.
 
-       •   $names is a reference an array of column names for the $data you
+       *   $names is a reference an array of column names for the $data you
            are providing.  The number and order should match the number and
            ordering of the $data columns.
 
-       •   %attr is a hash of other standard DBI attributes that you might
+       *   %attr is a hash of other standard DBI attributes that you might
            pass to a prepare statement.
 
            Currently only NAME, TYPE, and PRECISION are supported.
@@ -67,4 +67,4 @@ AUTHOR AND COPYRIGHT
 SEE ALSO
        DBI
 
-perl v5.40.0                      2024-08-13                    DBD::Sponge(3)
+perl v5.40.0                      2025-01-17                    DBD::Sponge(3)

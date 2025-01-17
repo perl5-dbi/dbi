@@ -112,9 +112,9 @@ DESCRIPTION
 
          f_ext => ".csv/r",
 
-       •   makes DBD::File prefer table.extension over table.
+       *   makes DBD::File prefer table.extension over table.
 
-       •   makes the table name the filename minus the extension.
+       *   makes the table name the filename minus the extension.
 
            DBI:CSV:f_dir=data;f_ext=.csv
 
@@ -353,12 +353,12 @@ DESCRIPTION
        table name).
 
 KNOWN BUGS AND LIMITATIONS
-       •   This module uses flock () internally but flock is not available on
+       *   This module uses flock () internally but flock is not available on
            all platforms. On MacOS and Windows 95 there is no locking at all
            (perhaps not so important on MacOS and Windows 95, as there is only
            a single user).
 
-       •   The module stores details about the handled tables in a private
+       *   The module stores details about the handled tables in a private
            area of the driver handle ($drh). This data area is not shared
            between different driver instances, so several "DBI->connect ()"
            calls will cause different table instances and private data areas.
@@ -403,7 +403,7 @@ KNOWN BUGS AND LIMITATIONS
            You can use f_clear_meta or the "f_file" attribute for a specific
            table to work around this.
 
-       •   When used with SQL::Statement and temporary tables e.g.,
+       *   When used with SQL::Statement and temporary tables e.g.,
 
              CREATE TEMP TABLE ...
 
@@ -435,4 +435,4 @@ SEE ALSO
        DBI, DBD::DBM, DBD::CSV, Text::CSV, Text::CSV_XS, SQL::Statement, and
        DBI::SQL::Nano
 
-perl v5.40.0                      2024-08-22                      DBD::File(3)
+perl v5.40.0                      2025-01-17                      DBD::File(3)

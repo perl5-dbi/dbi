@@ -820,7 +820,7 @@ Gofer needs to know about any driver-private attributes that should have their
 values sent back to the client.
 
 If the driver doesn't support private_attribute_info() method, and very few do,
-then the module fallsback to using some hard-coded details, if available, for
+then the module falls back to using some hard-coded details, if available, for
 the driver being used. Currently hard-coded details are available for the
 mysql, Pg, Sybase, and SQLite drivers.
 

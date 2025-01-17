@@ -923,7 +923,7 @@ any errors, and returning all of the results.
 B<last_result_most_common>
 
 Execute the requested method against each child handle, not stopping after
-the errors, and returning the most common result (eg three-way-voting etc).
+the errors, and returning the most common result (e.g. three-way-voting etc).
 Not yet implemented.
 
 =item B<mx_shuffle>

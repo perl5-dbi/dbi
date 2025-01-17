@@ -279,7 +279,7 @@ TRANSPORTS
 
        Gearman
 
-       I know Ask BjÃ¸rn Hansen has implemented a transport for the "gearman"
+       I know Ask Bjørn Hansen has implemented a transport for the "gearman"
        distributed job system, though it's not on CPAN at the time of writing
        this.
 
@@ -496,4 +496,4 @@ TODO
 
        Implement _new_sth in C.
 
-perl v5.40.0                      2024-08-13                     DBD::Gofer(3)
+perl v5.40.0                      2025-01-17                     DBD::Gofer(3)

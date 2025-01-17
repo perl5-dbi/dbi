@@ -2067,7 +2067,7 @@ following:
 
 Every time where an C<\%attr> argument can be specified, this C<\%attr>
 object's C<sql_table_source> attribute is preferred over the C<$dbh>
-attribute or the driver default, eg.
+attribute or the driver default, e.g.
 
   @ary = DBI->data_sources("dbi:CSV:", {
     f_dir => "/your/csv/tables",
@@ -2084,9 +2084,9 @@ and C<sql_data_source>) to the returned DSN's.
 
 Provides base functionality for dealing with tables. It is primarily
 designed for allowing transparent access to files on disk or already
-opened (file-)streams (eg. for DBD::CSV).
+opened (file-)streams (e.g. for DBD::CSV).
 
-Derived classes shall be restricted to similar functionality, too (eg.
+Derived classes shall be restricted to similar functionality, too (e.g.
 opening streams from an archive, transparently compress/uncompress
 log files before parsing them,
 
@@ -2129,7 +2129,7 @@ to open the resource is required:
   }
 
 After the method C<open_data> has been run successfully, the table's meta
-information are in a state which allowes the table's data accessor methods
+information are in a state which allows the table's data accessor methods
 will be able to fetch/store row information. Implementation details heavily
 depends on the table implementation, whereby the most famous is surely
 L<DBD::File::Table|DBD::File/DBD::File::Table>.

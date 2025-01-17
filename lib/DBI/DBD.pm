@@ -570,7 +570,7 @@ your driver.
 
 =item *
 
-You should add configuration management, copyright, and licencing
+You should add configuration management, copyright, and licensing
 information at the top.
 
 =back
@@ -2733,7 +2733,7 @@ If you use the B<DBI::DBD::Metadata> module, then the code you need is
 generated for you.
 
 If you decide not to use the B<DBI::DBD::Metadata> module, you
-should probably borrow the code from a driver that has done so (eg
+should probably borrow the code from a driver that has done so (e.g.
 B<DBD::Informix> from version 1.05 onwards) and crib the code from
 there, or look at the code that generates that module and follow
 that. The method in F<Driver.pm> will be very simple; the method in
@@ -2750,7 +2750,7 @@ If you use the C<DBI::DBD::Metadata> module, then the code you need is
 generated for you.
 
 If you decide not to use the C<DBI::DBD::Metadata> module, you
-should probably borrow the code from a driver that has done so (eg
+should probably borrow the code from a driver that has done so (e.g.
 C<DBD::Informix> from version 1.05 onwards) and crib the code from
 there, or look at the code that generates that module and follow
 that. The method in F<Driver.pm> will be very simple; the method in

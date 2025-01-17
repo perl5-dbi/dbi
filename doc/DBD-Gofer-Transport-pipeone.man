@@ -38,4 +38,4 @@ SEE ALSO
 
        DBD::Gofer
 
-perl v5.40.0                      2013-06-03              DBD::Go...pipeone(3)
+perl v5.40.0                      2025-01-17              DBD::Go...pipeone(3)

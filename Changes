@@ -1,3 +1,7 @@
+1.647 - 2025-01-17, H.Merijn Brand
+    * Spellcheck
+    * Fix Makefile rules for Changes
+
 1.646 - 2025-01-11, H.Merijn Brand
     * Remove "experimental" tag from statistics_info () (issue#134)
     * RT tickets moved to github issues (rwfranks++)

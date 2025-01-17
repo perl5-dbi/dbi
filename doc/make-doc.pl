@@ -3,15 +3,16 @@
 use 5.038002;
 use warnings;
 
-our $VERSION = "0.03 - 20250106";
+our $VERSION = "0.05 - 20250116";
 our $CMD = $0 =~ s{.*/}{}r;
 
 sub usage {
     my $err = shift and select STDERR;
-    say "usage: $CMD [-v[#]]";
+    say "usage: $CMD [-v[#]] [--pod]";
     exit $err;
     } # usage
 
+use Cwd;
 use Pod::Text;
 use File::Find;
 use List::Util   qw( first          );
@@ -20,6 +21,8 @@ use Getopt::Long qw(:config bundling);
 GetOptions (
     "help|?"		=> sub { usage (0); },
     "V|version"		=> sub { say "$CMD [$VERSION]"; exit 0; },
+
+    "p|pod!"		=> \ my $pod,
 
     "v|verbose:1"	=> \(my $opt_v = 0),
     ) or usage (1);
@@ -62,6 +65,8 @@ sub dext {
 		 =~ s{^(?=Read\.)}  {Spreadsheet-}r
 		 =~ s{^(SpeedTest)} {\L$1}ri
 		 =~ s{^}{doc/}r;
+    getcwd =~ m/Config-Perl/ and
+	$fn =~ s{doc/\K}{Config-Perl-};
     $fn;
     } # dext
 
@@ -72,6 +77,8 @@ my %pod;
 	open my $fh, ">", \$pod{$pm};
 	Pod::Text->new->parse_from_file ($pm, $fh);
 	close $fh;
+
+	$pod && $pod{$pm} and link $pm => dext ($pm, "pod");
 	}
     }
 

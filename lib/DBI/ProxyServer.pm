@@ -22,7 +22,6 @@
 #
 ##############################################################################
 
-
 use strict;
 use warnings;
 
@@ -30,10 +29,7 @@ use RPC::PlServer 0.2001;
 require DBI;
 require Config;
 
-
 package DBI::ProxyServer;
-
-
 
 ############################################################################
 #
@@ -43,7 +39,6 @@ package DBI::ProxyServer;
 
 our $VERSION = "0.3005";
 our @ISA = qw(RPC::PlServer DBI);
-
 
 # Most of the options below are set to default values, we note them here
 # just for the sake of documentation.
@@ -808,7 +803,7 @@ Controlling which person at which machine is allowed to access
 
 =item * "mask" is a perl regular expression against the plain ip-address of the machine which wishes to connect _or_ the reverse-lookup from a nameserver.
 
-=item * "accept" tells the dbiproxy-server whether ip-adresse like in "mask" are allowed to connect or not (0/1)
+=item * "accept" tells the dbiproxy-server whether ip-addresses like in "mask" are allowed to connect or not (0/1)
 
 =item * "users" is a reference to a list of usernames which must be matched, this is NOT a regular expression.
 

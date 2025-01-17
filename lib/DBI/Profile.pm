@@ -239,7 +239,7 @@ methods !Statement records an empty string.
 For statement handles this is always simply the string that was
 given to prepare() when the handle was created.  For database handles
 this is the statement that was last prepared or executed on that
-database handle. That can lead to a little 'fuzzyness' because, for
+database handle. That can lead to a little 'fuzziness' because, for
 example, calls to the quote() method to build a new statement will
 typically be associated with the previous statement. In practice
 this isn't a significant issue and the dynamic Path mechanism can
