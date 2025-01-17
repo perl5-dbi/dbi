@@ -123,8 +123,8 @@ SPECIFIC ATTRIBUTES
            last_result_most_common
 
            Execute the requested method against each child handle, not
-           stopping after the errors, and returning the most common result (eg
-           three-way-voting etc).  Not yet implemented.
+           stopping after the errors, and returning the most common result
+           (e.g. three-way-voting etc).  Not yet implemented.
 
        mx_shuffle
            Shuffles the list of child handles each time it's about to be used.

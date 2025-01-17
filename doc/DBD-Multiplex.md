@@ -129,7 +129,7 @@ The following specific attributes can be set when connecting:
     **last\_result\_most\_common**
 
     Execute the requested method against each child handle, not stopping after
-    the errors, and returning the most common result (eg three-way-voting etc).
+    the errors, and returning the most common result (e.g. three-way-voting etc).
     Not yet implemented.
 
 - **mx\_shuffle**

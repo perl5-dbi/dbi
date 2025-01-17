@@ -381,19 +381,25 @@ checkkeywords:
 	find . -type f \( -name .svn -prune -o -name \*.pm -o -name \*.PL -o -name \*.pl \) \
             -exec bash -c '[ -z "$$(svn pg svn:keywords {})" ] && echo svn propset svn:keywords \"Id Revision\" {}' \;
 
-.PHONY:	doc change changes spellcheck checkpod
+.PHONY:	doc change changes spellcheck checkpod newdist
 changes:	$(changes_pm1)
 doc:
 	perl doc/make-doc.pl --pod
+spellcheck checkpod:	doc
+	pod-spell-check -i -a doc/*.pod
+
 dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
-	perl dbipport.h --compat-version=5.8.0 DBI.xs
+	perl dbipport.h --compat-version=5.8.1 DBI.xs
 
-tgzdist:	changes doc dist
-
-spellcheck checkpod:	doc
-	pod-spell-check -i -a doc/*.pod
+# make dist does not remove existing .tar.gz causing questions
+newdist:
+	-@rm -f $(DISTVNAME).tar.gz $(DISTVNAME).tgz
+tgzdist:	changes spellcheck newdist dist
+	-@mv -f $(DISTVNAME).tar.gz $(DISTVNAME).tgz
+	-@cpants_lint.pl $(DISTVNAME).tgz
+	-@rm -f Debian_CPANTS.txt
 };
 
     return $xst;

@@ -114,7 +114,7 @@ DBI-&gt;connect(&quot;dbi:Gofer:transport=...;url=...;timeout=...;retry_limit=..
 
 <p>Returns true (would like to retry), false (must not retry), undef (no preference).</p>
 
-<p>If a true value is returned in the form of a CODE ref then, if DBD::Gofer does decide to retry the request, it calls the code ref passing $retry_count, $retry_limit. Can be used for logging and/or to implement exponential backoff behaviour. Currently the called code must return using <code>return;</code> to allow for future extensions.</p>
+<p>If a true value is returned in the form of a CODE ref then, if DBD::Gofer does decide to retry the request, it calls the code ref passing $retry_count, $retry_limit. Can be used for logging and/or to implement exponential back-off behaviour. Currently the called code must return using <code>return;</code> to allow for future extensions.</p>
 
 <h1 id="AUTHOR">AUTHOR</h1>
 

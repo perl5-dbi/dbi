@@ -150,7 +150,7 @@ Returns true (would like to retry), false (must not retry), undef (no preference
 .PP
 If a true value is returned in the form of a CODE ref then, if DBD::Gofer does
 decide to retry the request, it calls the code ref passing \f(CW$retry_count\fR, \f(CW$retry_limit\fR.
-Can be used for logging and/or to implement exponential backoff behaviour.
+Can be used for logging and/or to implement exponential back\-off behaviour.
 Currently the called code must return using \f(CW\*(C`return;\*(C'\fR to allow for future extensions.
 .SH AUTHOR
 .IX Header "AUTHOR"
