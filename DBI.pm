@@ -6894,11 +6894,28 @@ a hash (thanks to H.Merijn Brand):
 
   $sth->execute;
   my %row;
-  $sth->bind_columns( \( @row{ @{$sth->{NAME_lc} } } ));
+  $sth->bind_columns (\( @row{ @{$sth->{NAME_lc} }} ));
   while ($sth->fetch) {
       print "$row{region}: $row{sales}\n";
   }
 
+but has a small drawback: If data already fetched call to L</bind_columns>
+will flush current values.  If you want to bind_columns after you have fetched
+you can use:
+
+  use feature "refaliasing";
+  no warnings "experimental::refaliasing";
+  while (my $row = $sth->fetchrow_arrayref) {
+      \(@$data{ $sth->{NAME_lc}->@* }) =  \(@$row);
+  }
+
+or, with older perl versions:
+
+  use Data::Alias;
+  alias @$data{ $sth->{NAME_lc}->@* } =  @$row;
+
+This is useful in situations when you have many left joins, but wanna to join
+your %$data hash to only subset of fetched values.
 
 =head3 C<dump_results>
 

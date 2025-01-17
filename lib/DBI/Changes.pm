@@ -22,7 +22,11 @@ Spellcheck
 
 =item *
 
-Fix Makefile rules for Changes
+Fix Makefile rules for Changes (Windows case issue)
+
+=item *
+
+Another example to bind columns (issue#159)
 
 =back
 
