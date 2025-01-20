@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.647 - 17 Jan 2025
+=head2 Changes in DBI 1.647 - 20 Jan 2025
 
 =over 2
 
