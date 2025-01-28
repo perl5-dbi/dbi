@@ -1,3 +1,6 @@
+1.648 - 2025-01-20, H.Merijn Brand
+    * 
+
 1.647 - 2025-01-20, H.Merijn Brand
     * Spellcheck
     * Fix Makefile rules for Changes (Windows case issue)
@@ -11,7 +14,6 @@
     * Fix install issue (issue #168)
 
 1.645 - 2024-09-03, H.Merijn Brand
-
     * Move developer tests to xt/
     * Make Changes match CPAN::Changes::Spec and regen DBI::Changes from that
     * Fixes for modern gcc i.c.w. recent perl (Daniël)

@@ -16,7 +16,7 @@ use warnings;
 
 our ($XS_VERSION, $VERSION);
 BEGIN {
-$VERSION = "1.647"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.648"; # ==> ALSO update the version in the pod text below!
 $XS_VERSION = $VERSION;
 $VERSION =~ tr/_//d;
 }
@@ -148,7 +148,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.647
+This is the DBI specification that corresponds to DBI version 1.648
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -6899,9 +6899,9 @@ a hash (thanks to H.Merijn Brand):
       print "$row{region}: $row{sales}\n";
   }
 
-but has a small drawback: If data already fetched call to L</bind_columns>
-will flush current values.  If you want to bind_columns after you have fetched
-you can use:
+but has a small drawback: If the data has already been fetched, the call to
+L</bind_columns> will flush current values.  If you want to bind_columns after
+you have fetched, you can use:
 
   use feature "refaliasing";
   no warnings "experimental::refaliasing";
@@ -6914,7 +6914,7 @@ or, with older perl versions:
   use Data::Alias;
   alias @$data{ $sth->{NAME_lc}->@* } =  @$row;
 
-This is useful in situations when you have many left joins, but wanna to join
+This is useful in situations when you have many left joins, but want to join
 your %$data hash to only subset of fetched values.
 
 =head3 C<dump_results>
