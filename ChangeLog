@@ -1,5 +1,6 @@
-1.648 - 2025-02-14, H.Merijn Brand
+1.648 - 2025-03-11, H.Merijn Brand
     * Correct sprintf usage for trace_msg (issue#132)
+    * Add DBIXS_VERSION & DBIXS_RELEASE to dbixs_rev.h
 
 1.647 - 2025-01-20, H.Merijn Brand
     * Spellcheck

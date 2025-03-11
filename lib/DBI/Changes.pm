@@ -12,6 +12,20 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.648 - 11 Mar 2025
+
+=over 2
+
+=item *
+
+Correct sprintf usage for trace_msg (issue#132)
+
+=item *
+
+Add DBIXS_VERSION & DBIXS_RELEASE to dbixs_rev.h
+
+=back
+
 =head2 Changes in DBI 1.647 - 20 Jan 2025
 
 =over 2
