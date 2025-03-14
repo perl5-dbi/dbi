@@ -1,6 +1,4 @@
-/* Tue Mar 11 10:51:15 2025 */
-/*  M dbixs_rev.pl */
-/*  M lib/DBI/Changes.pm */
-#define DBIXS_VERSION  1
-#define DBIXS_RELEASE  648
-#define DBIXS_REVISION 1703
+/* Fri Mar 14 15:13:25 2025 */
+#define DBIXS_RELEASE  1
+#define DBIXS_VERSION  648
+#define DBIXS_REVISION 1705

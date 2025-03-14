@@ -35,4 +35,4 @@ DESCRIPTION
 AUTHORS
        Jonathan Leffler, Jochen Wiedmann and Tim Bunce.
 
-perl v5.40.0                      2024-08-13                    Bundle::DBI(3)
+perl v5.40.1                      2024-08-13                    Bundle::DBI(3)

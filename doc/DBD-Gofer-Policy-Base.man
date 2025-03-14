@@ -75,4 +75,4 @@ LICENCE AND COPYRIGHT
        This module is free software; you can redistribute it and/or modify it
        under the same terms as Perl itself. See perlartistic.
 
-perl v5.40.0                      2024-08-13              DBD::Go...y::Base(3)
+perl v5.40.1                      2024-08-13              DBD::Go...y::Base(3)

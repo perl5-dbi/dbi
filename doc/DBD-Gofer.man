@@ -496,4 +496,4 @@ TODO
 
        Implement _new_sth in C.
 
-perl v5.40.0                      2025-01-17                     DBD::Gofer(3)
+perl v5.40.1                      2025-01-17                     DBD::Gofer(3)

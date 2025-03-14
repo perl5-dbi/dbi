@@ -74,4 +74,4 @@ SEE ALSO
 
        DBD::Gofer
 
-perl v5.40.0                      2013-06-03             DBD::Go...::stream(3)
+perl v5.40.1                      2013-06-03             DBD::Go...::stream(3)

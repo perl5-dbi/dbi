@@ -12,6 +12,9 @@
 
 #ifndef DBIXS_VERSION                           /* prevent multiple inclusion */
 
+/* define DBIXS_VERSION & DBIXS_REVISION */
+#include "dbixs_rev.h"
+
 #ifndef DBIS
 #define DBIS    dbis    /* default name for dbistate_t variable */
 #endif
@@ -32,9 +35,6 @@
 #undef std
 #endif
 
-/* define DBIXS_REVISION */
-#include "dbixs_rev.h"
-
 /* Perl backwards compatibility definitions */
 #define NEED_sv_2pv_flags
 #define NEED_croak_xs_usage
@@ -43,9 +43,6 @@
 /* DBI SQL_* type definitions */
 #include "dbi_sql.h"
 
-
-#define DBIXS_VERSION 93 /* superseded by DBIXS_REVISION */
-
 #ifdef NEED_DBIXS_VERSION
 #if NEED_DBIXS_VERSION > DBIXS_VERSION
 error You_need_to_upgrade_your_DBI_module_before_building_this_driver
@@ -53,7 +50,6 @@ error You_need_to_upgrade_your_DBI_module_before_building_this_driver
 #else
 #define NEED_DBIXS_VERSION DBIXS_VERSION
 #endif
-
 
 #define DBI_LOCK
 #define DBI_UNLOCK

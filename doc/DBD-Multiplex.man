@@ -237,4 +237,4 @@ AUTHORS AND COPYRIGHT
        You may distribute under the terms of either the GNU General Public
        License or the Artistic License, as specified in the Perl README file.
 
-perl v5.40.0                      2025-01-17                 DBD::Multiplex(3)
+perl v5.40.1                      2025-01-17                 DBD::Multiplex(3)

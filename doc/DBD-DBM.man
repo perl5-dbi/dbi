@@ -785,4 +785,4 @@ SEE ALSO
        DBI, SQL::Statement, DBI::SQL::Nano, AnyDBM_File, DB_File, BerkeleyDB,
        MLDBM, YAML::MLDBM, MLDBM::Serializer::JSON
 
-perl v5.40.0                      2024-08-19                       DBD::DBM(3)
+perl v5.40.1                      2024-08-19                       DBD::DBM(3)

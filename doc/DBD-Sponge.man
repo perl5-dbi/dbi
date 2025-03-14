@@ -67,4 +67,4 @@ AUTHOR AND COPYRIGHT
 SEE ALSO
        DBI
 
-perl v5.40.0                      2025-01-17                    DBD::Sponge(3)
+perl v5.40.1                      2025-01-17                    DBD::Sponge(3)
