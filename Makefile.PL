@@ -106,7 +106,7 @@ if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
     if ($gccversion =~ m/ clang ([0-9][-0-9.]*)/i) {
 	print "Your perl was compiled with Clang (version $1). As this is not GCC, version checking is skipped.\n";
 	# https://clang.llvm.org/docs/DiagnosticsReference.html
-	$opts{DEFINE} .= " -W -Wall -Wpointer-arith -Wbad-function-cast";
+	$opts{DEFINE} .= " -W -Wall -Wpointer-arith";
 	$opts{DEFINE} .= " -Wno-comment -Wno-sign-compare -Wno-cast-qual";
 	$opts{DEFINE} .= " -Wmissing-noreturn -Wno-unused-parameter";
 	$opts{DEFINE} .= " -Wno-compound-token-split-by-macro -Wno-constant-conversion";
@@ -120,7 +120,7 @@ if (my $gccversion = $Config{gccversion}) {	# ask gcc to be more pedantic
 	    if $gccversion =~ m/^\D*(1|2\.[1-8])\b/;
 	print "Your perl was compiled with gcc (version $Config{gccversion}), okay.\n";
 	$gccversion =~ s/[^\d\.]//g; # just a number please
-	$opts{DEFINE} .= " -W -Wall -Wpointer-arith -Wbad-function-cast";
+	$opts{DEFINE} .= " -W -Wall -Wpointer-arith";
 	$opts{DEFINE} .= " -Wno-comment -Wno-sign-compare -Wno-cast-qual";
 	$opts{DEFINE} .= " -Wmissing-noreturn -Wno-unused-parameter" if $gccversion ge "3.0";
 	if ($is_developer && $::opt_g) {
