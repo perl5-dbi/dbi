@@ -9,6 +9,7 @@
 ^\.git
 ^\.github
 ^\.releaserc
+^\.test_info\.
 ^_Inline/
 \.bs$
 \.html$
@@ -40,7 +41,7 @@
 ^sandbox/
 ^t-mock/
 ^t/z
-^test_output_*/
+^test_output_
 ^used-by-t/
 ^used_by/
 ^xt/
