@@ -240,8 +240,10 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
         (  (flags && (DBIc_TRACE_FLAGS(imp) & flags) && (DBIc_TRACE_LEVEL(imp) >= flaglevel)) \
         || (level && DBIc_TRACE_LEVEL(imp) >= level) )
 
+/* Deprecated, but cannot be removed, becaused used in e.g. DBD::Oracle :( */
 #define DBIc_DEBUG(imp)         (_imp2com(imp, attr.TraceLevel)) /* deprecated */
 #define DBIc_DEBUGIV(imp)       SvIV(DBIc_DEBUG(imp))            /* deprecated */
+
 #define DBIc_STATE(imp)         SvRV(_imp2com(imp, attr.State))
 #define DBIc_ERR(imp)           SvRV(_imp2com(imp, attr.Err))
 #define DBIc_ERRSTR(imp)        SvRV(_imp2com(imp, attr.Errstr))
