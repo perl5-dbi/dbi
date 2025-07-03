@@ -4,8 +4,8 @@ use strict;
 use warnings;
 
 use Test::More;
-use Test::CVE;
+eval "use Test::CVE";
+plan skip_all => "Test::CVE required for this test" if $@;
 
-has_no_cves;
-
+has_no_cves ();
 done_testing;
