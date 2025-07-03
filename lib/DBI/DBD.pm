@@ -30,7 +30,7 @@ This document is I<still> a minimal draft which is in need of further work.
 
 Please read the B<DBI> documentation first and fully.  Then look at the
 implementation of some high-profile and regularly maintained drivers like
-DBD::Oracle, DBD::ODBC, DBD::Pg etc. (Those are no no particular order.)
+DBD::Oracle, DBD::ODBC, DBD::Pg etc. (Those are in no particular order.)
 
 Then reread the B<DBI> specification and the code of those drivers again as
 you're reading this. It'll help.  Where this document and the driver code
