@@ -11,12 +11,17 @@ use DBI qw(:sql_types);
 
 # our reference table:
 #
-#   A1      B1        C2
+#   A0      B1        C2
 #  ------- --------- -------
 #  foo     NULL      bazooka
 #  foolery bar       NULL
 #  NULL    barrowman baz
 #
+
+# Historically, DBD::Sponge defaulted an sth's PRECISION to the length
+# of its column names, meaning that some DBI shells could truncate row
+# display.  For example, formatting a row ('fo', NULL, 'ba') from our
+# reference table above.
 
 our @NAMES = ( 'A0',      'B1',        'C2'      );
 our @ROWS  = (['foo',     undef,       'bazooka'],
@@ -46,7 +51,8 @@ is_deeply($sth->fetch(), $ROWS[1], "second row fetch as expected");
 is_deeply($sth->fetch(), $ROWS[2], "third row fetch as expected");
 ok(!defined($sth->fetch()), "fourth fetch returns undef");
 
-# Test that DBD-Sponge preserves bogus user-supplied attributes
+# Test that DBD-Sponge preserves bogus user-supplied attributes but
+# ignores them when returning rows
 $sth = $dbh->prepare('user-supplied silly TYPE and PRECISION', {
                      rows => dclone( \@ROWS ),
                      NAME => [qw( first_col second_col third_col )],

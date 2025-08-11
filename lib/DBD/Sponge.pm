@@ -97,9 +97,11 @@ use warnings;
 		    || [ (0) x $numFields ];
 	    $sth->{NULLABLE} = $attribs->{NULLABLE}
 		    || [ (2) x $numFields ];
+	    # Allow user to specify precision, otherwise
+	    # FETCH will lazily compute if needed
 	    if ($attribs->{PRECISION}) {
 		    $sth->{PRECISION} = $attribs->{PRECISION};
-	    } # else FETCH will dynamically compute
+	    }
 	}
 
 	$outer;
@@ -203,11 +205,12 @@ use warnings;
     sub FETCH {
 	my ($sth, $attrib) = @_;
 	# would normally validate and only fetch known attributes
+	# else pass up to DBI to handle
+
 	if ($attrib eq 'PRECISION') {
-	    # prepare() did _not_ specify PRECISION.  We'll only get here once.
+	    # prepare() did _not_ specify PRECISION, so lazily compute it now
 	    return $sth->{PRECISION} = _max_col_lengths(@{$sth}{'NUM_OF_FIELDS', 'rows'});
 	}
-	# else pass up to DBI to handle
 	return $sth->SUPER::FETCH($attrib);
     }
 
@@ -219,18 +222,19 @@ use warnings;
     }
 
     sub _max_col_lengths {
-	# Compute result set PRECISION (data length) by looking for the
-	# max lengths of each column's data.
-	my ($numFields, $rows) = @_;
-	my @precision = (0,) x $numFields;
+	# compute our columns' PRECISION (data length) by looking for the
+	# max lengths of each column's data, row by row
+	my ($num_of_fields, $rows) = @_;
+	my @precision = (0,) x $num_of_fields;
+	my $n = $num_of_fields - 1;
 	my $len;
 	for my $row (@$rows) {
-	    for my $i (0 .. $numFields - 1) {
+	    for my $i (0 .. $n) {
 		next unless defined($len = length($row->[$i]));
 		$precision[$i] = $len if $len > $precision[$i];
 	    }
 	}
-	return wantarray ? @precision : \@precision;
+	return \@precision;
     }
 }
 
