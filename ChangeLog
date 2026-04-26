@@ -5,6 +5,7 @@
     * Add suggested dependency (issue#145), thanks Dick Franks
     * Force placeholder limit on :# and :p# too (CVE-2026-73194)
     * Limit statements to 292 Mb in preparse (CVE-2026-73193)
+    * Add a security policy (issue#174)
 
 1.651 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
     * Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)
