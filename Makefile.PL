@@ -364,6 +364,7 @@ ptest:  all
 .PHONY:	doc change changes spellcheck checkpod newdist
 changes:	$(changes_pm1)
 doc:
+	perl dbixs_rev.pl
 	perl doc/make-doc.pl --pod
 spellcheck checkpod:	doc
 	pod-spell-check -i -a doc/*.pod

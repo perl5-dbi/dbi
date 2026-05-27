@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.648 - 14 Mar 2025
+=head2 Changes in DBI 1.648 - 27 May 2025
 
 =over 2
 
@@ -27,6 +27,10 @@ Add DBIXS_VERSION & DBIXS_RELEASE to dbixs_rev.h
 =item *
 
 Remove -Wbad-function-cast
+
+=item *
+
+Fix possible stack overflow (old issue already noted by Tim)
 
 =back
 

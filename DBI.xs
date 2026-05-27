@@ -4000,7 +4000,6 @@ XS(XS_DBI_dispatch)
         SV **statement_svp = NULL;
         const int is_warning = (!SvTRUE(err_sv) && strlen(SvPV_nolen(err_sv))==1);
         const char *err_meth_name = meth_name;
-        char intro[200];
 
         if (meth_type == methtype_set_err) {
             SV **sem_svp = hv_fetchs((HV*)SvRV(h), "dbi_set_err_method", GV_ADDWARN);
@@ -4008,10 +4007,8 @@ XS(XS_DBI_dispatch)
                 err_meth_name = SvPV_nolen(*sem_svp);
         }
 
-        /* XXX change to vsprintf into sv directly */
-        sprintf(intro,"%s %s %s: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name,
-            SvTRUE(err_sv) ? "failed" : is_warning ? "warning" : "information");
-        msg = sv_2mortal(newSVpv(intro,0));
+        msg = sv_2mortal(newSVpvf("%s %s %s: ", HvNAME(DBIc_IMP_STASH(imp_xxh)), err_meth_name,
+            SvTRUE(err_sv) ? "failed" : is_warning ? "warning" : "information"));
         if (SvOK(DBIc_ERRSTR(imp_xxh)))
             sv_catsv(msg, DBIc_ERRSTR(imp_xxh));
         else
