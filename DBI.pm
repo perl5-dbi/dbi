@@ -7485,7 +7485,7 @@ can cause problems. You have been warned.
 
 Using DBI with perl threads is not yet recommended for production
 environments. For more information see
-L<http://www.perlmonks.org/index.pl?node_id=288022>
+L<https://www.perlmonks.org/index.pl?node_id=288022>
 
 Note: There is a bug in perl 5.8.2 when configured with threads and
 debugging enabled (bug #24463) which would cause some DBI tests to fail.
@@ -8367,7 +8367,7 @@ to thank Paul for his generosity and vision in supporting this work for many yea
 
 A couple of specific DBI features have been sponsored by enlightened companies:
 
-The development of the swap_inner_handle() method was sponsored by BizRate.com (L<http://BizRate.com>)
+The development of the swap_inner_handle() method was sponsored by BizRate.com
 
 The development of DBD::Gofer and related modules was sponsored by Shopzilla.com (L<https::connexity.com>).
 

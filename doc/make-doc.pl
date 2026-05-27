@@ -29,9 +29,8 @@ GetOptions (
 
 -d "doc" or mkdir "doc", 0775;
 
-my @pm;	# Do *NOT* scan t/
+my @pm = sort glob "*.pm";	# Do *NOT* scan t/
 -d "lib" and find (sub { m/\.pm$/ and push @pm => $File::Find::name }, "lib");
-@pm or @pm = sort glob "*.pm";
 if (@pm == 0 and open my $fh, "<", "Makefile.PL") {
     my @mpl = <$fh>;
     close $fh;
