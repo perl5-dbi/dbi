@@ -35,7 +35,7 @@ use warnings;
 use base qw( DBI::DBD::SqlEngine );
 use Carp;
 
-our $VERSION = "0.44";
+our $VERSION = "0.45";
 
 our $drh = undef;		# holds driver handle(s) once initialized
 
@@ -565,6 +565,7 @@ use warnings;
 our @ISA = "DBD::File::DataSource::Stream";
 
 use Carp;
+require List::Util;
 
 my $fn_any_ext_regex = qr/\.[^.]*/;
 
@@ -623,6 +624,13 @@ sub complete_table_name {
 	}
     -d $searchdir or
 	croak "-d $searchdir: $!";
+
+    # If the file location is outside the current folder, its
+    # absolute path should be in ($f_dir, @f_dir_search)
+    if ($searchdir and not List::Util::first { m{^$searchdir(?:/|$)} }
+	    $meta->{f_dir}, @{$meta->{f_dir_search} || []}) {
+	croak "Using data files in $searchdir is unsafe and not allowed.\nUse f_dir or f_dir_search.\n";
+	}
 
     $searchdir eq $meta->{f_dir} and
 	$dir = "";

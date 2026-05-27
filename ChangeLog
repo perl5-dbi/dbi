@@ -3,6 +3,7 @@
     * Add DBIXS_VERSION & DBIXS_RELEASE to dbixs_rev.h
     * Remove -Wbad-function-cast
     * Fix possible stack overflow (old issue already noted by Tim)
+    * Do not allow table source locations outside explicit given folders
 
 1.647 - 2025-01-20, H.Merijn Brand
     * Spellcheck

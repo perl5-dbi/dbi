@@ -192,12 +192,12 @@ SKIP: {
     }
 
 ok ($sth = $dbh->prepare ("insert into $tbl (txt) values (?)"), "prepare 'insert into $tbl'");
-is ($sth->execute ("Perl rules"), undef, "insert failed intensionally");
+is ($sth->execute ("Perl rules"), undef, "insert failed intentionally");
 
 ok ($sth = $dbh->prepare ("delete from $tbl"), "prepare 'delete from $tbl'");
-is ($sth->execute (), undef, "delete failed intensionally");
+is ($sth->execute (), undef, "delete failed intentionally");
 
-is ($dbh->do ("drop table $tbl"), undef, "table drop failed intensionally");
+is ($dbh->do ("drop table $tbl"), undef, "table drop failed intentionally");
 is (-f $tbl_file, 1, "Test table not removed");
 
 # ==================== ReadWrite again tests ======================
@@ -244,8 +244,7 @@ foreach my $tld ("./non-existing", "nonexisting_folder", "/Fr-dle/hurd0k/ok$$") 
 
 done_testing ();
 
-sub DBD::File::Table::fetch_row ($$)
-{
+sub DBD::File::Table::fetch_row ($$) {
     my ($self, $data) = @_;
     my $meta = $self->{meta};
     if ($rowidx >= scalar @rows) {
@@ -257,8 +256,7 @@ sub DBD::File::Table::fetch_row ($$)
     return $self->{row};
     } # fetch_row
 
-sub DBD::File::Table::push_names ($$$)
-{
+sub DBD::File::Table::push_names ($$$) {
     my ($self, $data, $row_aryref) = @_;
     my $meta = $self->{meta};
     @tfhl = PerlIO::get_layers ($meta->{fh});
