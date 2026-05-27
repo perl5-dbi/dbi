@@ -1880,7 +1880,7 @@ sub dbh {
 
 <p>Note that we&#39;ve also used a lexical for the callbacks hash reference. This is because <code>connect_cached()</code> returns a new database handle if any of the attributes passed to is have changed. If we used an inline hash reference, <code>connect_cached()</code> would return a new database handle every time. Which would rather defeat the purpose.</p>
 
-<p>A more common application for callbacks is setting connection state only when a new connection is made (by connect() or connect_cached()). Adding a callback to the connected method (when using <code>connect</code>) or via <code>connect_cached.connected</code> (when useing connect_cached()&gt;) makes this easy. The connected() method is a no-op by default (unless you subclass the DBI and change it). The DBI calls it to indicate that a new connection has been made and the connection attributes have all been set. You can give it a bit of added functionality by applying a callback to it. For example, to make sure that MySQL understands your application&#39;s ANSI-compliant SQL, set it up like so:</p>
+<p>A more common application for callbacks is setting connection state only when a new connection is made (by connect() or connect_cached()). Adding a callback to the connected method (when using <code>connect</code>) or via <code>connect_cached.connected</code> (when using connect_cached()&gt;) makes this easy. The connected() method is a no-op by default (unless you subclass the DBI and change it). The DBI calls it to indicate that a new connection has been made and the connection attributes have all been set. You can give it a bit of added functionality by applying a callback to it. For example, to make sure that MySQL understands your application&#39;s ANSI-compliant SQL, set it up like so:</p>
 
 <pre><code>my $dbh = DBI-&gt;connect($dsn, $username, $auth, {
     Callbacks =&gt; {
@@ -4114,9 +4114,9 @@ sub fetch {
 
 <h2 id="Memory-Leaks">Memory Leaks</h2>
 
-<p>When tracking down memory leaks using tools like <a>Devel::Leak</a> you&#39;ll find that some DBI internals are reported as &#39;leaking&#39; memory. This is very unlikely to be a real leak. The DBI has various caches to improve performance and the apparrent leaks are simply the normal operation of these caches.</p>
+<p>When tracking down memory leaks using tools like <a>Devel::Leak</a> you&#39;ll find that some DBI internals are reported as &#39;leaking&#39; memory. This is very unlikely to be a real leak. The DBI has various caches to improve performance and the apparent leaks are simply the normal operation of these caches.</p>
 
-<p>The most frequent sources of the apparrent leaks are <a href="#ChildHandles">&quot;ChildHandles&quot;</a>, <a href="#prepare_cached">&quot;prepare_cached&quot;</a> and <a href="#connect_cached">&quot;connect_cached&quot;</a>.</p>
+<p>The most frequent sources of the apparent leaks are <a href="#ChildHandles">&quot;ChildHandles&quot;</a>, <a href="#prepare_cached">&quot;prepare_cached&quot;</a> and <a href="#connect_cached">&quot;connect_cached&quot;</a>.</p>
 
 <p>For example http://stackoverflow.com/questions/13338308/perl-dbi-memory-leak</p>
 

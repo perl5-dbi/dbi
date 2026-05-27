@@ -2343,7 +2343,7 @@ ATTRIBUTES COMMON TO ALL HANDLES
        A more common application for callbacks is setting connection state
        only when a new connection is made (by connect() or connect_cached()).
        Adding a callback to the connected method (when using "connect") or via
-       "connect_cached.connected" (when useing connect_cached()>) makes this
+       "connect_cached.connected" (when using connect_cached()>) makes this
        easy.  The connected() method is a no-op by default (unless you
        subclass the DBI and change it). The DBI calls it to indicate that a
        new connection has been made and the connection attributes have all
@@ -5677,10 +5677,10 @@ FURTHER INFORMATION
        When tracking down memory leaks using tools like Devel::Leak you'll
        find that some DBI internals are reported as 'leaking' memory.  This is
        very unlikely to be a real leak.  The DBI has various caches to improve
-       performance and the apparrent leaks are simply the normal operation of
+       performance and the apparent leaks are simply the normal operation of
        these caches.
 
-       The most frequent sources of the apparrent leaks are "ChildHandles",
+       The most frequent sources of the apparent leaks are "ChildHandles",
        "prepare_cached" and "connect_cached".
 
        For example

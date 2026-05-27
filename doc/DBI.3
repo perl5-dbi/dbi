@@ -2652,7 +2652,7 @@ rather defeat the purpose.
 A more common application for callbacks is setting connection state only when
 a new connection is made (by \fBconnect()\fR or \fBconnect_cached()\fR). Adding a callback
 to the connected method (when using \f(CW\*(C`connect\*(C'\fR) or via
-\&\f(CW\*(C`connect_cached.connected\*(C'\fR (when useing \fBconnect_cached()\fR>) makes this easy.
+\&\f(CW\*(C`connect_cached.connected\*(C'\fR (when using \fBconnect_cached()\fR>) makes this easy.
 The \fBconnected()\fR method is a no\-op by default (unless you subclass the DBI and
 change it). The DBI calls it to indicate that a new connection has been made
 and the connection attributes have all been set. You can give it a bit of
@@ -6324,10 +6324,10 @@ COMMON TO ALL HANDLES" for info and important caveats.
 When tracking down memory leaks using tools like Devel::Leak
 you\*(Aqll find that some DBI internals are reported as \*(Aqleaking\*(Aq memory.
 This is very unlikely to be a real leak.  The DBI has various caches to improve
-performance and the apparrent leaks are simply the normal operation of these
+performance and the apparent leaks are simply the normal operation of these
 caches.
 .PP
-The most frequent sources of the apparrent leaks are "ChildHandles",
+The most frequent sources of the apparent leaks are "ChildHandles",
 "prepare_cached" and "connect_cached".
 .PP
 For example http://stackoverflow.com/questions/13338308/perl\-dbi\-memory\-leak

@@ -32,6 +32,10 @@ Remove -Wbad-function-cast
 
 Fix possible stack overflow (old issue already noted by Tim)
 
+=item *
+
+Do not allow table source locations outside explicit given folders
+
 =back
 
 =head2 Changes in DBI 1.647 - 20 Jan 2025

@@ -2330,7 +2330,7 @@ rather defeat the purpose.
 A more common application for callbacks is setting connection state only when
 a new connection is made (by connect() or connect\_cached()). Adding a callback
 to the connected method (when using `connect`) or via
-`connect_cached.connected` (when useing connect\_cached()>) makes this easy.
+`connect_cached.connected` (when using connect\_cached()>) makes this easy.
 The connected() method is a no-op by default (unless you subclass the DBI and
 change it). The DBI calls it to indicate that a new connection has been made
 and the connection attributes have all been set. You can give it a bit of
@@ -5685,10 +5685,10 @@ COMMON TO ALL HANDLES"](#attributes-common-to-all-handles) for info and importan
 When tracking down memory leaks using tools like [Devel::Leak](https://metacpan.org/pod/Devel%3A%3ALeak)
 you'll find that some DBI internals are reported as 'leaking' memory.
 This is very unlikely to be a real leak.  The DBI has various caches to improve
-performance and the apparrent leaks are simply the normal operation of these
+performance and the apparent leaks are simply the normal operation of these
 caches.
 
-The most frequent sources of the apparrent leaks are ["ChildHandles"](#childhandles),
+The most frequent sources of the apparent leaks are ["ChildHandles"](#childhandles),
 ["prepare\_cached"](#prepare_cached) and ["connect\_cached"](#connect_cached).
 
 For example http://stackoverflow.com/questions/13338308/perl-dbi-memory-leak
