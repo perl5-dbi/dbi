@@ -17,7 +17,7 @@ plan skip_all => "Unable to load required module ($@)"
 
 plan tests => 16;
 
-$dbh = DBI->connect("dbi:Sponge:foo","","", {
+my $dbh = DBI->connect("dbi:Sponge:foo","","", {
         PrintError => 0,
         RaiseError => 1,
 });
