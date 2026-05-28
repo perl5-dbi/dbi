@@ -4203,7 +4203,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
     }
 
     /* XXX this allocation strategy won't work when we get to more advanced stuff */
-    new_stmt_sv = newSV(strlen(statement) * 3);
+    new_stmt_sv = newSV(strlen(statement) * 6 + 16);
     sv_setpv(new_stmt_sv,"");
     src  = statement;
     dest = SvPVX(new_stmt_sv);

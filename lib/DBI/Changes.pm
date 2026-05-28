@@ -40,6 +40,10 @@ Do not allow table source locations outside explicit given folders
 
 DBD::Sponge PRECISION handling (pr#12, pilcrow)
 
+=item *
+
+Fix possible buffer overflow in preparse
+
 =back
 
 =head2 Changes in DBI 1.647 - 20 Jan 2025
