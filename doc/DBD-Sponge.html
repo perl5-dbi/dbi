@@ -76,7 +76,7 @@ my $sth = $sponge-&gt;prepare($statement, {
 </li>
 <li><p><code>%attr</code> is a hash of other standard DBI attributes that you might pass to a prepare statement.</p>
 
-<p>Currently only NAME, TYPE, and PRECISION are supported.</p>
+<p>Currently only NAME, TYPE, and PRECISION are supported. TYPE defaults to SQL_VARCHAR. PRECISION will be lazily computed if not supplied.</p>
 
 </li>
 </ul>

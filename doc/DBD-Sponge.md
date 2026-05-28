@@ -36,23 +36,28 @@ No username and password are needed.
         }
     );
 
-- The `$statement` here is an arbitrary statement or name you want
-to provide as identity of your data. If you're using DBI::Profile
-it will appear in the profile data.
+- The `$statement` here is an arbitrary statement or name you want to
+provide as identity of your data. If you're using DBI::Profile it will
+appear in the profile data.
 
-    Generally it's expected that you are preparing a statement handle
-    as if a `select` statement happened.
+    Generally it's expected that you are preparing a statement handle as if
+    a `select` statement happened.
 
-- `$data` is a reference to the data you are providing, given as an array of arrays.
-- `$names` is a reference an array of column names for the `$data` you are providing.
-The number and order should match the number and ordering of the `$data` columns.
-- `%attr` is a hash of other standard DBI attributes that you might pass to a prepare statement.
+- `$data` is a reference to the data you are providing, given as an array
+of arrays.
+- `$names` is a reference an array of column names for the `$data` you
+are providing.  The number and order should match the number and
+ordering of the `$data` columns.
+- `%attr` is a hash of other standard DBI attributes that you might pass
+to a prepare statement.
 
-    Currently only NAME, TYPE, and PRECISION are supported.
+    Currently only NAME, TYPE, and PRECISION are supported.  TYPE defaults
+    to SQL\_VARCHAR.  PRECISION will be lazily computed if not supplied.
 
 # BUGS
 
-Using this module to prepare INSERT-like statements is not currently documented.
+Using this module to prepare INSERT-like statements is not currently
+documented.
 
 # AUTHOR AND COPYRIGHT
 
