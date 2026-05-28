@@ -36,6 +36,10 @@ Fix possible stack overflow (old issue already noted by Tim)
 
 Do not allow table source locations outside explicit given folders
 
+=item *
+
+DBD::Sponge PRECISION handling (pr#12, pilcrow)
+
 =back
 
 =head2 Changes in DBI 1.647 - 20 Jan 2025
