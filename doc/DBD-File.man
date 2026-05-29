@@ -323,8 +323,7 @@ DESCRIPTION
 
        Signature:
 
-         sub f_versions (;$)
-         {
+         sub f_versions (;$) {
            my ($table_name) = @_;
            $table_name ||= ".";
            ...
@@ -415,13 +414,13 @@ KNOWN BUGS AND LIMITATIONS
 AUTHOR
        This module is currently maintained by
 
-       H.Merijn Brand < h.m.brand at xs4all.nl > and Jens Rehsack < rehsack at
+       H.Merijn Brand < hmbrand at cpan.org > and Jens Rehsack < rehsack at
        googlemail.com >
 
        The original author is Jochen Wiedmann.
 
 COPYRIGHT AND LICENSE
-        Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
+        Copyright (C) 2009-2026 by H.Merijn Brand & Jens Rehsack
         Copyright (C) 2004-2009 by Jeff Zucker
         Copyright (C) 1998-2004 by Jochen Wiedmann
 
@@ -435,4 +434,4 @@ SEE ALSO
        DBI, DBD::DBM, DBD::CSV, Text::CSV, Text::CSV_XS, SQL::Statement, and
        DBI::SQL::Nano
 
-perl v5.42.2                      2026-05-28                      DBD::File(3)
+perl v5.42.2                      2026-05-29                      DBD::File(3)

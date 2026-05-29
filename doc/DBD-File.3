@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBD::File 3"
-.TH DBD::File 3 2026-05-28 "perl v5.42.2" "User Contributed Perl Documentation"
+.TH DBD::File 3 2026-05-29 "perl v5.42.2" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -451,9 +451,8 @@ f_versions
 .PP
 Signature:
 .PP
-.Vb 6
-\&  sub f_versions (;$)
-\&  {
+.Vb 5
+\&  sub f_versions (;$) {
 \&    my ($table_name) = @_;
 \&    $table_name ||= ".";
 \&    ...
@@ -571,14 +570,14 @@ tables, but they will not covered by \f(CW\*(C`table_info\*(C'\fR.
 .IX Header "AUTHOR"
 This module is currently maintained by
 .PP
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack < rehsack at googlemail.com >
 .PP
 The original author is Jochen Wiedmann.
 .SH "COPYRIGHT AND LICENSE"
 .IX Header "COPYRIGHT AND LICENSE"
 .Vb 3
-\& Copyright (C) 2009\-2020 by H.Merijn Brand & Jens Rehsack
+\& Copyright (C) 2009\-2026 by H.Merijn Brand & Jens Rehsack
 \& Copyright (C) 2004\-2009 by Jeff Zucker
 \& Copyright (C) 1998\-2004 by Jochen Wiedmann
 .Ve

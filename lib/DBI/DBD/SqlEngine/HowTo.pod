@@ -99,8 +99,7 @@ taking care for you - all they need to know is which attribute names
 are valid and mutable or immutable. Tell them by adding
 C<init_valid_attributes> to your db class:
 
-    sub init_valid_attributes
-    {
+    sub init_valid_attributes {
 	my $dbh = $_[0];
 
 	$dbh->SUPER::init_valid_attributes ();
@@ -127,16 +126,14 @@ C<init_valid_attributes> to your db class:
 Woooho - but now the user cannot assign new managers? This is intended,
 overwrite C<STORE> to handle it!
 
-    sub STORE ($$$)
-    {
+    sub STORE ($$$) {
 	my ( $dbh, $attrib, $value ) = @_;
 
 	$dbh->SUPER::STORE( $attrib, $value );
 
 	# we're still alive, so no exception is thrown ...
 	# by DBI::DBD::SqlEngine::db::STORE
-	if ( $attrib eq "foo_manager_type" )
-	{
+	if ( $attrib eq "foo_manager_type" ) {
 	    $dbh->{foo_manager} = $dbh->{foo_manager_type}->new();
 	    # ... probably correct some states based on the new
 	    # foo_manager_type - see DBD::Sys for an example
@@ -147,20 +144,17 @@ But ... my driver runs without a manager until someone first assignes
 a C<foo_manager_type>. Well, no - there're two places where you can
 initialize defaults:
 
-    sub init_default_attributes
-    {
+    sub init_default_attributes {
 	my ($dbh, $phase) = @_;
 
 	$dbh->SUPER::init_default_attributes($phase);
 
-	if( 0 == $phase )
-	{
+	if( 0 == $phase ) {
 	    # init all attributes which have no knowledge about
 	    # user settings from DSN or the attribute hash
 	    $dbh->{foo_manager_type} = "DBD::Foo::Manager";
 	}
-	elsif( 1 == $phase )
-	{
+	elsif( 1 == $phase ) {
 	    # init phase with more knowledge from DSN or attribute
 	    # hash
 	    $dbh->{foo_manager} = $dbh->{foo_manager_type}->new();
@@ -205,8 +199,7 @@ Better, but here and there users likes to do:
 This interface is provided when derived DBD's define following in
 C<init_valid_attributes> (re-capture L</Deal with own attributes>):
 
-    sub init_valid_attributes
-    {
+    sub init_valid_attributes {
 	my $dbh = $_[0];
 
 	$dbh->SUPER::init_valid_attributes ();
@@ -269,8 +262,7 @@ entire meta initialization process.
 Any further action which needs to be taken can handled in
 C<table_meta_attr_changed>:
 
-    sub table_meta_attr_changed
-    {
+    sub table_meta_attr_changed {
 	my ($class, $meta, $attrib, $value) = @_;
 	...
 	$class->SUPER::table_meta_attr_changed ($meta, $attrib, $value);
@@ -306,12 +298,12 @@ Wiedmann and Jeff Zucker.
 
 The module DBI::DBD::SqlEngine is currently maintained by
 
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by H.Merijn Brand & Jens Rehsack
+Copyright (C) 2010-2026 by H.Merijn Brand & Jens Rehsack
 
 All rights reserved.
 

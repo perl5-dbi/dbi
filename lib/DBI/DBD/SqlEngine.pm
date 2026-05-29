@@ -10,7 +10,7 @@
 #
 #  The original author is Jochen Wiedmann.
 #
-#  Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
+#  Copyright (C) 2009-2026 by H.Merijn Brand & Jens Rehsack
 #  Copyright (C) 2004 by Jeff Zucker
 #  Copyright (C) 1998 by Jochen Wiedmann
 #
@@ -1671,10 +1671,9 @@ DBI::DBD::SqlEngine - Base class for DBI drivers without their own SQL engine
 
     use base qw(DBI::DBD::SqlEngine);
 
-    sub driver
-    {
+    sub driver {
 	...
-	my $drh = $proto->SUPER::driver($attr);
+	my $drh = $proto->SUPER::driver ($attr);
 	...
 	return $drh->{class};
 	}
@@ -1982,11 +1981,10 @@ backend information for the requested table, when it has a table name).
 
 Signature:
 
-    sub sql_get_meta ($$)
-    {
+    sub sql_get_meta ($$) {
 	my ($table_name, $attrib) = @_;
 	...
-    }
+        }
 
 Returns the value of a meta attribute set for a specific table, if any.
 See L<sql_meta> for the possible attributes.
@@ -1999,11 +1997,10 @@ This has the same restrictions as C<< $dbh->{$attrib} >>.
 
 Signature:
 
-    sub sql_set_meta ($$$)
-    {
+    sub sql_set_meta ($$$) {
 	my ($table_name, $attrib, $value) = @_;
 	...
-    }
+        }
 
 Sets the value of a meta attribute set for a specific table.
 See L<sql_meta> for the possible attributes.
@@ -2016,11 +2013,10 @@ This has the same restrictions as C<< $dbh->{$attrib} = $value >>.
 
 Signature:
 
-    sub sql_clear_meta ($)
-    {
+    sub sql_clear_meta ($) {
 	my ($table_name) = @_;
 	...
-    }
+        }
 
 Clears the table specific meta information in the private storage of the
 dbh.
@@ -2034,47 +2030,45 @@ handle level.
 
   package DBI::DBD::SqlEngine::TableSource;
 
-  sub data_sources ($;$)
-  {
-    my ( $class, $drh, $attrs ) = @_;
+  sub data_sources ($;$) {
+    my ($class, $drh, $attrs) = @_;
     ...
-  }
+    }
 
-  sub avail_tables
-  {
+  sub avail_tables {
     my ( $class, $drh ) = @_;
     ...
-  }
+    }
 
 The C<data_sources> method is called when the user invokes any of the
 following:
 
-  @ary = DBI->data_sources($driver);
-  @ary = DBI->data_sources($driver, \%attr);
+  @ary = DBI->data_sources ($driver);
+  @ary = DBI->data_sources ($driver, \%attr);
 
-  @ary = $dbh->data_sources();
-  @ary = $dbh->data_sources(\%attr);
+  @ary = $dbh->data_sources ();
+  @ary = $dbh->data_sources (\%attr);
 
 The C<avail_tables> method is called when the user invokes any of the
 following:
 
-  @names = $dbh->tables( $catalog, $schema, $table, $type );
+  @names = $dbh->tables ($catalog, $schema, $table, $type);
 
-  $sth = $dbh->table_info( $catalog, $schema, $table, $type );
-  $sth = $dbh->table_info( $catalog, $schema, $table, $type, \%attr );
+  $sth = $dbh->table_info ($catalog, $schema, $table, $type);
+  $sth = $dbh->table_info ($catalog, $schema, $table, $type, \%attr);
 
-  $dbh->func( "list_tables" );
+  $dbh->func ("list_tables");
 
 Every time where an C<\%attr> argument can be specified, this C<\%attr>
 object's C<sql_table_source> attribute is preferred over the C<$dbh>
 attribute or the driver default, e.g.
 
-  @ary = DBI->data_sources("dbi:CSV:", {
+  @ary = DBI->data_sources ("dbi:CSV:", {
     f_dir => "/your/csv/tables",
     # note: this class doesn't comes with DBI
     sql_table_source => "DBD::File::Archive::Tar::TableSource",
     # scan tarballs instead of directories
-  });
+    });
 
 When you're going to implement such a DBD::File::Archive::Tar::TableSource
 class, remember to add correct attributes (including C<sql_table_source>
@@ -2092,11 +2086,10 @@ log files before parsing them,
 
   package DBI::DBD::SqlEngine::DataSource;
 
-  sub complete_table_name ($$;$)
-  {
-    my ( $self, $meta, $table, $respect_case ) = @_;
+  sub complete_table_name ($$;$) {
+    my ($self, $meta, $table, $respect_case) = @_;
     ...
-  }
+    }
 
 The method C<complete_table_name> is called when first setting up the
 I<meta information> for a table:
@@ -2122,11 +2115,10 @@ to open the resource is required:
 
   package DBI::DBD::SqlEngine::DataSource;
 
-  sub open_data ($)
-  {
-    my ( $self, $meta, $attrs, $flags ) = @_;
+  sub open_data ($) {
+    my ($self, $meta, $attrs, $flags) = @_;
     ...
-  }
+    }
 
 After the method C<open_data> has been run successfully, the table's meta
 information are in a state which allows the table's data accessor methods
@@ -2199,14 +2191,14 @@ module.
 
 This module is currently maintained by
 
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 The original authors are Jochen Wiedmann and Jeff Zucker.
 
 =head1 COPYRIGHT AND LICENSE
 
- Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2009-2026 by H.Merijn Brand & Jens Rehsack
  Copyright (C) 2004-2009 by Jeff Zucker
  Copyright (C) 1998-2004 by Jochen Wiedmann
 

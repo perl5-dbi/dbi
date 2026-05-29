@@ -8,8 +8,7 @@ DBI::DBD::SqlEngine::Developers - Developers documentation for DBI::DBD::SqlEngi
 
     use base qw(DBI::DBD::SqlEngine);
 
-    sub driver
-    {
+    sub driver {
 	...
 	my $drh = $proto->SUPER::driver($attr);
 	...
@@ -116,8 +115,7 @@ interface:
   package DBD::DBM::dr;
   our @ISA = qw(DBI::DBD::SqlEngine::dr);
 
-  sub connect ($$;$$$)
-  {
+  sub connect ($$;$$$) {
       ...
   }
 
@@ -200,8 +198,7 @@ from DBI when the driver is initialized or from the derived class.
 
   use base qw( DBI::DBD::SqlEngine );
 
-  sub driver
-  {
+  sub driver {
       my ( $class, $attr ) = @_;
       ...
       my $drh = $class->SUPER::driver( $attr );
@@ -251,8 +248,7 @@ stage setup here after calling
   package DBD::Foo::db;
   our @ISA = qw(DBI::DBD::SqlEngine::db);
   
-  sub init_default_attributes
-  {
+  sub init_default_attributes {
     my ($dbh, $phase) = @_;
     $dbh->SUPER::init_default_attributes($phase);
     ...; # own setup code, maybe separated by phases
@@ -628,14 +624,12 @@ handle level.
 
   package DBI::DBD::SqlEngine::TableSource;
 
-  sub data_sources ($;$)
-  {
+  sub data_sources ($;$) {
     my ( $class, $drh, $attrs ) = @_;
     ...
   }
 
-  sub avail_tables
-  {
+  sub avail_tables {
     my ( $class, $drh ) = @_;
     ...
   }
@@ -675,8 +669,7 @@ log files before parsing them,
 
   package DBI::DBD::SqlEngine::DataSource;
 
-  sub complete_table_name ($$;$)
-  {
+  sub complete_table_name ($$;$) {
     my ( $self, $meta, $table, $respect_case ) = @_;
     ...
   }
@@ -705,8 +698,7 @@ to open the resource is required:
 
   package DBI::DBD::SqlEngine::DataSource;
 
-  sub open_data ($)
-  {
+  sub open_data ($) {
     my ( $self, $meta, $attrs, $flags ) = @_;
     ...
   }
@@ -835,12 +827,12 @@ methods.
 
 The module DBI::DBD::SqlEngine is currently maintained by
 
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by H.Merijn Brand & Jens Rehsack
+Copyright (C) 2010-2026 by H.Merijn Brand & Jens Rehsack
 
 All rights reserved.
 

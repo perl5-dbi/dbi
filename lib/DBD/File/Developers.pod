@@ -8,8 +8,7 @@ DBD::File::Developers - Developers documentation for DBD::File
 
     use base qw( DBD::File );
 
-    sub driver
-    {
+    sub driver {
 	...
 	my $drh = $proto->SUPER::driver ($attr);
 	...
@@ -108,8 +107,7 @@ interface:
   package DBD::DBM::dr;
   @DBD::DBM::dr::ISA = qw( DBD::File::dr );
 
-  sub connect ($$;$$$)
-  {
+  sub connect ($$;$$$) {
       ...
       }
 
@@ -152,8 +150,7 @@ initialized or from the derived class.
 
   use base qw( DBD::File );
 
-  sub driver
-  {
+  sub driver {
       my ($class, $attr) = @_;
       ...
       my $drh = $class->SUPER::driver ($attr);
@@ -363,14 +360,12 @@ handle level.
 
   package DBD::File::TableSource::FileSystem;
 
-  sub data_sources ($;$)
-  {
+  sub data_sources ($;$) {
       my ($class, $drh, $attrs) = @_;
       ...
       }
 
-  sub avail_tables
-  {
+  sub avail_tables {
       my ($class, $drh) = @_;
       ...
       }
@@ -404,8 +399,7 @@ attribute or the driver default.
 
   @DBD::File::DataSource::Stream::ISA = 'DBI::DBD::SqlEngine::DataSource';
 
-  sub complete_table_name
-  {
+  sub complete_table_name {
       my ($self, $meta, $file, $respect_case) = @_;
       ...
       }
@@ -416,8 +410,7 @@ C<< $meta->{sql_identifier_case} >> (SQL_IC_LOWER, SQL_IC_UPPER).
 
   package DBD::File::DataSource::Stream;
 
-  sub apply_encoding
-  {
+  sub apply_encoding {
       my ($self, $meta, $fn) = @_;
       ...
       }
@@ -427,8 +420,7 @@ to the file handled opened in C<open_data>.
 
   package DBD::File::DataSource::Stream;
 
-  sub open_data
-  {
+  sub open_data {
       my ($self, $meta, $attrs, $flags) = @_;
       ...
       }
@@ -446,8 +438,7 @@ subclasses).
 
   package DBD::File::DataSource::File;
 
-  sub complete_table_name ($$;$)
-  {
+  sub complete_table_name ($$;$) {
       my ($self, $meta, $table, $respect_case) = @_;
       ...
       }
@@ -464,8 +455,7 @@ undef.
 
   package DBD::File::DataSource::File;
 
-  sub open_data ($)
-  {
+  sub open_data ($) {
       my ($self, $meta, $attrs, $flags) = @_;
       ...
       }
@@ -493,8 +483,7 @@ table is handled and parametrized in DBD::File::Table. Unless you intend
 to add anything to the following implementation, an empty DBD::XXX::Statement
 package satisfies DBD::File.
 
-  sub open_table ($$$$$)
-  {
+  sub open_table ($$$$$) {
       my ($self, $data, $table, $createMode, $lockMode) = @_;
 
       my $class = ref $self;
@@ -647,14 +636,14 @@ meta information expected by the SQL engines.
 
 The module DBD::File is currently maintained by
 
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010-2013 by H.Merijn Brand & Jens Rehsack
+Copyright (C) 2010-2026 by H.Merijn Brand & Jens Rehsack
 
 All rights reserved.
 

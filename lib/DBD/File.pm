@@ -10,7 +10,7 @@
 #
 #  The original author is Jochen Wiedmann.
 #
-#  Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
+#  Copyright (C) 2009-2026 by H.Merijn Brand & Jens Rehsack
 #  Copyright (C) 2004 by Jeff Zucker
 #  Copyright (C) 1998 by Jochen Wiedmann
 #
@@ -1298,8 +1298,7 @@ by replacing the C<f_> in the method name with the driver prefix.
 
 Signature:
 
-  sub f_versions (;$)
-  {
+  sub f_versions (;$) {
     my ($table_name) = @_;
     $table_name ||= ".";
     ...
@@ -1423,14 +1422,14 @@ tables, but they will not covered by C<table_info>.
 
 This module is currently maintained by
 
-H.Merijn Brand < h.m.brand at xs4all.nl > and
+H.Merijn Brand < hmbrand at cpan.org > and
 Jens Rehsack < rehsack at googlemail.com >
 
 The original author is Jochen Wiedmann.
 
 =head1 COPYRIGHT AND LICENSE
 
- Copyright (C) 2009-2020 by H.Merijn Brand & Jens Rehsack
+ Copyright (C) 2009-2026 by H.Merijn Brand & Jens Rehsack
  Copyright (C) 2004-2009 by Jeff Zucker
  Copyright (C) 1998-2004 by Jochen Wiedmann
 

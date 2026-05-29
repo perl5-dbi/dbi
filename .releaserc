@@ -12,7 +12,7 @@ perls /pro/bin/perl\
 :/usr/bin/perl\
 :/media/Tux/perls/bin/perl5.8.[123456789] \
 :/media/Tux/perls/bin/perl5.[1234][02468].*\
-:/media/Tux/perls/bin/perl5.41.*\
+:/media/Tux/perls/bin/perl5.43.*\
 :/media/Tux/perls/bin/tperl5.8.[123456789] \
 :/media/Tux/perls/bin/tperl5.[1234][02468].*\
-:/media/Tux/perls/bin/tperl5.41.*
+:/media/Tux/perls/bin/tperl5.43.*
