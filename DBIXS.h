@@ -495,7 +495,7 @@ typedef dbistate_t** (*_dbi_state_lval_t)(pTHX);
             CV *cv = get_cv("DBI::_dbi_state_lval", 0);                     \
             if (!cv)                                                        \
                 croak("Unable to get DBI state function. DBI not loaded."); \
-            dbi_state_lval_p = (_dbi_state_lval_t)CvXSUB(cv);               \
+            dbi_state_lval_p = (_dbi_state_lval_t)(void *)CvXSUB(cv);       \
         }                                                                   \
         return dbi_state_lval_p(aTHX);                                      \
     }                                                                       \
