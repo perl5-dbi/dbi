@@ -386,4 +386,10 @@ tgzdist:	changes spellcheck newdist dist
     return $xst;
     } # post_constants
 
+sub processPL {
+    my $super = shift->SUPER::processPL (@_);
+    $super =~ s/^(dbi\w+ :: dbi\w+\.PL pm_to_blib)/$1 \$(INST_DYNAMIC)/gm;
+    return $super;
+}
+
 1;
