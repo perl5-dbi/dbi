@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.648 - 28 May 2026
+=head2 Changes in DBI 1.648 - 01 Jun 2026
 
 =over 2
 
@@ -43,6 +43,10 @@ DBD::Sponge PRECISION handling (pr#12, pilcrow)
 =item *
 
 Fix possible buffer overflow in preparse
+
+=item *
+
+Skip mismatching .so's (turnstep, PR#81)
 
 =back
 

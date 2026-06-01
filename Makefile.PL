@@ -390,6 +390,6 @@ sub processPL {
     my $super = shift->SUPER::processPL (@_);
     $super =~ s/^(dbi\w+ :: dbi\w+\.PL pm_to_blib)/$1 \$(INST_DYNAMIC)/gm;
     return $super;
-}
+    } # processPL
 
 1;
