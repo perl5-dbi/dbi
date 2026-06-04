@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.648 - 01 Jun 2026
+=head2 Changes in DBI 1.648 - 04 Jun 2026
 
 =over 2
 
@@ -30,7 +30,7 @@ Remove -Wbad-function-cast
 
 =item *
 
-Fix possible stack overflow (old issue already noted by Tim)
+Fix possible stack overflow (old issue already noted by Tim) (CVE-2026-9698)
 
 =item *
 
@@ -46,7 +46,11 @@ Fix possible buffer overflow in preparse
 
 =item *
 
-Skip mismatching .so's (turnstep, PR#81)
+Skip mismatching .so's (Greg, PR#81)
+
+=item *
+
+Fix cast warning in dbi_get_state (Greg, PR#182)
 
 =back
 
