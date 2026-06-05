@@ -12,6 +12,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.649 - 05 Jun 2026
+
+=over 2
+
+=item *
+
+Extra Cwd::abs_path required for Windows
+
+=back
+
 =head2 Changes in DBI 1.648 - 04 Jun 2026
 
 =over 2
@@ -42,7 +52,7 @@ DBD::Sponge PRECISION handling (pr#12, pilcrow)
 
 =item *
 
-Fix possible buffer overflow in preparse
+Fix possible buffer overflow in preparse (CVE-2026-10879)
 
 =item *
 

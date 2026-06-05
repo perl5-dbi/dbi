@@ -630,8 +630,10 @@ sub complete_table_name {
     # Note this triggers only when *used*, not at definition time
     #   $dbh->{csv_tables}{foo}{file} = "/out/side/scope/foo.csv"; # OK
     #   $dbh->do ("create table foo (c char)"); # FAIL
-    {   my @sd = map { Cwd::abs_path ($_) } $meta->{f_dir}, @{$meta->{f_dir_search} || []};
-	unless (List::Util::first { $_ eq $searchdir } @sd) {
+    if ($searchdir) {
+        my $sd = Cwd::abs_path ($searchdir);
+        my @sd = map { Cwd::abs_path ($_) } $meta->{f_dir}, @{$meta->{f_dir_search} || []};
+	unless (List::Util::first { $_ eq $sd } @sd) {
 	    croak "Using data files in $searchdir is unsafe and not allowed.\nUse f_dir or f_dir_search.\n";
 	    }
 	}
