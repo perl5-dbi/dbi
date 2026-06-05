@@ -1,3 +1,6 @@
+1.649 - 2026-06-04, H.Merijn Brand
+    * 
+
 1.648 - 2026-06-04, H.Merijn Brand
     * Correct sprintf usage for trace_msg (issue#132)
     * Add DBIXS_VERSION & DBIXS_RELEASE to dbixs_rev.h
@@ -5,7 +8,7 @@
     * Fix possible stack overflow (old issue already noted by Tim) (CVE-2026-9698)
     * Do not allow table source locations outside explicit given folders
     * DBD::Sponge PRECISION handling (pr#12, pilcrow)
-    * Fix possible buffer overflow in preparse
+    * Fix possible buffer overflow in preparse (CVE-2026-10879)
     * Skip mismatching .so's (Greg, PR#81)
     * Fix cast warning in dbi_get_state (Greg, PR#182)
 
