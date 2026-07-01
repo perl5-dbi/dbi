@@ -679,6 +679,7 @@ use warnings;
 use Exporter ();
 use UNIVERSAL ();
 use Carp;
+use Module::Load ();
 
 use DBI qw(dbi_time dbi_profile dbi_profile_merge_nodes dbi_profile_merge);
 
@@ -758,7 +759,9 @@ sub _auto_new {
         }
     }
 
-    eval "require $package" if $package; # silently ignores errors
+    eval {
+        Module::Load::load $package if $package; # silently ignores errors
+    };
     $package ||= $class;
 
     return $package->new(Path => \@Path, @args);
