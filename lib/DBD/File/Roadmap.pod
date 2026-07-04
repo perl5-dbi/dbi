@@ -152,7 +152,7 @@ users.
 
 =head1 RESOURCES AND CONTRIBUTIONS
 
-See L<http://dbi.perl.org/contributing> for I<how you can help>.
+See F<CONTRIBUTING.md> for I<how you can help>.
 
 If your company has benefited from DBI, please consider if
 it could make a donation to The Perl Foundation "DBI Development"

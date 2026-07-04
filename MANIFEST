@@ -11,6 +11,7 @@ Makefile.PL			The Makefile generator
 cpanfile
 Perl.xs				Test harness (currently) for Driver.xst
 README.md
+CONTRIBUTING.md
 dbd_xsh.h			Prototypes for standard Driver.xst interface
 dbi_sql.h			Definitions based on SQL CLI / ODBC (#inc'd by DBIXS.h)
 dbipport.h			Perl portability macros (from Devel::PPort)

@@ -6239,8 +6239,10 @@ development, and rapidly get something specific and valuable in return.
 
 # ACKNOWLEDGEMENTS
 
+The creator: Tim Bunce!
+
 I would like to acknowledge the valuable contributions of the many
-people I have worked with on the DBI project, especially in the early
+people Tim has worked with on the DBI project, especially in the early
 years (1992-1994). In no particular order: Kevin Stock, Buzz Moschetti,
 Kurt Andersen, Ted Lemon, William Hails, Garth Kennedy, Michael Peppler,
 Neil S. Briscoe, Jeff Urlwin, David J. Hughes, Jeff Stander,
@@ -6268,12 +6270,16 @@ The development of the swap\_inner\_handle() method was sponsored by BizRate.com
 
 The development of DBD::Gofer and related modules was sponsored by Shopzilla.com ([https::connexity.com](https://metacpan.org/pod/https%3A%3Aconnexity.com)).
 
+After the release of version 1.643, the development was lead by H.Merijn Brand
+with the help of the DBI team. Thanks to all that added issues, did Pull
+Requests or helped in any way to keep the DBI healthy.
+
 # CONTRIBUTING
 
 As you can see above, many people have contributed to the DBI and
 drivers in many ways over many years.
 
-If you'd like to help then see [http://dbi.perl.org/contributing](http://dbi.perl.org/contributing).
+If you'd like to help then see `CONTRIBUTING.md`.
 
 If you'd like the DBI to do something new or different then a good way
 to make that happen is to do it yourself and send me a patch to the
