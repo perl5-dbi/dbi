@@ -4239,7 +4239,13 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
                 }
                 if (in_comment == '/')
                     src++;
-                src += (*src != '\n' || *(dest-1)=='\n') ? 1 : 0;
+                /* Only inspect the previously-emitted byte if one exists;
+                   when an initial line comment is deleted, dest is still at
+                   the start of the output buffer and *(dest-1) would read
+                   one byte before it (OOB read). */
+                src += (*src != '\n'
+                        || (dest > SvPVX(new_stmt_sv) && *(dest-1)=='\n'))
+                       ? 1 : 0;
                 in_comment = '\0';
                 rt_comment = '\0';
              }
