@@ -20,6 +20,10 @@ DBI::Changes - List of significant changes to the DBI
 
 Set a hard limit of 99999 on '?' placeholders
 
+=item *
+
+Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-14740)
+
 =back
 
 =head2 Changes in DBI 1.649 - 22 Jun 2026
