@@ -126,7 +126,7 @@ sure that your issue isn't related to the driver you're using.
 
 ## NOTES
 
-This is the DBI specification that corresponds to DBI version 1.649
+This is the DBI specification that corresponds to DBI version 1.650
 (see [DBI::Changes](https://metacpan.org/pod/DBI%3A%3AChanges) for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -5055,7 +5055,8 @@ a ref to an empty hash because they can't pre-determine the names.
 It is possible that the keys in the hash returned by `ParamValues`
 are not exactly the same as those implied by the prepared statement.
 For example, DBD::Oracle translates '`?`' placeholders into '`:pN`'
-where N is a sequence number starting at 1.
+where N is a sequence number starting at `1` with a hard limit of
+`99999`.
 
 \* Values:
 
@@ -5156,7 +5157,8 @@ integer.
 It is also possible that the keys in the hash returned by
 `ParamArrays` are not exactly the same as those implied by the
 prepared statement.  For example, DBD::Oracle translates '`?`'
-placeholders into '`:pN`' where N is a sequence number starting at 1.
+placeholders into '`:pN`' where N is a sequence number starting at
+`1` with a hard limit of `99999`.
 
 ### `RowsInCache`
 

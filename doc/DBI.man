@@ -122,7 +122,7 @@ SYNOPSIS
        the driver you're using.
 
    NOTES
-       This is the DBI specification that corresponds to DBI version 1.649
+       This is the DBI specification that corresponds to DBI version 1.650
        (see DBI::Changes for details).
 
        The DBI is evolving at a steady pace, so it's good to check that you
@@ -5062,7 +5062,7 @@ DBI STATEMENT HANDLE OBJECTS
        It is possible that the keys in the hash returned by "ParamValues" are
        not exactly the same as those implied by the prepared statement.  For
        example, DBD::Oracle translates '"?"' placeholders into '":pN"' where N
-       is a sequence number starting at 1.
+       is a sequence number starting at 1 with a hard limit of 99999.
 
        * Values:
 
@@ -5161,7 +5161,7 @@ DBI STATEMENT HANDLE OBJECTS
        It is also possible that the keys in the hash returned by "ParamArrays"
        are not exactly the same as those implied by the prepared statement.
        For example, DBD::Oracle translates '"?"' placeholders into '":pN"'
-       where N is a sequence number starting at 1.
+       where N is a sequence number starting at 1 with a hard limit of 99999.
 
        "RowsInCache"
 
@@ -6435,4 +6435,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.42.2                      2026-06-04                            DBI(3)
+perl v5.42.2                      2026-07-04                            DBI(3)

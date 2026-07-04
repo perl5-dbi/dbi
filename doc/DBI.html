@@ -422,7 +422,7 @@ $rc  = $dbh-&gt;disconnect;</code></pre>
 
 <h2 id="NOTES">NOTES</h2>
 
-<p>This is the DBI specification that corresponds to DBI version 1.649 (see <a>DBI::Changes</a> for details).</p>
+<p>This is the DBI specification that corresponds to DBI version 1.650 (see <a>DBI::Changes</a> for details).</p>
 
 <p>The DBI is evolving at a steady pace, so it&#39;s good to check that you have the latest copy.</p>
 
@@ -3704,7 +3704,7 @@ print &quot;Name $row[ $sth-&gt;{NAME_lc_hash}{name} ]\n&quot;;</code></pre>
 
 <p>If the driver supports <code>ParamValues</code> but no values have been bound yet then the driver should return a hash with placeholders names in the keys but all the values undef, but some drivers may return a ref to an empty hash because they can&#39;t pre-determine the names.</p>
 
-<p>It is possible that the keys in the hash returned by <code>ParamValues</code> are not exactly the same as those implied by the prepared statement. For example, DBD::Oracle translates &#39;<code>?</code>&#39; placeholders into &#39;<code>:pN</code>&#39; where N is a sequence number starting at 1.</p>
+<p>It is possible that the keys in the hash returned by <code>ParamValues</code> are not exactly the same as those implied by the prepared statement. For example, DBD::Oracle translates &#39;<code>?</code>&#39; placeholders into &#39;<code>:pN</code>&#39; where N is a sequence number starting at <code>1</code> with a hard limit of <code>99999</code>.</p>
 
 <p>* Values:</p>
 
@@ -3771,7 +3771,7 @@ if ($sth-&gt;{ParamArrays}) {
 
 <p>It is possible that the values in the hash returned by <code>ParamArrays</code> are not <i>exactly</i> the same as those passed to <a href="#bind_param_array">&quot;bind_param_array&quot;</a> or <a href="#execute_array">&quot;execute_array&quot;</a>. The driver may have slightly modified values in some way based on the TYPE the value was bound with. For example a floating point value bound as an SQL_INTEGER type may be returned as an integer.</p>
 
-<p>It is also possible that the keys in the hash returned by <code>ParamArrays</code> are not exactly the same as those implied by the prepared statement. For example, DBD::Oracle translates &#39;<code>?</code>&#39; placeholders into &#39;<code>:pN</code>&#39; where N is a sequence number starting at 1.</p>
+<p>It is also possible that the keys in the hash returned by <code>ParamArrays</code> are not exactly the same as those implied by the prepared statement. For example, DBD::Oracle translates &#39;<code>?</code>&#39; placeholders into &#39;<code>:pN</code>&#39; where N is a sequence number starting at <code>1</code> with a hard limit of <code>99999</code>.</p>
 
 <h3 id="RowsInCache"><code>RowsInCache</code></h3>
 

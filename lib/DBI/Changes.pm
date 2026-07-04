@@ -12,6 +12,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.650 - 04 Jul 2026
+
+=over 2
+
+=item *
+
+Set a hard limit of 99999 on '?' placeholders
+
+=back
+
 =head2 Changes in DBI 1.649 - 22 Jun 2026
 
 =over 2

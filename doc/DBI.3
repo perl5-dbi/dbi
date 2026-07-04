@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI 3"
-.TH DBI 3 2026-06-04 "perl v5.42.2" "User Contributed Perl Documentation"
+.TH DBI 3 2026-07-04 "perl v5.42.2" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -190,7 +190,7 @@ page for your driver. Only submit a bug report against the DBI itself if you\*(A
 sure that your issue isn\*(Aqt related to the driver you\*(Aqre using.
 .SS NOTES
 .IX Subsection "NOTES"
-This is the DBI specification that corresponds to DBI version 1.649
+This is the DBI specification that corresponds to DBI version 1.650
 (see DBI::Changes for details).
 .PP
 The DBI is evolving at a steady pace, so it\*(Aqs good to check that
@@ -5665,7 +5665,8 @@ a ref to an empty hash because they can\*(Aqt pre\-determine the names.
 It is possible that the keys in the hash returned by \f(CW\*(C`ParamValues\*(C'\fR
 are not exactly the same as those implied by the prepared statement.
 For example, DBD::Oracle translates \*(Aq\f(CW\*(C`?\*(C'\fR\*(Aq placeholders into \*(Aq\f(CW\*(C`:pN\*(C'\fR\*(Aq
-where N is a sequence number starting at 1.
+where N is a sequence number starting at \f(CW1\fR with a hard limit of
+\&\f(CW99999\fR.
 .PP
 * Values:
 .PP
@@ -5776,7 +5777,8 @@ integer.
 It is also possible that the keys in the hash returned by
 \&\f(CW\*(C`ParamArrays\*(C'\fR are not exactly the same as those implied by the
 prepared statement.  For example, DBD::Oracle translates \*(Aq\f(CW\*(C`?\*(C'\fR\*(Aq
-placeholders into \*(Aq\f(CW\*(C`:pN\*(C'\fR\*(Aq where N is a sequence number starting at 1.
+placeholders into \*(Aq\f(CW\*(C`:pN\*(C'\fR\*(Aq where N is a sequence number starting at
+\&\f(CW1\fR with a hard limit of \f(CW99999\fR.
 .PP
 \fR\f(CI\*(C`RowsInCache\*(C'\fR\fI\fR
 .IX Subsection "RowsInCache"

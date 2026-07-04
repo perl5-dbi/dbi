@@ -16,7 +16,7 @@ use warnings;
 
 our ($XS_VERSION, $VERSION);
 BEGIN {
-$VERSION = "1.649"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.650"; # ==> ALSO update the version in the pod text below!
 $XS_VERSION = $VERSION;
 $VERSION =~ tr/_//d;
 }
@@ -148,7 +148,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.649
+This is the DBI specification that corresponds to DBI version 1.650
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -7137,7 +7137,8 @@ a ref to an empty hash because they can't pre-determine the names.
 It is possible that the keys in the hash returned by C<ParamValues>
 are not exactly the same as those implied by the prepared statement.
 For example, DBD::Oracle translates 'C<?>' placeholders into 'C<:pN>'
-where N is a sequence number starting at 1.
+where N is a sequence number starting at C<1> with a hard limit of
+C<99999>.
 
 * Values:
 
@@ -7239,7 +7240,8 @@ integer.
 It is also possible that the keys in the hash returned by
 C<ParamArrays> are not exactly the same as those implied by the
 prepared statement.  For example, DBD::Oracle translates 'C<?>'
-placeholders into 'C<:pN>' where N is a sequence number starting at 1.
+placeholders into 'C<:pN>' where N is a sequence number starting at
+C<1> with a hard limit of C<99999>.
 
 =head3 C<RowsInCache>
 
