@@ -18,7 +18,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =item *
 
-Set a hard limit of 99999 on '?' placeholders
+Set a hard limit of 99999 on '?' placeholders (CVE-2026-14739)
 
 =item *
 
