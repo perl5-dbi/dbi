@@ -31,7 +31,7 @@ BEGIN {
         if $Config{osvers} =~ /xen/ # eg 2.6.18-4-xen-amd64
         and $ENV{AUTOMATED_TESTING};
 
-    plan tests => 60;
+    plan tests => 61;
 }
 
 $Data::Dumper::Indent = 1;
