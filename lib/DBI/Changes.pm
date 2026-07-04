@@ -24,6 +24,10 @@ Set a hard limit of 99999 on '?' placeholders
 
 Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-14740)
 
+=item *
+
+Fix code injection via Profile DSN attribute or DBI_PROFILE variable (CVE-2026-14380)
+
 =back
 
 =head2 Changes in DBI 1.649 - 22 Jun 2026
