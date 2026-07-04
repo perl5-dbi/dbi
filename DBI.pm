@@ -8378,7 +8378,7 @@ The development of DBD::Gofer and related modules was sponsored by Shopzilla.com
 As you can see above, many people have contributed to the DBI and
 drivers in many ways over many years.
 
-If you'd like to help then see L<http://dbi.perl.org/contributing>.
+If you'd like to help then see L<https://dbi.perl.org/contributing>.
 
 If you'd like the DBI to do something new or different then a good way
 to make that happen is to do it yourself and send me a patch to the
