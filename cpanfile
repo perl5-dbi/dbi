@@ -1,22 +1,26 @@
 requires   "XSLoader";
+requires   "Module::Load"             => "0.22";
 
 recommends "Encode"                   => "3.21";
+recommends "Module::Load"             => "0.36";
 
-suggests   "Clone"                    => "0.47";
+suggests   "Clone"                    => "0.50";
 suggests   "DB_File";
 suggests   "MLDBM";
-suggests   "Net::Daemon";
+suggests   "Net::Daemon"              => "0.52";
 suggests   "RPC::PlServer"            => "0.2020";
 suggests   "SQL::Statement"           => "1.414";
 
 on "configure" => sub {
-    requires   "ExtUtils::MakeMaker"      => "6.48";
+    requires   "ExtUtils::MakeMaker"  => "6.48";
 
-    recommends "ExtUtils::MakeMaker"      => "7.70";
+    recommends "ExtUtils::MakeMaker"  => "7.22";
+
+    suggests   "ExtUtils::MakeMaker"  => "7.78";
     };
 
 on "test" => sub {
-    requires   "Test::More"               => "0.90";
+    requires   "Test::More"           => "0.90";
 
-    recommends "Test::More"               => "1.302207";
+    recommends "Test::More"           => "1.302222";
     };

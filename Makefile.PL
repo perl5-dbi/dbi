@@ -64,6 +64,9 @@ my %opts = (
         "ExtUtils::MakeMaker" => "6.48",
         "Test::Simple"        => "0.90",
 	},
+    PREREQ_PM                 => {
+        "Module::Load"        => "0.22",
+        },
     META_MERGE                => {
 	resources             => {
 	    repository        => "https://github.com/perl5-dbi/dbi",
