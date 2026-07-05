@@ -1,5 +1,5 @@
 requires   "XSLoader";
-requires   "Module::Load";
+requires   "Module::Load"             => "0.22";
 
 recommends "Encode"                   => "3.21";
 
