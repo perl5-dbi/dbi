@@ -3,6 +3,7 @@
     * Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-14740)
     * Fix code injection via Profile DSN attribute or DBI_PROFILE variable (CVE-2026-14380)
     * Update dbipport.h to Devel::PPPort-3.73
+    * Raise minimum perl to 5.10 (Module::Load is core since 5.10; CVE-2026-14380)
 
 1.649 - 2026-06-22, H.Merijn Brand
     * Extra Cwd::abs_path required for Windows

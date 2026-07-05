@@ -58,7 +58,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI 3"
-.TH DBI 3 2026-07-04 "perl v5.42.2" "User Contributed Perl Documentation"
+.TH DBI 3 2026-07-05 "perl v5.42.2" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -6033,24 +6033,11 @@ Using DBI with perl threads is not yet recommended for production
 environments. For more information see
 <https://www.perlmonks.org/index.pl?node_id=288022>
 .PP
-Note: There is a bug in perl 5.8.2 when configured with threads and
-debugging enabled (bug #24463) which would cause some DBI tests to fail.
-These tests have been disabled for perl\-5.8.2 and below.
-.PP
 Tests for inner method cache are disabled for perl\-5.10.x
 .SS "Signal Handling and Canceling Operations"
 .IX Subsection "Signal Handling and Canceling Operations"
 [The following only applies to systems with unix\-like signal handling.
 I\*(Aqd welcome additions for other systems, especially Windows.]
-.PP
-The first thing to say is that signal handling in Perl versions less
-than 5.8 is \fInot\fR safe. There is always a small risk of Perl
-crashing and/or core dumping when, or after, handling a signal
-because the signal could arrive and be handled while internal data
-structures are being changed. If the signal handling code
-used those same internal data structures it could cause all manner
-of subtle and not\-so\-subtle problems.  The risk was reduced with
-5.4.4 but was still present in all perls up through 5.8.0.
 .PP
 Beginning in perl 5.8.0 perl implements \*(Aqsafe\*(Aq signal handling if
 your system has the POSIX \fBsigaction()\fR routine. Now when a signal
@@ -6173,11 +6160,10 @@ See previous example for the reasoning around the double eval.
 .PP
 Similar techniques can be used for canceling statement execution.
 .PP
-Unfortunately, this solution is somewhat messy, and it does \fInot\fR work with
-perl versions less than perl 5.8 where \f(CWPOSIX::sigaction()\fR appears to be broken.
+Unfortunately, this solution is somewhat messy.
 .PP
-For a cleaner implementation that works across perl versions, see Lincoln Baxter\*(Aqs
-Sys::SigAction module at Sys::SigAction.
+For a cleaner implementation that works across perl versions, see
+Lincoln Baxter\*(Aqs Sys::SigAction module at Sys::SigAction.
 The documentation for Sys::SigAction includes an longer discussion
 of this problem, and a DBD::Oracle test script.
 .PP
@@ -6456,11 +6442,9 @@ application has reset the trace file via another call to
 Tied filehandles are not currently supported, as
 tie operations are not available to the PerlIO
 methods used by the DBI.
-.IP \(bu 4
-PerlIO layer support requires Perl version 5.8 or higher.
 .PP
-As of version 5.8, Perl provides the ability to layer various
-"disciplines" on an open filehandle via the PerlIO module.
+Perl provides the ability to layer various "disciplines" on an open
+filehandle via the PerlIO module.
 .PP
 A simple example of using PerlIO layers is to use a scalar as the output:
 .PP

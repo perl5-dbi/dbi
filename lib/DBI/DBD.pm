@@ -3418,7 +3418,7 @@ sub dbd_edit_mm_attribs {
 		foreach my $match (@test_matches) {
 		    next TEST if $test !~ $match;
 		}
-                my $usethr = ($test =~ /(\d+|\b)thr/ && $] >= 5.008 && $Config{useithreads});
+                my $usethr = ($test =~ /(\d+|\b)thr/ && $Config{useithreads});
                 my $v_test = "t/zv${v_type}_$test";
                 my $v_perl = ($test =~ /taint/) ? "perl -wT" : "perl -w";
 		printf "%s %s\n", $v_test, ($usethr) ? "(use threads)" : "";

@@ -3932,15 +3932,11 @@ $dbh-&gt;disconnect;</code></pre>
 
 <p>Using DBI with perl threads is not yet recommended for production environments. For more information see <a href="https://www.perlmonks.org/index.pl?node_id=288022">https://www.perlmonks.org/index.pl?node_id=288022</a></p>
 
-<p>Note: There is a bug in perl 5.8.2 when configured with threads and debugging enabled (bug #24463) which would cause some DBI tests to fail. These tests have been disabled for perl-5.8.2 and below.</p>
-
 <p>Tests for inner method cache are disabled for perl-5.10.x</p>
 
 <h2 id="Signal-Handling-and-Canceling-Operations">Signal Handling and Canceling Operations</h2>
 
 <p>[The following only applies to systems with unix-like signal handling. I&#39;d welcome additions for other systems, especially Windows.]</p>
-
-<p>The first thing to say is that signal handling in Perl versions less than 5.8 is <i>not</i> safe. There is always a small risk of Perl crashing and/or core dumping when, or after, handling a signal because the signal could arrive and be handled while internal data structures are being changed. If the signal handling code used those same internal data structures it could cause all manner of subtle and not-so-subtle problems. The risk was reduced with 5.4.4 but was still present in all perls up through 5.8.0.</p>
 
 <p>Beginning in perl 5.8.0 perl implements &#39;safe&#39; signal handling if your system has the POSIX sigaction() routine. Now when a signal is delivered perl just makes a note of it but does <i>not</i> run the %SIG handler. The handling is &#39;deferred&#39; until a &#39;safe&#39; moment.</p>
 
@@ -4034,7 +4030,7 @@ if ( $failed ) {
 
 <p>Similar techniques can be used for canceling statement execution.</p>
 
-<p>Unfortunately, this solution is somewhat messy, and it does <i>not</i> work with perl versions less than perl 5.8 where <code>POSIX::sigaction()</code> appears to be broken.</p>
+<p>Unfortunately, this solution is somewhat messy.</p>
 
 <p>For a cleaner implementation that works across perl versions, see Lincoln Baxter&#39;s Sys::SigAction module at <a>Sys::SigAction</a>. The documentation for Sys::SigAction includes an longer discussion of this problem, and a DBD::Oracle test script.</p>
 
@@ -4197,12 +4193,9 @@ TXN - trace transactions
 <li><p>Tied filehandles are not currently supported, as tie operations are not available to the PerlIO methods used by the DBI.</p>
 
 </li>
-<li><p>PerlIO layer support requires Perl version 5.8 or higher.</p>
-
-</li>
 </ul>
 
-<p>As of version 5.8, Perl provides the ability to layer various &quot;disciplines&quot; on an open filehandle via the <a>PerlIO</a> module.</p>
+<p>Perl provides the ability to layer various &quot;disciplines&quot; on an open filehandle via the <a>PerlIO</a> module.</p>
 
 <p>A simple example of using PerlIO layers is to use a scalar as the output:</p>
 

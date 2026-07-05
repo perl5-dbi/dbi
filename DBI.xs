@@ -63,13 +63,6 @@ static int use_xsbypass = 1; /* set in dbi_bootinit() */
 #  define DBI_save_hv_fetch_ent
 # endif
 
-/* prior to 5.8.9: when a CV is duped, the mg dup method is called,
- * then *afterwards*, any_ptr is copied from the old CV to the new CV.
- * This wipes out anything which the dup method did to any_ptr.
- * This needs working around */
-# if defined(USE_ITHREADS) && (PERL_VERSION == 8) && (PERL_SUBVERSION < 9)
-#  define BROKEN_DUP_ANY_PTR
-# endif
 #endif
 
 /* types of method name */
@@ -104,7 +97,7 @@ static I32      dbi_hash _((const char *string, long i));
 static void     dbih_dumphandle _((pTHX_ SV *h, const char *msg, int level));
 static int      dbih_dumpcom _((pTHX_ imp_xxh_t *imp_xxh, const char *msg, int level));
 static int      dbi_ima_free(pTHX_ SV* sv, MAGIC* mg);
-#if defined(USE_ITHREADS) && !defined(BROKEN_DUP_ANY_PTR)
+#if defined(USE_ITHREADS)
 static int      dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param);
 #endif
 char *neatsvpv _((SV *sv, STRLEN maxlen));
@@ -171,9 +164,6 @@ typedef struct dbi_ima_st {
     HV *stash;          /* the stash we found the GV in */
     GV *gv;             /* the GV containing the inner sub */
     U32 generation;     /* cache invalidation */
-#ifdef BROKEN_DUP_ANY_PTR
-    PerlInterpreter *my_perl; /* who owns this struct */
-#endif
 
 } dbi_ima_t;
 
@@ -236,7 +226,7 @@ static char *dbi_build_opt = "-nothread";
 
 static MGVTBL dbi_ima_vtbl = { 0, 0, 0, 0, dbi_ima_free,
                                     0,
-#if defined(USE_ITHREADS) && !defined(BROKEN_DUP_ANY_PTR)
+#if defined(USE_ITHREADS)
                                     dbi_ima_dup
 #else
                                     0
@@ -251,17 +241,13 @@ static MGVTBL dbi_ima_vtbl = { 0, 0, 0, 0, dbi_ima_free,
 static int dbi_ima_free(pTHX_ SV* sv, PERL_UNUSED_DECL MAGIC* mg)
 {
     dbi_ima_t *ima = (dbi_ima_t *)(CvXSUBANY((CV*)sv).any_ptr);
-#ifdef BROKEN_DUP_ANY_PTR
-    if (ima->my_perl != my_perl)
-        return 0;
-#endif
     SvREFCNT_dec(ima->stash);
     SvREFCNT_dec(ima->gv);
     Safefree(ima);
     return 0;
 }
 
-#if defined(USE_ITHREADS) && !defined(BROKEN_DUP_ANY_PTR)
+#if defined(USE_ITHREADS)
 static int dbi_ima_dup(pTHX_ MAGIC* mg, CLONE_PARAMS *param)
 {
     dbi_ima_t *ima, *nima;
@@ -3217,20 +3203,6 @@ XS(XS_DBI_dispatch)
     SV          *qsv       = Nullsv; /* quick result from a shortcut method   */
 
 
-#ifdef BROKEN_DUP_ANY_PTR
-    if (ima->my_perl != my_perl) {
-        /* we couldn't dup the ima struct at clone time, so do it now */
-        dbi_ima_t *nima;
-        Newx(nima, 1, dbi_ima_t);
-        *nima = *ima; /* structure copy */
-        CvXSUBANY(cv).any_ptr = nima;
-        nima->stash = NULL;
-        nima->gv    = NULL;
-        nima->my_perl = my_perl;
-        ima = nima;
-    }
-#endif
-
     ima_flags  = ima->flags;
     meth_type = ima->meth_type;
     if (trace_level >= 9) {
@@ -4783,11 +4755,7 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
      * pointer to the mg, but not the SV) */
     mg = sv_magicext((SV*)cv, NULL, DBI_MAGIC, &dbi_ima_vtbl,
                         (char *)cv, 0);
-#ifdef BROKEN_DUP_ANY_PTR
-    ima->my_perl = my_perl; /* who owns this struct */
-#else
     mg->mg_flags |= MGf_DUP;
-#endif
     ST(0) = &PL_sv_yes;
     }
 

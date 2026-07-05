@@ -20,7 +20,7 @@
 #  General Public License or the Artistic License, as specified in
 #  the Perl README file.
 
-require 5.008;
+require 5.010;
 
 use strict;
 use warnings;
