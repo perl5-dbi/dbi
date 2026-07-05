@@ -65,7 +65,7 @@ my %opts = (
         "Test::Simple"        => "0.90",
 	},
     PREREQ_PM                 => {
-	"Module::Load"        => 0,
+	"Module::Load"        => 0.22,
 	},
     META_MERGE                => {
 	resources             => {
