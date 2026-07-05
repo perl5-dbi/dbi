@@ -66,7 +66,7 @@ my %opts = (
 	},
     PREREQ_PM                 => {
 	"Module::Load"        => 0,
-	}
+	},
     META_MERGE                => {
 	resources             => {
 	    repository        => "https://github.com/perl5-dbi/dbi",
