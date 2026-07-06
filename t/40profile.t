@@ -461,31 +461,34 @@ is($total_time, 2.93, 'merged nodes foo/bar time');
 subtest "CVE-2026-14380" => sub {
 
     {
-        my $marker = sprintf('dbi-test-payload-%u-%u-%u', time, $$, 1);
+        my $marker = sprintf('dbi-test-payload-%1.6f-%u-%u-%u', $], time, $$, 1);
         local $ENV{DBI_PROFILE} = payload_for($marker);
         my $dbh = eval {
             DBI->connect("dbi:Sponge:", "", "", { RaiseError => 0 })
         };
         ok !( -e "/tmp/$marker" ), "ENV DBI_PROFILE payload";
+        unlink "/tmp/$marker" if -e "/tmp/$marker";
     }
 
     {
-        my $marker = sprintf('dbi-test-payload-%u-%u-%u', time, $$, 1);
+        my $marker = sprintf('dbi-test-payload-%1.6f-%u-%u-%u', $], time, $$, 2);
         my $dbh = DBI->connect("dbi:Sponge:", "", "", { RaiseError => 0 });
         eval {
             $dbh->{Profile} = payload_for($marker);
         };
         ok !( -e "/tmp/$marker" ), "Set Profile payload";
+        unlink "/tmp/$marker" if -e "/tmp/$marker";
     }
 
     {
-        my $marker  = sprintf('dbi-test-payload-%u-%u-%u', time, $$, 1);
+        my $marker = sprintf('dbi-test-payload-%1.6f-%u-%u-%u', $], time, $$, 3);
         my $payload = payload_for($marker);
         my $dsn = "dbi:Sponge(Profile=>$payload):";
         my $dbh = eval {
             DBI->connect($dsn, "", "", { RaiseError => 0 })
         };
         ok !( -e "/tmp/$marker" ), "DSN payload";
+        unlink "/tmp/$marker" if -e "/tmp/$marker";
     }
 
 };
