@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.650 - 04 Jul 2026
+=head2 Changes in DBI 1.650 - 05 Jul 2026
 
 =over 2
 
@@ -27,6 +27,10 @@ Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-1
 =item *
 
 Fix code injection via Profile DSN attribute or DBI_PROFILE variable (CVE-2026-14380)
+
+=item *
+
+Update dbipport.h to Devel::PPPort-3.73
 
 =back
 
