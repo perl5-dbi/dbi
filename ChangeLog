@@ -1,8 +1,9 @@
-1.650 - 2026-07-05, H.Merijn Brand
+1.650 - 2026-07-06, H.Merijn Brand & Rob
     * Set a hard limit of 99999 on '?' placeholders (CVE-2026-14739)
     * Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-14740)
     * Fix code injection via Profile DSN attribute or DBI_PROFILE variable (CVE-2026-14380)
     * Update dbipport.h to Devel::PPPort-3.73
+    * Require Test::More 0.96 (tests will otherwise fail on pristine perl-5.12)
 
 1.649 - 2026-06-22, H.Merijn Brand
     * Extra Cwd::abs_path required for Windows

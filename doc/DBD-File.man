@@ -434,4 +434,4 @@ SEE ALSO
        DBI, DBD::DBM, DBD::CSV, Text::CSV, Text::CSV_XS, SQL::Statement, and
        DBI::SQL::Nano
 
-perl v5.42.2                      2026-06-05                      DBD::File(3)
+perl v5.42.2                      2026-07-05                      DBD::File(3)

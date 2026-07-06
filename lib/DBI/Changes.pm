@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.650 - 05 Jul 2026
+=head2 Changes in DBI 1.650 - 06 Jul 2026
 
 =over 2
 
@@ -31,6 +31,10 @@ Fix code injection via Profile DSN attribute or DBI_PROFILE variable (CVE-2026-1
 =item *
 
 Update dbipport.h to Devel::PPPort-3.73
+
+=item *
+
+Require Test::More 0.96 (tests will otherwise fail on pristine perl-5.12)
 
 =back
 
