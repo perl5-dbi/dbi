@@ -460,6 +460,8 @@ is($total_time, 2.93, 'merged nodes foo/bar time');
 
 subtest "CVE-2026-14380" => sub {
 
+    plan tests => 3;
+
     {
         my $marker = sprintf('dbi-test-payload-%1.6f-%u-%u-%u', $], time, $$, 1);
         local $ENV{DBI_PROFILE} = payload_for($marker);
