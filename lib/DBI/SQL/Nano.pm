@@ -693,8 +693,8 @@ sub is_matched
         if ( $op eq '>' )  { return $val1 gt $val2; }
         if ( $op eq '=' )  { return $val1 eq $val2; }
         if ( $op eq '<>' ) { return $val1 ne $val2; }
-        if ( $op eq '<=' ) { return $val1 ge $val2; }
-        if ( $op eq '>=' ) { return $val1 le $val2; }
+        if ( $op eq '<=' ) { return $val1 le $val2; }
+        if ( $op eq '>=' ) { return $val1 ge $val2; }
     }
 }
 
