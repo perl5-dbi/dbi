@@ -5226,6 +5226,9 @@ _set_fbav(sth, src_rv)
     src_av = (AV*)SvRV(src_rv);
     src_fields = AvFILL(src_av)+1;
     if (src_fields != dst_fields) {
+        if ( dst_fields == 0 )
+            croak("_set_fbav(%s): array has %d elements, but the statement handle row buffer has 0",
+                    neatsvpv(src_rv,0), src_fields);
         warn("_set_fbav(%s): array has %d elements, the statement handle row buffer has %d (and NUM_OF_FIELDS is %d)",
                 neatsvpv(src_rv,0), src_fields, dst_fields, DBIc_NUM_FIELDS(imp_sth));
         SvREADONLY_off(dst_av);
