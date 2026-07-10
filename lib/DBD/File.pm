@@ -630,10 +630,10 @@ sub complete_table_name {
     # Note this triggers only when *used*, not at definition time
     #   $dbh->{csv_tables}{foo}{file} = "/out/side/scope/foo.csv"; # OK
     #   $dbh->do ("create table foo (c char)"); # FAIL
+    my @bases = map { Cwd::abs_path ($_) } $meta->{f_dir}, @{$meta->{f_dir_search} || []};
     if ($searchdir) {
         my $sd = Cwd::abs_path ($searchdir);
-        my @sd = map { Cwd::abs_path ($_) } $meta->{f_dir}, @{$meta->{f_dir_search} || []};
-	unless (List::Util::first { $_ eq $sd } @sd) {
+        unless (List::Util::first { $_ eq $sd } @bases) {
 	    croak "Using data files in $searchdir is unsafe and not allowed.\nUse f_dir or f_dir_search.\n";
 	    }
 	}
@@ -694,6 +694,14 @@ sub complete_table_name {
 	$meta->{f_fqln} = $meta->{f_fqbn} . $meta->{f_lockfile};
 
     $dir && !$user_spec_file  and $tbl = File::Spec->catfile ($dir, $tbl);
+
+    if ( -l $fqfn ) {
+        my $real = Cwd::abs_path($fqfn);
+        unless ( List::Util::any { $real =~ m{^\Q$_\E} } @bases ) {
+            croak "Data file $fqfn is a outside of f_dir f_and f_dir_search\n";
+        }
+    }
+
     $meta->{table_name} = $tbl;
 
     return $tbl;
