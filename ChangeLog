@@ -1,3 +1,6 @@
+1.651 - 2026-07-10, H.Merijn Brand & Robert Rothenberg
+    * 
+
 1.650 - 2026-07-06, H.Merijn Brand & Robert Rothenberg
     * Set a hard limit of 99999 on '?' placeholders (CVE-2026-14739)
     * Fix out-of-bounds read in preparse of SQL that starts with a comment (CVE-2026-14740)
