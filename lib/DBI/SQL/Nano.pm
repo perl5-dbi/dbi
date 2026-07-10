@@ -928,6 +928,7 @@ script by putting this at the top of the script:
     * op may be one of:
          < > >= <= = <> LIKE CLIKE IS
     * CLIKE is a case insensitive LIKE
+    * IS NULL matches against NULL and empty strings
 
   order_clause ::= column_name [ASC|DESC]
     * a single column optional ORDER BY clause is supported

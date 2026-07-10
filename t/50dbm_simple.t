@@ -114,6 +114,9 @@ my %tests_statement_results = (
 	    [ 2, 'apples' ],
 	    [ 1, 'oranges' ],
 	],
+	"SELECT * FROM fruit WHERE dVal IS NULL", [
+	    [ 3, '' ],
+	],
 	"DELETE FROM fruit", 4,
 	$dbi_sql_nano ? () : ( "SELECT COUNT(*) FROM fruit", [ [ 0 ] ] ),
 	"DROP TABLE fruit", -1,
