@@ -693,8 +693,8 @@ sub is_matched
         if ( $op eq '>' )  { return $val1 gt $val2; }
         if ( $op eq '=' )  { return $val1 eq $val2; }
         if ( $op eq '<>' ) { return $val1 ne $val2; }
-        if ( $op eq '<=' ) { return $val1 ge $val2; }
-        if ( $op eq '>=' ) { return $val1 le $val2; }
+        if ( $op eq '<=' ) { return $val1 le $val2; }
+        if ( $op eq '>=' ) { return $val1 ge $val2; }
     }
 }
 
@@ -928,6 +928,7 @@ script by putting this at the top of the script:
     * op may be one of:
          < > >= <= = <> LIKE CLIKE IS
     * CLIKE is a case insensitive LIKE
+    * IS NULL matches against NULL and empty strings
 
   order_clause ::= column_name [ASC|DESC]
     * a single column optional ORDER BY clause is supported
