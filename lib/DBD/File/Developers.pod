@@ -490,7 +490,7 @@ package satisfies DBD::File.
       $class =~ s/::Statement/::Table/;
 
       my $flags = {
-  	  createMode => $createMode,
+	  createMode => $createMode,
 	  lockMode   => $lockMode,
 	  };
       $self->{command} eq "DROP" and $flags->{dropMode} = 1;

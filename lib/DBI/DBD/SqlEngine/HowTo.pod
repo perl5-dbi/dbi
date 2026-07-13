@@ -105,7 +105,7 @@ C<init_valid_attributes> to your db class:
 	$dbh->SUPER::init_valid_attributes ();
 
 	$dbh->{foo_valid_attrs} = {
-	    foo_version 	=> 1,	# contains version of this driver
+	    foo_version		=> 1,	# contains version of this driver
 	    foo_valid_attrs	=> 1,	# contains the valid attributes of foo drivers
 	    foo_readonly_attrs	=> 1,	# contains immutable attributes of foo drivers
 	    foo_bar		=> 1,	# contains the bar attribute
@@ -114,7 +114,7 @@ C<init_valid_attributes> to your db class:
 	    foo_manager_type	=> 1,	# contains the manager class of the driver instance
 	};
 	$dbh->{foo_readonly_attrs} = {
-	    foo_version 	=> 1,	# ensure no-one modifies the driver version
+	    foo_version		=> 1,	# ensure no-one modifies the driver version
 	    foo_valid_attrs	=> 1,	# do not permit one to add more valid attributes ...
 	    foo_readonly_attrs	=> 1,	# ... or make the immutable mutable
 	    foo_manager		=> 1,	# manager is set internally only
@@ -205,7 +205,7 @@ C<init_valid_attributes> (re-capture L</Deal with own attributes>):
 	$dbh->SUPER::init_valid_attributes ();
 
 	$dbh->{foo_valid_attrs} = {
-	    foo_version 	=> 1,	# contains version of this driver
+	    foo_version		=> 1,	# contains version of this driver
 	    foo_valid_attrs	=> 1,	# contains the valid attributes of foo drivers
 	    foo_readonly_attrs	=> 1,	# contains immutable attributes of foo drivers
 	    foo_bar		=> 1,	# contains the bar attribute
@@ -215,7 +215,7 @@ C<init_valid_attributes> (re-capture L</Deal with own attributes>):
 	    foo_meta            => 1,   # contains the public interface to modify table meta attributes
 	};
 	$dbh->{foo_readonly_attrs} = {
-	    foo_version 	=> 1,	# ensure no-one modifies the driver version
+	    foo_version		=> 1,	# ensure no-one modifies the driver version
 	    foo_valid_attrs	=> 1,	# do not permit one to add more valid attributes ...
 	    foo_readonly_attrs	=> 1,	# ... or make the immutable mutable
 	    foo_manager		=> 1,	# manager is set internally only

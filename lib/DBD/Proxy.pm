@@ -449,7 +449,7 @@ sub table_info {
 		'TYPE' => $types,
 		'cache_filled' => 1
 		},
-    	'proxy_cache_only' => 1,
+	'proxy_cache_only' => 1,
     });
     $sth->SUPER::STORE('NUM_OF_FIELDS' => $numFields);
     $inner->{NAME} = $names;
@@ -634,7 +634,7 @@ sub finish ($) {
     $sth->SUPER::STORE('Active' => 0);
     return 0 unless $rsth; # Something's out of sync
     my $no_finish = exists($sth->{'proxy_no_finish'})
- 	? $sth->{'proxy_no_finish'}
+	? $sth->{'proxy_no_finish'}
 	: $sth->FETCH('Database')->{'proxy_no_finish'};
     unless ($no_finish) {
         local $SIG{__DIE__} = 'DEFAULT';

@@ -739,7 +739,7 @@ sub _auto_new {
             push @p, DBIprofile_Statement	if $element & 0x02;
             push @p, DBIprofile_MethodName	if $element & 0x04;
             push @p, DBIprofile_MethodClass	if $element & 0x08;
-            push @p, '!Caller2'            	if $element & 0x10;
+            push @p, '!Caller2'			if $element & 0x10;
             push @Path, ($reverse ? reverse @p : @p);
         }
         elsif ($element =~ m/^&(\w.*)/) {

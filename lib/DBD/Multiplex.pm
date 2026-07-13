@@ -686,7 +686,7 @@ sub execute {
 	$sth->{TYPE} = [ DBI::SQL_INTEGER, (DBI::SQL_VARCHAR) x 4 ];
 	$sth->SUPER::STORE(NUM_OF_FIELDS => 5);
 	$sth->SUPER::STORE(Active => 1);
-	$sth->{mx_union} = 1;     	# disable normal fetchrow_arrayref
+	$sth->{mx_union} = 1;		# disable normal fetchrow_arrayref
 	$sth->{mx_exit_mode} = 'all';	# XXX
 	$sth->set_err(0, undef);	# clear error, if any
 	# mx_method_all() has set {mx_as_select_results} for us

@@ -46,8 +46,8 @@ my %DEFAULT_SERVER_OPTIONS;
 {
     my $o = \%DEFAULT_SERVER_OPTIONS;
     $o->{'chroot'}     = undef,		# To be used in the initfile,
-    					# after loading the required
-    					# DBI drivers.
+					# after loading the required
+					# DBI drivers.
     $o->{'clients'} =
 	[ { 'mask' => '.*',
 	    'accept' => 1,

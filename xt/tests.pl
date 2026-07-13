@@ -156,7 +156,7 @@ sub mem_test {	# harness to help find basic leaks
 
     $cursor_a = $dbh->prepare($select)		if $level >= 2;
     $cursor_a->execute(@$params)		if $level >= 3;
-    $cursor_a->fetchrow_hashref()        	if $level >= 4;
+    $cursor_a->fetchrow_hashref()		if $level >= 4;
     my $rows = $cursor_a->fetchall_arrayref({})	if $level >= 4;
     $cursor_a->finish if $cursor_a && $cursor_a->{Active};
     undef $cursor_a;

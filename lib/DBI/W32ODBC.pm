@@ -150,7 +150,7 @@ sub rows {
 }
 
 sub finish {
-    shift->Close;						## uncommented this line
+    shift->Close;				## uncommented this line
 }
 
 # ---
@@ -163,11 +163,11 @@ sub rollback {
 }
 
 sub disconnect {
-	my ($h) = shift; 					## this will kill all the statement handles
+	my ($h) = shift;			## this will kill all the statement handles
 	foreach (@{$h->{'___sths'}}) {		## created for a specific connection
-		$_->Close if $_->{DSN};			##
-	}							        ##
-    $h->Close;  						##
+		$_->Close if $_->{DSN};		##
+	}				        ##
+    $h->Close;					##
 }
 
 sub err {

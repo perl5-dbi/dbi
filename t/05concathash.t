@@ -135,7 +135,7 @@ if (0) {
 
         print "\n";
         cmpthese(200_000, {
-  	    NotNeat => sub {DBI::_concat_hash_sorted(
+	    NotNeat => sub {DBI::_concat_hash_sorted(
                 $simple_hash, "=", ":",1,undef);
             },
 	    Neat    => sub {DBI::_concat_hash_sorted(

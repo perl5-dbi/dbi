@@ -122,7 +122,7 @@ SYNOPSIS
        the driver you're using.
 
    NOTES
-       This is the DBI specification that corresponds to DBI version 1.650
+       This is the DBI specification that corresponds to DBI version 1.651
        (see DBI::Changes for details).
 
        The DBI is evolving at a steady pace, so it's good to check that you
@@ -6441,4 +6441,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.42.2                      2026-07-05                            DBI(3)
+perl v5.42.2                      2026-07-13                            DBI(3)

@@ -126,7 +126,7 @@ sure that your issue isn't related to the driver you're using.
 
 ## NOTES
 
-This is the DBI specification that corresponds to DBI version 1.650
+This is the DBI specification that corresponds to DBI version 1.651
 (see [DBI::Changes](https://metacpan.org/pod/DBI%3A%3AChanges) for details).
 
 The DBI is evolving at a steady pace, so it's good to check that

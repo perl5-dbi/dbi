@@ -101,7 +101,7 @@ like($dbh->errstr,  qr/^Unknown field names: foo\b/, '... checking $dbh->errstr'
 is($dbh->state, 'S1000', '... checking $dbh->state');
 
 ok($dbh->{Executed}, '... checking Executed attribute for dbh');    # even though it failed
-$dbh->{Executed} = 0;       	                            # reset(able)
+$dbh->{Executed} = 0;			                            # reset(able)
 cmp_ok($dbh->{Executed}, '==', 0, '... checking Executed attribute for dbh (after reset)');
 
 cmp_ok($dbh->{ErrCount}, '==', 1, '... checking ErrCount attribute for dbh (after error was generated)');

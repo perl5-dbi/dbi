@@ -33,13 +33,13 @@ sub new
 	my $self= {};
 
 	$_=$connect_line;
- 	/^(DSN=)(.*)(;UID=)(.*)(;PWD=)(.*)(;)$/;
+	/^(DSN=)(.*)(;UID=)(.*)(;PWD=)(.*)(;)$/;
 
- 	#---- DBI CONNECTION VARIABLES
+	#---- DBI CONNECTION VARIABLES
 
- 	$self->{ODBC_DSN}=$2;
- 	$self->{ODBC_UID}=$4;
- 	$self->{ODBC_PWD}=$6;
+	$self->{ODBC_DSN}=$2;
+	$self->{ODBC_UID}=$4;
+	$self->{ODBC_PWD}=$6;
 
 	#---- DBI CONNECTION VARIABLES
 	$self->{DBI_DBNAME}=$self->{ODBC_DSN};
@@ -61,8 +61,8 @@ sub new
 #EMU --- $db->Sql('SELECT * FROM DUAL');
 sub Sql
 {
- 	my $self= shift;
- 	my $SQL_statment=shift;
+	my $self= shift;
+	my $SQL_statment=shift;
 
  #	print " SQL : $SQL_statment \n";
 
@@ -94,7 +94,7 @@ sub Sql
 	}
 
 # [R] provide compatibility with Win32::ODBC's way of identifying erroneous SQL statements
- 	return ($self->{'DBI_ERR'})?1:undef;
+	return ($self->{'DBI_ERR'})?1:undef;
 # -[R]-
 }
 
@@ -102,20 +102,20 @@ sub Sql
 #EMU --- $db->FetchRow())
 sub FetchRow
 {
- 	my $self= shift;
+	my $self= shift;
 
- 	my $sth=$self->{'DBI_STH'};
- 	if ($sth)
+	my $sth=$self->{'DBI_STH'};
+	if ($sth)
 	{
-	 	my @row=$sth->fetchrow_array;
-	 	$self->{'DBI_ROW'}=\@row;
+		my @row=$sth->fetchrow_array;
+		$self->{'DBI_ROW'}=\@row;
 
-	 	if (scalar(@row)>0)
-	 	{
+		if (scalar(@row)>0)
+		{
 			#-- the row of result is not nul
 			#-- return something nothing will be return else
 			return 1;
-	 	}
+		}
 	}
 	return undef;
 }
@@ -137,15 +137,15 @@ sub Data
 #EMU --- %record = $db->DataHash;
 sub DataHash
 {
- 	my $self= shift;
+	my $self= shift;
 
- 	my $p_name=$self->{'DBI_NAME'};
- 	my $p_row=$self->{'DBI_ROW'};
+	my $p_name=$self->{'DBI_NAME'};
+	my $p_row=$self->{'DBI_ROW'};
 
- 	my @name=@$p_name;
- 	my @row=@$p_row;
+	my @name=@$p_name;
+	my @row=@$p_row;
 
- 	my %DataHash;
+	my %DataHash;
 #print @name; print "\n"; print @row;
 # [R] new code that seems to work consistent with Win32::ODBC
 	while (@name)
@@ -174,23 +174,23 @@ sub DataHash
 #	}
 # -[R]-
 
- 	#--- Return Hash
- 	return %DataHash;
+	#--- Return Hash
+	return %DataHash;
 }
 
 
 #EMU --- $db->Error()
 sub Error
 {
- 	my $self= shift;
+	my $self= shift;
 
- 	if ($self->{'DBI_ERR'} ne '')
- 	{
+	if ($self->{'DBI_ERR'} ne '')
+	{
 		#--- Return error message
 		$self->{'DBI_ERRSTR'};
- 	}
+	}
 
- 	#-- else good no error message
+	#-- else good no error message
 }
 
 # [R] provide compatibility with Win32::ODBC's Close() method.
