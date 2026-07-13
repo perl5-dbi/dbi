@@ -405,8 +405,8 @@ my $keeperr = { O=>0x0004 };
 
     common => {		# Interface methods common to all DBI handle classes
 	'DESTROY'	=> { O=>0x004|0x10000 },
-	'CLEAR'  	=> $keeperr,
-	'EXISTS' 	=> $keeperr,
+	'CLEAR'		=> $keeperr,
+	'EXISTS'	=> $keeperr,
 	'FETCH'		=> { O=>0x0404 },
 	'FETCH_many'	=> { O=>0x0404 },
 	'FIRSTKEY'	=> $keeperr,
@@ -414,12 +414,12 @@ my $keeperr = { O=>0x0004 };
 	'STORE'		=> { O=>0x0418 | 0x4 },
 	'DELETE'	=> { O=>0x0404 },
 	can		=> { O=>0x0100 }, # special case, see dispatch
-	debug 	 	=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
-	dump_handle 	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
+	debug		=> { U =>[1,2,'[$debug_level]'],	O=>0x0004 }, # old name for trace
+	dump_handle	=> { U =>[1,3,'[$message [, $level]]'],	O=>0x0004 },
 	err		=> $keeperr,
 	errstr		=> $keeperr,
 	state		=> $keeperr,
-	func	   	=> { O=>0x0006	},
+	func		=> { O=>0x0006	},
 	parse_trace_flag   => { U =>[2,2,'$name'],	O=>0x0404, T=>8 },
 	parse_trace_flags  => { U =>[2,2,'$flags'],	O=>0x0404, T=>8 },
 	private_data	=> { U =>[1,1],			O=>0x0004 },
@@ -441,15 +441,15 @@ my $keeperr = { O=>0x0004 };
     db => {		# Database Session Class Interface
 	data_sources	=> { U =>[1,2,'[\%attr]' ], O=>0x0200 },
 	take_imp_data	=> { U =>[1,1], O=>0x10000 },
-	clone   	=> { U =>[1,2,'[\%attr]'], T=>0x200 },
-	connected   	=> { U =>[1,0], O => 0x0004, T=>0x200, H=>3 },
-	begin_work   	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400, T=>0x1000 },
-	commit     	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
-	rollback   	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
-	'do'       	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
+	clone		=> { U =>[1,2,'[\%attr]'], T=>0x200 },
+	connected	=> { U =>[1,0], O => 0x0004, T=>0x200, H=>3 },
+	begin_work	=> { U =>[1,2,'[ \%attr ]'], O=>0x0400, T=>0x1000 },
+	commit		=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
+	rollback	=> { U =>[1,1], O=>0x0480|0x0800, T=>0x1000 },
+	'do'		=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x3200 },
 	last_insert_id	=> { U =>[1,6,'[$catalog [,$schema [,$table_name [,$field_name [, \%attr ]]]]]'], O=>0x2800 },
-	preparse    	=> {  }, # XXX
-	prepare    	=> { U =>[2,3,'$statement [, \%attr]'],                    O=>0xA200 },
+	preparse	=> {  }, # XXX
+	prepare		=> { U =>[2,3,'$statement [, \%attr]'],                    O=>0xA200 },
 	prepare_cached	=> { U =>[2,4,'$statement [, \%attr [, $if_active ] ]'],   O=>0xA200 },
 	selectrow_array	=> { U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectrow_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
@@ -458,11 +458,11 @@ my $keeperr = { O=>0x0004 };
 	selectall_array   =>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectall_hashref=>{ U =>[3,0,'$statement, $keyfield [, \%attr [, @bind_params ] ]'], O=>0x2000 },
 	selectcol_arrayref=>{U =>[2,0,'$statement [, \%attr [, @bind_params ] ]'], O=>0x2000 },
-	ping       	=> { U =>[1,1], O=>0x0404 },
-	disconnect 	=> { U =>[1,1], O=>0x0400|0x0800|0x10000, T=>0x200 },
-	quote      	=> { U =>[2,3, '$string [, $data_type ]' ],   O=>0x0430, T=>2 },
+	ping		=> { U =>[1,1], O=>0x0404 },
+	disconnect	=> { U =>[1,1], O=>0x0400|0x0800|0x10000, T=>0x200 },
+	quote		=> { U =>[2,3, '$string [, $data_type ]' ],   O=>0x0430, T=>2 },
 	quote_identifier=> { U =>[2,6, '$name [, ...] [, \%attr ]' ], O=>0x0430, T=>2 },
-	rows       	=> $keeperr,
+	rows		=> $keeperr,
 
 	tables          => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ], O=>0x2200 },
 	table_info      => { U =>[1,6,'$catalog, $schema, $table, $type [, \%attr ]' ],	O=>0x2200|0x8800 },
@@ -488,11 +488,11 @@ my $keeperr = { O=>0x0004 };
 	execute_array     => { U =>[2,0,'\\%attribs [, @args]'],         O=>0x1040|0x4000 },
 	execute_for_fetch => { U =>[2,3,'$fetch_sub [, $tuple_status]'], O=>0x1040|0x4000 },
 
-	fetch    	  => undef, # alias for fetchrow_arrayref
+	fetch		  => undef, # alias for fetchrow_arrayref
 	fetchrow_arrayref => undef,
 	fetchrow_hashref  => undef,
 	fetchrow_array    => undef,
-	fetchrow   	  => undef, # old alias for fetchrow_array
+	fetchrow	  => undef, # old alias for fetchrow_array
 
 	fetchall_arrayref => { U =>[1,3, '[ $slice [, $max_rows]]'] },
 	fetchall_hashref  => { U =>[2,2,'$key_field'] },
@@ -501,8 +501,8 @@ my $keeperr = { O=>0x0004 };
 	blob_copy_to_file => { U =>[3,3,'$field, $filename_or_handleref'] },
 	dump_results => { U =>[1,5,'$maxfieldlen, $linesep, $fieldsep, $filehandle'] },
 	more_results => { U =>[1,1] },
-	finish     => 	{ U =>[1,1] },
-	cancel     => 	{ U =>[1,1], O=>0x0800 },
+	finish     =>	{ U =>[1,1] },
+	cancel     =>	{ U =>[1,1], O=>0x0800 },
 	rows       =>	$keeperr,
 
 	_get_fbav	=> undef,
@@ -1117,7 +1117,7 @@ sub data_diff {
     return "" if !$diff and $a_desc eq $b_desc;
 
     $diff ||= "Strings contain the same sequence of characters"
-    	if length($a);
+	if length($a);
     $diff .= "\n" if $diff;
     return "a: $a_desc\nb: $b_desc\n$diff";
 }
@@ -1249,7 +1249,7 @@ sub _new_drh {	# called by DBD::<drivername>::driver()
 	'State'		=> \$h_state_store,  # Holder for DBI::state
 	'Err'		=> \$h_err_store,    # Holder for DBI::err
 	'Errstr'	=> \$h_errstr_store, # Holder for DBI::errstr
-	'TraceLevel' 	=> 0,
+	'TraceLevel'	=> 0,
 	FetchHashKeyName=> 'NAME',
 	%$initial_attr,
     };
