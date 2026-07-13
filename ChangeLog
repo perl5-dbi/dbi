@@ -3,6 +3,7 @@
     * Document that IS NULL matches empty strings in DBI::SQL::Nano
     * Fix DBD::File to ensure that the table is not a symlink outside of f_dir (CVE-2026-15392)
     * Fix an out-of-bounds error when a statement handle has no fields but the source row is not empty (CVE-2026-60082)
+    * Add an overridable upper bound $MAX_PATH_DEPTH for DBI::ProfileData (CVE-2026-60081)
 
 1.650 - 2026-07-06, H.Merijn Brand & Robert Rothenberg
     * Set a hard limit of 99999 on '?' placeholders (CVE-2026-14739)
