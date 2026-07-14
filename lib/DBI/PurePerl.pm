@@ -959,7 +959,7 @@ sub set_err {
 }
 sub trace_msg {
     my ($h, $msg, $minlevel)=@_;
-    $minlevel = 1 unless defined $minlevel;
+    $minlevel //= 1;
     return unless $minlevel <= ($DBI::dbi_debug & 0xF);
     print $DBI::tfh $msg;
     return 1;

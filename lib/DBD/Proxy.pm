@@ -592,7 +592,7 @@ sub fetch ($) {
 
     my $data = $sth->{'proxy_data'};
 
-    $sth->{'proxy_rows'} = 0 unless defined $sth->{'proxy_rows'};
+    $sth->{'proxy_rows'} //= 0;
 
     if(!$data || !@$data) {
 	return undef unless $sth->SUPER::FETCH('Active');
@@ -624,7 +624,7 @@ sub fetch ($) {
 
 sub rows ($) {
     my $rows = shift->{'proxy_rows'};
-    return (defined $rows) ? $rows : -1;
+    return ($rows // -1);
 }
 
 sub finish ($) {

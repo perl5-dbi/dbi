@@ -34,7 +34,7 @@ sub _connection_get {
     my ($self) = @_;
 
     my $persist = $self->go_persist; # = 0 can force non-caching
-    $persist = $persist_all if not defined $persist;
+    $persist //= $persist_all;
     my $key = ($persist) ? $self->_connection_key : '';
     if ($persist{$key} && $self->_connection_check($persist{$key})) {
         $self->trace_msg("reusing persistent connection $key\n",0) if $self->trace >= 1;

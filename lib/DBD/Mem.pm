@@ -175,7 +175,7 @@ sub complete_table_name ($$;$)
 sub open_data ($)
 {
     my ( $self, $meta, $attrs, $flags ) = @_;
-    defined $meta->{data_tbl} or $meta->{data_tbl} = [];
+    $meta->{data_tbl} //= [];
 }
 
 ########################
@@ -207,7 +207,7 @@ sub bootstrap_table_meta
 {
     my ( $self, $dbh, $meta, $table ) = @_;
 
-    defined $meta->{sql_data_source} or $meta->{sql_data_source} = "DBD::Mem::DataSource";
+    $meta->{sql_data_source} //= "DBD::Mem::DataSource";
 
     $meta;
 }

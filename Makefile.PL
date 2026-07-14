@@ -155,9 +155,7 @@ if ($os eq "MSWin32"  &&  $Config{libs} =~ /\bPerlCRT.lib\b/ &&  -f "$Config{arc
 # Set aside some values for post_initialize() in package MY
 my ($cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp, $cfg_man3direxp) =
      @Config{qw( privlibexp archlibexp sitelibexp sitearchexp man3direxp )};
-for ($cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp, $cfg_man3direxp) {
-     $_ = "" unless defined $_;
-    }
+$_ //= "" for $cfg_privlibexp, $cfg_archlibexp, $cfg_sitelibexp, $cfg_sitearchexp, $cfg_man3direxp;
 
 my $conflictMsg = <<EOCM;
 ***

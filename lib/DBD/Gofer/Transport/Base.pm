@@ -177,7 +177,7 @@ sub response_retry_preference {
     if (my $go_retry_hook = $self->go_retry_hook) {
         my $retry = $go_retry_hook->($request, $response, $self);
         $self->trace_msg(sprintf "go_retry_hook returned %s\n",
-            (defined $retry) ? $retry : 'undef');
+            $retry // 'undef');
         return $retry if defined $retry;
     }
 

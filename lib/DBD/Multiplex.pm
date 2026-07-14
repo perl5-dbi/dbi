@@ -370,7 +370,7 @@ sub connect {
 	# There is no standard for the text following the driver name.
 	# Each driver is free to use whatever syntax it wants.
 	$dsn =~ s/\bmx_id=(\w+);?//;
-	my $mx_id = (defined $1) ? $1 : $dsn;
+	my $mx_id = $1 // $dsn;
 
 	# Retrieve the datasource mx_type
 	my $type_match = ($dsn =~ s/\bmx_type=(\w+);?//) ? $1 : '';

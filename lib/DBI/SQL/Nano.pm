@@ -668,8 +668,8 @@ sub is_matched
         return 1 if ( !defined $val1 or $val1 eq '' );
         return 0;
     }
-    $val1 = '' unless ( defined $val1 );
-    $val2 = '' unless ( defined $val2 );
+    $val1 //= '';
+    $val2 //= '';
     if ( $op =~ /LIKE|CLIKE/i )
     {
         $val2 = quotemeta($val2);

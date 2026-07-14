@@ -139,7 +139,7 @@ sub _dump {
 
 sub trace_msg {
     my ($self, $msg, $min_level) = @_;
-    $min_level = 1 unless defined $min_level;
+    $min_level //= 1;
     # transport trace level can override DBI's trace level
     $min_level = 0 if $self->trace >= $min_level;
     return DBI->trace_msg("gofer ".$msg, $min_level);

@@ -457,7 +457,7 @@ sub avail_tables {
 	while (defined ($file = $dirh->read ())) {
 	    my ($tbl, $meta) = $class->get_table_meta ($dbh, $file, 0, 0) or next; # XXX
 	    # $tbl && $meta && -f $meta->{f_fqfn} or next;
-	    $seen{defined $schema ? $schema : "\0"}{$dir}{$tbl}++ or
+	    $seen{$schema // "\0"}{$dir}{$tbl}++ or
 		push @tables, [ undef, $schema, $tbl, "TABLE", "FILE" ];
 	    }
 	$dirh->close () or
@@ -511,7 +511,7 @@ sub complete_table_name {
 
 sub apply_encoding {
     my ($self, $meta, $fn) = @_;
-    defined $fn or $fn = "file handle " . fileno ($meta->{fh});
+    $fn //= "file handle " . fileno ($meta->{fh});
     if (my $enc = $meta->{f_encoding}) {
 	binmode $meta->{fh}, ":encoding($enc)" or
 	    croak "Failed to set encoding layer '$enc' on $fn: $!";
@@ -932,7 +932,7 @@ sub seek ($$$$) {
     my ($self, $data, $pos, $whence) = @_;
     my $meta = $self->{meta};
     if ($whence == 0 && $pos == 0) {
-	$pos = defined $meta->{first_row_pos} ? $meta->{first_row_pos} : 0;
+	$pos = $meta->{first_row_pos} // 0;
 	}
     elsif ($whence != 2 || $pos != 0) {
 	croak "Illegal seek position: pos = $pos, whence = $whence";

@@ -207,7 +207,7 @@ sub connect ($$;$$$)
         my @ordered_attr =
           map  { $_->[0] }
           sort { $a->[1] <=> $b->[1] }
-          map  { [ $_, defined $order{$_} ? $order{$_} : 50 ] }
+          map  { [ $_, $order{$_} // 50 ] }
           keys %$attr;
 
         # initialize given attributes ... lower weighted before higher weighted
@@ -298,7 +298,7 @@ sub data_sources
     my ( $dbh, $attr, @other ) = @_;
     my $drh = $dbh->{Driver};    # XXX proxy issues?
     ref($attr) eq 'HASH' or $attr = {};
-    defined( $attr->{sql_table_source} ) or $attr->{sql_table_source} = $dbh->{sql_table_source};
+    $attr->{sql_table_source} //= $dbh->{sql_table_source};
     return $drh->data_sources( $attr, @other );
 }
 

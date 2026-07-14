@@ -280,8 +280,7 @@ sub bootstrap_table_meta
     $meta->{dbm_mldbm} ||= $dbh->{dbm_mldbm} if ( $dbh->{dbm_mldbm} );
     $meta->{dbm_berkeley_flags} ||= $dbh->{dbm_berkeley_flags};
 
-    defined $meta->{f_ext}
-      or $meta->{f_ext} = $dbh->{f_ext};
+    $meta->{f_ext} //= $dbh->{f_ext};
     unless ( defined( $meta->{f_ext} ) )
     {
         my $ext;

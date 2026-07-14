@@ -103,7 +103,7 @@ sub write_getinfo_pm
 {
     my ($dsn, $user, $pass, $driver) = @_ ? @_ : @ARGV;
     my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1});
-    $driver = "<foo>" unless defined $driver;
+    $driver //= "<foo>";
 
     print <<PERL;
 
@@ -312,7 +312,7 @@ sub write_typeinfo_pm
 {
     my ($dsn, $user, $pass, $driver) = @_ ? @_ : @ARGV;
     my $dbh = DBI->connect($dsn, $user, $pass, {AutoCommit=>1, RaiseError=>1});
-    $driver = "<foo>" unless defined $driver;
+    $driver //= "<foo>";
 
     print <<PERL;
 
@@ -433,7 +433,7 @@ PERL
         #-DEBUG-# print "dbi_key = $dbi_key\n";
         #-DEBUG-# print "odbc_key = $odbc_map{$dbi_key}\n";
         # Find the index in %odbc_map that has this key.
-        $dbi_to_odbc[$num] = (defined $odbc_map{$dbi_key}) ? $odbc_map{$dbi_key} : undef;
+        $dbi_to_odbc[$num] = $odbc_map{$dbi_key};
     }
 
     # Determine the length of the longest formatted value in each field
