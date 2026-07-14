@@ -681,15 +681,15 @@ sub connect {
 
 	my $dbh;
 	unless ($dbh = $drh->$connect_meth($dsn, $user, $pass, $attr)) {
-	    $user = '' if !defined $user;
-	    $dsn = '' if !defined $dsn;
+	    $user //= '';
+	    $dsn  //= '';
 	    # $drh->errstr isn't safe here because $dbh->DESTROY may not have
 	    # been called yet and so the dbh errstr would not have been copied
 	    # up to the drh errstr. Certainly true for connect_cached!
 	    my $errstr = $DBI::errstr;
             # Getting '(no error string)' here is a symptom of a ref loop
-	    $errstr = '(no error string)' if !defined $errstr;
-	    my $msg = "$class connect('$dsn','$user',...) failed: $errstr";
+	    $errstr //= '(no error string)';
+	    my $msg   = "$class connect('$dsn','$user',...) failed: $errstr";
 	    DBI->trace_msg("       $msg\n");
 	    # XXX HandleWarn
 	    unless ($attr->{HandleError} && $attr->{HandleError}->($msg, $drh, $dbh)) {
@@ -1082,8 +1082,8 @@ sub data_sources {
 
 sub neat_list {
     my ($listref, $maxlen, $sep) = @_;
-    $maxlen = 0 unless defined $maxlen;	# 0 == use internal default
-    $sep = ", " unless defined $sep;
+    $maxlen //= 0;	# 0 == use internal default
+    $sep    //= ", ";
     join($sep, map { neat($_,$maxlen) } @$listref);
 }
 
@@ -1441,7 +1441,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub visit_child_handles {
 	my ($h, $code, $info) = @_;
-	$info = {} if not defined $info;
+	$info //= {};
 	for my $ch (@{ $h->{ChildHandles} || []}) {
 	    next unless $ch;
 	    my $child_info = $code->($ch, $info)
@@ -1460,8 +1460,8 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub default_user {
 	my ($drh, $user, $pass, $attr) = @_;
-	$user = $ENV{DBI_USER} unless defined $user;
-	$pass = $ENV{DBI_PASS} unless defined $pass;
+	$user //= $ENV{DBI_USER};
+	$pass //= $ENV{DBI_PASS};
 	return ($user, $pass);
     }
 
@@ -1981,7 +1981,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 		$maxlen = @$ary if !$maxlen || @$ary > $maxlen;
 	    }
 	    # if there are no arrays then execute scalars once
-	    $maxlen = 1 unless defined $maxlen;
+	    $maxlen //= 1;
 	    my @bind_ids = 1..keys(%hash_of_arrays);
 
 	    my $tuple_idx = 0;
@@ -2046,7 +2046,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    # we copy the array here because fetch (currently) always
 	    # returns the same array ref. XXX
 	    if ($slice && @$slice) {
-                $max_rows = -1 unless defined $max_rows;
+                $max_rows //= -1;
 		push @rows, [ @{$row}[ @$slice] ]
 		    while($max_rows-- and $row = $sth->fetch);
 	    }
@@ -6339,7 +6339,7 @@ For example:
   else {
       for my $tuple (0..@last_names-1) {
           my $status = $tuple_status[$tuple];
-          $status = [0, "Skipped"] unless defined $status;
+          $status //= [0, "Skipped"];
           next unless ref $status;
           printf "Failed to insert (%s, %s): %s\n",
               $first_names[$tuple], $last_names[$tuple], $status->[1];
@@ -7445,7 +7445,7 @@ Here's how to convert fetched NULLs (undefined values) into empty strings:
 
   while($row = $sth->fetchrow_arrayref) {
     # this is a fast and simple way to deal with nulls:
-    foreach (@$row) { $_ = '' unless defined }
+    $_ //= '' for @$row;
     print "@$row\n";
   }
 
