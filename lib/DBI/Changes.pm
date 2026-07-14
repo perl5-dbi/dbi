@@ -12,6 +12,20 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.651 - 10 Jul 2026
+
+=over 2
+
+=item *
+
+Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)
+
+=item *
+
+Document that IS NULL matches empty strings in DBI::SQL::Nano
+
+=back
+
 =head2 Changes in DBI 1.650 - 06 Jul 2026
 
 =over 2
