@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.651 - 10 Jul 2026
+=head2 Changes in DBI 1.651 - 14 Jul 2026
 
 =over 2
 
@@ -23,6 +23,22 @@ Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)
 =item *
 
 Document that IS NULL matches empty strings in DBI::SQL::Nano
+
+=item *
+
+Fix DBD::File to ensure that the table is not a symlink outside of f_dir (CVE-2026-15392)
+
+=item *
+
+Fix an out-of-bounds error when a statement handle has no fields but the source row is not empty (CVE-2026-60082)
+
+=item *
+
+Add an overridable upper bound $MAX_PATH_DEPTH for DBI::ProfileData (CVE-2026-60081)
+
+=item *
+
+*** WARNING: Next release will require perl-5.12 ***
 
 =back
 
