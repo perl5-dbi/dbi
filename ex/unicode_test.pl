@@ -229,6 +229,7 @@ sub drop_table {
     # DBD::CSV seems to get upset by the mixed_lob_unicode_data test
     # and fails to drop the table with:
     # Execution ERROR: utf8 "\x89" does not map to Unicode at /usr/lib/perl/5.10/IO/Handle.pm line 167.
+    # TODO: Check if this is still the case for perl-5.12 and up
     unlink 'fred.csv' if $driver eq 'CSV';
     #diag($@) if $@;
 }

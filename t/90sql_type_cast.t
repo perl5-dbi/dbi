@@ -77,21 +77,12 @@ unless ($pp) {
     }
 }
 
-if ($] >= 5.010001) {
-   # Some numeric tests fail the return value test on Perls before 5.10.1
-   # because sv_2nv leaves NOK set - changed in 5.10.1 probably via the
-   # following change:
-   # The public IV and NV flags are now not set if the string
-   # value has trailing "garbage". This behaviour is consistent with not
-   # setting the public IV or NV flags if the value is out of range for the
-   # type.
-   push @tests, (
+push @tests, (
     ['non numeric cast to double',
      "aabb",                     SQL_DOUBLE,  0,              NO_CAST_NO_STRICT, q{["aabb"]}],
     ['non numeric cast to double (strict)',
      "aabb",                     SQL_DOUBLE,  DBIstcf_STRICT, NO_CAST_STRICT,    q{["aabb"]}]
    );
-}
 
 my $tests = @tests;
 $tests *= 2 if $jx;

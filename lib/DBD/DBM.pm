@@ -16,7 +16,7 @@
 #  DBD AUTHORS - see the comments in the code
 #
 #######################################################################
-require 5.008;
+require 5.012;
 use strict;
 use warnings;
 

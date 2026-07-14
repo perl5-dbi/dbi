@@ -5403,25 +5403,12 @@ Using DBI with perl threads is not yet recommended for production
 environments. For more information see
 [https://www.perlmonks.org/index.pl?node\_id=288022](https://www.perlmonks.org/index.pl?node_id=288022)
 
-Note: There is a bug in perl 5.8.2 when configured with threads and
-debugging enabled (bug #24463) which would cause some DBI tests to fail.
-These tests have been disabled for perl-5.8.2 and below.
-
 Tests for inner method cache are disabled for perl-5.10.x
 
 ## Signal Handling and Canceling Operations
 
 \[The following only applies to systems with unix-like signal handling.
 I'd welcome additions for other systems, especially Windows.\]
-
-The first thing to say is that signal handling in Perl versions less
-than 5.8 is _not_ safe. There is always a small risk of Perl
-crashing and/or core dumping when, or after, handling a signal
-because the signal could arrive and be handled while internal data
-structures are being changed. If the signal handling code
-used those same internal data structures it could cause all manner
-of subtle and not-so-subtle problems.  The risk was reduced with
-5.4.4 but was still present in all perls up through 5.8.0.
 
 Beginning in perl 5.8.0 perl implements 'safe' signal handling if
 your system has the POSIX sigaction() routine. Now when a signal
@@ -5540,11 +5527,10 @@ See previous example for the reasoning around the double eval.
 
 Similar techniques can be used for canceling statement execution.
 
-Unfortunately, this solution is somewhat messy, and it does _not_ work with
-perl versions less than perl 5.8 where `POSIX::sigaction()` appears to be broken.
+Unfortunately, this solution is somewhat messy.
 
-For a cleaner implementation that works across perl versions, see Lincoln Baxter's
-Sys::SigAction module at [Sys::SigAction](https://metacpan.org/pod/Sys%3A%3ASigAction).
+For a cleaner implementation that works across perl versions, see
+Lincoln Baxter's Sys::SigAction module at [Sys::SigAction](https://metacpan.org/pod/Sys%3A%3ASigAction).
 The documentation for Sys::SigAction includes an longer discussion
 of this problem, and a DBD::Oracle test script.
 
@@ -5818,10 +5804,9 @@ application has reset the trace file via another call to
 - Tied filehandles are not currently supported, as
 tie operations are not available to the PerlIO
 methods used by the DBI.
-- PerlIO layer support requires Perl version 5.8 or higher.
 
-As of version 5.8, Perl provides the ability to layer various
-"disciplines" on an open filehandle via the [PerlIO](https://metacpan.org/pod/PerlIO) module.
+Perl provides the ability to layer various "disciplines" on an open
+filehandle via the [PerlIO](https://metacpan.org/pod/PerlIO) module.
 
 A simple example of using PerlIO layers is to use a scalar as the output:
 

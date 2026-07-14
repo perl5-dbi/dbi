@@ -1,3 +1,6 @@
+1.652 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
+    * DBI now requires perl-5.12, driven by CVE's
+
 1.651 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
     * Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)
     * Document that IS NULL matches empty strings in DBI::SQL::Nano

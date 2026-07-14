@@ -6,23 +6,10 @@
 BEGIN { eval "use threads;" }	# Must be first
 my $use_threads_err = $@;
 use Config qw(%Config);
-# With this test code and threads, 5.8.1 has issues with freeing freed
-# scalars, while 5.8.9 doesn't; I don't know about in-between - DAPM
 my $has_threads = $Config{useithreads};
 die $use_threads_err if $has_threads && $use_threads_err;
 
 use Test::More;
-
-# weaken itself is buggy on 5.8.1 (magic killbackrefs panic
-#  triggered by threads, fixed in 5.8.2, but 5.8.2 has other
-#  issues that should have been fixed in 5.8.3, but 5.8.4 ..
-#  5.8.6 still fail where 5.8.7 PASSes
-if ($has_threads && $] < 5.008007) {
-    plan skip_all => "Test will fail in threaded perl <= 5.8.6";
-}
-if ($] >= 5.010000 && $] < 5.012000) {
-    plan skip_all => "Test will fail in perl-5.10.x";
-}
 
 use strict;
 
@@ -130,15 +117,12 @@ sub run_tests {
 run_tests("plain", new_handle());
 
 
-SKIP: {
-    skip "no threads / perl < 5.8.9", 12 unless $has_threads;
-    # only enable this when handles are allowed to be shared across threads
-    #{
-    #    my @h = new_handle();
-    #    threads->new(sub { run_tests("threads", @h) })->join; 
-    #}
-    threads->new(sub { run_tests("threads-h", new_handle()) })->join; 
-};
+# only enable this when handles are allowed to be shared across threads
+#{
+#    my @h = new_handle();
+#    threads->new(sub { run_tests("threads", @h) })->join; 
+#}
+threads->new(sub { run_tests("threads-h", new_handle()) })->join; 
 
 # using weaken attaches magic to the CV; see whether this interferes
 # with the cache magic
@@ -148,15 +132,11 @@ my $fetch_ref = \&DBI::st::fetch;
 weaken $fetch_ref;
 run_tests("magic", new_handle());
 
-SKIP: {
-    skip "no threads / perl < 5.8.9", 12 unless $has_threads;
-
-    # only enable this when handles are allowed to be shared across threads
-    #{
-    #    my @h = new_handle();
-    #    threads->new(sub { run_tests("threads", @h) })->join; 
-    #}
-    threads->new(sub { run_tests("magic threads-h", new_handle()) })->join; 
-};
+# only enable this when handles are allowed to be shared across threads
+#{
+#    my @h = new_handle();
+#    threads->new(sub { run_tests("threads", @h) })->join; 
+#}
+threads->new(sub { run_tests("magic threads-h", new_handle()) })->join; 
 
 1;

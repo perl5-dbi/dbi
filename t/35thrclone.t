@@ -17,12 +17,6 @@ BEGIN {
     die $use_threads_err if $use_threads_err; # need threads
 }
 
-BEGIN {
-    if ($] >= 5.010000 && $] < 5.010001) {
-	plan skip_all => "Threading bug in perl 5.10.0 fixed in 5.10.1";
-    }
-}
-
 my $threads = 4;
 plan tests => 4 + 4 * $threads;
 
@@ -51,13 +45,8 @@ sub testing {
     isa_ok( $dbh, 'DBI::db' );
     isnt($dbh, $dbh_parent, '... new $dbh is not the same instance as $dbh_parent');
  
-    SKIP: {
-	# skip seems broken with threads (5.8.3)
-	# skip "Kids attribute not supported under DBI::PurePerl", 1 if $DBI::PurePerl;
-
-        cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid')
-		unless $DBI::PurePerl && ok(1);
-    }
+    cmp_ok($dbh->{Driver}->{Kids}, '==', 1, '... the Driver has one Kid')
+	    unless $DBI::PurePerl && ok(1);
 
     # RT #77137: a thread created from a thread was crashing the
     # interpreter

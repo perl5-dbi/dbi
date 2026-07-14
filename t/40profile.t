@@ -20,10 +20,6 @@ BEGIN {
     plan skip_all => "profiling not supported for DBI::PurePerl"
         if $DBI::PurePerl;
 
-    # tie methods (STORE/FETCH etc) get called different number of times
-    plan skip_all => "test results assume perl >= 5.8.2"
-        if $] <= 5.008001;
-
     # clock instability on xen systems is a reasonably common cause of failure
     # http://www.nntp.perl.org/group/perl.cpan.testers/2009/05/msg3828158.html
     # so we'll skip automated testing on those systems

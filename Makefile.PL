@@ -8,7 +8,7 @@
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
-use 5.008_001;
+use 5.012_000;
 
 use ExtUtils::MakeMaker 5.16, qw(WriteMakefile $Verbose prompt);
 use Getopt::Long;
@@ -59,7 +59,7 @@ my %opts = (
     AUTHOR                    => 'DBI team (dbi-users@perl.org)',
     VERSION_FROM              => "DBI.pm",
     ABSTRACT_FROM             => "DBI.pm",
-    MIN_PERL_VERSION          => "5.008001",
+    MIN_PERL_VERSION          => "5.012000",
     BUILD_REQUIRES            => {
         "ExtUtils::MakeMaker" => "6.48",
         "Test::Simple"        => "0.96",
@@ -375,7 +375,7 @@ spellcheck checkpod:	doc
 dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
-	perl dbipport.h --compat-version=5.8.1 DBI.xs
+	perl dbipport.h --compat-version=5.12.0 DBI.xs
 
 # make dist does not remove existing .tar.gz causing questions
 newdist:
