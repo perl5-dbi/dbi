@@ -92,8 +92,10 @@ my %opts = (
 	OTHERLDFLAGS          => "$::opt_g",
 	},
     clean                     => {
-	FILES                 => "\$(DISTVNAME) Perl.xsi t/zv*_*.t dbi__null_test_tmp* test_output_*"
-                ." dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl dbiproxy.*log dbitrace.log dbi*.prof ndtest.prt" },
+	FILES                 => join " " => "\$(DISTVNAME)", "Perl.xsi cover_db",
+				"t/zv*_*.t dbi__null_test_tmp* test_output_*",
+				"dbiproxy$ext_pl dbiprof$ext_pl dbilogstrip$ext_pl",
+				"dbiproxy.*log dbitrace.log dbi*.prof ndtest.prt" },
     dist                      => {
 	DIST_DEFAULT          => "clean distcheck disttest tardist",
 	PREOP                 => '$(MAKE) -f Makefile.old distdir',
@@ -258,8 +260,20 @@ warn <<EOT if $os eq "MSWin32";
 EOT
 
     # This here instead of post_constants, as otherwise xt/ would be tested *before* t/
+    my %no_inc =
+	map  { $_ => 1 }
+	map  { s{^(.*/)inline.h$}{-ignore_re $1.*}; $_ }
+	grep { -s $_ }
+	map  { "$_/CORE/inline.h" }
+	@INC;
+    my $no_inc = join " " => "-ignore doc/make-doc.pl", sort keys %no_inc;
     my $min_vsn = ($] >= 5.024 && -d "xt" && -d "sandbox" && ($ENV{AUTOMATED_TESTING} || 0) != 1)
 	? join "\n" =>
+	    'cover $make_sep test_cover:',
+	    '	ccache -C',
+	    '	-@rm -f *.gc??',
+	    '	env AUTOMATED_TESTING=1 cover -test -jobs 17',
+	    "	cover -report html $no_inc",
 	    'test ::',
 	    '	-@env TEST_FILES="xt/*.t" make -e test_dynamic',
 	    ''

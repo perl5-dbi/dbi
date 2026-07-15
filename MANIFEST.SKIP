@@ -23,6 +23,7 @@
 ^appveyor\.yml
 ^blib/
 ^changes2pm\.pl
+^cover_db
 ^DBI-\d
 ^dbi.tiddlyspot.com.html
 ^dbilogstrip$
