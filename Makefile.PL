@@ -56,6 +56,7 @@ if ($^O eq "MSWin32" && $] < 5.012 && $File::Spec::VERSION < 3.31) {
 
 my %opts = (
     NAME                      => "DBI",
+    OBJECT                    => '$(O_FILES)',
     AUTHOR                    => 'DBI team (dbi-users@perl.org)',
     VERSION_FROM              => "DBI.pm",
     ABSTRACT_FROM             => "DBI.pm",

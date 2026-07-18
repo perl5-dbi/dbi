@@ -28,6 +28,7 @@ ex/unicode_test.pl
 lib/Bundle/DBI.pm		A bundle for automatic installation via CPAN.
 lib/DBD/DBM.pm			A driver for DBM files (uses DBD::File)
 lib/DBD/ExampleP.pm		A very simple example Driver module
+lib/DBD/MockAsync.pm		Reference mock driver for asynchronous DBI testing
 lib/DBD/File.pm			A driver base class for simple drivers
 lib/DBD/File/Developers.pod	Developer documentation for DBD::File
 lib/DBD/File/Roadmap.pod	Roadmap for DBD::File and other Pure Perl DBD's
@@ -93,7 +94,8 @@ t/13taint.t
 t/14utf8.t
 t/15array.t
 t/16destroy.t
-t/17handle_error.t
+t/18async.t
+t/19mock_async.t
 t/19fhtrace.t
 t/20meta.t
 t/30subclass.t
@@ -122,5 +124,6 @@ t/86gofer_fail.t
 t/87gofer_cache.t
 t/90sql_type_cast.t
 t/91_store_warning.t
+t/19mock_async.t		Test suite for DBD::MockAsync reference driver
 t/lib.pl		Utility functions for test scripts
 typemap
