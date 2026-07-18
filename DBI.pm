@@ -265,7 +265,18 @@ BEGIN {
    profile   => [ qw(
 	dbi_profile dbi_profile_merge dbi_profile_merge_nodes dbi_time
    ) ], # notionally "in" DBI::Profile and normally imported from there
+   async     => [ qw(
+	DBI_E_WOULDBLOCK
+	DBI_ASYNC_WOULDBLOCK
+	is_wouldblock
+   ) ],
 );
+
+sub is_wouldblock {
+    my $err_value = shift;
+    return 0 unless defined $err_value;
+    return ($err_value eq 'DBI_ASYNC_WOULDBLOCK') ? 1 : 0;
+}
 
 $DBI::dbi_debug = 0;          # mixture of bit fields and int sub-fields
 $DBI::neat_maxlen = 1000;
@@ -474,6 +485,8 @@ my $keeperr = { O=>0x0004 };
 	type_info_all	=> { U =>[1,1], O=>0x2200|0x0800 },
 	type_info	=> { U =>[1,2,'$data_type'], O=>0x2200 },
 	get_info	=> { U =>[2,2,'$info_type'], O=>0x2200|0x0800 },
+	async_read_ready  => { U =>[1,1] },
+	async_write_ready => { U =>[1,1] },
     },
     st => {		# Statement Class Interface
 	bind_col	=> { U =>[3,4,'$column, \\$var [, \%attr]'] },
@@ -482,6 +495,8 @@ my $keeperr = { O=>0x0004 };
 	bind_param_inout=> { U =>[4,5,'$parameter, \\$var, $maxlen, [, \%attr]'] },
 	execute		=> { U =>[1,0,'[@args]'], O=>0x1040 },
 	last_insert_id	=> { U =>[1,6,'[$catalog [,$schema [,$table_name [,$field_name [, \%attr ]]]]]'], O=>0x2800 },
+	async_read_ready  => { U =>[1,1] },
+	async_write_ready => { U =>[1,1] },
 
 	bind_param_array  => { U =>[3,4,'$parameter, $var [, \%attr]'] },
 	bind_param_inout_array => { U =>[4,5,'$parameter, \\@var, $maxlen, [, \%attr]'] },
@@ -490,7 +505,9 @@ my $keeperr = { O=>0x0004 };
 
 	fetch		  => undef, # alias for fetchrow_arrayref
 	fetchrow_arrayref => undef,
+	fetch_async_row   => undef,
 	fetchrow_hashref  => undef,
+	fetch_async_hashref => undef,
 	fetchrow_array    => undef,
 	fetchrow	  => undef, # old alias for fetchrow_array
 
@@ -1542,7 +1559,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    $attr->{$_} = $old_dbh->FETCH($_) for (qw(
 		AutoCommit ChopBlanks InactiveDestroy AutoInactiveDestroy
 		LongTruncOk PrintError PrintWarn Profile RaiseError RaiseWarn
-		ShowErrorStatement TaintIn TaintOut
+		ShowErrorStatement TaintIn TaintOut Async
 	    ));
 	}
 
@@ -1554,7 +1571,19 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 	    return $old_dbh->set_err($drh->err, $drh->errstr, $drh->state);
 	}
         $new_dbh->{dbi_connect_closure} = $closure;
+        $new_dbh->{AsyncWantRead} = 0;
+        $new_dbh->{AsyncWantWrite} = 0;
 	return $new_dbh;
+    }
+
+    sub async_read_ready {
+        my ($h) = @_;
+        return $h->set_err($DBI::stderr, "Driver does not support asynchronous execution", "IM001");
+    }
+
+    sub async_write_ready {
+        my ($h) = @_;
+        return $h->set_err($DBI::stderr, "Driver does not support asynchronous execution", "IM001");
     }
 
     sub quote_identifier {
@@ -1845,6 +1874,16 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     our @ISA = qw(DBD::_::common);
     use strict;
 
+    sub async_read_ready {
+        my ($h) = @_;
+        return $h->set_err($DBI::stderr, "Driver does not support asynchronous execution", "IM001");
+    }
+
+    sub async_write_ready {
+        my ($h) = @_;
+        return $h->set_err($DBI::stderr, "Driver does not support asynchronous execution", "IM001");
+    }
+
     sub bind_param { Carp::croak("Can't bind_param, not implement by driver") }
 
 #
@@ -2001,6 +2040,9 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
 
     sub execute_for_fetch {
 	my ($sth, $fetch_tuple_sub, $tuple_status) = @_;
+
+	return $sth->set_err($DBI::stderr, "execute_for_fetch is not supported when Async => 1")
+		if $sth->{Async};
 	# start with empty status array
 	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
 
