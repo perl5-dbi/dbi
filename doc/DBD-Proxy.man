@@ -237,4 +237,4 @@ AUTHOR AND COPYRIGHT
 SEE ALSO
        DBI, RPC::PlClient, Storable
 
-perl v5.42.2                      2026-07-13                     DBD::Proxy(3)
+perl v5.44.0                      2026-07-14                     DBD::Proxy(3)

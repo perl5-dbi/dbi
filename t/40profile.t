@@ -26,8 +26,6 @@ BEGIN {
     plan skip_all => "skipping profile tests on xen (due to clock instability)"
         if $Config{osvers} =~ /xen/ # eg 2.6.18-4-xen-amd64
         and $ENV{AUTOMATED_TESTING};
-
-    plan tests => 61;
 }
 
 $Data::Dumper::Indent = 1;
@@ -490,6 +488,8 @@ subtest "CVE-2026-14380" => sub {
     }
 
 };
+
+done_testing;
 
 exit 0;
 

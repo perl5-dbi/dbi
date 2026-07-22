@@ -13,8 +13,6 @@ $Data::Dumper::Indent = 1;
 $Data::Dumper::Sortkeys = 1;
 $Data::Dumper::Quotekeys = 0;
 
-plan tests => 24;
-
 my $dbh = DBI->connect("dbi:Sponge:foo","","", {
         PrintError => 0,
         RaiseError => 1,
@@ -120,5 +118,6 @@ if (0) {
     Benchmark::timethis(10, sub { go(\@perf)->fetchall_hashref([ 'C1','C2','C3' ]) });
 }
 
+done_testing;
 
 1; # end

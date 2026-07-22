@@ -18,8 +18,6 @@ BEGIN {
     plan skip_all => "skipping profile tests on xen (due to clock instability)"
         if $Config{osvers} =~ /xen/ # eg 2.6.18-4-xen-amd64
         and $ENV{AUTOMATED_TESTING};
-
-    plan tests => 31;
 }
 
 BEGIN {
@@ -152,5 +150,7 @@ ok(exists $Data->{$sql2}, "Data for '$sql2' should exist")
     or print Dumper($Data);
 ok(exists $Data->{$sql3}, "Data for '$sql3' should exist")
     or print Dumper($Data);
+
+done_testing;
 
 1;

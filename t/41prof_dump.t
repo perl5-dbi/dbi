@@ -23,8 +23,6 @@ BEGIN {
     plan skip_all => "skipping profile tests on xen (due to clock instability)"
         if $Config{osvers} =~ /xen/ # eg 2.6.18-4-xen-amd64
         and $ENV{AUTOMATED_TESTING};
-
-    plan tests => 15;
 }
 
 BEGIN {
@@ -101,5 +99,7 @@ SKIP: {
         unless eval { require Apache };
     require_ok('DBI::ProfileDumper::Apache')
 }
+
+done_testing;
 
 1;

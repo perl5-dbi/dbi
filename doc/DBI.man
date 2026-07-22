@@ -122,7 +122,7 @@ SYNOPSIS
        the driver you're using.
 
    NOTES
-       This is the DBI specification that corresponds to DBI version 1.651
+       This is the DBI specification that corresponds to DBI version 1.652
        (see DBI::Changes for details).
 
        The DBI is evolving at a steady pace, so it's good to check that you
@@ -4277,7 +4277,7 @@ DBI STATEMENT HANDLE OBJECTS
          else {
              for my $tuple (0..@last_names-1) {
                  my $status = $tuple_status[$tuple];
-                 $status = [0, "Skipped"] unless defined $status;
+                 $status //= [0, "Skipped"];
                  next unless ref $status;
                  printf "Failed to insert (%s, %s): %s\n",
                      $first_names[$tuple], $last_names[$tuple], $status->[1];
@@ -5355,7 +5355,7 @@ FURTHER INFORMATION
 
          while($row = $sth->fetchrow_arrayref) {
            # this is a fast and simple way to deal with nulls:
-           foreach (@$row) { $_ = '' unless defined }
+           $_ //= '' for @$row;
            print "@$row\n";
          }
 
@@ -5398,8 +5398,6 @@ FURTHER INFORMATION
        Using DBI with perl threads is not yet recommended for production
        environments. For more information see
        <https://www.perlmonks.org/index.pl?node_id=288022>
-
-       Tests for inner method cache are disabled for perl-5.10.x
 
    Signal Handling and Canceling Operations
        [The following only applies to systems with unix-like signal handling.
@@ -6152,7 +6150,7 @@ COPYRIGHT
        developer group (2024-2024) All rights reserved.
 
        You may distribute under the terms of either the GNU General Public
-       License or the Artistic License, as specified in the Perl 5.10.0 README
+       License or the Artistic License, as specified in the Perl 5.12.0 README
        file.
 
 SUPPORT / WARRANTY
@@ -6424,4 +6422,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.42.2                      2026-07-13                            DBI(3)
+perl v5.44.0                      2026-07-14                            DBI(3)

@@ -18,7 +18,6 @@ BEGIN {
 }
 
 my $threads = 4;
-plan tests => 4 + 4 * $threads;
 
 {
     package threads_sub;
@@ -77,5 +76,7 @@ foreach my $thread (@thr) {
 }
 
 pass('... all tests have passed');
+
+done_testing;
 
 1;

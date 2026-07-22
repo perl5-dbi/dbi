@@ -16,7 +16,7 @@ use strict;
 $|=1;
 $^W=1;
 
-plan tests => ($has_threads ? 49 : 13);
+$has_threads or diag("No threads available in this perl");
 
 use_ok( 'DBI' );
 
@@ -127,12 +127,14 @@ if ($has_threads) {
 
     # using weaken attaches magic to the CV; see whether this interferes
     # with the cache magic
+}
 
-    use Scalar::Util qw(weaken);
-    my $fetch_ref = \&DBI::st::fetch;
-    weaken $fetch_ref;
-    run_tests("magic", new_handle());
+use Scalar::Util qw(weaken);
+my $fetch_ref = \&DBI::st::fetch;
+weaken $fetch_ref;
+run_tests("magic", new_handle());
 
+if ($has_threads) {
     # only enable this when handles are allowed to be shared across threads
     #{
     #    my @h = new_handle();
@@ -140,8 +142,7 @@ if ($has_threads) {
     #}
     threads->new(sub { run_tests("magic threads-h", new_handle()) })->join; 
 }
-else {
-    diag("No threads available in this perl");
-}
+
+done_testing;
 
 1;

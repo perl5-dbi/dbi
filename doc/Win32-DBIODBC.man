@@ -27,4 +27,4 @@ TO DO
 AUTHOR
        Tom Horen <tho@melexis.com>
 
-perl v5.42.2                      2026-07-13                 Win32::DBIODBC(3)
+perl v5.44.0                      2026-07-13                 Win32::DBIODBC(3)

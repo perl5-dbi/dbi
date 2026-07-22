@@ -12,13 +12,17 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.652 - 14 Jul 2026
+=head2 Changes in DBI 1.652 - 22 Jul 2026
 
 =over 2
 
 =item *
 
 DBI now requires perl-5.12, driven by CVE's
+
+=item *
+
+Fix test for perl configured without threads (caught by perl-5.45.1)
 
 =back
 

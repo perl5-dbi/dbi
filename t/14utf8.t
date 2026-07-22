@@ -15,8 +15,6 @@ eval {
 plan skip_all => "Unable to load required module ($@)"
     unless defined &_utf8_on;
 
-plan tests => 16;
-
 my $dbh = DBI->connect("dbi:Sponge:foo","","", {
         PrintError => 0,
         RaiseError => 1,
@@ -69,5 +67,7 @@ ok my $hash = $sth->fetchrow_hashref;
 ok 1 == grep { is_utf8($_) } keys %$hash;
 
 $sth->finish;
+
+done_testing;
 
 # end

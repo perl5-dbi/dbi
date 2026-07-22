@@ -10,9 +10,6 @@ BEGIN {
 	if ($DBI::PurePerl) {
 		plan skip_all => 'preparse not supported for DBI::PurePerl';
 	}
-	else {
-		plan tests => 39;
-	}
 }
 
 my $dbh = DBI->connect("dbi:ExampleP:", "", "", {
@@ -144,5 +141,7 @@ is( $DBI::errstr, "preparse found unterminated bracketed {...} comment" );
 # --------------------------------------------------------------------- #
 
 $dbh->disconnect;
+
+done_testing;
 
 1;

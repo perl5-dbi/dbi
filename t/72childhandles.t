@@ -23,8 +23,6 @@ if (!$HAS_WEAKEN) {
     exit 0;
 }
 
-plan tests => 16;
-
 my $using_dbd_gofer = ($ENV{DBI_AUTOPROXY}||'') =~ /^dbi:Gofer.*transport=/i;
 
 my $drh;
@@ -145,5 +143,7 @@ SKIP: {
     my @live = grep { defined } @$handles;
     is scalar @live, 0;
 }
+
+done_testing;
 
 1;

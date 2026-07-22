@@ -126,7 +126,7 @@ sure that your issue isn't related to the driver you're using.
 
 ## NOTES
 
-This is the DBI specification that corresponds to DBI version 1.651
+This is the DBI specification that corresponds to DBI version 1.652
 (see [DBI::Changes](https://metacpan.org/pod/DBI%3A%3AChanges) for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -4274,7 +4274,7 @@ For example:
     else {
         for my $tuple (0..@last_names-1) {
             my $status = $tuple_status[$tuple];
-            $status = [0, "Skipped"] unless defined $status;
+            $status //= [0, "Skipped"];
             next unless ref $status;
             printf "Failed to insert (%s, %s): %s\n",
                 $first_names[$tuple], $last_names[$tuple], $status->[1];
@@ -5359,7 +5359,7 @@ Here's how to convert fetched NULLs (undefined values) into empty strings:
 
     while($row = $sth->fetchrow_arrayref) {
       # this is a fast and simple way to deal with nulls:
-      foreach (@$row) { $_ = '' unless defined }
+      $_ //= '' for @$row;
       print "@$row\n";
     }
 
@@ -5402,8 +5402,6 @@ can cause problems. You have been warned.
 Using DBI with perl threads is not yet recommended for production
 environments. For more information see
 [https://www.perlmonks.org/index.pl?node\_id=288022](https://www.perlmonks.org/index.pl?node_id=288022)
-
-Tests for inner method cache are disabled for perl-5.10.x
 
 ## Signal Handling and Canceling Operations
 
@@ -6199,7 +6197,7 @@ The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland.
 The DBI developer group (2024-2024) All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl 5.10.0 README file.
+License or the Artistic License, as specified in the Perl 5.12.0 README file.
 
 # SUPPORT / WARRANTY
 

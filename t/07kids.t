@@ -10,7 +10,6 @@ use DBI 1.50; # also tests Exporter::require_version
 BEGIN {
 	plan skip_all => '$h->{Kids} attribute not supported for DBI::PurePerl'
 		if $DBI::PurePerl && $DBI::PurePerl; # doubled to avoid typo warning
-	plan tests => 20;
 }
 
 ## ----------------------------------------------------------------------------
@@ -100,3 +99,4 @@ ok(!defined($dbh), '... lets be sure that $dbh is not undefined');
 cmp_ok( $drh->{Kids}, '==', 0, '... driver handle has 0 Kid(s) after undef $dbh');
 cmp_ok( $drh->{ActiveKids}, '==', 0, '... driver handle has 0 ActiveKid(s) after undef $dbh');
 
+done_testing;

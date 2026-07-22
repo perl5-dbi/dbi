@@ -110,4 +110,4 @@ APPENDIX
        inside the do() method for the response from the database. Normally
        that would block.
 
-perl v5.42.2                      2013-04-05             DBD::Go...rostream(3)
+perl v5.44.0                      2013-04-05             DBD::Go...rostream(3)

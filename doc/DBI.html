@@ -422,7 +422,7 @@ $rc  = $dbh-&gt;disconnect;</code></pre>
 
 <h2 id="NOTES">NOTES</h2>
 
-<p>This is the DBI specification that corresponds to DBI version 1.651 (see <a>DBI::Changes</a> for details).</p>
+<p>This is the DBI specification that corresponds to DBI version 1.652 (see <a>DBI::Changes</a> for details).</p>
 
 <p>The DBI is evolving at a steady pace, so it&#39;s good to check that you have the latest copy.</p>
 
@@ -3196,7 +3196,7 @@ if ($tuples) {
 else {
     for my $tuple (0..@last_names-1) {
         my $status = $tuple_status[$tuple];
-        $status = [0, &quot;Skipped&quot;] unless defined $status;
+        $status //= [0, &quot;Skipped&quot;];
         next unless ref $status;
         printf &quot;Failed to insert (%s, %s): %s\n&quot;,
             $first_names[$tuple], $last_names[$tuple], $status-&gt;[1];
@@ -3910,7 +3910,7 @@ $dbh-&gt;disconnect;</code></pre>
 
 <pre><code>while($row = $sth-&gt;fetchrow_arrayref) {
   # this is a fast and simple way to deal with nulls:
-  foreach (@$row) { $_ = &#39;&#39; unless defined }
+  $_ //= &#39;&#39; for @$row;
   print &quot;@$row\n&quot;;
 }</code></pre>
 
@@ -3931,8 +3931,6 @@ $dbh-&gt;disconnect;</code></pre>
 <p>But BEWARE, some underlying database APIs (the code the DBD driver uses to talk to the database, often supplied by the database vendor) are not thread safe. If it&#39;s not thread safe, then allowing more than one thread to enter the code at the same time may cause subtle/serious problems. In some cases allowing more than one thread to enter the code, even if <i>not</i> at the same time, can cause problems. You have been warned.</p>
 
 <p>Using DBI with perl threads is not yet recommended for production environments. For more information see <a href="https://www.perlmonks.org/index.pl?node_id=288022">https://www.perlmonks.org/index.pl?node_id=288022</a></p>
-
-<p>Tests for inner method cache are disabled for perl-5.10.x</p>
 
 <h2 id="Signal-Handling-and-Canceling-Operations">Signal Handling and Canceling Operations</h2>
 
@@ -4528,7 +4526,7 @@ http://online.securityfocus.com/infocus/1644</code></pre>
 
 <p>The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland. The DBI developer group (2024-2024) All rights reserved.</p>
 
-<p>You may distribute under the terms of either the GNU General Public License or the Artistic License, as specified in the Perl 5.10.0 README file.</p>
+<p>You may distribute under the terms of either the GNU General Public License or the Artistic License, as specified in the Perl 5.12.0 README file.</p>
 
 <h1 id="SUPPORT-WARRANTY">SUPPORT / WARRANTY</h1>
 

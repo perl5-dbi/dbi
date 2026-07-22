@@ -84,15 +84,6 @@ push @tests, (
      "aabb",                     SQL_DOUBLE,  DBIstcf_STRICT, NO_CAST_STRICT,    q{["aabb"]}]
    );
 
-my $tests = @tests;
-$tests *= 2 if $jx;
-foreach (@tests) {
-    $tests++ if ($dp) && ($_->[3] & DBIstcf_DISCARD_STRING);
-    $tests++ if ($dp) && ($_->[2] == SQL_DOUBLE);
-}
-
-plan tests => $tests;
-
 foreach my $test(@tests) {
     my $val = $test->[1];
     #diag(join(",", map {neat($_)} Data::Peek::DDual($val)));
@@ -144,5 +135,7 @@ foreach my $test(@tests) {
         }
     }
 }
+
+done_testing;
 
 1;
