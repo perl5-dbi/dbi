@@ -3,8 +3,8 @@
 # check that the inner-method lookup cache works
 # (or rather, check that it doesn't cache things when it shouldn't)
 
-BEGIN { eval "use threads;" }	# Must be first
-my $use_threads_err = $@;
+my $use_threads_err;
+BEGIN { eval "use threads;"; $use_threads_err = $@; }	# Must be first
 use Config qw(%Config);
 my $has_threads = $Config{useithreads};
 die $use_threads_err if $has_threads && $use_threads_err;
@@ -16,7 +16,7 @@ use strict;
 $|=1;
 $^W=1;
 
-plan tests => 49;
+plan tests => ($has_threads ? 49 : 13);
 
 use_ok( 'DBI' );
 
@@ -117,26 +117,31 @@ sub run_tests {
 run_tests("plain", new_handle());
 
 
-# only enable this when handles are allowed to be shared across threads
-#{
-#    my @h = new_handle();
-#    threads->new(sub { run_tests("threads", @h) })->join; 
-#}
-threads->new(sub { run_tests("threads-h", new_handle()) })->join; 
+if ($has_threads) {
+    # only enable this when handles are allowed to be shared across threads
+    #{
+    #    my @h = new_handle();
+    #    threads->new(sub { run_tests("threads", @h) })->join; 
+    #}
+    threads->new(sub { run_tests("threads-h", new_handle()) })->join; 
 
-# using weaken attaches magic to the CV; see whether this interferes
-# with the cache magic
+    # using weaken attaches magic to the CV; see whether this interferes
+    # with the cache magic
 
-use Scalar::Util qw(weaken);
-my $fetch_ref = \&DBI::st::fetch;
-weaken $fetch_ref;
-run_tests("magic", new_handle());
+    use Scalar::Util qw(weaken);
+    my $fetch_ref = \&DBI::st::fetch;
+    weaken $fetch_ref;
+    run_tests("magic", new_handle());
 
-# only enable this when handles are allowed to be shared across threads
-#{
-#    my @h = new_handle();
-#    threads->new(sub { run_tests("threads", @h) })->join; 
-#}
-threads->new(sub { run_tests("magic threads-h", new_handle()) })->join; 
+    # only enable this when handles are allowed to be shared across threads
+    #{
+    #    my @h = new_handle();
+    #    threads->new(sub { run_tests("threads", @h) })->join; 
+    #}
+    threads->new(sub { run_tests("magic threads-h", new_handle()) })->join; 
+}
+else {
+    diag("No threads available in this perl");
+}
 
 1;
