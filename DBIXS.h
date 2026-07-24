@@ -289,11 +289,45 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_Callbacks   0x200000      /* has Callbacks attribute hash         */
 #define DBIcf_AIADESTROY  0x400000      /* auto DBIcf_IADESTROY if pid changes  */
 #define DBIcf_RaiseWarn   0x800000      /* throw exception (croak) on warn      */
+/* Async I/O bit allocation in high bytes of flags integer */
+#define DBIcf_Async               0x01000000
+#define DBIcf_AsyncWantRead       0x02000000
+#define DBIcf_AsyncWantWrite      0x04000000
+#define DBIcf_AsyncMultiplex      0x08000000
+#define DBIcf_AsyncBufferWrites   0x10000000
+#define DBIcf_TransactionPending  0x20000000
 /* NOTE: new flags may require clone() to be updated */
+
+/* Standard error state for event loop yield */
+#ifndef DBI_E_WOULDBLOCK
+#define DBI_E_WOULDBLOCK -1
+#endif
+
+/* Core accessor Macros for driver authors */
+#define DBIc_ASYNC(imp_xxh)             (DBIc_FLAGS(imp_xxh) & DBIcf_Async)
+#define DBIc_ASYNC_on(imp_xxh)          (DBIc_FLAGS(imp_xxh) |= DBIcf_Async)
+#define DBIc_ASYNC_off(imp_xxh)         (DBIc_FLAGS(imp_xxh) &= ~DBIcf_Async)
+
+#define DBIc_ASYNC_WANT_READ(imp_xxh)      (DBIc_FLAGS(imp_xxh) & DBIcf_AsyncWantRead)
+#define DBIc_ASYNC_WANT_READ_on(imp_xxh)   (DBIc_FLAGS(imp_xxh) |= DBIcf_AsyncWantRead)
+#define DBIc_ASYNC_WANT_READ_off(imp_xxh)  (DBIc_FLAGS(imp_xxh) &= ~DBIcf_AsyncWantRead)
+
+#define DBIc_ASYNC_WANT_WRITE(imp_xxh)     (DBIc_FLAGS(imp_xxh) & DBIcf_AsyncWantWrite)
+#define DBIc_ASYNC_WANT_WRITE_on(imp_xxh)  (DBIc_FLAGS(imp_xxh) |= DBIcf_AsyncWantWrite)
+#define DBIc_ASYNC_WANT_WRITE_off(imp_xxh) (DBIc_FLAGS(imp_xxh) &= ~DBIcf_AsyncWantWrite)
+
+#define DBIc_ASYNC_MULTIPLEX(imp_xxh)      (DBIc_FLAGS(imp_xxh) & DBIcf_AsyncMultiplex)
+#define DBIc_ASYNC_MULTIPLEX_on(imp_xxh)   (DBIc_FLAGS(imp_xxh) |= DBIcf_AsyncMultiplex)
+#define DBIc_ASYNC_MULTIPLEX_off(imp_xxh)  (DBIc_FLAGS(imp_xxh) &= ~DBIcf_AsyncMultiplex)
+
+#define DBIc_ASYNC_BUFFER_WRITES(imp_xxh)     (DBIc_FLAGS(imp_xxh) & DBIcf_AsyncBufferWrites)
+#define DBIc_ASYNC_BUFFER_WRITES_on(imp_xxh)  (DBIc_FLAGS(imp_xxh) |= DBIcf_AsyncBufferWrites)
+#define DBIc_ASYNC_BUFFER_WRITES_off(imp_xxh) (DBIc_FLAGS(imp_xxh) &= ~DBIcf_AsyncBufferWrites)
 
 #define DBIcf_INHERITMASK               /* what NOT to pass on to children */   \
   (U32)( DBIcf_COMSET | DBIcf_IMPSET | DBIcf_ACTIVE | DBIcf_IADESTROY \
-  | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed | DBIcf_Callbacks )
+  | DBIcf_AutoCommit | DBIcf_BegunWork | DBIcf_Executed | DBIcf_Callbacks \
+  | DBIcf_AsyncWantRead | DBIcf_AsyncWantWrite )
 
 /* general purpose bit setting and testing macros                       */
 #define DBIbf_is( bitset,flag)          ((bitset) &   (flag))

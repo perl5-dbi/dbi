@@ -126,9 +126,22 @@ use constant IMA_CLEAR_CACHED_KIDS    => 0x10000; #/* clear CachedKids before ca
 
 use constant DBIstcf_STRICT           => 0x0001;
 use constant DBIstcf_DISCARD_STRING   => 0x0002;
+use constant DBI_E_WOULDBLOCK         => -1;
+use constant DBI_ASYNC_WOULDBLOCK     => -1;
+
+sub is_wouldblock {
+    my $err_value = shift;
+    return 0 unless defined $err_value;
+    return ($err_value eq 'DBI_ASYNC_WOULDBLOCK' || $err_value eq 'DBI_E_WOULDBLOCK' || $err_value eq '-1' || $err_value == -1) ? 1 : 0;
+}
 
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active
+	Async
+	AsyncWantRead
+	AsyncWantWrite
+	AsyncMultiplex
+	AsyncBufferWrites
 	AutoCommit
 	ChopBlanks
 	CompatMode
@@ -149,6 +162,8 @@ my %is_flag_attribute = map {$_ =>1 } qw(
 );
 my %is_valid_attribute = map {$_ =>1 } (keys %is_flag_attribute, qw(
 	ActiveKids
+	AsyncWatcher
+	AsyncErrorDetails
 	Attribution
 	BegunWork
 	CachedKids
@@ -218,6 +233,17 @@ sub  _install_method {
     my @pre_call_frag;
 
     return if $method_name eq 'can';
+
+    push @pre_call_frag, q{
+        if ($h->{Async}) {
+            if (defined $h->{dbi_pp_pid} && $$ != $h->{dbi_pp_pid}) {
+                Carp::croak("PID mismatch on async handle $h ($h->{dbi_pp_pid} vs $$): handle created in parent process cannot be used in child fork");
+            }
+            if (!$h->{AsyncMultiplex} && $h->{AsyncWantRead}) {
+                Carp::croak("Synchronous concurrency violation on busy handle $h: cannot invoke method while AsyncWantRead is active");
+            }
+        }
+    } unless $method_name =~ /^(async_read_ready|async_write_ready|FETCH|STORE|DESTROY)$/;
 
     push @pre_call_frag, q{
         delete $h->{CachedKids};
@@ -361,7 +387,7 @@ sub  _install_method {
 	    my($pe,$pw,$re,$rw,$he) = @{$h}{qw(PrintError PrintWarn RaiseError RaiseWarn HandleError)};
 	    my $msg;
 
-	    if ($err && ($pe || $re || $he)	# error
+	    if ($err && !is_wouldblock($err) && ($pe || $re || $he)	# error
 	    or (!$err && length($err) && ($pw || $rw))	# warning
 	    ) {
 		my $last = ($DBI::last_method_except{$method_name})
@@ -866,7 +892,22 @@ sub FETCH {
 }
 sub STORE {
     my ($h,$key,$value) = @_;
-    if ($key eq 'AutoCommit') {
+    if ($key eq 'Async') {
+        if ($value) {
+            my $imp = $h->{ImplementorClass} || ref($h);
+            my $code = $imp->can('async_read_ready');
+            my $stash_name = '';
+            if ($code) {
+                require B;
+                my $obj = B::svref_2object($code);
+                $stash_name = $obj->GV->STASH->NAME if $obj && $obj->can('GV') && $obj->GV && $obj->GV->can('STASH') && $obj->GV->STASH;
+            }
+            if (!$code || $stash_name =~ /^DBD::_::/ || $stash_name =~ /^DBI::/) {
+                Carp::croak('Driver does not support non-blocking asynchronous execution (Async => 1)');
+            }
+        }
+    }
+    elsif ($key eq 'AutoCommit') {
         Carp::croak("DBD driver has not implemented the AutoCommit attribute")
 	    unless $value == -900 || $value == -901;
 	$value = ($value == -901);

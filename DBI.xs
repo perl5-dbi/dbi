@@ -77,6 +77,7 @@ static int       dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
 
 static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method));
 static int      set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
+static SV *DBI_async_wouldblock_sv = NULL;
 static int      quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int      sql_type_cast_svpv _((pTHX_ SV *sv, int sql_type, U32 flags, void *v));
 static I32      dbi_hash _((const char *string, long i));
@@ -171,6 +172,7 @@ typedef struct dbi_ima_st {
 #define IMA_HIDE_ERR_PARAMVALUES  0x00004000  /* ParamValues are not relevant */
 #define IMA_IS_FACTORY            0x00008000  /* new h ie connect and prepare */
 #define IMA_CLEAR_CACHED_KIDS     0x00010000  /* clear CachedKids before call */
+#define IMA_ASYNC_METHOD          0x00020000  /* non-blocking polling method  */
 
 #define DBIc_STATE_adjust(imp_xxh, state)                                \
     (SvOK(state)        /* SQLSTATE is implemented by driver   */        \
@@ -524,6 +526,12 @@ dbi_bootinit(dbistate_t * parent_dbis)
     DBIS->bind_col    = dbih_sth_bind_col;
     DBIS->sql_type_cast_svpv = sql_type_cast_svpv;
 
+    if (!DBI_async_wouldblock_sv) {
+        DBI_async_wouldblock_sv = newSViv(-1);
+        sv_setpv(DBI_async_wouldblock_sv, "DBI_ASYNC_WOULDBLOCK");
+        SvIOK_on(DBI_async_wouldblock_sv);
+    }
+
 
     /* Remember the last handle used. BEWARE! Sneaky stuff here!        */
     /* We want a handle reference but we don't want to increment        */
@@ -793,7 +801,15 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         sv_setsv(h_errstr, errstr);
 
     /* SvTRUE(err) > "0" > "" > undef */
-    if (SvTRUE(err)             /* new error: so assign                 */
+    if (SvIOK(err) && SvIV(err) == -1) {
+        sv_setsv(h_err, DBI_async_wouldblock_sv);
+        err_changed = 1;
+    }
+    else if (SvPOK(err) && (strEQ(SvPV_nolen(err), "DBI_ASYNC_WOULDBLOCK") || strEQ(SvPV_nolen(err), "-1"))) {
+        sv_setsv(h_err, DBI_async_wouldblock_sv);
+        err_changed = 1;
+    }
+    else if (SvTRUE(err)             /* new error: so assign                 */
         || !SvOK(h_err) /* no existing warn/info: so assign     */
            /* new warn ("0" len 1) > info ("" len 0): so assign         */
         || (SvOK(err) && strlen(SvPV_nolen(err)) > strlen(SvPV_nolen(h_err)))
@@ -2083,6 +2099,39 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "LongTruncOk")) {
         DBIc_set(imp_xxh,DBIcf_LongTruncOk, on);
     }
+    else if (strEQ(key, "Async")) {
+        if (on) {
+            GV *gv = gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), "async_read_ready", 0);
+            if (!gv || !GvCV(gv) || (GvSTASH(gv) && (strEQ(HvNAME(GvSTASH(gv)), "DBD::_::db") || strEQ(HvNAME(GvSTASH(gv)), "DBD::_::common")))) {
+                croak("Driver does not support non-blocking asynchronous execution (Async => 1)");
+            }
+            DBIc_ASYNC_on(imp_xxh);
+        } else {
+            DBIc_ASYNC_off(imp_xxh);
+            DBIc_ASYNC_WANT_READ_off(imp_xxh);
+            DBIc_ASYNC_WANT_WRITE_off(imp_xxh);
+        }
+        cacheit = 1;
+    }
+    else if (strEQ(key, "AsyncWantRead")) {
+        (on) ? DBIc_ASYNC_WANT_READ_on(imp_xxh) : DBIc_ASYNC_WANT_READ_off(imp_xxh);
+        cacheit = 1;
+    }
+    else if (strEQ(key, "AsyncWantWrite")) {
+        (on) ? DBIc_ASYNC_WANT_WRITE_on(imp_xxh) : DBIc_ASYNC_WANT_WRITE_off(imp_xxh);
+        cacheit = 1;
+    }
+    else if (strEQ(key, "AsyncMultiplex")) {
+        (on) ? DBIc_ASYNC_MULTIPLEX_on(imp_xxh) : DBIc_ASYNC_MULTIPLEX_off(imp_xxh);
+        cacheit = 1;
+    }
+    else if (strEQ(key, "AsyncBufferWrites")) {
+        (on) ? DBIc_ASYNC_BUFFER_WRITES_on(imp_xxh) : DBIc_ASYNC_BUFFER_WRITES_off(imp_xxh);
+        cacheit = 1;
+    }
+    else if (strEQ(key, "AsyncWatcher") || strEQ(key, "AsyncErrorDetails")) {
+        cacheit = 1;
+    }
     else if (strEQ(key, "RaiseError")) {
         DBIc_set(imp_xxh,DBIcf_RaiseError, on);
     }
@@ -2442,7 +2491,22 @@ dbih_get_attr_k(SV *h, SV *keysv, int dbikey)
     if (valuesv == Nullsv) {
         switch (*key) {
           case 'A':
-            if (keylen==6 && strEQ(key, "Active")) {
+            if (keylen==5 && strEQ(key, "Async")) {
+                valuesv = boolSV(DBIc_ASYNC(imp_xxh));
+            }
+            else if (keylen==13 && strEQ(key, "AsyncWantRead")) {
+                valuesv = boolSV(DBIc_ASYNC_WANT_READ(imp_xxh));
+            }
+            else if (keylen==14 && strEQ(key, "AsyncWantWrite")) {
+                valuesv = boolSV(DBIc_ASYNC_WANT_WRITE(imp_xxh));
+            }
+            else if (keylen==14 && strEQ(key, "AsyncMultiplex")) {
+                valuesv = boolSV(DBIc_ASYNC_MULTIPLEX(imp_xxh));
+            }
+            else if (keylen==17 && strEQ(key, "AsyncBufferWrites")) {
+                valuesv = boolSV(DBIc_ASYNC_BUFFER_WRITES(imp_xxh));
+            }
+            else if (keylen==6 && strEQ(key, "Active")) {
                 valuesv = boolSV(DBIc_ACTIVE(imp_xxh));
             }
             else if (keylen==10 && strEQ(key, "ActiveKids")) {
@@ -3317,6 +3381,19 @@ XS(XS_DBI_dispatch)
 }
 #endif
 
+    if (DBIc_ASYNC(imp_xxh)) {
+        if ((U32)PerlProc_getpid() != imp_xxh->com.std.pid) {
+            croak("PID mismatch on async handle %s (%ld vs %ld): handle created in parent process cannot be used in child fork",
+                neatsvpv(h,0), (long)imp_xxh->com.std.pid, (long)PerlProc_getpid());
+        }
+        if (!DBIc_ASYNC_MULTIPLEX(imp_xxh) && DBIc_ASYNC_WANT_READ(imp_xxh)) {
+            if (!(ima_flags & IMA_ASYNC_METHOD) && !strEQ(meth_name, "FETCH") && !strEQ(meth_name, "STORE") && !is_DESTROY) {
+                croak("Synchronous concurrency violation on busy handle %s: cannot invoke %s while AsyncWantRead is active",
+                    neatsvpv(h,0), meth_name);
+            }
+        }
+    }
+
     if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
         I32 h_trace_level = (i & DBIc_TRACE_LEVEL_MASK);
         if ( h_trace_level > trace_level )
@@ -3949,7 +4026,7 @@ XS(XS_DBI_dispatch)
         && !is_nested_call              /* skip nested (internal) calls         */
         && (
                /* is an error and has RaiseError|PrintError|HandleError set     */
-           (SvTRUE(err_sv) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
+           (SvTRUE(err_sv) && !(SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK")) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
                /* is a warn (not info) and has RaiseWarn|PrintWarn set          */
         || (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_RaiseWarn|DBIcf_PrintWarn))
         )
@@ -4066,7 +4143,7 @@ XS(XS_DBI_dispatch)
             if (DBIc_has(imp_xxh, DBIcf_RaiseWarn))
                 croak_sv(msg);
         }
-        else if (!hook_svp && SvTRUE(err_sv)) {
+        else if (!hook_svp && SvTRUE(err_sv) && !(SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK"))) {
             if (DBIc_has(imp_xxh, DBIcf_PrintError))
                 warn_sv(msg);
             if (DBIc_has(imp_xxh, DBIcf_RaiseError))
@@ -4541,6 +4618,8 @@ constant()
         DBIf_TRACE_ENC  = DBIf_TRACE_ENC
         DBIf_TRACE_DBD  = DBIf_TRACE_DBD
         DBIf_TRACE_TXN  = DBIf_TRACE_TXN
+        DBI_E_WOULDBLOCK = DBI_E_WOULDBLOCK
+        DBI_ASYNC_WOULDBLOCK = DBI_E_WOULDBLOCK
     CODE:
     RETVAL = ix;
     OUTPUT:
@@ -4729,6 +4808,9 @@ _install_method(dbi_class, meth_name, file, attribs=Nullsv)
     if (trace_msg)
         PerlIO_printf(DBILOGFP,"%s\n", SvPV_nolen(trace_msg));
     file = savepv(file);
+    if (strstr(meth_name, "async_read_ready") || strstr(meth_name, "async_write_ready")) {
+        ima->flags |= IMA_ASYNC_METHOD;
+    }
     cv = newXS(meth_name, XS_DBI_dispatch, file);
     SvPVX((SV *)cv) = file;
     SvLEN((SV *)cv) = 1;
@@ -5362,6 +5444,82 @@ fetch(sth)
             sv_setsv(AvARRAY(av)[num_fields], POPs);
         PUTBACK;
         ST(0) = sv_2mortal(newRV_inc((SV*)av));
+    }
+
+
+void
+fetch_async_row(sth)
+    SV *        sth
+    CODE:
+    {
+        D_imp_sth(sth);
+        if (GIMME_V == G_ARRAY) {
+            croak("fetch_async_row evaluated in list context; forbidden to avoid dualvar array emptiness logic traps");
+        }
+        
+        dSP;
+        PUSHMARK(SP);
+        XPUSHs(sth);
+        PUTBACK;
+        int count = call_method("fetchrow_arrayref", G_SCALAR);
+        SPAGAIN;
+        SV *res = (count > 0) ? POPs : &PL_sv_undef;
+        PUTBACK;
+
+        if (SvOK(res) && !(SvPOK(res) && strEQ(SvPV_nolen(res), "DBI_ASYNC_WOULDBLOCK"))) {
+            ST(0) = res;
+        } else if (DBIc_ASYNC_WANT_READ(imp_sth) || DBIc_ASYNC_WANT_WRITE(imp_sth)) {
+            if (!DBIc_ACTIVE(imp_sth)) {
+                DBIc_ASYNC_WANT_READ_off(imp_sth);
+                DBIc_ASYNC_WANT_WRITE_off(imp_sth);
+                ST(0) = &PL_sv_undef;
+            } else {
+                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBI_async_wouldblock_sv);
+                ST(0) = sv_2mortal(newSVsv(DBI_async_wouldblock_sv));
+            }
+        } else {
+            ST(0) = &PL_sv_undef;
+        }
+        XSRETURN(1);
+    }
+
+
+void
+fetch_async_hashref(sth, name_sv=NULL)
+    SV *        sth
+    SV *        name_sv
+    CODE:
+    {
+        D_imp_sth(sth);
+        if (GIMME_V == G_ARRAY) {
+            croak("fetch_async_hashref MUST be evaluated in scalar context. Evaluating in list-context intercepts unrecoverable truthiness traps.");
+        }
+
+        dSP;
+        PUSHMARK(SP);
+        XPUSHs(sth);
+        if (name_sv) XPUSHs(name_sv);
+        PUTBACK;
+        int count = call_method("fetchrow_hashref", G_SCALAR);
+        SPAGAIN;
+        SV *res = (count > 0) ? POPs : &PL_sv_undef;
+        PUTBACK;
+
+        if (SvOK(res) && !(SvPOK(res) && strEQ(SvPV_nolen(res), "DBI_ASYNC_WOULDBLOCK"))) {
+            ST(0) = res;
+        } else if (DBIc_ASYNC_WANT_READ(imp_sth) || DBIc_ASYNC_WANT_WRITE(imp_sth)) {
+            if (!DBIc_ACTIVE(imp_sth)) {
+                DBIc_ASYNC_WANT_READ_off(imp_sth);
+                DBIc_ASYNC_WANT_WRITE_off(imp_sth);
+                ST(0) = &PL_sv_undef;
+            } else {
+                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBI_async_wouldblock_sv);
+                ST(0) = sv_2mortal(newSVsv(DBI_async_wouldblock_sv));
+            }
+        } else {
+            ST(0) = &PL_sv_undef;
+        }
+        XSRETURN(1);
     }
 
 
