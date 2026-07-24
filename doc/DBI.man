@@ -1853,8 +1853,8 @@ ATTRIBUTES COMMON TO ALL HANDLES
 
        The subroutine is called with three parameters: the error message
        string that "RaiseError", "RaiseWarn" or "PrintError" would use, the
-       DBI handle being used, and the first value being returned by the method
-       that failed (typically undef).
+       DBI handle being used (dbh, sth or drh as appropriate) and the first
+       value being returned by the method that failed (typically undef).
 
        If the subroutine returns a false value then the "RaiseError",
        "RaiseWarn" and/or "PrintError" attributes are checked and acted upon
@@ -6422,4 +6422,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.44.0                      2026-07-14                            DBI(3)
+perl v5.44.0                      2026-07-24                            DBI(3)

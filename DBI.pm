@@ -3870,15 +3870,15 @@ The same logic applies to other attributes, including C<PrintError>.
 
 Type: code ref, inherited
 
-The C<HandleError> attribute can be used to provide your own alternative behaviour
-in case of errors. If set to a reference to a subroutine then that
+The C<HandleError> attribute can be used to provide your own alternative
+behaviour in case of errors. If set to a reference to a subroutine then that
 subroutine is called when an error is detected (at the same point that
 C<RaiseError> and C<PrintError> are handled). It is called also when
 C<RaiseWarn> is enabled and a warning is detected.
 
-The subroutine is called with three parameters: the error message
-string that C<RaiseError>, C<RaiseWarn> or C<PrintError> would use,
-the DBI handle being used, and the first value being returned by
+The subroutine is called with three parameters: the error message string that
+C<RaiseError>, C<RaiseWarn> or C<PrintError> would use, the DBI handle being
+used (dbh, sth or drh as appropriate) and the first value being returned by
 the method that failed (typically undef).
 
 If the subroutine returns a false value then the C<RaiseError>, C<RaiseWarn>

@@ -55,7 +55,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI 3"
-.TH DBI 3 2026-07-14 "perl v5.44.0" "User Contributed Perl Documentation"
+.TH DBI 3 2026-07-24 "perl v5.44.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification. Always turn off hyphenation. String
 .\" and register settings are required by groff 1.23.0 and later. Changing
 .\" tag separation back to 1n is required by groff 1.24.0 and later.
@@ -2125,15 +2125,15 @@ The same logic applies to other attributes, including \f(CR\*(C`PrintError\*(C'\
 .PP
 Type: code ref, inherited
 .PP
-The \f(CR\*(C`HandleError\*(C'\fR attribute can be used to provide your own alternative behaviour
-in case of errors. If set to a reference to a subroutine then that
+The \f(CR\*(C`HandleError\*(C'\fR attribute can be used to provide your own alternative
+behaviour in case of errors. If set to a reference to a subroutine then that
 subroutine is called when an error is detected (at the same point that
 \&\f(CR\*(C`RaiseError\*(C'\fR and \f(CR\*(C`PrintError\*(C'\fR are handled). It is called also when
 \&\f(CR\*(C`RaiseWarn\*(C'\fR is enabled and a warning is detected.
 .PP
-The subroutine is called with three parameters: the error message
-string that \f(CR\*(C`RaiseError\*(C'\fR, \f(CR\*(C`RaiseWarn\*(C'\fR or \f(CR\*(C`PrintError\*(C'\fR would use,
-the DBI handle being used, and the first value being returned by
+The subroutine is called with three parameters: the error message string that
+\&\f(CR\*(C`RaiseError\*(C'\fR, \f(CR\*(C`RaiseWarn\*(C'\fR or \f(CR\*(C`PrintError\*(C'\fR would use, the DBI handle being
+used (dbh, sth or drh as appropriate) and the first value being returned by
 the method that failed (typically undef).
 .PP
 If the subroutine returns a false value then the \f(CR\*(C`RaiseError\*(C'\fR, \f(CR\*(C`RaiseWarn\*(C'\fR

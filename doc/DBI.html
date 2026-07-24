@@ -1577,7 +1577,7 @@ try {
 
 <p>The <code>HandleError</code> attribute can be used to provide your own alternative behaviour in case of errors. If set to a reference to a subroutine then that subroutine is called when an error is detected (at the same point that <code>RaiseError</code> and <code>PrintError</code> are handled). It is called also when <code>RaiseWarn</code> is enabled and a warning is detected.</p>
 
-<p>The subroutine is called with three parameters: the error message string that <code>RaiseError</code>, <code>RaiseWarn</code> or <code>PrintError</code> would use, the DBI handle being used, and the first value being returned by the method that failed (typically undef).</p>
+<p>The subroutine is called with three parameters: the error message string that <code>RaiseError</code>, <code>RaiseWarn</code> or <code>PrintError</code> would use, the DBI handle being used (dbh, sth or drh as appropriate) and the first value being returned by the method that failed (typically undef).</p>
 
 <p>If the subroutine returns a false value then the <code>RaiseError</code>, <code>RaiseWarn</code> and/or <code>PrintError</code> attributes are checked and acted upon as normal.</p>
 
