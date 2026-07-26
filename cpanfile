@@ -7,6 +7,7 @@ suggests   "Clone"                    => "0.50";
 suggests   "DB_File";
 suggests   "MLDBM";
 suggests   "Net::Daemon"              => "0.52";
+suggests   "RPC::PlClient"            => "0.2020";
 suggests   "RPC::PlServer"            => "0.2020";
 suggests   "SQL::Statement"           => "1.414";
 

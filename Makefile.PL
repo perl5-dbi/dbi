@@ -77,6 +77,7 @@ my %opts = (
 	    IRC               => "irc://irc.perl.org/#dbi",
 	    },
 	suggests              => {
+	    "RPC::PlClient"   => 0.2020,
 	    "RPC::PlServer"   => 0.2020,
 	    "Net::Daemon"     => 0,
 	    "SQL::Statement"  => 1.414,

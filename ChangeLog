@@ -1,7 +1,8 @@
-1.652 - 2026-07-24, H.Merijn Brand & Robert Rothenberg
+1.652 - 2026-07-26, H.Merijn Brand & Robert Rothenberg
     * DBI now requires perl-5.12, driven by CVE's
     * Fix test for perl configured without threads (caught by perl-5.45.1)
-    * Small doc fix, (issue#155), Thanks rwfranks
+    * Small doc fix, (issue#155), thanks Dick Franks
+    * Add suggested dependency (issue#145), thanks Dick Franks
 
 1.651 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
     * Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)
@@ -40,7 +41,7 @@
 
 1.646 - 2025-01-11, H.Merijn Brand
     * Remove "experimental" tag from statistics_info () (issue#134)
-    * RT tickets moved to github issues (rwfranks++)
+    * RT tickets moved to github issues (Dick Franks++)
       - All RT tickets now marked as resolved with reference to GitHub issue
     * Fix install issue (issue #168)
 
