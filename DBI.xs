@@ -2114,19 +2114,19 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
         cacheit = 1;
     }
     else if (strEQ(key, "AsyncWantRead")) {
-        (on) ? DBIc_ASYNC_WANT_READ_on(imp_xxh) : DBIc_ASYNC_WANT_READ_off(imp_xxh);
+        DBIc_set(imp_xxh, DBIcf_AsyncWantRead, on);
         cacheit = 1;
     }
     else if (strEQ(key, "AsyncWantWrite")) {
-        (on) ? DBIc_ASYNC_WANT_WRITE_on(imp_xxh) : DBIc_ASYNC_WANT_WRITE_off(imp_xxh);
+        DBIc_set(imp_xxh, DBIcf_AsyncWantWrite, on);
         cacheit = 1;
     }
     else if (strEQ(key, "AsyncMultiplex")) {
-        (on) ? DBIc_ASYNC_MULTIPLEX_on(imp_xxh) : DBIc_ASYNC_MULTIPLEX_off(imp_xxh);
+        DBIc_set(imp_xxh, DBIcf_AsyncMultiplex, on);
         cacheit = 1;
     }
     else if (strEQ(key, "AsyncBufferWrites")) {
-        (on) ? DBIc_ASYNC_BUFFER_WRITES_on(imp_xxh) : DBIc_ASYNC_BUFFER_WRITES_off(imp_xxh);
+        DBIc_set(imp_xxh, DBIcf_AsyncBufferWrites, on);
         cacheit = 1;
     }
     else if (strEQ(key, "AsyncWatcher") || strEQ(key, "AsyncErrorDetails")) {
