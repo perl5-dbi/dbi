@@ -111,6 +111,9 @@ eval { $dbh->prepare($tainted_sql); 1; };
 ok($@ =~ /Insecure dependency/, $@);
 eval { $csr_a->execute($tainted_dot); 1; };
 ok($@ =~ /Insecure dependency/, $@);
+eval { $dbh->func($tainted_dot, 'M' x 180); 1; };
+ok($@ =~ /Insecure dependency.*parameter 1/s,
+    'long func method name is safely included in taint rejection');
 undef $@;
 
 $dbh->{'TaintIn'} = $csr_a->{'TaintIn'} = 0;

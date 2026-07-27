@@ -3381,19 +3381,17 @@ XS(XS_DBI_dispatch)
         }
 
         if (ima_flags & IMA_HAS_USAGE) {
-            const char *err = NULL;
-            char msg[200];
+            SV *usage_err = Nullsv;
 
             if (ima->minargs && (items < ima->minargs
                                 || (ima->maxargs>0 && items > ima->maxargs))) {
-                sprintf(msg,
+                usage_err = sv_2mortal(newSVpvf(
                     "DBI %s: invalid number of arguments: got handle + %ld, expected handle + between %d and %d\n",
-                    meth_name, (long)items-1, (int)ima->minargs-1, (int)ima->maxargs-1);
-                err = msg;
+                    meth_name, (long)items-1, (int)ima->minargs-1, (int)ima->maxargs-1));
             }
             /* arg type checking could be added here later */
-            if (err) {
-                croak("%sUsage: %s->%s(%s)", err, "$h", meth_name,
+            if (usage_err) {
+                croak("%sUsage: %s->%s(%s)", SvPV_nolen(usage_err), "$h", meth_name,
                     (ima->usage_msg) ? ima->usage_msg : "...?");
             }
         }
@@ -3409,11 +3407,11 @@ XS(XS_DBI_dispatch)
     ) {
         for(i=1; i < items; ++i) {
             if (SvTAINTED(ST(i))) {
-                char buf[100];
-                sprintf(buf,"parameter %d of %s->%s method call",
-                        i, SvPV_nolen(h), meth_name);
+                SV *taint_msg = sv_2mortal(newSVpvf(
+		    "parameter %d of %s->%s method call",
+		    i, SvPV_nolen(h), meth_name));
                 PL_tainted = 1; /* needed for TAINT_PROPER to work      */
-                TAINT_PROPER(buf);      /* die's */
+                TAINT_PROPER(SvPV_nolen(taint_msg));      /* die's */
             }
         }
     }

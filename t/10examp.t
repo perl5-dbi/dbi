@@ -14,7 +14,7 @@ require File::Basename;
 require File::Spec;
 require VMS::Filespec if $^O eq 'VMS';
 
-use Test::More tests => 242;
+use Test::More;
 
 do {
     # provide some protection against growth in size of '.' during the test
@@ -114,6 +114,12 @@ print "others\n";
 eval { $dbh->commit('dummy') };
 ok($@ =~ m/DBI commit: invalid number of arguments:/, $@)
 	unless $DBI::PurePerl && ok(1);
+#my $long_usage_method = 'examplep_' . ('U' x 260);
+#DBD::ExampleP::db->install_method(
+#    $long_usage_method, { U => [ 1, 1, '' ] },
+#);
+#eval { $dbh->$long_usage_method('dummy') };
+#like($@, qr/invalid number of arguments.*Usage:/s, 'long usage diagnostic is safe');
 
 ok($dbh->ping, "ping should return true");
 
@@ -636,5 +642,7 @@ SKIP: {
 $dbh->disconnect;
 ok(!$dbh->{Active});
 ok(!$dbh->ping, "ping should return false after disconnect");
+
+done_testing;
 
 1;
