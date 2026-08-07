@@ -276,7 +276,69 @@ sub do_test {
     my @tables = $sth->fetchall_arrayref;
     is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
 
+    # TODO these tests should be run using the database connection parameters
+    do_update_test( $dbh, $dtype ) unless $using_dbd_gofer;
+
     $dbh->disconnect;
+
     return 1;
 }
+
+sub do_update_test {
+    my ( $dbh, $dtype ) = @_;
+
+    for my $mode ( 0 .. 2 ) {
+
+        note "dbm_updatable_key = $mode";
+        $dbh->{dbm_updatable_key} = $mode;
+
+        my $tests = [
+            "DROP TABLE IF EXISTS brassica",                      -1,
+            "CREATE TABLE brassica (dKey INT, dVal VARCHAR(10))", '0E0',
+            "INSERT INTO  brassica VALUES (1,'neep')",            1,
+            "INSERT INTO  brassica VALUES (2,'kale')",            1,
+            "UPDATE brassica SET dKey=1 WHERE dKey=2",            \$mode, # depends on mode
+            "DROP TABLE brassica",                                -1,
+        ];
+
+        my $i = 0;
+        my ( $queries, $expected ) = part { $i++ % 2 } @{$tests};
+
+        my $idx = 0;
+        for my $sql ( @{$queries} ) {
+
+            $sql =~ s/\S*brassica/${dtype}_brassica/;    # include dbm type in table name
+
+            my $sth = $dbh->prepare($sql);
+            ok( $sth, "prepare $sql" ) or diag( $dbh->errstr || 'unknown error' );
+
+            my $expect = $expected->[$idx];
+            if ( ref($expect) ) {
+
+                $sth->{PrintError} = 0;
+
+                my $n = $sth->execute();
+
+                if ( $mode == 2 ) {
+                    ok( !$n, 'execute failed' );
+                    like $sth->errstr, qr/^Row with PK '1' already exists/, 'execpted error';
+                }
+                else {
+                    # TODO: trap warnings to test when $mode == 1
+                    is( $n, 1, 'execute' ) or diag( $sth->errstr || 'unknown error' );
+                }
+
+            }
+            else {
+                my $n = $sth->execute();
+                is( $n, $expect, 'execute' ) or diag( $sth->errstr || 'unknown error' );
+            }
+
+            $idx++;
+        }
+
+    }
+
+}
+
 1;

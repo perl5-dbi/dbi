@@ -44,6 +44,10 @@ Limit statements to 292 Mb in preparse (CVE-2026-73193)
 
 Add a security policy (issue#174)
 
+=item *
+
+Add dbm_updatable_key attribute to DBD::DBM to configure how keys are updated
+
 =back
 
 =head2 Changes in DBI 1.651 - 14 Jul 2026
