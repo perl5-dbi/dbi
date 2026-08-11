@@ -1,8 +1,9 @@
-1.652 - 2026-07-26, H.Merijn Brand & Robert Rothenberg
+1.652 - 2026-08-11, H.Merijn Brand & Robert Rothenberg
     * DBI now requires perl-5.12, driven by CVE's
     * Fix test for perl configured without threads (caught by perl-5.45.1)
     * Small doc fix, (issue#155), thanks Dick Franks
     * Add suggested dependency (issue#145), thanks Dick Franks
+    * Force placeholder limit on :# and :p# too (CVE-2026-73194)
 
 1.651 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
     * Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)

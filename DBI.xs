@@ -4348,9 +4348,17 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
         }
         else if (isDIGIT(*src)) {   /* :1 */
             const int pln = atoi(src);
+
+            if (pln > 99999 || pln <= 0) {
+                char buf[99];
+                sprintf(buf, "preparse found :p%d which is outside the allowed range.", pln);
+                set_err_char(dbh, imp_xxh, "1", 1, buf, 0, "preparse");
+                return &PL_sv_undef;
+            }
+
             style = ":1";
 
-            if (PS_return(DBIpp_ph_cn)) { /* ':1'->':p1'  */
+            if (PS_return(DBIpp_ph_cn)) { /* ':1'-> ':p1'  */
                 idx = pln;
                 *dest++ = 'p';
                 while(isDIGIT(*src))

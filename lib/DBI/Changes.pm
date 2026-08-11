@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.652 - 26 Jul 2026
+=head2 Changes in DBI 1.652 - 11 Aug 2026
 
 =over 2
 
@@ -31,6 +31,10 @@ Small doc fix, (issue#155), thanks Dick Franks
 =item *
 
 Add suggested dependency (issue#145), thanks Dick Franks
+
+=item *
+
+Force placeholder limit on :# and :p# too (CVE-2026-73194)
 
 =back
 
