@@ -40,6 +40,10 @@ Force placeholder limit on :# and :p# too (CVE-2026-73194)
 
 Limit statements to 292 Mb in preparse (CVE-2026-73193)
 
+=item *
+
+Add a security policy (issue#174)
+
 =back
 
 =head2 Changes in DBI 1.651 - 14 Jul 2026
