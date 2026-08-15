@@ -24,6 +24,7 @@
       <li><a href="#Adding-multi-column-support-with-MLDBM">Adding multi-column support with MLDBM</a></li>
       <li><a href="#Support-for-Berkeley-DB">Support for Berkeley DB</a></li>
       <li><a href="#Optimizing-the-use-of-key-fields">Optimizing the use of key fields</a></li>
+      <li><a href="#Updatable-Keys">Updatable Keys</a></li>
       <li><a href="#Supported-SQL-syntax">Supported SQL syntax</a></li>
       <li><a href="#Specifying-Column-Names">Specifying Column Names</a></li>
     </ul>
@@ -334,6 +335,24 @@ SELECT phone FROM user WHERE user_name=&#39;Fred Bloggs&#39;;</code></pre>
 <p><b>Note</b> that the underlying DBM storage needs to loop over all <i>key/value</i> pairs when the optimized fetch is used. SQL::Statement has a massively improved where clause evaluation which costs around 15% of the evaluation in DBI::SQL::Nano - combined with the loop in the DBM storage the speed improvement isn&#39;t so impressive.</p>
 
 <p>Even if lookups are faster by around 50%, DBI::SQL::Nano and SQL::Statement can benefit from the key field optimizations on updating and deleting rows - and here the improved where clause evaluation of SQL::Statement might beat DBI::SQL::Nano every time the where clause contains not only the key field (or more than one).</p>
+
+<h2 id="Updatable-Keys">Updatable Keys</h2>
+
+<p>The default behavior is that updating a key to the same value of an existing key will succeed, and the existing row will be overwritten.</p>
+
+<p>There may be cases where this is undesirable.</p>
+
+<p>This behavior can now be configured, by setting <code>dbm_updatable_key</code> attribute. To emit a warning when this happens, set it to <code>1</code>:</p>
+
+<pre><code>$dbh = DBI-&gt;connect(&#39;dbi:DBM:&#39;, undef, undef, {
+    dbm_updatable_key =&gt; 1,
+} );</code></pre>
+
+<p>To instead die when that happens, set it to <code>2</code>:</p>
+
+<pre><code>$dbh = DBI-&gt;connect(&#39;dbi:DBM:&#39;, undef, undef, {
+    dbm_updatable_key =&gt; 2,
+} );</code></pre>
 
 <h2 id="Supported-SQL-syntax">Supported SQL syntax</h2>
 

@@ -390,6 +390,26 @@ updating and deleting rows - and here the improved where clause
 evaluation of SQL::Statement might beat DBI::SQL::Nano every time the
 where clause contains not only the key field (or more than one).
 
+## Updatable Keys
+
+The default behavior is that updating a key to the same value of an
+existing key will succeed, and the existing row will be overwritten.
+
+There may be cases where this is undesirable.
+
+This behavior can now be configured, by setting `dbm_updatable_key`
+attribute.  To emit a warning when this happens, set it to `1`:
+
+    $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+        dbm_updatable_key => 1,
+    } );
+
+To instead die when that happens, set it to `2`:
+
+    $dbh = DBI->connect('dbi:DBM:', undef, undef, {
+        dbm_updatable_key => 2,
+    } );
+
 ## Supported SQL syntax
 
 DBD::DBM uses a subset of SQL.  The robustness of that subset depends on

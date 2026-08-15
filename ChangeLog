@@ -1,4 +1,4 @@
-1.652 - 2026-08-11, H.Merijn Brand & Robert Rothenberg
+1.652 - 2026-08-15, H.Merijn Brand & Robert Rothenberg
     * DBI now requires perl-5.12, driven by CVE's
     * Fix test for perl configured without threads (caught by perl-5.45.1)
     * Small doc fix, (issue#155), thanks Dick Franks
@@ -8,6 +8,7 @@
     * Add a security policy (issue#174)
     * Add dbm_updatable_key attribute to DBD::DBM to configure how keys are updated
     * Fix missing import in DBI::DBD::SqlEngine
+    * Fix !Caller2 caller loss when $^P is set (PR#184) (Thanks Paul)
 
 1.651 - 2026-07-14, H.Merijn Brand & Robert Rothenberg
     * Fix inverted comparisons for strings in DBI::SQL::Nano  (CVE-2026-15043)

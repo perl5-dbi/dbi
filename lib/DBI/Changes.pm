@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.652 - 11 Aug 2026
+=head2 Changes in DBI 1.652 - 15 Aug 2026
 
 =over 2
 
@@ -51,6 +51,10 @@ Add dbm_updatable_key attribute to DBD::DBM to configure how keys are updated
 =item *
 
 Fix missing import in DBI::DBD::SqlEngine
+
+=item *
+
+Fix !Caller2 caller loss when $^P is set (PR#184) (Thanks Paul)
 
 =back
 

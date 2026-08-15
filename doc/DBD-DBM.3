@@ -55,7 +55,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBD::DBM 3"
-.TH DBD::DBM 3 2026-07-14 "perl v5.44.0" "User Contributed Perl Documentation"
+.TH DBD::DBM 3 2026-08-15 "perl v5.44.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification. Always turn off hyphenation. String
 .\" and register settings are required by groff 1.23.0 and later. Changing
 .\" tag separation back to 1n is required by groff 1.24.0 and later.
@@ -471,6 +471,29 @@ SQL::Statement can benefit from the key field optimizations on
 updating and deleting rows \- and here the improved where clause
 evaluation of SQL::Statement might beat DBI::SQL::Nano every time the
 where clause contains not only the key field (or more than one).
+.SS "Updatable Keys"
+.IX Subsection "Updatable Keys"
+The default behavior is that updating a key to the same value of an
+existing key will succeed, and the existing row will be overwritten.
+.PP
+There may be cases where this is undesirable.
+.PP
+This behavior can now be configured, by setting \f(CR\*(C`dbm_updatable_key\*(C'\fR
+attribute.  To emit a warning when this happens, set it to \f(CR1\fR:
+.PP
+.Vb 3
+\&  $dbh = DBI\->connect(\*(Aqdbi:DBM:\*(Aq, undef, undef, {
+\&      dbm_updatable_key => 1,
+\&  } );
+.Ve
+.PP
+To instead die when that happens, set it to \f(CR2\fR:
+.PP
+.Vb 3
+\&  $dbh = DBI\->connect(\*(Aqdbi:DBM:\*(Aq, undef, undef, {
+\&      dbm_updatable_key => 2,
+\&  } );
+.Ve
 .SS "Supported SQL syntax"
 .IX Subsection "Supported SQL syntax"
 DBD::DBM uses a subset of SQL.  The robustness of that subset depends on
