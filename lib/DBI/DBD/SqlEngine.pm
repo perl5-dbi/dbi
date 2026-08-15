@@ -275,6 +275,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Scalar::Util qw( refaddr );
 
 if ( eval { require Clone; } )
 {
