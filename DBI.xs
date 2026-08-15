@@ -2681,7 +2681,8 @@ dbi_caller_cop()
         if (cxix < 0) {
             break;
         }
-        if (PL_DBsub && cxix >= 0 && ccstack[cxix].blk_sub.cv == GvCV(PL_DBsub))
+        /* skip the automatic calls to &DB::sub, as perl's pp_caller does */
+        if (PL_DBsub && GvCV(PL_DBsub) && cxix >= 0 && ccstack[cxix].blk_sub.cv == GvCV(PL_DBsub))
             continue;
         cx = &ccstack[cxix];
         stashname = CopSTASHPV(cx->blk_oldcop);
