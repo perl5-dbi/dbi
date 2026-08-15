@@ -48,6 +48,10 @@ Add a security policy (issue#174)
 
 Add dbm_updatable_key attribute to DBD::DBM to configure how keys are updated
 
+=item *
+
+Fix missing import in DBI::DBD::SqlEngine
+
 =back
 
 =head2 Changes in DBI 1.651 - 14 Jul 2026
