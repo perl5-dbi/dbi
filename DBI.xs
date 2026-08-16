@@ -13,6 +13,10 @@
 
 #include "DBIXS.h"      /* DBI public interface for DBD's written in C  */
 
+#include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
+
 # if (defined(_WIN32) && (! defined(HAS_GETTIMEOFDAY)))
 #include <sys/timeb.h>
 # endif
@@ -74,6 +78,7 @@ static SV        *dbih_event       _((SV *h, const char *name, SV*, SV*));
 static int        dbih_set_attr_k  _((SV *h, SV *keysv, int dbikey, SV *valuesv));
 static SV        *dbih_get_attr_k  _((SV *h, SV *keysv, int dbikey));
 static int       dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
+static int       dbi_atoi          _((const char *nptr));
 
 static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method));
 static int      set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
@@ -4356,7 +4361,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
             }
         }
         else if (isDIGIT(*src)) {   /* :1 */
-            const int pln = atoi(src);
+            const int pln = dbi_atoi(src);
 
             if (pln > 99999 || pln <= 0) {
                 char buf[99];
@@ -4442,6 +4447,21 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
     SvCUR_set(new_stmt_sv, strlen(SvPVX(new_stmt_sv)));
     *SvEND(new_stmt_sv) = '\0';
     return new_stmt_sv;
+}
+
+
+/* Like atoi() but returns 2147483647 (32-bit INT_MAX) for out of range values */
+static int dbi_atoi(const char *nptr)
+{
+    long lresult;
+
+    errno = 0;
+    lresult = strtol(nptr, NULL, 10);
+    if (errno != 0 || lresult < INT_MIN || lresult > INT_MAX) {
+        /* Don't use INT_MAX in case it's not 32 bits */
+        return 2147483647;
+    }
+    return (int)lresult;
 }
 
 
