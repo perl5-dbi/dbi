@@ -12,6 +12,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.653 - 17 Aug 2026
+
+=over 2
+
+=item *
+
+Fix test for 32bit-perl (report in PR#189)
+
+=back
+
 =head2 Changes in DBI 1.652 - 15 Aug 2026
 
 =over 2

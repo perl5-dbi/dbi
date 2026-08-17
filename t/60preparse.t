@@ -148,7 +148,7 @@ ok( $DBI::err );
 is( $DBI::errstr, "preparse found :p100000 which is outside the allowed range.");
 is( pp($dbh, 'a = :2147483648', DBIpp_ph_qm, DBIpp_ph_cs|DBIpp_ph_cn), undef, 'exceeds limit');
 ok( $DBI::err );
-is( $DBI::errstr, "preparse found :p-2147483648 which is outside the allowed range.");
+like( $DBI::errstr, qr{^preparse found :p(?:-2147483648|2147483647) which is outside the allowed range.$});
 is( pp($dbh, 'a = :12345678987654321', DBIpp_ph_qm, DBIpp_ph_cs|DBIpp_ph_cn), undef, 'exceeds limit');
 ok( $DBI::err );
 like( $DBI::errstr, qr{^preparse found :p\d+ which is outside the allowed range.$});
