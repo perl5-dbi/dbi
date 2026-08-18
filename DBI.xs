@@ -4358,7 +4358,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
         else if (isDIGIT(*src)) {   /* :1 */
             const int pln = atoi(src);
 
-            if (pln > 99999 || pln <= 0) {
+            if (strspn(src, "0123456789") > 5 || pln > 99999 || pln <= 0) {
                 char buf[99];
                 sprintf(buf, "preparse found :p%d which is outside the allowed range.", pln);
                 set_err_char(dbh, imp_xxh, "1", 1, buf, 0, "preparse");
