@@ -4144,7 +4144,7 @@ preparse(SV *dbh, const char *statement, IV ps_return, IV ps_accept, void *foo)
         we add support for odbc escape sequences.
 */
     int idx = 1;
-    int sln;
+    STRLEN sln;
 
     char in_quote = '\0';
     char in_comment = '\0';
