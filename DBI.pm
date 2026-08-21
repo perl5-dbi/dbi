@@ -8204,7 +8204,7 @@ the (very large) SQL/CLI Working Draft available from:
 A hyperlinked, browsable version of the BNF syntax for SQL92 (plus
 Oracle 7 SQL and PL/SQL) is available here:
 
-  http://cui.unige.ch/db-research/Enseignement/analyseinfo/SQL92/BNFindex.html
+L<https://web.archive.org/web/20040212094722/http://cui.unige.ch/db-research/Enseignement/analyseinfo/SQL92/BNFindex.html>
 
 You can find more information about SQL standards online by searching for the
 appropriate standard names and numbers. For example, searching for
