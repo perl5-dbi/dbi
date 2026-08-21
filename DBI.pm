@@ -8187,17 +8187,14 @@ standard:
  type_info         SQLGetTypeInfo    Page 239
  statistics_info   SQLStatistics
 
-To find documentation on the ODBC function you can use
-the MSDN search facility at:
+To find documentation on the ODBC function you can browse Microsoft's documentaion at:
 
-    http://msdn.microsoft.com/Search
-
-and search for something like C<"SQLColumns returns">.
+L<https://learn.microsoft.com/en-us/sql/odbc/reference/odbc-programmer-s-reference>
 
 And for SQL/CLI standard information on SQLColumns you'd read page 124 of
 the (very large) SQL/CLI Working Draft available from:
 
-  http://jtc1sc32.org/doc/N0701-0750/32N0744T.pdf
+L<https://web.archive.org/web/20071107215745/http://jtc1sc32.org/doc/N0701-0750/32N0744T.pdf>
 
 =head2 Standards Reference Information
 
