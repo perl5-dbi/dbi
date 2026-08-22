@@ -80,6 +80,7 @@ my %opts = (
 	    "RPC::PlClient"   => 0.2020,
 	    "RPC::PlServer"   => 0.2020,
 	    "Net::Daemon"     => 0,
+	    "Params::Util"    => '1.100',
 	    "SQL::Statement"  => 1.414,
 	    "Clone"           => 0.47,
 	    "MLDBM"           => 0,

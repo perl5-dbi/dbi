@@ -59,6 +59,21 @@ sub CLONE
     undef $drh;
 }
 
+if (eval { require Params::Util; }) {
+    Params::Util->import ("_CLASS");
+} else {
+    # SPDX-SnippetBegin
+    # SPDX-SnippetCopyrightText: 2005-2012 Adam Kennedy. 2020 Jens Rehsack.
+    # SPDX-License-Identifier: Artistic-1.0-Perl
+    # SPDX-PackageName: pkg:cpan/Params-Util@1.102
+    # SPDX-Description: taken from Params::Util::PP 1.102
+    *_CLASS = sub {
+        my $arg = $_[0];
+        return (defined $arg and not ref $arg and $arg =~ m/^[^\W\d]\w*(?:::\w+)*\z/s) ? $arg : undef;
+    };
+    # SPDX-SnippetEnd
+}
+
 #####################
 package DBD::DBM::dr;
 #####################
@@ -77,7 +92,8 @@ package DBD::DBM::db;
 our $imp_data_size = 0;
 our @ISA           = qw(DBD::File::db);
 
-use Carp qw/carp/;
+use Carp;
+use Module::Load ();
 
 sub validate_STORE_attr
 {
@@ -190,10 +206,9 @@ sub get_dbm_versions
         };
         eval {
             my $ser_class = "MLDBM::Serializer::" . $meta->{dbm_mldbm};
-            my $ser_mod   = $ser_class;
-            $ser_mod =~ s|::|/|g;
-            $ser_mod .= ".pm";
-            require $ser_mod;
+            DBD::DBM::_CLASS($ser_class)
+                or croak "Invalid dbm_mldbm '$ser_class': expected a module name";
+            Module::Load::load $ser_class;
             $dver = $ser_class->VERSION();
             $dtype .= ' + ' . $ser_class;    # (*)
             $dver and $dtype .= " ($dver)";  # (*)
@@ -254,6 +269,7 @@ package DBD::DBM::Table;
 ########################
 use Carp;
 use Fcntl;
+use Module::Load ();
 
 our @ISA = qw(DBD::File::Table);
 
@@ -318,12 +334,14 @@ sub init_table_meta
     unless ( defined( $meta->{dbm_tietype} ) )
     {
         my $tie_type = $meta->{dbm_type};
-        $INC{"$tie_type.pm"} or require "$tie_type.pm";
+        DBD::DBM::_CLASS($tie_type)
+            or croak "Invalid dbm_type '$tie_type': expected a module name";
+        Module::Load::load $tie_type;
         $tie_type eq 'BerkeleyDB' and $tie_type = 'BerkeleyDB::Hash';
 
         if ( $meta->{dbm_mldbm} )
         {
-            $INC{"MLDBM.pm"} or require "MLDBM.pm";
+            Module::Load::load "MLDBM";
             $meta->{dbm_usedb} = $tie_type;
             $tie_type = 'MLDBM';
         }
@@ -394,6 +412,8 @@ sub open_data
         {
             $MLDBM::UseDB      = $meta->{dbm_usedb};
             $MLDBM::Serializer = $meta->{dbm_mldbm};
+            DBD::DBM::_CLASS($MLDBM::Serializer)
+                or croak "Invalid dbm_mldbm '${MLDBM::Serializer}': expected a module name";
         }
 
         $meta->{hash} = {};
