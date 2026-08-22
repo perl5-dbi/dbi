@@ -8208,7 +8208,7 @@ appropriate standard names and numbers. For example, searching for
 "ANSI/ISO/IEC International Standard (IS) Database Language SQL - Part 1:
 SQL/Framework" you'll find a copy at:
 
-  ftp://ftp.iks-jena.de/mitarb/lutz/standards/sql/ansi-iso-9075-1-1999.pdf
+L<ftp://ftp.iks-jena.de/mitarb/lutz/standards/sql/ansi-iso-9075-1-1999.pdf>
 
 =head2 Books and Articles
 
