@@ -8187,31 +8187,28 @@ standard:
  type_info         SQLGetTypeInfo    Page 239
  statistics_info   SQLStatistics
 
-To find documentation on the ODBC function you can use
-the MSDN search facility at:
+To find documentation on the ODBC function you can browse Microsoft's documentaion at:
 
-    http://msdn.microsoft.com/Search
-
-and search for something like C<"SQLColumns returns">.
+L<https://learn.microsoft.com/en-us/sql/odbc/reference/odbc-programmer-s-reference>
 
 And for SQL/CLI standard information on SQLColumns you'd read page 124 of
 the (very large) SQL/CLI Working Draft available from:
 
-  http://jtc1sc32.org/doc/N0701-0750/32N0744T.pdf
+L<https://web.archive.org/web/20071107215745/http://jtc1sc32.org/doc/N0701-0750/32N0744T.pdf>
 
 =head2 Standards Reference Information
 
 A hyperlinked, browsable version of the BNF syntax for SQL92 (plus
 Oracle 7 SQL and PL/SQL) is available here:
 
-  http://cui.unige.ch/db-research/Enseignement/analyseinfo/SQL92/BNFindex.html
+L<https://web.archive.org/web/20040212094722/http://cui.unige.ch/db-research/Enseignement/analyseinfo/SQL92/BNFindex.html>
 
 You can find more information about SQL standards online by searching for the
 appropriate standard names and numbers. For example, searching for
 "ANSI/ISO/IEC International Standard (IS) Database Language SQL - Part 1:
 SQL/Framework" you'll find a copy at:
 
-  ftp://ftp.iks-jena.de/mitarb/lutz/standards/sql/ansi-iso-9075-1-1999.pdf
+L<ftp://ftp.iks-jena.de/mitarb/lutz/standards/sql/ansi-iso-9075-1-1999.pdf>
 
 =head2 Books and Articles
 
