@@ -12,6 +12,10 @@
 ^\.test_info\.
 ^_Inline/
 \.bs$
+\.[co]$
+\.gcda$
+\.gcno$
+\.gcov$
 \.html$
 \.log$
 \.old$
@@ -19,7 +23,6 @@
 \.prt$
 \.tmp$
 \.xsi$
-\.[co]$
 ^appveyor\.yml
 ^blib/
 ^changes2pm\.pl

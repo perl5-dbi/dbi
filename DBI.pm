@@ -8187,7 +8187,7 @@ standard:
  type_info         SQLGetTypeInfo    Page 239
  statistics_info   SQLStatistics
 
-To find documentation on the ODBC function you can browse Microsoft's documentaion at:
+To find documentation on the ODBC function you can browse Microsoft's documentation at:
 
 L<https://learn.microsoft.com/en-us/sql/odbc/reference/odbc-programmer-s-reference>
 

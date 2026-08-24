@@ -20,6 +20,10 @@ DBI::Changes - List of significant changes to the DBI
 
 Fix test for 32bit-perl (report in PR#189)
 
+=item *
+
+Fix arbitrary module and file loading via dbm_type/dbm_mldbm (CVE-2026-78030)
+
 =back
 
 =head2 Changes in DBI 1.652 - 15 Aug 2026
