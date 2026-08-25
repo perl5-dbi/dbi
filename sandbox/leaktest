@@ -1,0 +1,18 @@
+#!/bin/sh
+
+PERL=$1
+HRNS=$2
+shift ; shift
+
+export PERL_DL_NONLAZY=1
+export PERL_DESTRUCT_LEVEL=2
+
+prove --exec "$PERL -Iblib/lib -Iblib/arch -MTest::Valgrind" $@
+
+exit 0
+
+for t in $@ ; do
+    echo $PERL $t
+    #$PERL -MExtUtils::Command::MM -e "$HRNS" -MTest::Valgrind $t
+    $PERL -MTest::Valgrind=diag,1 -Iblib/lib -Iblib/arch $t
+    done

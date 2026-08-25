@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.653 - 17 Aug 2026
+=head2 Changes in DBI 1.653 - 25 Aug 2026
 
 =over 2
 
@@ -23,6 +23,10 @@ Fix test for 32bit-perl (report in PR#189)
 =item *
 
 Fix arbitrary module and file loading via dbm_type/dbm_mldbm (CVE-2026-78030)
+
+=item *
+
+More META checking/updates
 
 =back
 

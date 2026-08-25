@@ -1,0 +1,15 @@
+#!/bin/sh
+
+export PERL_DESTRUCT_LEVEL=2 PERL_DL_NONLAZY=1
+
+valgrind					\
+    --suppressions=sandbox/perl.supp		\
+    --leak-check=yes				\
+    --leak-resolution=high			\
+    --show-reachable=yes			\
+    --num-callers=50				\
+    --log-fd=3					\
+    /pro/bin/perl				\
+	-MPerl::Destruct::Level=level,2		\
+	"$@"					\
+	3>valgrind.log

@@ -1,0 +1,15 @@
+pc09:/pro/docker/containers/run/daxim-dbi 508 🐧 podman build -t dbi-170 -f Containerfile
+pc09:/pro/docker/containers/run/daxim-dbi 509 🐧 podman run -it dbi-170 bash
+
+root@b2d8e8673f2a:/# perl5.40.1 -V:config_args
+config_args='-des -Dusedevel -Duseshrplib -Dman1dir=none -Dman3dir=none -Dcf_email=root@localhost -Dperladmin=root@localhost -Dusemorebits -Dusesitecustomize -Accflags=-DNO_TAINT_SUPPORT -Accflags=-march=native -Accflags=-fPIC -Accflags=-DPERL_DISABLE_PMC -Accflags=-ggdb';
+
+root@b2d8e8673f2a:/# gdb --args perl5.40.1 -mDBI -MClone=clone -E'clone(DBI->connect("dbi:Pg:host=localhost", "postgres"))'
+(gdb) run
+Program received signal SIGSEGV, Segmentation fault.
+XS_DBI_dispatch (cv=0x557729084a28)
+    at /root/.cpanm/work/1742569693.7/DBI-1.647/DBI.xs:3362
+3362        if ((i = DBIc_DEBUGIV(imp_xxh))) { /* merge handle into global */
+
+
+lx09:> gdb --args perl5.41.10 -mDBI -mDBD::Pg -MClone=clone -E'say "DBI-$DBI::VERSION + DBD::Pg-$DBD::Pg::VERSION";clone (DBI->connect ("dbi:Pg:host=localhost", "postgres"))'

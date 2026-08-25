@@ -6,6 +6,7 @@ recommends "Encode"                   => "3.24";
 suggests   "Clone"                    => "0.50";
 suggests   "DB_File";
 suggests   "MLDBM";
+suggests   "Module::Load"             => "0.36";
 suggests   "Net::Daemon"              => "0.52";
 suggests   "Params::Util"             => "1.102";
 suggests   "RPC::PlClient"            => "0.2020";

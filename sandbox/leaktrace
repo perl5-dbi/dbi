@@ -1,0 +1,13 @@
+#!/bin/sh
+
+PERL=$1
+HRNS=$2
+shift ; shift
+
+export PERL_DL_NONLAZY=1
+export PERL_DESTRUCT_LEVEL=2
+
+#prove --exec "$PERL -Iblib/lib -Iblib/arch -MTest::LeakTrace::Script=-verbose'" $@
+for t in $@ ; do
+    $PERL -MTest::LeakTrace::Script=-verbose $t
+    done

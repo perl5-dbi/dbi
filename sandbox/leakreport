@@ -1,0 +1,27 @@
+#!/pro/bin/perl
+
+use strict;
+use warnings;
+
+(my $pdir = $INC{"warnings.pm"}) =~ s{/warnings.pm}{};
+print "PDIR: $pdir\n";
+
+my %skip;
+foreach my $m (qw( Devel::Symdump Pod::Coverage Test::Pod Test::Pod::Coverage
+		   Test::Builder )) {
+    eval "use $m";
+    $@ and next;
+    (my $M = $m) =~ s{::}{/}g;
+    $skip{$INC{"$M.pm"}}++;
+    }
+
+$/ = undef;
+for (split m{(?<=\n)(?=leaked )} => <>) {
+    my @chunk = split m/\n/ => $_;
+    my ($mod) = ($chunk[0] =~ m{ from (.+) line });
+    $mod or next;
+    $mod =~ m{^$pdir/} || exists $skip{$mod}	and next;
+    $chunk[2] =~ m{^\s*[0-9]+:\s*SKIP\s*:}	and next;
+    $chunk[2] =~ m{^\s*[0-9]+:\s*use vars\b:}	and next;
+    print "$chunk[0]\n$chunk[2]\n";
+    }

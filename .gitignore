@@ -35,7 +35,8 @@ _Inline/
 nytprof*
 pm_to_blib
 pod2htm*
-sandbox/
+sandbox/commits.txt
+sandbox/michaelwinser-dbi-findings-2026-04-25.md
 t/zv[gpxn]*
 used-by-t/
 tmp/
