@@ -503,7 +503,8 @@ struct dbistate_st {
 
     /* WARNING: Only add new structure members here, and reduce pad2 to keep */
     /* the memory footprint exactly the same */
-    void *pad2[3];
+    SV *async_wouldblock_sv;
+    void *pad2[2];
 };
 
 /* macros for backwards compatibility */

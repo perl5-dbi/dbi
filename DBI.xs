@@ -77,7 +77,7 @@ static int       dbih_sth_bind_col _((SV *sth, SV *col, SV *ref, SV *attribs));
 
 static int      set_err_char _((SV *h, imp_xxh_t *imp_xxh, const char *err_c, IV err_i, const char *errstr, const char *state, const char *method));
 static int      set_err_sv   _((SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method));
-static SV *DBI_async_wouldblock_sv = NULL;
+
 static int      quote_type _((int sql_type, int p, int s, int *base_type, void *v));
 static int      sql_type_cast_svpv _((pTHX_ SV *sv, int sql_type, U32 flags, void *v));
 static I32      dbi_hash _((const char *string, long i));
@@ -526,10 +526,10 @@ dbi_bootinit(dbistate_t * parent_dbis)
     DBIS->bind_col    = dbih_sth_bind_col;
     DBIS->sql_type_cast_svpv = sql_type_cast_svpv;
 
-    if (!DBI_async_wouldblock_sv) {
-        DBI_async_wouldblock_sv = newSViv(-1);
-        sv_setpv(DBI_async_wouldblock_sv, "DBI_ASYNC_WOULDBLOCK");
-        SvIOK_on(DBI_async_wouldblock_sv);
+    if (!DBIS->async_wouldblock_sv) {
+        DBIS->async_wouldblock_sv = newSViv(-1);
+        sv_setpv(DBIS->async_wouldblock_sv, "DBI_ASYNC_WOULDBLOCK");
+        SvIOK_on(DBIS->async_wouldblock_sv);
     }
 
 
@@ -802,11 +802,11 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
 
     /* SvTRUE(err) > "0" > "" > undef */
     if (DBIc_ASYNC(imp_xxh) && SvIOK(err) && SvIV(err) == -1) {
-        sv_setsv(h_err, DBI_async_wouldblock_sv);
+        sv_setsv(h_err, DBIc_DBISTATE(imp_xxh)->async_wouldblock_sv);
         err_changed = 1;
     }
     else if (DBIc_ASYNC(imp_xxh) && SvPOK(err) && (strEQ(SvPV_nolen(err), "DBI_ASYNC_WOULDBLOCK") || strEQ(SvPV_nolen(err), "-1"))) {
-        sv_setsv(h_err, DBI_async_wouldblock_sv);
+        sv_setsv(h_err, DBIc_DBISTATE(imp_xxh)->async_wouldblock_sv);
         err_changed = 1;
     }
     else if (SvTRUE(err)             /* new error: so assign                 */
@@ -5489,8 +5489,8 @@ fetch_async_row(sth)
                 DBIc_ASYNC_WANT_WRITE_off(imp_sth);
                 ST(0) = &PL_sv_undef;
             } else {
-                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBI_async_wouldblock_sv);
-                ST(0) = sv_2mortal(newSVsv(DBI_async_wouldblock_sv));
+                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBIc_DBISTATE(imp_sth)->async_wouldblock_sv);
+                ST(0) = sv_2mortal(newSVsv(DBIc_DBISTATE(imp_sth)->async_wouldblock_sv));
             }
         } else {
             ST(0) = &PL_sv_undef;
@@ -5528,8 +5528,8 @@ fetch_async_hashref(sth, name_sv=NULL)
                 DBIc_ASYNC_WANT_WRITE_off(imp_sth);
                 ST(0) = &PL_sv_undef;
             } else {
-                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBI_async_wouldblock_sv);
-                ST(0) = sv_2mortal(newSVsv(DBI_async_wouldblock_sv));
+                sv_setsv(DBIc_ERR(imp_sth), (SV*)DBIc_DBISTATE(imp_sth)->async_wouldblock_sv);
+                ST(0) = sv_2mortal(newSVsv(DBIc_DBISTATE(imp_sth)->async_wouldblock_sv));
             }
         } else {
             ST(0) = &PL_sv_undef;
