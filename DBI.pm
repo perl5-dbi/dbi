@@ -275,7 +275,7 @@ BEGIN {
 sub is_wouldblock {
     my $err_value = shift;
     return 0 unless defined $err_value;
-    return ($err_value eq 'DBI_ASYNC_WOULDBLOCK') ? 1 : 0;
+    return ($err_value eq 'DBI_ASYNC_WOULDBLOCK' || $err_value eq '-1' || $err_value == -1) ? 1 : 0;
 }
 
 $DBI::dbi_debug = 0;          # mixture of bit fields and int sub-fields

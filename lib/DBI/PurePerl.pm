@@ -129,11 +129,7 @@ use constant DBIstcf_DISCARD_STRING   => 0x0002;
 use constant DBI_E_WOULDBLOCK         => -1;
 use constant DBI_ASYNC_WOULDBLOCK     => -1;
 
-sub is_wouldblock {
-    my $err_value = shift;
-    return 0 unless defined $err_value;
-    return ($err_value eq 'DBI_ASYNC_WOULDBLOCK' || $err_value eq 'DBI_E_WOULDBLOCK' || $err_value eq '-1' || $err_value == -1) ? 1 : 0;
-}
+
 
 my %is_flag_attribute = map {$_ =>1 } qw(
 	Active
