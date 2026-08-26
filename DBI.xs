@@ -3387,7 +3387,7 @@ XS(XS_DBI_dispatch)
 #endif
 
     if (DBIc_ASYNC(imp_xxh)) {
-        if ((U32)PerlProc_getpid() != imp_xxh->com.std.pid) {
+        if (!is_DESTROY && (U32)PerlProc_getpid() != imp_xxh->com.std.pid) {
             croak("PID mismatch on async handle %s (%ld vs %ld): handle created in parent process cannot be used in child fork",
                 neatsvpv(h,0), (long)imp_xxh->com.std.pid, (long)PerlProc_getpid());
         }
