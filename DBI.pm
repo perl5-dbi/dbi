@@ -2041,7 +2041,7 @@ sub _new_sth {	# called by DBD::<drivername>::db::prepare)
     sub execute_for_fetch {
 	my ($sth, $fetch_tuple_sub, $tuple_status) = @_;
 
-	return $sth->set_err($DBI::stderr, "execute_for_fetch is not supported when Async => 1")
+	Carp::croak("execute_for_fetch is not supported when Async => 1")
 		if $sth->FETCH('Async');
 	# start with empty status array
 	($tuple_status) ? @$tuple_status = () : $tuple_status = [];
