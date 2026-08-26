@@ -2102,7 +2102,11 @@ dbih_set_attr_k(SV *h, SV *keysv, int dbikey, SV *valuesv)
     else if (strEQ(key, "Async")) {
         if (on) {
             GV *gv = gv_fetchmethod_autoload(DBIc_IMP_STASH(imp_xxh), "async_read_ready", 0);
-            if (!gv || !GvCV(gv) || (GvSTASH(gv) && (strEQ(HvNAME(GvSTASH(gv)), "DBD::_::db") || strEQ(HvNAME(GvSTASH(gv)), "DBD::_::common")))) {
+            const char *stash_name = (gv && GvSTASH(gv)) ? HvNAME(GvSTASH(gv)) : NULL;
+            if (!gv || !GvCV(gv) || (stash_name && (
+                strEQ(stash_name, "DBD::_::db") ||
+                strEQ(stash_name, "DBD::_::st") ||
+                strEQ(stash_name, "DBD::_::common")))) {
                 croak("Driver does not support non-blocking asynchronous execution (Async => 1)");
             }
             DBIc_ASYNC_on(imp_xxh);
