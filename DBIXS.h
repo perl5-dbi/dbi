@@ -295,7 +295,6 @@ typedef struct {                /* -- FIELD DESCRIPTOR --               */
 #define DBIcf_AsyncWantWrite      0x04000000
 #define DBIcf_AsyncMultiplex      0x08000000
 #define DBIcf_AsyncBufferWrites   0x10000000
-#define DBIcf_TransactionPending  0x20000000
 /* NOTE: new flags may require clone() to be updated */
 
 /* Standard error state for event loop yield */
