@@ -3176,6 +3176,123 @@ to the bind_col method and both default to off.
 
 See DBD::Oracle for an example of how this is used.
 
+=head1 ASYNCHRONOUS EXECUTION SUPPORT
+
+As of DBI 1.644 (and DBIXS_REVISION 1811), DBI includes experimental support
+for non-blocking asynchronous execution. Drivers can opt-in to this feature
+by implementing the required methods and managing the async state flags.
+
+=head2 Driver Capability Declaration
+
+To declare support for asynchronous execution, a driver must implement the
+C<async_read_ready> method (and optionally C<async_write_ready>) in its
+database handle (C<DBD::Driver::db>) and/or statement handle
+(C<DBD::Driver::st>) packages.
+
+If a user attempts to set C<$h->{Async} = 1> on a driver that does not
+implement C<async_read_ready>, DBI will croak with an error indicating
+lack of support.
+
+=head2 The Async Protocol and State Flags
+
+Drivers are responsible for managing the following state flags, either via
+C<STORE> in Perl or direct flag manipulation in C (using C<DBIc_ASYNC_...>
+macros from F<DBIXS.h>):
+
+=over 4
+
+=item * C<AsyncWantRead>
+
+Set by the driver when an asynchronous operation is initiated and needs to wait
+for data to be readable from the underlying Database/Network descriptor.
+Cleared by the driver when the ready condition is satisfied.
+
+=item * C<AsyncWantWrite>
+
+Set by the driver when an asynchronous operation needs to wait for the
+descriptor to become writable.
+
+=item * C<AsyncMultiplex>
+
+Indicates whether the driver supports multiplexed asynchronous operations on
+a single connection.
+
+=back
+
+Note: C<AsyncWantRead> and C<AsyncWantWrite> are NOT inherited by child handles
+(e.g., statement handles prepared from a database handle).
+
+=head2 Modifying execute() for Asynchronous Support
+
+When C<$sth->FETCH('Async')> is true, C<execute()> should initiate the
+non-blocking execution and return immediately if the operation would block.
+
+In this case, the driver MUST:
+
+=over 4
+
+=item 1. Call C<$sth->set_err(DBI_ASYNC_WOULDBLOCK, ...)> to notify DBI.
+
+=item 2. Set C<$sth->STORE('AsyncWantRead', 1)> (and/or C<AsyncWantWrite>).
+
+=item 3. Return a value appropriate for non-blocking yield (e.g., C<"0E0"> or C<undef> depending on context).
+
+=back
+
+=head2 The async_read_ready() and async_write_ready() methods
+
+These methods are called by the user's event loop (or explicitly by the user)
+when the handle's associated file descriptor becomes ready.
+
+The driver implementation should:
+
+=over 4
+
+=item 1. Check progress of the asynchronous operation using non-blocking calls to the underlying engine.
+
+=item 2. If the operation is still pending, return without clearing the flags.
+
+=item 3. If the operation is complete (success or failure), clear C<AsyncWantRead>/C<AsyncWantWrite>.
+
+=item 4. Process results and return success/failure code.
+
+=back
+
+=head2 Handle Inheritance and Mid-flight Switching
+
+The C<Async> attribute is inherited by child handles (e.g., C<prepare> will create
+a statement handle with C<Async> enabled if the database handle has it enabled).
+
+Altering the C<Async> attribute on a database handle does NOT affect already
+existing statement handles.
+
+Drivers should handle cases where C<Async> is toggled on a statement handle
+after preparation but before execution, if supported.
+
+=head2 AsyncWatcher Integration
+
+Users can provide an C<AsyncWatcher> attribute (typically a hash reference with
+callbacks like C<on_add> and C<on_remove>) to integrate handle readiness
+detection into custom event loops (e.g., L<AnyEvent>, L<IO::Async>).
+
+Drivers are encouraged to invoke these callbacks when changing
+C<AsyncWantRead>/C<AsyncWantWrite> states to trigger adding/removing
+descriptors to/from the event loop.
+
+=head2 Thread and Fork Safety
+
+Drivers must be vigilant about PID changes. If C<Async> is enabled, DBI dispatch
+layers will reject invocations of standard methods from child processes with
+"PID mismatch" errors to prevent corrupting state. Drivers should check
+C<imp_xxh->com.std.pid> or equivalent to ensure handle validity.
+
+=head2 Concurrency Violations
+
+Drivers operating in non-multiplexed mode should rely on DBI core to reject
+attempts to invoke blocking synchronous methods on handles while an asynchronous
+operation is pending (i.e., while C<AsyncWantRead> is active).
+
+
 =head1 SUBCLASSING DBI DRIVERS
 
 This is definitely an open subject. It can be done, as demonstrated by
