@@ -95,6 +95,7 @@ t/13taint.t
 t/14utf8.t
 t/15array.t
 t/16destroy.t
+t/17handle_error.t
 t/18async.t
 t/19mock_async.t
 t/19fhtrace.t
@@ -127,6 +128,5 @@ t/86gofer_fail.t
 t/87gofer_cache.t
 t/90sql_type_cast.t
 t/91_store_warning.t
-t/19mock_async.t		Test suite for DBD::MockAsync reference driver
 t/lib.pl			Utility functions for test scripts
 typemap
