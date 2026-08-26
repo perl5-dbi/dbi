@@ -10,6 +10,7 @@
 
 #define IN_DBI_XS 1     /* see DBIXS.h */
 #define PERL_NO_GET_CONTEXT
+#define DBI_ASYNC_WOULDBLOCK_DUMMY_IX -999
 
 #include "DBIXS.h"      /* DBI public interface for DBD's written in C  */
 
@@ -4548,7 +4549,6 @@ BOOT:
      * never actually call it as an XS sub, or it will crash and burn! */
     (void) newXS("DBI::_dbi_state_lval", (XSUBADDR_t)(void (*) (void))_dbi_state_lval, __FILE__);
 
-
 I32
 constant()
         PROTOTYPE:
@@ -4638,9 +4638,13 @@ constant()
         DBIf_TRACE_DBD  = DBIf_TRACE_DBD
         DBIf_TRACE_TXN  = DBIf_TRACE_TXN
         DBI_E_WOULDBLOCK = DBI_E_WOULDBLOCK
-        DBI_ASYNC_WOULDBLOCK = DBI_E_WOULDBLOCK
+        DBI_ASYNC_WOULDBLOCK = DBI_ASYNC_WOULDBLOCK_DUMMY_IX
     CODE:
-    RETVAL = ix;
+    if (ix == DBI_ASYNC_WOULDBLOCK_DUMMY_IX) {
+        RETVAL = DBI_E_WOULDBLOCK;
+    } else {
+        RETVAL = ix;
+    }
     OUTPUT:
     RETVAL
 
