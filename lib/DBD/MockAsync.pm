@@ -73,7 +73,9 @@ sub driver {
         my ($dbh, $statement, $attr) = @_;
 
         my ($outer, $sth) = DBI::_new_sth($dbh, {
-            Statement => $statement,
+            Statement     => $statement,
+            NUM_OF_FIELDS => 2,
+            NAME          => ['id', 'name'],
         });
 
         $sth->STORE('Active', 1);

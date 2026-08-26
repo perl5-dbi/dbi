@@ -5,7 +5,7 @@ use Test::More;
 if ($ENV{DBI_AUTOPROXY}) {
     plan skip_all => 'Gofer DBI_AUTOPROXY';
 } else {
-    plan tests => 22;
+    plan tests => 26;
 }
 use lib 't/lib';
 use DBI qw(:async);
@@ -62,6 +62,15 @@ eval {
 };
 like($@, qr/Synchronous concurrency violation/, 'Concurrent operation croaks on busy non-multiplex handle');
 
+# 7.5 Multiplex Concurrency Lock Bypass
+$dbh->{AsyncMultiplex} = 1;
+my $sth3 = $dbh->prepare('SELECT 3');
+eval {
+    $sth3->execute();
+};
+ok(!$@, 'Concurrent operation allowed on multiplex handle');
+$dbh->{AsyncMultiplex} = 0;
+
 # 8. Simulated Network Ingestion via Non-blocking Pipe Writes
 my $inner = tied(%$dbh) || $dbh;
 my $pipe_w = $inner->{mock_pipe_write};
@@ -86,6 +95,15 @@ is($row->[1], 'Spanner', 'Second column matches mock pipe payload');
 # 11. EOF Verification
 my $eof_row = $sth->fetch_async_row();
 is($eof_row, undef, 'fetch_async_row() returns undef on EOF');
+
+# 12. fetch_async_hashref Verification
+$pipe_w->syswrite("102,Hashref\n");
+$dbh->async_read_ready(); # process it
+
+my $hash_row = $sth->fetch_async_hashref();
+ok($hash_row, 'fetch_async_hashref() returned hashref');
+is($hash_row->{id}, '102', 'Hashref key id matches');
+is($hash_row->{name}, 'Hashref', 'Hashref key name matches');
 
 $dbh->{Async} = 0;
 $dbh->disconnect();
