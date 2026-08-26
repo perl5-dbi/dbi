@@ -5472,6 +5472,9 @@ fetch_async_row(sth)
     CODE:
     {
         D_imp_sth(sth);
+        if (CvDEPTH(cv) >= 99) {
+            croak("Deep recursion in fetch_async_row");
+        }
         if (GIMME_V == G_ARRAY) {
             croak("fetch_async_row evaluated in list context; forbidden to avoid dualvar array emptiness logic traps");
         }
@@ -5510,6 +5513,9 @@ fetch_async_hashref(sth, name_sv=NULL)
     CODE:
     {
         D_imp_sth(sth);
+        if (CvDEPTH(cv) >= 99) {
+            croak("Deep recursion in fetch_async_hashref");
+        }
         if (GIMME_V == G_ARRAY) {
             croak("fetch_async_hashref MUST be evaluated in scalar context. Evaluating in list-context intercepts unrecoverable truthiness traps.");
         }
