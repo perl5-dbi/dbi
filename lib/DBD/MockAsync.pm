@@ -177,6 +177,22 @@ sub driver {
         return undef;
     }
 
+    sub fetch_async_hashref {
+        my ($sth, $name) = @_; # name unused in this simple mock
+        my $row = $sth->fetch_async_row();
+        return $row if !defined $row;
+        
+        # Guard against dualvar sentinel string comparison
+        if (!ref($row) && $row eq DBI_ASYNC_WOULDBLOCK) {
+            return $row;
+        }
+        
+        my $names = $sth->{NAME};
+        my %hash;
+        @hash{@$names} = @$row;
+        return \%hash;
+    }
+
     sub fetchrow_arrayref {
         my ($sth) = @_;
         return $sth->fetch_async_row();
