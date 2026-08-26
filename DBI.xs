@@ -801,11 +801,11 @@ set_err_sv(SV *h, imp_xxh_t *imp_xxh, SV *err, SV *errstr, SV *state, SV *method
         sv_setsv(h_errstr, errstr);
 
     /* SvTRUE(err) > "0" > "" > undef */
-    if (SvIOK(err) && SvIV(err) == -1) {
+    if (DBIc_ASYNC(imp_xxh) && SvIOK(err) && SvIV(err) == -1) {
         sv_setsv(h_err, DBI_async_wouldblock_sv);
         err_changed = 1;
     }
-    else if (SvPOK(err) && (strEQ(SvPV_nolen(err), "DBI_ASYNC_WOULDBLOCK") || strEQ(SvPV_nolen(err), "-1"))) {
+    else if (DBIc_ASYNC(imp_xxh) && SvPOK(err) && (strEQ(SvPV_nolen(err), "DBI_ASYNC_WOULDBLOCK") || strEQ(SvPV_nolen(err), "-1"))) {
         sv_setsv(h_err, DBI_async_wouldblock_sv);
         err_changed = 1;
     }
@@ -4025,7 +4025,7 @@ XS(XS_DBI_dispatch)
         && !is_nested_call              /* skip nested (internal) calls         */
         && (
                /* is an error and has RaiseError|PrintError|HandleError set     */
-           (SvTRUE(err_sv) && !(SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK")) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
+           (SvTRUE(err_sv) && !(DBIc_ASYNC(imp_xxh) && SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK")) && DBIc_has(imp_xxh, DBIcf_RaiseError|DBIcf_PrintError|DBIcf_HandleError))
                /* is a warn (not info) and has RaiseWarn|PrintWarn set          */
         || (  SvOK(err_sv) && strlen(SvPV_nolen(err_sv)) && DBIc_has(imp_xxh, DBIcf_RaiseWarn|DBIcf_PrintWarn))
         )
@@ -4142,7 +4142,7 @@ XS(XS_DBI_dispatch)
             if (DBIc_has(imp_xxh, DBIcf_RaiseWarn))
                 croak_sv(msg);
         }
-        else if (!hook_svp && SvTRUE(err_sv) && !(SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK"))) {
+        else if (!hook_svp && SvTRUE(err_sv) && !(DBIc_ASYNC(imp_xxh) && SvPOK(err_sv) && strEQ(SvPV_nolen(err_sv), "DBI_ASYNC_WOULDBLOCK"))) {
             if (DBIc_has(imp_xxh, DBIcf_PrintError))
                 warn_sv(msg);
             if (DBIc_has(imp_xxh, DBIcf_RaiseError))
