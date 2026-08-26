@@ -4,6 +4,14 @@ use strict;
 use Test::More;
 use DBI;
 
+if ($ENV{DBI_AUTOPROXY}) {
+    plan skip_all => 'Async regression tests not valid with DBI_AUTOPROXY';
+}
+
+if ($DBI::PurePerl) {
+    plan skip_all => 'Async regression tests are XS specific';
+}
+
 # Plan tests
 plan tests => 6;
 

@@ -97,13 +97,17 @@ my $eof_row = $sth->fetch_async_row();
 is($eof_row, undef, 'fetch_async_row() returns undef on EOF');
 
 # 12. fetch_async_hashref Verification
-$pipe_w->syswrite("102,Hashref\n");
-$dbh->async_read_ready(); # process it
+SKIP: {
+    skip "fetch_async_hashref not supported in PurePerl", 3 if $DBI::PurePerl;
 
-my $hash_row = $sth->fetch_async_hashref();
-ok($hash_row, 'fetch_async_hashref() returned hashref');
-is($hash_row->{id}, '102', 'Hashref key id matches');
-is($hash_row->{name}, 'Hashref', 'Hashref key name matches');
+    $pipe_w->syswrite("102,Hashref\n");
+    $dbh->async_read_ready(); # process it
+
+    my $hash_row = $sth->fetch_async_hashref();
+    ok($hash_row, 'fetch_async_hashref() returned hashref');
+    is($hash_row->{id}, '102', 'Hashref key id matches');
+    is($hash_row->{name}, 'Hashref', 'Hashref key name matches');
+}
 
 $dbh->{Async} = 0;
 $dbh->disconnect();
