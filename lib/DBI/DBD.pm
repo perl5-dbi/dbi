@@ -3178,7 +3178,7 @@ See DBD::Oracle for an example of how this is used.
 
 =head1 ASYNCHRONOUS EXECUTION SUPPORT
 
-As of DBI 1.644 (and DBIXS_REVISION 1811), DBI includes experimental support
+As of DBI 1.653 (and DBIXS_REVISION 1848), DBI includes experimental support
 for non-blocking asynchronous execution. Drivers can opt-in to this feature
 by implementing the required methods and managing the async state flags.
 
