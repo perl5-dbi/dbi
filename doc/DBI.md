@@ -5643,7 +5643,7 @@ set a hash attribute on the handle, as Perl's autovivification will
 bite you by (in)conveniently creating an unblessed hashref, which your
 method will then return with usually baffling results later on like
 the error "dbih\_getcom handle HASH(0xa4451a8) is not a DBI handle (has
-no magic".  It's best to check right after the call and return undef
+no magic)".  It's best to check right after the call and return undef
 immediately on error, just like DBI would and just like the example
 above.
 

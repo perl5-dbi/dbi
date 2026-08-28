@@ -5634,9 +5634,10 @@ FURTHER INFORMATION
        hash attribute on the handle, as Perl's autovivification will bite you
        by (in)conveniently creating an unblessed hashref, which your method
        will then return with usually baffling results later on like the error
-       "dbih_getcom handle HASH(0xa4451a8) is not a DBI handle (has no magic".
-       It's best to check right after the call and return undef immediately on
-       error, just like DBI would and just like the example above.
+       "dbih_getcom handle HASH(0xa4451a8) is not a DBI handle (has no
+       magic)".  It's best to check right after the call and return undef
+       immediately on error, just like DBI would and just like the example
+       above.
 
        If your method needs to record an error it should call the set_err()
        method with the error code and error string, as shown in the example
@@ -6420,4 +6421,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.44.0                      2026-08-24                            DBI(3)
+perl v5.44.0                      2026-08-28                            DBI(3)

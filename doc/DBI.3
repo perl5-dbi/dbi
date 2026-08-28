@@ -55,7 +55,7 @@
 .\" ========================================================================
 .\"
 .IX Title "DBI 3"
-.TH DBI 3 2026-08-24 "perl v5.44.0" "User Contributed Perl Documentation"
+.TH DBI 3 2026-08-28 "perl v5.44.0" "User Contributed Perl Documentation"
 .\" For nroff, turn off justification. Always turn off hyphenation. String
 .\" and register settings are required by groff 1.23.0 and later. Changing
 .\" tag separation back to 1n is required by groff 1.24.0 and later.
@@ -6307,7 +6307,7 @@ set a hash attribute on the handle, as Perl\*(Aqs autovivification will
 bite you by (in)conveniently creating an unblessed hashref, which your
 method will then return with usually baffling results later on like
 the error "dbih_getcom handle HASH(0xa4451a8) is not a DBI handle (has
-no magic".  It\*(Aqs best to check right after the call and return undef
+no magic)".  It\*(Aqs best to check right after the call and return undef
 immediately on error, just like DBI would and just like the example
 above.
 .PP
