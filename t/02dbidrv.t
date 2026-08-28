@@ -42,6 +42,7 @@ SKIP: {
     use warnings;
 
     my $drh = undef;
+    DESTROY { $drh = undef; }
 
     sub driver {
         return $drh if $drh;
@@ -75,7 +76,7 @@ SKIP: {
 
     Test::More::cmp_ok($DBD::Test::dr::imp_data_size, '==', 0, '... check DBD::Test::dr::imp_data_size to avoid typo');
 
-    sub DESTROY { undef }
+    sub DESTROY { undef; }
 
     sub data_sources {
         my ($h) = @_;
@@ -140,7 +141,7 @@ SKIP: {
     }
 
     sub disconnect {
-    shift->STORE(Active => 0);
+	shift->STORE(Active => 0);
     }
 }
 
@@ -258,7 +259,11 @@ SKIP: {
     ok($name, '... used FETCH returned from can to fetch the Name attribute');
     is($name, "Test", '... the Name attribute is equal to Test');
 
-    ok(!$drh->can('disconnect_all'), '... ');
+    ok(!$drh->can('disconnect_all'), '... no disconnect_all');
 }
+
+# Suppress "(in cleanup) dbih_getcom handle DBI::dr=HASH(0x39db90e8) is not a DBI handle (has no magic) during global destruction."
+$SIG{__WARN__} = sub { $@ = "" };
+$SIG{__DIE__}  = sub { $@ = "" };
 
 1;
