@@ -40,8 +40,9 @@ my $have_mldbm = eval { require 'MLDBM.pm'; 1 };
 {
     local $::DBM_PLANT_LOADED = 0;
     my $dbh = DBI->connect( "dbi:DBM:f_dir=$dbdir", undef, undef,
-                            { RaiseError => 0, PrintError => 0 } );
-    $dbh->{dbm_type} = $plant_noext;
+                            { RaiseError => 0, PrintError => 0,
+                              dbm_type => $plant_noext } );
+    #$dbh->{dbm_type} = $plant_noext;
     eval { $dbh->do("CREATE TABLE t_reject (id INT, v CHAR(8))"); 1 };
     ok( !$::DBM_PLANT_LOADED,
         "a path-shaped dbm_type does not load the file it names" );
@@ -55,8 +56,9 @@ my $have_mldbm = eval { require 'MLDBM.pm'; 1 };
 {
     local $::DBM_PLANT_LOADED = 0;
     my $dbh = DBI->connect( "dbi:DBM:f_dir=$dbdir", undef, undef,
-                            { RaiseError => 0, PrintError => 0 } );
-    $dbh->{dbm_type} = $plant;
+                            { RaiseError => 0, PrintError => 0,
+                              dbm_type => $plant_noext } );
+    #$dbh->{dbm_type} = $plant;
     eval { $dbh->do("CREATE TABLE t_reject_pm (id INT, v CHAR(8))"); 1 };
     ok( !$::DBM_PLANT_LOADED,
         "a dbm_type naming a .pm file directly does not load it" );
