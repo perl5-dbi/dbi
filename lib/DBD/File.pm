@@ -697,7 +697,7 @@ sub complete_table_name {
 
     if (-l $fqfn) {
 	my $real = Cwd::abs_path ($fqfn);
-	unless (List::Util::any { $real =~ m{^\Q$_\E} } @bases) {
+	unless (List::Util::any { $real =~ m{^\Q$_\E(?:$|/)} } @bases) {
             croak "Data file $fqfn is a outside of f_dir f_and f_dir_search\n";
 	    }
 	}

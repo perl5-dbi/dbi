@@ -1,7 +1,8 @@
-1.653 - 2026-08-25, H.Merijn Brand & Robert Rothenberg
+1.653 - 2026-08-28, H.Merijn Brand & Robert Rothenberg
     * Fix test for 32bit-perl (report in PR#189)
     * Fix arbitrary module and file loading via dbm_type/dbm_mldbm (CVE-2026-78030)
     * More META checking/updates
+    * Tighten symlink outside of f_dir (CVE-2026-15392) check (reported by Raj)
 
 1.652 - 2026-08-15, H.Merijn Brand & Robert Rothenberg
     * DBI now requires perl-5.12, driven by CVE's
