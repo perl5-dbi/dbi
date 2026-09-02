@@ -636,7 +636,7 @@ meta information expected by the SQL engines.
 
 The module DBD::File is currently maintained by
 
-H.Merijn Brand < hmbrand at cpan.org > and
+H.Merijn Brand < perl5 at tux.freedom.nl > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 The original author is Jochen Wiedmann.

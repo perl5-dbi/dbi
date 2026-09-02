@@ -2192,7 +2192,7 @@ module.
 
 This module is currently maintained by
 
-H.Merijn Brand < hmbrand at cpan.org > and
+H.Merijn Brand < perl5 at tux.freedom.nl > and
 Jens Rehsack  < rehsack at googlemail.com >
 
 The original authors are Jochen Wiedmann and Jeff Zucker.

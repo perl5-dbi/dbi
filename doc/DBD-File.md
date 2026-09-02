@@ -415,7 +415,7 @@ cause different table instances and private data areas.
 
 This module is currently maintained by
 
-H.Merijn Brand < hmbrand at cpan.org > and
+H.Merijn Brand < perl5 at tux.freedom.nl > and
 Jens Rehsack < rehsack at googlemail.com >
 
 The original author is Jochen Wiedmann.

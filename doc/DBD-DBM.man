@@ -770,7 +770,7 @@ GETTING HELP, MAKING SUGGESTIONS, AND REPORTING BUGS
 
        If you need enhancements quickly, you can get commercial support as
        described at <http://dbi.perl.org/support/> or you can contact Jens
-       Rehsack at rehsack@cpan.org for commercial support in Germany.
+       Rehsack at rehsack@googlemail.com for commercial support in Germany.
 
        Please don't bother Jochen Wiedmann or Jeff Zucker for support - they
        handed over further maintenance to H.Merijn Brand and Jens Rehsack.
@@ -804,4 +804,4 @@ SEE ALSO
        DBI, SQL::Statement, DBI::SQL::Nano, AnyDBM_File, DB_File, BerkeleyDB,
        MLDBM, YAML::MLDBM, MLDBM::Serializer::JSON
 
-perl v5.44.0                      2026-08-24                       DBD::DBM(3)
+perl v5.44.0                      2026-09-02                       DBD::DBM(3)

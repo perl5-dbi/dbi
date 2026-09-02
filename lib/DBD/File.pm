@@ -1432,7 +1432,7 @@ tables, but they will not covered by C<table_info>.
 
 This module is currently maintained by
 
-H.Merijn Brand < hmbrand at cpan.org > and
+H.Merijn Brand < perl5 at tux.freedom.nl > and
 Jens Rehsack < rehsack at googlemail.com >
 
 The original author is Jochen Wiedmann.

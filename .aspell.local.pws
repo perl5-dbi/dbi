@@ -1,4 +1,4 @@
-personal_ws-1.1 en_EN 299
+personal_ws-1.1 en_EN 300
 # checked all files ended up in doc/
 AIX
 ALRM
@@ -278,6 +278,7 @@ unlinked
 unmapped
 Unproxied
 unrecognised
+Updatable
 Urlwin
 usenet
 usercipher

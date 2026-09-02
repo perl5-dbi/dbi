@@ -2,7 +2,7 @@
 #
 #  DBI::SQL::Nano - a very tiny SQL engine
 #
-#  Copyright (c) 2010 by Jens Rehsack < rehsack AT cpan.org >
+#  Copyright (c) 2010 by Jens Rehsack < rehsack AT googlemail.com >
 #  Copyright (c) 2004 by Jeff Zucker < jzucker AT cpan.org >
 #
 #  All rights reserved.
@@ -1001,7 +1001,7 @@ to him.
 
 This module is originally written by Jeff Zucker < jzucker AT cpan.org >
 
-This module is currently maintained by Jens Rehsack < jrehsack AT cpan.org >
+This module is currently maintained by Jens Rehsack < jrehsack AT googlemail.com >
 
 Copyright (C) 2010 by Jens Rehsack, all rights reserved.
 Copyright (C) 2004 by Jeff Zucker, all rights reserved.

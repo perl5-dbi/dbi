@@ -1466,7 +1466,7 @@ the code that produces the bug.  And of course, patches are welcome, too
 
 If you need enhancements quickly, you can get commercial support as
 described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
-at rehsack@cpan.org for commercial support in Germany.
+at rehsack@googlemail.com for commercial support in Germany.
 
 Please don't bother Jochen Wiedmann or Jeff Zucker for support - they
 handed over further maintenance to H.Merijn Brand and Jens Rehsack.

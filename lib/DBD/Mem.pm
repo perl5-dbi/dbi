@@ -350,11 +350,11 @@ the code that produces the bug.  And of course, patches are welcome, too
 
 If you need enhancements quickly, you can get commercial support as
 described at L<http://dbi.perl.org/support/> or you can contact Jens Rehsack
-at rehsack@cpan.org for commercial support.
+at rehsack@googlemail.com for commercial support.
 
 =head1 AUTHOR AND COPYRIGHT
 
-This module is written by Jens Rehsack < rehsack AT cpan.org >.
+This module is written by Jens Rehsack < rehsack AT googlemail.com >.
 
  Copyright (c) 2016- by Jens Rehsack, all rights reserved.
 

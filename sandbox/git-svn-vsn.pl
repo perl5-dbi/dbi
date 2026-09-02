@@ -84,7 +84,7 @@ git (1), svn (1)
 
 =head1 AUTHOR
 
-H.Merijn Brand <hmbrand at cpan.org>
+H.Merijn Brand < perl5 at tux.freedom.nl >
 
 =head1 COPYRIGHT
 
