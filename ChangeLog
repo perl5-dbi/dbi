@@ -1,4 +1,4 @@
-1.653 - 2026-09-02, H.Merijn Brand & Robert Rothenberg
+1.653 - 2026-09-09, H.Merijn Brand & Robert Rothenberg
     * Fix test for 32bit-perl (report in PR#189)
     * Fix arbitrary module and file loading via dbm_type/dbm_mldbm (CVE-2026-78030)
     * More META checking/updates
