@@ -1,5 +1,7 @@
 package DBD::Multiplex::Logic::Default;
 
+our $VERSION = "2.165300";
+
 use strict;
 use warnings;
 no strict 'refs';

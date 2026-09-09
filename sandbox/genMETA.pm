@@ -2,9 +2,9 @@
 
 package genMETA;
 
-our $VERSION = "1.18-20250113";
+our $VERSION = "1.19-20260909";
 
-use 5.014001;
+use 5.026001;
 use warnings;
 use Carp;
 
@@ -33,7 +33,7 @@ sub extract_version {
     my $fh = shift;
     my @vsn;
     while (<$fh>) {
-	m/\$VERSION\b/ and push @vsn => $_;
+	m/\bVERSION\b/ and push @vsn => $_;
 	m{^(?:our\s+)?							# declaration
 	   \$VERSION \s*=\s*						# variable
 	   ["']? ([0-9._]+)						# version
@@ -48,6 +48,15 @@ sub extract_version {
     for (@vsn) {
 	m{^(?:our\s+)?							# declaration
 	   \$VERSION \s*=\s*						# variable
+	   ([""'']) ([0-9._]+) \1					# version
+	   \s*;
+	   }x or next;
+	return $2;
+	}
+    # Still no match, try as full package declaration
+    for (@vsn) {
+	m{^(?:our\s+)?							# declaration
+	   \$(?:\w+::)+VERSION \s*=\s*					# package-variable
 	   ([""'']) ([0-9._]+) \1					# version
 	   \s*;
 	   }x or next;
@@ -306,6 +315,11 @@ sub check_provides {
 
 	my $version = extract_version ($fh);
 	close $fh;
+	unless ($version) {
+	    require V;
+	    my ($first) = V::Module::Info->all_installed ($m);
+	    $version = $first ? $first->version : undef;
+	    }
 	unless ($version) {
 	    $fail++;
 	    say RED, "$file does not contain a VERSION", RESET;

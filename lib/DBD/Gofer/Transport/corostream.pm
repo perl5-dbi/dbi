@@ -3,6 +3,8 @@ package DBD::Gofer::Transport::corostream;
 use strict;
 use warnings;
 
+our $VERSION = "2.165300";
+
 use Carp;
 
 use Coro::Select; #  a slow but coro-aware replacement for CORE::select (global effect!)
