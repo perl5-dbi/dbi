@@ -12,6 +12,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.654 - 09 Sep 2026
+
+=over 2
+
+=item *
+
+
+
+=back
+
 =head2 Changes in DBI 1.653 - 09 Sep 2026
 
 =over 2
