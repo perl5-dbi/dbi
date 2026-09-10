@@ -12,13 +12,13 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.654 - 09 Sep 2026
+=head2 Changes in DBI 1.654 - 10 Sep 2026
 
 =over 2
 
 =item *
 
-
+Fix DBI::sql_type_cast on IV/NV (reported by Raj)
 
 =back
 

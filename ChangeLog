@@ -1,5 +1,5 @@
-1.654 - 2026-09-09, H.Merijn Brand & Robert Rothenberg
-    * 
+1.654 - 2026-09-10, H.Merijn Brand & Robert Rothenberg
+    * Fix DBI::sql_type_cast on IV/NV (reported by Raj)
 
 1.653 - 2026-09-09, H.Merijn Brand & Robert Rothenberg
     * Fix test for 32bit-perl (report in PR#189)

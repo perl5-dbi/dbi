@@ -49,6 +49,22 @@ my @tests = (
      "aa",         SQL_NUMERIC, 0,               NO_CAST_NO_STRICT, q{["aa"]}],
     ['non numeric cast to numeric (strict)',
      "aa",         SQL_NUMERIC, DBIstcf_STRICT,  NO_CAST_STRICT,    q{["aa"]}],
+
+    ['invalid sql type',
+     99,           123456789,   0,               INVALID_TYPE,      q{[99]}],
+    ['small int cast to int',
+     99,           SQL_INTEGER, 0,               CAST_OK,           q{[99]}],
+    ['2 byte max signed int cast to int',
+     32767,        SQL_INTEGER, 0,               CAST_OK,           q{[32767]}],
+    ['2 byte max unsigned int cast to int',
+     65535,        SQL_INTEGER, 0,               CAST_OK,           q{[65535]}],
+    ['4 byte max signed int cast to int',
+     2147483647,   SQL_INTEGER, 0,               CAST_OK,           q{[2147483647]}],
+    ['4 byte max unsigned int cast to int',
+     4294967295,   SQL_INTEGER, 0,               CAST_OK,           q{[4294967295]}],
+    ['small int cast to int (discard)',
+     99,           SQL_INTEGER, DBIstcf_DISCARD_STRING,
+                                                 CAST_OK,           q{[99]}],
    );
 
 unless ($pp) {

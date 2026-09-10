@@ -1957,8 +1957,10 @@ sql_type_cast_svpv(pTHX_ SV *sv, int sql_type, U32 flags, PERL_UNUSED_DECL void 
     /* else no error and sv is untouched */
     case SQL_NUMERIC:
         /* based on the code in perl's toke.c */
+        STRLEN len;
+        char *p = SvPV(sv, len); /* force stringify, handle magic */
         uv = 0;
-        grok_flags = grok_number(SvPVX(sv), SvCUR(sv), &uv);
+        grok_flags = grok_number(p, len, &uv);
         cast_ok = 1;
         if (grok_flags == IS_NUMBER_IN_UV) { /* +ve int */
             if (uv <= IV_MAX)   /* prefer IV over UV */
