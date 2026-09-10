@@ -328,6 +328,17 @@ check_inherited($drh, "ReadOnly", 1, 0);
 
 }
 
+{   # CVE-2026-88816
+    my $h = DBI->connect("dbi:ExampleP:", "", "", { RaiseError => 0, PrintError => 0 });
+    $dbh->{FetchHashKeyName} = 42;
+    my $s = $dbh->prepare("select mode,size,name from .");
+    $s->execute;
+    my @err;
+    local $SIG{__DIE__} = sub { push @err => @_ };
+    eval { $s->fetchrow_hashref; };
+    like($err[0], qr{Can't use (?:attribute '42'|an undefined)}, "Invalid HashKeyName");
+}
+
 done_testing();
 
 1;

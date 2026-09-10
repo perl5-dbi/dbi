@@ -18,7 +18,11 @@ DBI::Changes - List of significant changes to the DBI
 
 =item *
 
-Fix DBI::sql_type_cast on IV/NV (reported by Raj)
+Fix DBI::sql_type_cast on IV/NV (CVE-2026-88815) (reported by Raj)
+
+=item *
+
+Fix FetchHashKeyName   on IV/NV (CVE-2026-88816) (reported by Raj)
 
 =back
 

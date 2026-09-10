@@ -5306,7 +5306,7 @@ fetchrow_hashref(sth, keyattrib=Nullch)
     if (!keyattrib || !*keyattrib) {
         SV *kn = DBIc_FetchHashKeyName(imp_sth);
         if (kn && SvOK(kn))
-            keyattrib = SvPVX(kn);
+            keyattrib = SvPV_nolen(kn); /* Also force stringification */
         else
             keyattrib = "NAME";
     }

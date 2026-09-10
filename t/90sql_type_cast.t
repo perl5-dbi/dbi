@@ -49,7 +49,7 @@ my @tests = (
      "aa",         SQL_NUMERIC, 0,               NO_CAST_NO_STRICT, q{["aa"]}],
     ['non numeric cast to numeric (strict)',
      "aa",         SQL_NUMERIC, DBIstcf_STRICT,  NO_CAST_STRICT,    q{["aa"]}],
-
+    # CVE-2026-88815
     ['invalid sql type',
      99,           123456789,   0,               INVALID_TYPE,      q{[99]}],
     ['small int cast to int',
