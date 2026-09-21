@@ -45,12 +45,18 @@ author:
 generated_by:            Author
 distribution_type:       module
 provides:
+    Bundle::DBI:
+        file:            lib/Bundle/DBI.pm
+        version:         12.008696
     DBI:
         file:            DBI.pm
         version:         VERSION
     DBD::DBM:
         file:            lib/DBD/DBM.pm
         version:         0.08
+    DBD::ExampleP:
+        file:            lib/DBD/ExampleP.pm
+        version:         12.014311
     DBD::File:
         file:            lib/DBD/File.pm
         version:         0.45
