@@ -1,3 +1,6 @@
+1.655 - 2026-09-25, H.Merijn Brand & Robert Rothenberg
+    * Fix for C89 (Paul Howarth, PR#197)
+
 1.654 - 2026-09-25, H.Merijn Brand & Robert Rothenberg
     * Fix DBI::sql_type_cast on IV/NV (CVE-2026-88815) (reported by Raj)
     * Fix FetchHashKeyName   on IV/NV (CVE-2026-88816) (reported by Raj)

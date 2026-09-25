@@ -12,6 +12,16 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
+=head2 Changes in DBI 1.655 - 25 Sep 2026
+
+=over 2
+
+=item *
+
+Fix for C89 (Paul Howarth, PR#197)
+
+=back
+
 =head2 Changes in DBI 1.654 - 25 Sep 2026
 
 =over 2
