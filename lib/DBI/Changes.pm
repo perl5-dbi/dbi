@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.654 - 18 Sep 2026
+=head2 Changes in DBI 1.654 - 25 Sep 2026
 
 =over 2
 
@@ -23,6 +23,10 @@ Fix DBI::sql_type_cast on IV/NV (CVE-2026-88815) (reported by Raj)
 =item *
 
 Fix FetchHashKeyName   on IV/NV (CVE-2026-88816) (reported by Raj)
+
+=item *
+
+Fix provided in META
 
 =back
 
