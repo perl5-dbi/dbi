@@ -164,12 +164,16 @@ selectall_arrayref(...)
             sth = mg->mg_obj;
     }
     else {
+        MAGIC *mg;
         sth = dbixst_bounce_method("prepare", 3);
         SPAGAIN; SP -= items; /* because stack might have been realloc'd */
         if (!SvROK(sth))
             XSRETURN_UNDEF;
         /* switch to inner handle */
-        sth = mg_find(SvRV(sth),'P')->mg_obj;
+        mg  = mg_find(SvRV(sth),'P');
+        if (!mg)
+            XSRETURN_UNDEF;
+        sth = mg->mg_obj;
     }
     imp_sth = (imp_sth_t*)(DBIh_COM(sth));
     /* --- bind_param --- */
@@ -204,10 +208,14 @@ selectrow_arrayref(...)
         MAGIC *mg;
         sth = ST(1);
         /* switch to inner handle if not already */
-        if ( (mg = mg_find(SvRV(sth),'P')) )
-            sth = mg->mg_obj;
+        mg  = mg_find(SvRV(sth),'P');
+        if (!mg) {
+            if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
+        }
+        sth = mg->mg_obj;
     }
     else {
+        MAGIC *mg;
         /* --- prepare --- */
         sth = dbixst_bounce_method("prepare", 3);
         SPAGAIN; SP -= items; /* because stack might have been realloc'd */
@@ -215,7 +223,11 @@ selectrow_arrayref(...)
             if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
         }
         /* switch to inner handle */
-        sth = mg_find(SvRV(sth),'P')->mg_obj;
+        mg  = mg_find(SvRV(sth),'P');
+        if (!mg) {
+            if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
+        }
+        sth = mg->mg_obj;
     }
     imp_sth = (imp_sth_t*)(DBIh_COM(sth));
     /* --- bind_param --- */
