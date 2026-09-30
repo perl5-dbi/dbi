@@ -1,4 +1,4 @@
-1.655 - 2026-09-28, H.Merijn Brand & Robert Rothenberg
+1.655 - 2026-09-30, H.Merijn Brand & Robert Rothenberg
     * Fix for C89 (Paul Howarth, PR#197)
     * Ignore invalid handles consistently (detected by Raj)
 

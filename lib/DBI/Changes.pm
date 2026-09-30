@@ -12,13 +12,17 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.655 - 25 Sep 2026
+=head2 Changes in DBI 1.655 - 30 Sep 2026
 
 =over 2
 
 =item *
 
 Fix for C89 (Paul Howarth, PR#197)
+
+=item *
+
+Ignore invalid handles consistently (detected by Raj)
 
 =back
 

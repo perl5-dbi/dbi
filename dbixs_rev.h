@@ -1,5 +1,4 @@
-/* Fri Sep 25 15:14:29 2026 */
-/*  M lib/DBI/Changes.pm */
+/* Wed Sep 30 10:54:42 2026 */
 #define DBIXS_RELEASE  1
 #define DBIXS_VERSION  655
-#define DBIXS_REVISION 1839
+#define DBIXS_REVISION 1844
