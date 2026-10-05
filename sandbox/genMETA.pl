@@ -202,13 +202,13 @@ suggests:
     RPC::PlServer:       0.2020
     SQL::Statement:      1.414
 conflicts:
-    DBD::Amazon:         0.10
-    DBD::AnyData:        0.110
-    DBD::CSV:            0.36
-    DBD::Google:         0.51
-    DBD::PO:             2.10
-    DBD::RAM:            0.072
-    SQL::Statement:      1.33
+    DBD::Amazon:         '<= 0.10'
+    DBD::AnyData:        '<= 0.110'
+    DBD::CSV:            '<= 0.36'
+    DBD::Google:         '<= 0.51'
+    DBD::PO:             '<= 2.10'
+    DBD::RAM:            '<= 0.072'
+    SQL::Statement:      '<= 1.33'
 test_recommends:
     Test::More:          1.302225
 resources:

@@ -2,7 +2,7 @@
 
 package genMETA;
 
-our $VERSION = "1.19-20260909";
+our $VERSION = "1.20-20261005";
 
 use 5.026001;
 use warnings;
