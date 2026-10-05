@@ -1,3 +1,6 @@
+1.656 - 2026-10-05, H.Merijn Brand & Robert Rothenberg
+    * Re-add conflicts to cpanfile. (WIP)
+
 1.655 - 2026-09-30, H.Merijn Brand & Robert Rothenberg
     * Fix for C89 (Paul Howarth, PR#197)
     * Ignore invalid handles consistently (detected by Raj)
