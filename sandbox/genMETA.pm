@@ -489,8 +489,8 @@ sub fix_meta {
 	croak join "\n" => RED, "META Validator found fail:\n", $cmv->errors, RESET, "";
 
     unless ($yf) {
-	my @my = grep { -s } glob ("*/META.yml"), "META.yml" or croak "No META files";
-	$yf = $my[0];
+	my @my = grep { -s } glob ("*/META.yml"), "META.yml" or warn "No META files (yet)\n";
+	$yf = $my[0] || "META.yml";
 	}
     my $jf = $yf =~ s/yml$/json/r;
     open my $jh, ">", $jf or croak "Cannot update $jf: $!\n";
