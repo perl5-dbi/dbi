@@ -12,13 +12,17 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.656 - 05 Oct 2026
+=head2 Changes in DBI 1.656 - 09 Oct 2026
 
 =over 2
 
 =item *
 
 Re-add conflicts to cpanfile. (WIP)
+
+=item *
+
+Remove lock file on end of scope
 
 =back
 

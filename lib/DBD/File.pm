@@ -953,8 +953,9 @@ sub truncate ($$) {
 sub DESTROY {
     my $self = shift;
     my $meta = $self->{meta};
-    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{fh}     and $meta->{fh}->close ();
     $meta->{lockfh} and $meta->{lockfh}->close ();
+    $meta->{f_fqln} && -e $meta->{d_fqln} and unlink $meta->{f_fqln};
     undef $meta->{fh};
     undef $meta->{lockfh};
 
