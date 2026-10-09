@@ -483,7 +483,7 @@ our @ISA = "DBI::DBD::SqlEngine::DataSource";
 my $locking = eval {
     my $fh;
     my $nulldevice = File::Spec->devnull ();
-    open $fh, ">", $nulldevice or croak "Can't open $nulldevice: $!";
+    open  $fh, ">", $nulldevice or croak "Can't open $nulldevice: $!";
     flock $fh, 0;
     close $fh;
     1;
@@ -918,7 +918,8 @@ sub drop ($) {
     my $meta = $self->{meta};
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
-    $meta->{fh} and $meta->{fh}->close ();
+    $meta->{fh}     and $meta->{fh}->close ();
+    $meta->{lockfh} and eval { flock $meta->{lockfh}, 0 };
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
@@ -954,8 +955,8 @@ sub DESTROY {
     my $self = shift;
     my $meta = $self->{meta};
     $meta->{fh}     and $meta->{fh}->close ();
+    $meta->{lockfh} and eval { flock $meta->{lockfh}, 0 };
     $meta->{lockfh} and $meta->{lockfh}->close ();
-#   $meta->{f_fqln} && -e $meta->{f_fqln} and unlink $meta->{f_fqln};
     undef $meta->{fh};
     undef $meta->{lockfh};
 
