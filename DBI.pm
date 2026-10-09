@@ -7487,7 +7487,7 @@ can cause problems. You have been warned.
 
 Using DBI with perl threads is not yet recommended for production
 environments. For more information see
-L<https://www.perlmonks.org/index.pl?node_id=288022>
+https://www.perlmonks.org/index.pl?node_id=288022
 
 =head2 Signal Handling and Canceling Operations
 
