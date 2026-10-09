@@ -955,7 +955,7 @@ sub DESTROY {
     my $meta = $self->{meta};
     $meta->{fh}     and $meta->{fh}->close ();
     $meta->{lockfh} and $meta->{lockfh}->close ();
-    $meta->{f_fqln} && -e $meta->{d_fqln} and unlink $meta->{f_fqln};
+#   $meta->{f_fqln} && -e $meta->{f_fqln} and unlink $meta->{f_fqln};
     undef $meta->{fh};
     undef $meta->{lockfh};
 
