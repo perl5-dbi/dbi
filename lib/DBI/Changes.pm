@@ -24,6 +24,10 @@ Re-add conflicts to cpanfile. (WIP)
 
 Remove lock file on end of scope
 
+=item *
+
+Prevent dbi_profile crash (Henrik Teichmann)
+
 =back
 
 =head2 Changes in DBI 1.655 - 30 Sep 2026

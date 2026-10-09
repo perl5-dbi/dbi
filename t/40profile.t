@@ -489,6 +489,20 @@ subtest "CVE-2026-14380" => sub {
 
 };
 
+# The DESTROY of a database handle must be profiled when the Path has {attr} elements.
+# While the outer handle is being destroyed DBIc_MY_H() holds the raw inner HV; dbi_profile() used to
+# call SvRV() on the (raw HV) result of dbih_inner() and so used the hash's bucket array as an HV.
+{
+    my $prof = DBI::Profile->new(Path => [ '{Username}', '!MethodName' ]);
+    my $dbh = DBI->connect("dbi:ExampleP:", 'usrnam', '', { RaiseError => 1, Profile => $prof });
+    $dbh->ping;
+    undef $dbh; # DESTROY of the database handle
+    my $node = $prof->{Data}{usrnam};
+    ok $node && $node->{DESTROY}, 'DESTROY of a database handle is profiled with a {Username} path element';
+    is $node && $node->{DESTROY} ? $node->{DESTROY}[0] : undef, 1, 'exactly one DESTROY call profiled';
+    $prof->{Data} = undef; # no report at exit
+}
+
 done_testing;
 
 exit 0;

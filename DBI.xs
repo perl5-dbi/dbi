@@ -3004,7 +3004,13 @@ dbi_profile(SV *h, imp_xxh_t *imp_xxh, SV *statement_sv, SV *method, NV t1, NV t
                         dbh_outer_hv = DBIc_MY_H(imp_dbh);
                         if (SvTYPE(dbh_outer_hv) != SVt_PVHV)
                             return &PL_sv_undef;        /* presumably global destruction - bail */
-                        dbh_inner_hv = (HV*)SvRV(dbih_inner(aTHX_ (SV*)dbh_outer_hv, "profile"));
+                        {   /* dbih_inner() returns the inner handle as an RV, except when it was
+                             * given a raw inner HV (DBIc_MY_H() is set to the inner HV while the
+                             * outer handle is being destroyed): then it returns that HV itself,
+                             * and SvRV() on it would return its bucket array (HvARRAY). */
+                            SV *irv = dbih_inner(aTHX_ (SV*)dbh_outer_hv, "profile");
+                            dbh_inner_hv = (HV*)(SvROK (irv) ? SvRV (irv) : irv);
+                        }
                         if (SvTYPE(dbh_inner_hv) != SVt_PVHV)
                             return &PL_sv_undef;        /* presumably global destruction - bail */
                     }
