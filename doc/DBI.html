@@ -3930,7 +3930,7 @@ $dbh-&gt;disconnect;</code></pre>
 
 <p>But BEWARE, some underlying database APIs (the code the DBD driver uses to talk to the database, often supplied by the database vendor) are not thread safe. If it&#39;s not thread safe, then allowing more than one thread to enter the code at the same time may cause subtle/serious problems. In some cases allowing more than one thread to enter the code, even if <i>not</i> at the same time, can cause problems. You have been warned.</p>
 
-<p>Using DBI with perl threads is not yet recommended for production environments. For more information see <a href="https://www.perlmonks.org/index.pl?node_id=288022">https://www.perlmonks.org/index.pl?node_id=288022</a></p>
+<p>Using DBI with perl threads is not yet recommended for production environments. For more information see https://www.perlmonks.org/index.pl?node_id=288022</p>
 
 <h2 id="Signal-Handling-and-Canceling-Operations">Signal Handling and Canceling Operations</h2>
 

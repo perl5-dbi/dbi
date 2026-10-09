@@ -5397,7 +5397,7 @@ FURTHER INFORMATION
 
        Using DBI with perl threads is not yet recommended for production
        environments. For more information see
-       <https://www.perlmonks.org/index.pl?node_id=288022>
+       https://www.perlmonks.org/index.pl?node_id=288022
 
    Signal Handling and Canceling Operations
        [The following only applies to systems with unix-like signal handling.
@@ -6421,4 +6421,4 @@ TODO
        installed_methods
        setup_driver
 
-perl v5.44.0                      2026-09-30                            DBI(3)
+perl v5.44.0                      2026-10-09                            DBI(3)

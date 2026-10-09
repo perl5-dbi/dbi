@@ -5401,7 +5401,7 @@ can cause problems. You have been warned.
 
 Using DBI with perl threads is not yet recommended for production
 environments. For more information see
-[https://www.perlmonks.org/index.pl?node\_id=288022](https://www.perlmonks.org/index.pl?node_id=288022)
+https://www.perlmonks.org/index.pl?node\_id=288022
 
 ## Signal Handling and Canceling Operations
 
