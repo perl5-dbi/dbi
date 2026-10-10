@@ -26,7 +26,7 @@ Remove lock file on end of scope
 
 =item *
 
-Prevent dbi_profile crash (Henrik Teichmann)
+Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)
 
 =back
 
