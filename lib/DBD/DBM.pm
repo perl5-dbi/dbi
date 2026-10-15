@@ -596,7 +596,10 @@ sub update_specific_row ($$$$)
     return unless ( defined $key );
 
     if ( my $mode = $meta->{dbm_updatable_key} ) {
-        my $method = $mode == 1 ? \&carp : \&croak;
+        my $method = $mode == 1 ? \&carp : sub {
+            warn $_[0] if  $] < 5.013002;
+            croak $_[0];
+        };
         my $exists;
         eval { $exists = $key ne $newkey && exists( $meta->{hash}->{$newkey} ); };
         $exists and $method->("Row with PK '$newkey' already exists");
