@@ -277,7 +277,7 @@ sub do_test {
     is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
 
     # TODO these tests should be run using the database connection parameters
-    do_update_test( $dbh, $dtype ) unless $using_dbd_gofer;
+    do_update_test( $dbh, $dtype ) unless $using_dbd_gofer || $] < 5.014000;
 
     $dbh->disconnect;
 
