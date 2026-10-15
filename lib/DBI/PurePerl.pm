@@ -778,7 +778,7 @@ sub _get_sorted_hash_keys {
 
 sub _err_hash {
     return 1 unless defined $_[0]->{err};
-    return "$_[0]->{err} $_[0]->{errstr}"
+    return join " " => $_[0]->{err}, $_[0]->{errstr} // "?";
 }
 
 

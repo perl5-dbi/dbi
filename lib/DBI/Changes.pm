@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.656 - 09 Oct 2026
+=head2 Changes in DBI 1.656 - 15 Oct 2026
 
 =over 2
 
@@ -27,6 +27,10 @@ Remove lock file on end of scope
 =item *
 
 Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)
+
+=item *
+
+Memory corruption via selectrow_array + SQLite UDF (issue#98)
 
 =back
 
