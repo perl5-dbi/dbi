@@ -241,8 +241,10 @@ selectrow_arrayref(...)
     if ( dbd_st_execute(sth, imp_sth) <= -2 ) { /* -2 == error */
         if (is_selectrow_array) { XSRETURN_EMPTY; } else { XSRETURN_UNDEF; }
     }
+    SPAGAIN; SP -= items; /* because stack might have been realloc'd */
     /* --- fetchrow_arrayref --- */
     row_av = dbd_st_fetch(sth, imp_sth);
+    SPAGAIN; SP -= items; /* because stack might have been realloc'd */
     if (!row_av) {
         if (GIMME_V == G_SCALAR)
             PUSHs(&PL_sv_undef);
