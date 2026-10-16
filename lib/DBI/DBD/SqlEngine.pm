@@ -1272,6 +1272,8 @@ sub execute
         return;
     }
 
+    warn $_ for @err;
+
     if ( $stmt->{NUM_OF_FIELDS} )
     {    # is a SELECT statement
         $sth->STORE( Active => 1 );
