@@ -324,7 +324,7 @@ sub do_update_test {
 
                 if ( $mode == 2 ) {
                     ok( !$n, 'execute failed' );
-                    like $sth->errstr, qr/^Row with PK '1' already exists/, 'execpted error';
+                    like $sth->errstr, qr/^Row with PK '1' already exists/, 'expected error';
                 }
                 else {
                     if ( $mode == 1) {
