@@ -53,7 +53,7 @@ provides:
         version:         VERSION
     DBD::DBM:
         file:            lib/DBD/DBM.pm
-        version:         0.08
+        version:         1.656
     DBD::ExampleP:
         file:            lib/DBD/ExampleP.pm
         version:         12.014311
@@ -122,7 +122,7 @@ provides:
         version:         2.014214
     DBI::DBD::SqlEngine:
         file:            lib/DBI/DBD/SqlEngine.pm
-        version:         0.06
+        version:         1.656
     DBI::Gofer::Execute:
         file:            lib/DBI/Gofer/Execute.pm
         version:         0.014283
