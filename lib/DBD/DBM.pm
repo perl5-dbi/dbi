@@ -25,7 +25,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 our ($drh,$methods_already_installed);
-our $VERSION     = '0.08';
+our $VERSION     = '1.656';
 our $ATTRIBUTION = 'DBD::DBM by Jens Rehsack';
 
 # no need to have driver() unless you need private methods
@@ -596,7 +596,10 @@ sub update_specific_row ($$$$)
     return unless ( defined $key );
 
     if ( my $mode = $meta->{dbm_updatable_key} ) {
-        my $method = $mode == 1 ? \&carp : \&croak;
+        my $method = $mode == 1 ? \&carp : sub {
+            warn $_[0] if  $] < 5.013002;
+            croak $_[0];
+        };
         my $exists;
         eval { $exists = $key ne $newkey && exists( $meta->{hash}->{$newkey} ); };
         $exists and $method->("Row with PK '$newkey' already exists");

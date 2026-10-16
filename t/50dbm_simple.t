@@ -277,7 +277,7 @@ sub do_test {
     is_deeply( \@tables, [ [] ], "No tables delivered by table_info" );
 
     # TODO these tests should be run using the database connection parameters
-    do_update_test( $dbh, $dtype ) unless $using_dbd_gofer || $] < 5.013002;
+    do_update_test( $dbh, $dtype ) unless $using_dbd_gofer;
 
     $dbh->disconnect;
 
@@ -317,14 +317,19 @@ sub do_update_test {
 
                 $sth->{PrintError} = 0;
 
+                my @warn;
+
+                local $SIG{__WARN__} = sub { push @warn, @_ };
                 my $n = $sth->execute();
 
                 if ( $mode == 2 ) {
                     ok( !$n, 'execute failed' );
-                    like $sth->errstr, qr/^Row with PK '1' already exists/, 'execpted error';
+                    like $sth->errstr, qr/^Row with PK '1' already exists/, 'expected error';
                 }
                 else {
-                    # TODO: trap warnings to test when $mode == 1
+                    if ( $mode == 1) {
+                        like $warn[0], qr/^Row with PK '1' already exists/, 'expected warning';
+                    }
                     is( $n, 1, 'execute' ) or diag( $sth->errstr || 'unknown error' );
                 }
 

@@ -34,6 +34,14 @@ Memory corruption via selectrow_array + SQLite UDF (issue#98)
 
 =item *
 
+Fix errstr when dbm_updatable_key attribute for DBD::DBM is set to 2 (croak) on Perl versions < v5.13.2.
+
+=item *
+
+Fix emit warnings when dbm_updatable_key attribute for DBD::DBM is set to 1 (carp)
+
+=item *
+
 *** WARNING: Next release will require perl-5.14 ***
 - Main reason: Exception handling
 

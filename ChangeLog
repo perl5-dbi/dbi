@@ -3,6 +3,8 @@
     * Remove lock file on end of scope
     * Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)
     * Memory corruption via selectrow_array + SQLite UDF (issue#98)
+    * Fix errstr when dbm_updatable_key attribute for DBD::DBM is set to 2 (croak) on Perl versions < v5.13.2.
+    * Fix emit warnings when dbm_updatable_key attribute for DBD::DBM is set to 1 (carp)
     * *** WARNING: Next release will require perl-5.14 ***
       - Main reason: Exception handling
 
