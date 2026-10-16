@@ -1,8 +1,10 @@
-1.656 - 2026-10-15, H.Merijn Brand & Robert Rothenberg
+1.656 - 2026-10-16, H.Merijn Brand & Robert Rothenberg
     * Re-add conflicts to cpanfile. (WIP)
     * Remove lock file on end of scope
     * Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)
     * Memory corruption via selectrow_array + SQLite UDF (issue#98)
+    * *** WARNING: Next release will require perl-5.14 ***
+      - Main reason: Exception handling
 
 1.655 - 2026-09-30, H.Merijn Brand & Robert Rothenberg
     * Fix for C89 (Paul Howarth, PR#197)

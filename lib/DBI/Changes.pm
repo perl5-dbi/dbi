@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.656 - 15 Oct 2026
+=head2 Changes in DBI 1.656 - 16 Oct 2026
 
 =over 2
 
@@ -31,6 +31,11 @@ Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)
 =item *
 
 Memory corruption via selectrow_array + SQLite UDF (issue#98)
+
+=item *
+
+*** WARNING: Next release will require perl-5.14 ***
+- Main reason: Exception handling
 
 =back
 
