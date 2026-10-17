@@ -42,6 +42,10 @@ Fix emit warnings when dbm_updatable_key attribute for DBD::DBM is set to 1 (car
 
 =item *
 
+Fix lock file not removed when DBD::DBM check for bad serializer class fails.
+
+=item *
+
 *** WARNING: Next release will require perl-5.14 ***
 - Main reason: Exception handling
 

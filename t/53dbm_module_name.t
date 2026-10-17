@@ -20,6 +20,7 @@ use File::Path qw(mkpath);
 use File::Spec;
 use File::Temp qw(tempdir);
 use Test::More;
+use Fcntl qw(:flock);
 
 my $dir = tempdir( CLEANUP => 1 );
 my $dbdir = File::Spec->catdir( $dir, 'db' );
@@ -104,6 +105,20 @@ SKIP: {
     };
     ok( !$::DBM_PLANT_LOADED,
         "a dbm_mldbm that traverses out of MLDBM::Serializer:: does not load the file it names" );
+
+    # The rejection must happen before the table's lock file is created and
+    # flock()ed.  Otherwise the lock outlives the failed CREATE and every
+    # later open of the table in this process blocks on it: the DROP below
+    # hung under DBI_AUTOPROXY=dbi:Gofer:transport=null, where the dbh that
+    # serves the DROP is not the one holding the stale lock.
+    my $lck  = File::Spec->catfile( $dbdir, "t_ser.lck" );
+    my $free = 1;
+    if ( -f $lck and open( my $lfh, "<", $lck ) )
+    {
+        $free = flock( $lfh, LOCK_EX | LOCK_NB ) ? 1 : 0;
+        close($lfh);
+    }
+    ok( $free, "a rejected dbm_mldbm does not leave the table's lock file locked" );
     eval { $dbh->do( "DROP TABLE t_ser" ); 1 };
     $dbh->disconnect;
 }
