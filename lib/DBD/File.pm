@@ -932,7 +932,7 @@ sub _release_lock {
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
-}
+    } # _release_lock
 
 sub seek ($$$$) {
     my ($self, $data, $pos, $whence) = @_;
