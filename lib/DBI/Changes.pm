@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.656 - 16 Oct 2026
+=head2 Changes in DBI 1.656 - 17 Oct 2026
 
 =over 2
 
@@ -42,7 +42,7 @@ Fix emit warnings when dbm_updatable_key attribute for DBD::DBM is set to 1 (car
 
 =item *
 
-Fix lock file not removed when DBD::DBM check for bad serializer class fails.
+Fix lock file not removed when DBD::DBM check for bad serializer class fails. (CVE-2026-111879)
 
 =item *
 

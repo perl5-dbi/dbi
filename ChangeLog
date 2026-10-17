@@ -1,4 +1,4 @@
-1.656 - 2026-10-16, H.Merijn Brand & Robert Rothenberg
+1.656 - 2026-10-17, H.Merijn Brand & Robert Rothenberg
     * Re-add conflicts to cpanfile. (WIP)
     * Remove lock file on end of scope
     * Prevent dbi_profile crash (CVE-2026-108518) (Henrik Teichmann)

@@ -59,7 +59,7 @@ provides:
         version:         12.014311
     DBD::File:
         file:            lib/DBD/File.pm
-        version:         0.45
+        version:         1.656
     DBD::Gofer:
         file:            lib/DBD/Gofer.pm
         version:         0.015327
