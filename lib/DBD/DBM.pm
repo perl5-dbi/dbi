@@ -372,6 +372,17 @@ sub init_table_meta
 sub open_data
 {
     my ( $className, $meta, $attrs, $flags ) = @_;
+
+    # Validate dbm_mldbm BEFORE SUPER::open_data creates and flock()s the
+    # lock file.  A croak after that point leaves $meta->{lockfh} holding an
+    # exclusive lock for as long as the table meta data lives, and the next
+    # open of the same table in this process blocks on it forever.
+    if ( $meta->{dbm_mldbm} and not $flags->{dropMode} )
+    {
+        DBD::DBM::_CLASS( $meta->{dbm_mldbm} )
+            or croak "Invalid dbm_mldbm '$meta->{dbm_mldbm}': expected a module name";
+    }
+
     $className->SUPER::open_data( $meta, $attrs, $flags );
 
     unless ( $flags->{dropMode} )
@@ -412,15 +423,20 @@ sub open_data
         {
             $MLDBM::UseDB      = $meta->{dbm_usedb};
             $MLDBM::Serializer = $meta->{dbm_mldbm};
-            DBD::DBM::_CLASS($MLDBM::Serializer)
-                or croak "Invalid dbm_mldbm '${MLDBM::Serializer}': expected a module name";
         }
 
         $meta->{hash} = {};
         my $tie_class = $meta->{dbm_tietype};
         eval { tie %{ $meta->{hash} }, $tie_class, @tie_args };
-        $@ and croak "Cannot tie(\%h $tie_class @tie_args): $@";
-        -f $meta->{f_fqfn} or croak( "No such file: '" . $meta->{f_fqfn} . "'" );
+        if ( $@ or not -f $meta->{f_fqfn} )
+        {
+            # Release the lock SUPER::open_data took, or it outlives this
+            # failure (see above).
+            my $err = $@ ? "Cannot tie(\%h $tie_class @tie_args): $@"
+                         : "No such file: '" . $meta->{f_fqfn} . "'";
+            $className->_release_lock($meta);
+            croak $err;
+        }
     }
 
     unless ( $flags->{createMode} )

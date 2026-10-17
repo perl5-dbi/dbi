@@ -35,7 +35,7 @@ use warnings;
 use base qw( DBI::DBD::SqlEngine );
 use Carp;
 
-our $VERSION = "0.45";
+our $VERSION = "1.656";
 
 our $drh = undef;		# holds driver handle(s) once initialized
 
@@ -916,6 +916,15 @@ sub open_data {
 sub drop ($) {
     my ($self, $data) = @_;
     my $meta = $self->{meta};
+    $self->_release_lock($meta);
+    $meta->{f_fqfn} and unlink $meta->{f_fqfn}; # XXX ==> sql_data_source
+    $meta->{f_fqln} and unlink $meta->{f_fqln}; # XXX ==> sql_data_source
+    delete $data->{Database}{sql_meta}{$self->{table}};
+    return 1;
+    } # drop
+
+sub _release_lock {
+    my ($self, $meta) = @_;
     # We have to close the file before unlinking it: Some OS'es will
     # refuse the unlink otherwise.
     $meta->{fh}     and $meta->{fh}->close ();
@@ -923,11 +932,7 @@ sub drop ($) {
     $meta->{lockfh} and $meta->{lockfh}->close ();
     undef $meta->{fh};
     undef $meta->{lockfh};
-    $meta->{f_fqfn} and unlink $meta->{f_fqfn}; # XXX ==> sql_data_source
-    $meta->{f_fqln} and unlink $meta->{f_fqln}; # XXX ==> sql_data_source
-    delete $data->{Database}{sql_meta}{$self->{table}};
-    return 1;
-    } # drop
+}
 
 sub seek ($$$$) {
     my ($self, $data, $pos, $whence) = @_;
@@ -954,11 +959,7 @@ sub truncate ($$) {
 sub DESTROY {
     my $self = shift;
     my $meta = $self->{meta};
-    $meta->{fh}     and $meta->{fh}->close ();
-    $meta->{lockfh} and eval { flock $meta->{lockfh}, 0 };
-    $meta->{lockfh} and $meta->{lockfh}->close ();
-    undef $meta->{fh};
-    undef $meta->{lockfh};
+    $self->_release_lock($meta);
 
     $self->SUPER::DESTROY();
     } # DESTROY
