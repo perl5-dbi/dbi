@@ -34,7 +34,7 @@ use strict;
 use Carp;
 our %methods_installed;
 
-our $VERSION = "1.656";
+our $VERSION = "1.657";
 
 our $drh = undef;    # holds driver handle(s) once initialized
 

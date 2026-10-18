@@ -2,7 +2,7 @@
 
 package genMETA;
 
-our $VERSION = "1.20-20261005";
+our $VERSION = "1.21-20261018";
 
 use 5.026001;
 use warnings;
@@ -111,7 +111,7 @@ sub version_from {
 sub from_data {
     my ($self, @data) = @_;
     $self->{version} or $self->version_from ();
-    s/VERSION/$self->{version}/g for @data;
+    s/\bVERSION\b/$self->{version}/g for @data;
     my ($dsct, $dmod);
     for (@data) {
 	s/[ \t]+$//;

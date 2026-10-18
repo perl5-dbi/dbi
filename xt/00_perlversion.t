@@ -20,8 +20,7 @@ my @pm = sort "DBI.pm",
 	(glob "lib/*/*/*/*.pm");
 
 my %f5xx = (
-    "5.012.0" => { map { $_ => 1 } @pm, glob ("t/*"), glob ("xt/*.t"), glob ("*.PL") },
-    "5.014.0" => { map { $_ => 1 } "xt/20_kwalitee.t" },
+    "5.014.0" => { map { $_ => 1 } @pm, glob ("t/*"), glob ("xt/*.t"), glob ("*.PL") },
     "5.016.0" => {},
     );
 

@@ -1,6 +1,6 @@
 #!/pro/bin/perl
 
-use 5.012000;
+use 5.014000;
 use warnings;
 
 use Test::More;

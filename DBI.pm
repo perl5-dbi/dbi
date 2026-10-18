@@ -9,14 +9,14 @@
 
 package DBI;
 
-require 5.012000;
+require 5.014000;
 
 use strict;
 use warnings;
 
 our ($XS_VERSION, $VERSION);
 BEGIN {
-$VERSION = "1.656"; # ==> ALSO update the version in the pod text below!
+$VERSION = "1.657"; # ==> ALSO update the version in the pod text below!
 $XS_VERSION = $VERSION;
 $VERSION =~ tr/_//d;
 }
@@ -148,7 +148,7 @@ sure that your issue isn't related to the driver you're using.
 
 =head2 NOTES
 
-This is the DBI specification that corresponds to DBI version 1.656
+This is the DBI specification that corresponds to DBI version 1.657
 (see L<DBI::Changes> for details).
 
 The DBI is evolving at a steady pace, so it's good to check that
@@ -8297,7 +8297,7 @@ The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland.
 The DBI developer group (2024-2024) All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl 5.12.0 README file.
+License or the Artistic License, as specified in the Perl 5.14.0 README file.
 
 =head1 SUPPORT / WARRANTY
 

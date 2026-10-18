@@ -8,7 +8,7 @@
 #
 # See COPYRIGHT section in DBI.pm for usage and distribution rights.
 
-use 5.012_000;
+use 5.014_000;
 
 use ExtUtils::MakeMaker 5.16, qw(WriteMakefile $Verbose prompt);
 use Getopt::Long;
@@ -48,18 +48,12 @@ if (($ENV{LANG}||"") =~ m/utf-?8/i) {
     sleep 1;
     }
 
-if ($^O eq "MSWin32" && $] < 5.012 && $File::Spec::VERSION < 3.31) {
-    warn "Windows requires File::Spec-3.31, which is CORE as of perl-5.11.3\n";
-    warn "As this is just perl-$] with File::Spec-$File::Spec::VERSION\n";
-    exit 1;
-    }
-
 my %opts = (
     NAME                      => "DBI",
     AUTHOR                    => 'DBI team (dbi-users@perl.org)',
     VERSION_FROM              => "DBI.pm",
     ABSTRACT_FROM             => "DBI.pm",
-    MIN_PERL_VERSION          => "5.012000",
+    MIN_PERL_VERSION          => "5.014000",
     BUILD_REQUIRES            => {
         "ExtUtils::MakeMaker" => "6.48",
         "Test::Simple"        => "0.96",
@@ -389,7 +383,7 @@ spellcheck checkpod:	doc
 dbipport:
 	perl sandbox/genPPPort_h.pl
 ppport:		dbipport.h
-	perl dbipport.h --compat-version=5.12.0 DBI.xs
+	perl dbipport.h --compat-version=5.14.0 DBI.xs
 
 # make dist does not remove existing .tar.gz causing questions
 newdist:

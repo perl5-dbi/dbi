@@ -1,3 +1,7 @@
+1.657 - 2026-10-18, H.Merijn Brand & Robert Rothenberg
+    * DBI now requires perl-5.14, driven by CVE's
+    * 
+
 1.656 - 2026-10-17, H.Merijn Brand & Robert Rothenberg
     * Re-add conflicts to cpanfile. (WIP)
     * Remove lock file on end of scope

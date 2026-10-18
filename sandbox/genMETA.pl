@@ -53,13 +53,13 @@ provides:
         version:         VERSION
     DBD::DBM:
         file:            lib/DBD/DBM.pm
-        version:         1.656
+        version:         VERSION
     DBD::ExampleP:
         file:            lib/DBD/ExampleP.pm
         version:         12.014311
     DBD::File:
         file:            lib/DBD/File.pm
-        version:         1.656
+        version:         VERSION
     DBD::Gofer:
         file:            lib/DBD/Gofer.pm
         version:         0.015327
@@ -122,7 +122,7 @@ provides:
         version:         2.014214
     DBI::DBD::SqlEngine:
         file:            lib/DBI/DBD/SqlEngine.pm
-        version:         1.656
+        version:         VERSION
     DBI::Gofer::Execute:
         file:            lib/DBI/Gofer/Execute.pm
         version:         0.014283
@@ -192,7 +192,7 @@ test_requires:
 recommends:
     Encode:              3.24
 suggests:
-    Clone:               0.50
+    Clone:               0.51
     DB_File:             0
     MLDBM:               0
     Module::Load:        0.36

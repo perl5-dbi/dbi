@@ -3,7 +3,7 @@ requires   "XSLoader";
 
 recommends "Encode"                   => "3.24";
 
-suggests   "Clone"                    => "0.50";
+suggests   "Clone"                    => "0.51";
 suggests   "DB_File";
 suggests   "MLDBM";
 suggests   "Module::Load"             => "0.36";

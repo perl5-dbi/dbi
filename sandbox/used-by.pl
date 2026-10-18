@@ -1,6 +1,6 @@
 #!/pro/bin/perl
 
-use 5.26.0;
+use 5.026000;
 use warnings;
 
 our $VERSION = "2.00 - 20200209";
@@ -260,7 +260,7 @@ foreach my $m (@tm) {
 	open my $fh, ">", "$opt_d/$m.t";
 	print $fh <<~"EOT";
 		#!$^X
-		use 5.12.1;
+		use 5.012000;
 		use warnings;
 		# HARNESS-TIMEOUT-EVENT 300
 		use CPAN;

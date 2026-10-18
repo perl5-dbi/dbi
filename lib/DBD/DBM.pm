@@ -16,7 +16,7 @@
 #  DBD AUTHORS - see the comments in the code
 #
 #######################################################################
-require 5.012;
+require 5.014;
 use strict;
 use warnings;
 
@@ -25,7 +25,7 @@ package DBD::DBM;
 #################
 use base qw( DBD::File );
 our ($drh,$methods_already_installed);
-our $VERSION     = '1.656';
+our $VERSION     = '1.657';
 our $ATTRIBUTION = 'DBD::DBM by Jens Rehsack';
 
 # no need to have driver() unless you need private methods
@@ -613,7 +613,7 @@ sub update_specific_row ($$$$)
 
     if ( my $mode = $meta->{dbm_updatable_key} ) {
         my $method = $mode == 1 ? \&carp : sub {
-            warn $_[0] if  $] < 5.013002;
+            warn $_[0] if  $] < 5.013002; # rrwho: please simplify. 5.014 is now prereq
             croak $_[0];
         };
         my $exists;
