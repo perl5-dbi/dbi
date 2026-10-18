@@ -95,34 +95,6 @@ our @ISA           = qw(DBD::File::db);
 use Carp;
 use Module::Load ();
 
-sub validate_STORE_attr
-{
-    my ( $dbh, $attrib, $value ) = @_;
-
-    if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
-    {
-        ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-        carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if ($^W);
-        $attrib = $newattrib;
-    }
-
-    return $dbh->SUPER::validate_STORE_attr( $attrib, $value );
-}
-
-sub validate_FETCH_attr
-{
-    my ( $dbh, $attrib ) = @_;
-
-    if ( $attrib eq "dbm_ext" or $attrib eq "dbm_lockfile" )
-    {
-        ( my $newattrib = $attrib ) =~ s/^dbm_/f_/g;
-        carp "Attribute '$attrib' is depreciated, use '$newattrib' instead" if ($^W);
-        $attrib = $newattrib;
-    }
-
-    return $dbh->SUPER::validate_FETCH_attr($attrib);
-}
-
 sub set_versions
 {
     my $this = $_[0];
@@ -283,9 +255,7 @@ __PACKAGE__->register_reset_on_modify( \%reset_on_modify );
 
 my %compat_map = (
                    ( map { $_ => "dbm_$_" } qw(type mldbm store_metadata) ),
-                   dbm_ext      => 'f_ext',
                    dbm_file     => 'f_file',
-                   dbm_lockfile => ' f_lockfile',
                  );
 __PACKAGE__->register_compat_map( \%compat_map );
 
