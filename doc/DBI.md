@@ -6194,7 +6194,7 @@ The DBI module is Copyright (c) 1994-2024 Tim Bunce. Ireland.
 The DBI developer group (2024-2024) All rights reserved.
 
 You may distribute under the terms of either the GNU General Public
-License or the Artistic License, as specified in the Perl 5.12.0 README file.
+License or the Artistic License, as specified in the Perl 5.14.0 README file.
 
 # SUPPORT / WARRANTY
 

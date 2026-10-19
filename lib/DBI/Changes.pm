@@ -22,7 +22,7 @@ DBI now requires perl-5.14, driven by CVE's
 
 =item *
 
-
+Removed support for the deprecated 'dbm_ext' and 'dbm_lockfile' attributes
 
 =back
 

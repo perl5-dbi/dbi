@@ -178,7 +178,7 @@ provides:
         file:            lib/DBI/Util/CacheMemory.pm
         version:         0.010315
 requires:
-    perl:                5.012000
+    perl:                5.014000
     Module::Load:        0.22
     XSLoader:            0
 configure_requires:
