@@ -574,7 +574,7 @@ Allows C<get_table_meta_attr> and C<set_table_meta_attr> to update the
 attribute name to the current favored one:
 
   # from DBD::DBM
-  my %compat_map = (dbm_ext => "f_ext");
+  my %compat_map = ( "dbm_ext" => "f_ext", "dbm_lockfile" => "f_lockfile" );
   __PACKAGE__->register_compat_map (\%compat_map);
 
 =item open_file
