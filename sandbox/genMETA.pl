@@ -173,7 +173,7 @@ provides:
         version:         2.014286
     DBI::SQL::Nano:
         file:            lib/DBI/SQL/Nano.pm
-        version:         1.015544
+        version:         1.015545
     DBI::Util::CacheMemory:
         file:            lib/DBI/Util/CacheMemory.pm
         version:         0.010315

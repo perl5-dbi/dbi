@@ -28,7 +28,7 @@ require DBI;    # for looks_like_number()
 
 BEGIN
 {
-    $VERSION = "1.015544";
+    $VERSION = "1.015545";
 
     $versions->{nano_version} = $VERSION;
     if ( $ENV{DBI_SQL_NANO} || !eval { require SQL::Statement; $SQL::Statement::VERSION ge '1.400' } )
@@ -463,7 +463,7 @@ sub SELECT ($$$)
               if ( $self->{fetched_from_key} );
         }
     }
-    if ( $self->{order_clause} )
+    if ( $self->{order_clause} and keys %{ $self->{order_clause} })
     {
         my ( $sort_col, $desc ) = each %{ $self->{order_clause} };
         my @sortCols = ( $self->column_nums( $table, $sort_col, 1 ) );

@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.657 - 18 Oct 2026
+=head2 Changes in DBI 1.657 - 09 Nov 2026
 
 =over 2
 
@@ -23,6 +23,10 @@ DBI now requires perl-5.14, driven by CVE's
 =item *
 
 Removed support for the deprecated 'dbm_ext' and 'dbm_lockfile' attributes
+
+=item *
+
+Fix SQL::Nano to skip empty order_clause hashes
 
 =back
 
