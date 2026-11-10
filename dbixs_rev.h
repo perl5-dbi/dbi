@@ -1,6 +1,4 @@
-/* Mon Nov  9 17:03:08 2026 */
-/*  M lib/DBI/Changes.pm */
-/*  M sandbox/genMETA.pl */
+/* Tue Nov 10 08:51:22 2026 */
 #define DBIXS_RELEASE  1
 #define DBIXS_VERSION  657
-#define DBIXS_REVISION 1877
+#define DBIXS_REVISION 1878

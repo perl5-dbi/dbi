@@ -1112,6 +1112,7 @@ sub SCALAR
 package DBI::DBD::SqlEngine::TieTables;
 
 use Carp qw(croak);
+use Scalar::Util qw(weaken);
 require Tie::Hash;
 our @ISA = qw(Tie::Hash);
 
@@ -1127,6 +1128,7 @@ sub TIEHASH
                       },
                       $class
                     );
+    weaken( $self->{dbh} );
     return $self;
 }    # new
 

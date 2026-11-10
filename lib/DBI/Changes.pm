@@ -12,7 +12,7 @@ DBI::Changes - List of significant changes to the DBI
 
 =encoding UTF-8
 
-=head2 Changes in DBI 1.657 - 09 Nov 2026
+=head2 Changes in DBI 1.657 - 10 Nov 2026
 
 =over 2
 
@@ -27,6 +27,10 @@ Removed support for the deprecated 'dbm_ext' and 'dbm_lockfile' attributes
 =item *
 
 Fix SQL::Nano to skip empty order_clause hashes
+
+=item *
+
+Fix memory leak in DBI::DBD::SqlEngin (issue#158, thanks rwfranks)
 
 =back
 
